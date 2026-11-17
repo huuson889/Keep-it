@@ -12,55 +12,211 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 **Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
 
 ### 1. Bối cảnh & Mục tiêu
-- Tab **Tài liệu** (PDF, Word DOCX, PowerPoint PPTX, Ảnh) hiện đã có bộ đọc cục bộ, hỗ trợ highlight, ghi chú, đọc text, tra từ điển, dịch panel và Ask AI.
-- Mục tiêu: Nâng cấp trải nghiệm đọc sách/tài liệu dài chuyên sâu, tiện dụng và hỗ trợ học ngoại ngữ đắm chìm như một máy đọc sách chuyên nghiệp (Kindle/e-reader).
+- Tab **Tài liệu** (`pages/documents.html`, `js/dashboard/documents.js`, `documents-renderers.js`, `documents-store.js`) hiện đã hỗ trợ đọc PDF, Word (DOCX), PowerPoint (PPTX), ảnh (JPG/PNG/WebP), có highlight, ghi chú, đọc text, từ điển, panel dịch và Ask AI.
+- Mục tiêu: Bổ sung chi tiết kỹ thuật cho 9 tính năng mở rộng nhằm nâng tầm trải nghiệm đọc sách, tài liệu dài và học ngoại ngữ đắm chìm như một máy đọc sách e-reader chuyên nghiệp.
 
-### 2. Chi tiết 5 tính năng giao diện & đọc cốt lõi
+---
 
-1. **Cây mục lục tài liệu (PDF Outline / Table of Contents / Heading Navigation):**
-   - *PDF:* Gọi hàm `await document.getOutline()` của PDF.js lấy cây mục lục phân cấp `{ title, dest, items }`, dùng `await document.getPageIndex(destRef)` để lấy số trang chính xác.
-   - *PPTX & DOCX:* Trích xuất tiêu đề slide hoặc các thẻ tiêu đề `<h1>, <h2>, <h3>` kèm số trang tương ứng.
-   - *Giao diện:* Thêm nút chuyển đổi tab trên thanh rail bên trái **[Trang thu nhỏ (Thumbnails) | Mục lục (Outline)]**. Click vào mục nào thì gọi `setPage(targetPage)` nhảy ngay đến trang đó.
+### 2. Chi tiết kỹ thuật 5 tính năng giao diện & đọc cốt lõi
 
-2. **Tìm kiếm nội dung trong file (In-Document Search / Ctrl+F nội bộ):**
-   - *Vấn đề:* `Ctrl+F` của trình duyệt không quét được các trang ở xa viewport do PDF.js giải phóng DOM/canvas để tối ưu RAM.
-   - *Giải pháp:* Tận dụng mảng `activeEngine.pages[i].texts` đã nạp sẵn; bấm `Ctrl+F` mở thanh tìm kiếm góc trên stage (`input`, `Next/Prev`, số kết quả `3 / 15`, `✕`).
-   - *Tô sáng:* Gọi `setPage(match.page)`, tìm phần tử `.para[data-i="..."] .en` tương ứng và bọc từ khóa tìm thấy trong thẻ `<mark class="docSearchActive">` màu vàng sáng.
+#### 1. Cây mục lục tài liệu (PDF Outline / Table of Contents / Heading Navigation)
+- **Can thiệp file:** `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `pages/documents.html`, `css/dashboard/documents.css`.
+- **Trích xuất dữ liệu mục lục:**
+  - *PDF:* Trong hàm `pdf(blob, hooks)`, sau khi nạp `document`, gọi hàm có sẵn của PDF.js:
+    ```js
+    const outlineData = await document.getOutline(); // Trả về cây [{ title, dest, items: [...] }]
+    ```
+    Để ánh xạ `dest` thành số trang thực: dùng `await document.getPageIndex(destRef)` (trả về 0-based index $\rightarrow$ cộng 1 ra số trang).
+  - *DOCX:* Trong hàm `office()` nhánh `docx`, quét các thẻ `h1, h2, h3` trong `section.keepitDocx` đã gán `data-page` để lấy danh sách tiêu đề + số trang.
+  - *PPTX:* Lấy mảng tiêu đề slide từ `speakerNotes()` hoặc text đầu tiên của từng slide.
+  - Trả về trường `outline: [...]` trong đối tượng trả về của `KeepitDocumentRenderers.prepare()`.
+- **Giao diện & Tương tác:**
+  - Tại thanh rail bên trái (`#rail`), thêm 2 tab chuyển đổi: `[Trang thu nhỏ (Thumbs) | Mục lục (TOC)]`.
+  - Tab Mục lục dựng danh sách HTML dạng cây phân cấp (`<ul class="docOutlineTree">`), hỗ trợ thụt đầu dòng theo cấp độ (`item.items`).
+  - Gắn sự kiện click vào mục: gọi `setPage(item.pageNumber)` để cuộn ngay đến trang mong muốn.
 
-3. **Bộ lọc màu đọc ban đêm (Dark Mode & Giấy vàng Sepia cho trang sách):**
-   - *Vấn đề:* Nền canvas PDF/Word mặc định màu trắng tinh, rất chói mắt khi đọc ban đêm dù giao diện app đã bật Dark Theme.
-   - *Giải pháp:* Thêm thuộc tính `data-doc-theme="sepia|dark"` vào `.docSurface` với CSS filter thông minh:
-     - **Sepia (Màu giấy vàng):** `filter: sepia(35%) brightness(95%) contrast(95%);` giúp dịu mắt như máy đọc sách Kindle.
-     - **Đêm (Dark Mode đảo màu):** `filter: invert(90%) hue-rotate(180deg) contrast(90%);` kèm quy tắc đảo ngược lại cho hình ảnh bên trong tài liệu (`img, image { filter: invert(100%) hue-rotate(180deg); }`) để giữ nguyên màu gốc của hình ảnh và sơ đồ.
+#### 2. Tìm kiếm nội dung trong file (In-Document Search / Ctrl+F nội bộ)
+- **Can thiệp file:** `js/dashboard/documents.js`, `css/dashboard/documents.css`, `pages/documents.html`.
+- **Dữ liệu nguồn:** Tận dụng mảng `activeEngine.pages[pageIndex].texts` đã được nạp sẵn khi mở tài liệu (chứa toàn bộ chuỗi văn bản sạch của từng block/đoạn).
+- **Luồng phím tắt & Giao diện:**
+  - Bắt sự kiện bàn phím: `(e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f'`.
+  - Hiển thị thanh tìm kiếm `#docSearchBar` nổi ở góc trên bên phải của `#stage`: gồm ô `input#docSearchQuery`, nút `Prev (▲)`, `Next (▼)`, nhãn đếm `index / total` và nút đóng `✕ (Esc)`.
+- **Thuật toán tìm kiếm & Tô sáng:**
+  - Khi gõ từ khóa: Quét chuỗi regex không phân biệt hoa thường (`RegExp(query, 'gi')`) trên toàn bộ các trang trong `activeEngine.pages`.
+  - Tạo mảng kết quả: `matches = [{ page: 1, textIndex: 2, start: 10, end: 18 }, ...]`.
+  - Nhảy kết quả: Khi bấm Next/Prev $\rightarrow$ gọi `setPage(currentMatch.page)`.
+  - Khi trang render (`ensurePage` / `render`): trong `textLayer` của PDF hoặc DOM của Office, duyệt node `.para[data-i="..."] .en`, thay thế chuỗi khớp bằng thẻ `<mark class="docSearchHit">` và gán class `docSearchActive` cho kết quả đang chọn.
+  - Tự động cuộn đến từ khóa: `activeMark.scrollIntoView({ block: 'center', behavior: 'smooth' })`.
 
-4. **Chế độ đọc 2 trang song song (Two-Page Spread / Book View):**
-   - Mở rộng biến luồng `V.flow`: ngoài `'continuous'` và `'single'`, bổ sung giá trị `'spread'`.
-   - Bố cục: Trang 1 là trang bìa nằm độc lập. Từ trang 2 trở đi hiển thị theo cặp `[Trang chẵn (Trái) | Trang lẻ (Phải)]` qua CSS Flexbox/Grid (`gap: 16px`).
-   - Phím mũi tên và nút tiến/lùi trang chuyển 2 trang mỗi lần (`V.page ± 2`), tối ưu tuyệt đối cho màn hình máy tính rộng và tablet xoay ngang.
+#### 3. Bộ lọc màu đọc ban đêm (Dark Mode & Giấy vàng Sepia cho trang sách)
+- **Can thiệp file:** `css/dashboard/documents.css`, `js/dashboard/documents.js`.
+- **Vấn đề kỹ thuật:** Canvas vẽ của PDF và HTML của Word/PPTX có nền trắng cứng `#ffffff`, nếu chỉ bật Dark Theme cho app thì trang sách vẫn trắng toát, gây chói mắt ban đêm.
+- **Cơ chế lưu trữ:** Lưu tùy chọn vào `lhnDocumentsPrefs`: `pageTheme: 'default' | 'sepia' | 'dark'`.
+- **Thiết lập giao diện & CSS Filters:**
+  - Gán thuộc tính `data-doc-theme` trực tiếp vào `.docSurface` hoặc container `#stage`.
+  - **Sepia (Giấy vàng ấm dịu mắt như máy đọc sách Kindle):**
+    ```css
+    .docSurface[data-doc-theme="sepia"] canvas,
+    .docSurface[data-doc-theme="sepia"] .docsSource {
+      filter: sepia(38%) brightness(94%) contrast(92%);
+      background: #fbf0d9 !important;
+    }
+    ```
+  - **Dark Mode (Đảo màu thông minh ban đêm):**
+    ```css
+    .docSurface[data-doc-theme="dark"] canvas,
+    .docSurface[data-doc-theme="dark"] .docsSource {
+      filter: invert(90%) hue-rotate(180deg) contrast(90%);
+      background: #18191a !important;
+    }
+    /* Đảo ngược lại 100% cho hình ảnh/sơ đồ trong tài liệu để giữ nguyên màu gốc */
+    .docSurface[data-doc-theme="dark"] img,
+    .docSurface[data-doc-theme="dark"] image,
+    .docSurface[data-doc-theme="dark"] svg {
+      filter: invert(100%) hue-rotate(180deg);
+    }
+    ```
 
-5. **Đọc song ngữ đoạn văn trực tiếp (Inline Bilingual Paragraph):**
-   - *Vấn đề:* Muốn dịch đoạn văn hiện phải liếc mắt sang panel sidebar bên phải, làm ngắt quãng mạch đọc.
-   - *Giải pháp:* Click đúp hoặc dùng phím tắt `Alt+D` trên khối `.para`: gọi `BILINGUAL_TRANSLATE` và chèn khối `<div class="viTrans">` ngay bên dưới `<span class="en">`.
-   - Bản dịch được tự động lưu vào store `translations` của `keepit-documents` (IndexedDB), lần sau mở lại đoạn đó sẽ hiện ngay mà không cần gọi mạng dịch lại.
+#### 4. Chế độ đọc 2 trang song song (Two-Page Spread / Book View)
+- **Can thiệp file:** `js/dashboard/documents.js`, `css/dashboard/documents.css`.
+- **Mở rộng trạng thái luồng (`V.flow`):**
+  - Hiện tại `V.flow` chỉ có `'continuous'` (cuộn dọc) và `'single'` (1 trang). Bổ sung giá trị `'spread'`.
+- **Toán học phân bổ trang & Render:**
+  - Trang 1 là trang bìa độc lập (căn giữa hoặc lệch phải).
+  - Từ trang 2 trở đi ghép theo cặp `[Trang chẵn (Trái) | Trang lẻ (Phải)]`: Cặp 1 là `(2, 3)`, Cặp 2 là `(4, 5)`...
+  - Khi `V.flow === 'spread'`, hàm `renderViewer()` tạo các container cặp trang `.spreadRow`:
+    ```html
+    <div class="spreadRow">
+      <div class="pageFrame pageLeft" data-page="2">...</div>
+      <div class="pageFrame pageRight" data-page="3">...</div>
+    </div>
+    ```
+  - CSS Flexbox:
+    ```css
+    .pageStack.flowSpread .spreadRow {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    ```
+  - Pager & Phím mũi tên: Bước nhảy 2 trang mỗi lần (`setPage(V.page - 2)` hoặc `setPage(V.page + 2)`). Tự động vô hiệu hóa chế độ này khi màn hình hẹp/dọc (`matchMedia('(orientation: portrait)').matches`).
 
-### 3. Chi tiết 4 tính năng học tập chuyên sâu
+#### 5. Đọc song ngữ đoạn văn trực tiếp (Inline Bilingual Paragraph)
+- **Can thiệp file:** `js/dashboard/documents.js`, `js/dashboard/documents-renderers.js`, `css/dashboard/documents.css`, `js/dashboard/documents-store.js`.
+- **Cấu trúc DOM hiện có:** Mỗi khối văn bản trong cả PDF và Office đều đã được bọc: `<div class="para" data-page="1" data-i="0"><span class="en">...</span></div>`.
+- **Cơ chế kích hoạt & Lưu cache:**
+  - Bắt phím tắt `Alt+D` hoặc click đúp vào khối `.para`.
+  - Kiểm tra trong IndexedDB store `translations` (`KeepitDocumentsStore` đã có sẵn):
+    ```js
+    const cached = await Store.get('translations', `${V.doc.id}:${page}:${i}`);
+    ```
+  - Nếu chưa có: Gửi tin nhắn `BILINGUAL_TRANSLATE` tới background để dịch.
+  - Khi có kết quả: Lưu vào store `translations` `{ id: `${docId}:${page}:${i}`, docId, page, i, original, translation }`.
+- **Hiển thị trực tiếp trong trang:**
+  - Chèn phần tử bản dịch ngay dưới `.en`:
+    ```html
+    <div class="para activeTrans">
+      <span class="en">Original English paragraph...</span>
+      <div class="docInlineTrans">Bản dịch tiếng Việt hiển thị mượt mà ở đây...</div>
+    </div>
+    ```
+  - CSS hiển thị:
+    ```css
+    .docInlineTrans {
+      display: block;
+      margin-top: 6px;
+      padding: 6px 10px;
+      font-size: 0.9em;
+      line-height: 1.4;
+      color: var(--kp-primary, #6366f1);
+      background: rgba(99, 102, 241, 0.08);
+      border-left: 3px solid var(--kp-primary, #6366f1);
+      border-radius: 0 4px 4px 0;
+      user-select: text;
+    }
+    ```
 
-6. **Chế độ Audiobook tự động lật trang (Continuous Document TTS):**
-   - Nút "Đọc tiếp (Play Book)": TTS đọc tuần tự từng câu/đoạn văn trên trang (có vạch sáng highlight chạy theo câu đang đọc).
-   - Khi đọc hết câu cuối của trang hiện tại $\rightarrow$ tự động gọi `setPage(V.page + 1)` lật sang trang kế tiếp và đọc tiếp liên tục mà không cần thao tác chuột.
+---
 
-7. **Xuất toàn bộ Ghi chú của cuốn sách (Export Book Summary & Flashcard Deck):**
-   - Nút "Xuất ghi chú cuốn sách":
-     - Xuất file **Markdown (`.md`)** hoặc HTML tóm tắt: Gom toàn bộ câu trích dẫn kèm ghi chú cá nhân theo thứ tự số trang để in hoặc lưu trữ.
-     - Xuất trực tiếp toàn bộ các từ vựng đã highlight trong cuốn sách đó thành **một bộ thẻ Flashcard riêng** trong Dashboard (ví dụ bộ thẻ: *"Từ vựng sách Atomic Habits"*).
+### 3. Chi tiết kỹ thuật 4 tính năng học tập chuyên sâu
 
-8. **Đánh dấu trang & Nhớ vị trí cuộn chi tiết (Bookmarks 🔖 & Precise Scroll):**
-   - *Lưu vị trí cuộn chính xác:* Lưu thêm tỷ lệ phần trăm cuộn của trang (`scrollPercent`) vào `KeepitDocumentsStore.patch(id, { at, scrollPercent })`. Mở lại sách mắt sẽ dừng đúng ngay dòng chữ đang đọc dở thay vì nhảy về đầu trang.
-   - *Nút Bookmark 🔖:* Cho phép ghim các trang quan trọng, hiển thị danh sách trang đã bookmark trên thanh rail bên trái để bấm nhảy đến ngay.
+#### 6. Chế độ Audiobook tự động lật trang (Continuous Document TTS)
+- **Can thiệp file:** `js/dashboard/documents.js`.
+- **Luồng xử lý tuần tự (Audiobook Pipeline):**
+  - Người dùng bấm nút **[Play Book / Đọc tiếp]** trên thanh công cụ.
+  - Quản lý trạng thái: `audiobook = { running: true, page: V.page, paraIndex: 0 }`.
+  - Lấy chuỗi văn bản của đoạn hiện tại: `const text = activeEngine.pages[page - 1].texts[paraIndex];`.
+  - Tô sáng đoạn đang đọc bằng class `.para.ttsReading`.
+  - Gọi `LHN_TTS` (qua pipeline Google TTS / SpeechSynthesis có sẵn).
+  - **Sự kiện chuyển tiếp:** Khi đoạn hiện tại kết thúc (`onend` callback):
+    - Nếu còn đoạn trong trang: Tăng `paraIndex++` và đọc đoạn tiếp theo.
+    - Nếu là đoạn cuối cùng của trang: Tự động gọi `setPage(V.page + 1)`, đợi sự kiện render trang mới hoàn tất $\rightarrow$ đặt `paraIndex = 0` và tiếp tục phát âm đoạn đầu của trang mới.
+    - Cho phép phím `Space` để Tạm dừng/Tiếp tục (Pause/Resume).
 
-9. **Chế độ đọc tập trung không phân tâm (Distraction-Free Focus Mode):**
-   - Phím tắt `F` hoặc nút Fullscreen: Tạm ẩn toàn bộ sidebar, toolbar, topbar; trang sách căn giữa toàn màn hình.
-   - Con trỏ chuột và nút phân trang tự động mờ đi khi không di chuột (`pointer-events: none` sau 1.5 giây idle).
+#### 7. Xuất toàn bộ Ghi chú của cuốn sách (Export Book Summary & Flashcard Deck)
+- **Can thiệp file:** `js/dashboard/documents.js`, `js/dashboard/documents-store.js`.
+- **Dữ liệu nguồn:** Đọc toàn bộ ghi chú của tài liệu từ `KeepitDocumentsStore`:
+  ```js
+  const notes = await Store.all('notes'); // Lọc theo note.docId === V.doc.id
+  notes.sort((a, b) => a.page - b.page || a.i - b.i);
+  ```
+- **Xuất file Markdown (`.md`):**
+  - Định dạng nội dung:
+    ```markdown
+    # Tóm tắt ghi chú: [Tên tài liệu]
+    Ngày tạo: [Ngày] | Tổng số ghi chú: [N]
+
+    ## Trang [X]
+    > [Câu trích dẫn gốc đã highlight]
+    - Ghi chú: [Nội dung ghi chú cá nhân của người học]
+    ```
+  - Tạo tải về qua Blob URL:
+    ```js
+    const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    // Tự động kích hoạt tải về file [Ten_tai_lieu]_notes.md
+    ```
+- **Tạo bộ thẻ Flashcard riêng:**
+  - Lấy các highlight/từ vựng trong sách, tạo bản ghi Flashcard mới vào `browser.storage.local` với tag gắn liền với ID sách: `deck: "Tài liệu: " + V.doc.title`.
+
+#### 8. Đánh dấu trang & Nhớ vị trí cuộn chi tiết (Bookmarks 🔖 & Precise Scroll)
+- **Can thiệp file:** `js/dashboard/documents.js`, `js/dashboard/documents-store.js`.
+- **Nâng cấp Store Schema (`meta`):** Bổ sung 2 trường dữ liệu:
+  - `scrollPercent`: Số thực từ `0.0` đến `1.0` lưu vị trí cuộn tương đối trong trang.
+  - `bookmarks`: Mảng danh sách các số trang đã được đánh dấu `[3, 15, 42]`.
+- **Lưu và phục hồi vị trí cuộn chính xác:**
+  - Khi cuộn `#stage`, ngoài việc tính trang hiện tại, tính thêm:
+    ```js
+    const currentFrame = $(`#pageStack>.pageFrame[data-page="${V.page}"]`);
+    const rect = currentFrame.getBoundingClientRect();
+    const stageRect = $('#stage').getBoundingClientRect();
+    const scrollPercent = Math.max(0, Math.min(1, (stageRect.top - rect.top) / rect.height));
+    ```
+  - Khi mở lại tài liệu: Cuộn đến số trang `V.doc.at` và bù thêm khoảng `scrollPercent * frameHeight` $\rightarrow$ dừng đúng dòng đang đọc dở.
+- **Nút Bookmark 🔖:** Thêm icon Bookmark trên pager; bấm vào sẽ bật/tắt số trang vào `bookmarks` và cập nhật danh sách trang yêu thích ở tab Bookmark trên thanh rail bên trái.
+
+#### 9. Chế độ đọc tập trung không phân tâm (Distraction-Free Focus Mode)
+- **Can thiệp file:** `js/dashboard/documents.js`, `css/dashboard/documents.css`.
+- **Cơ chế kích hoạt:** Bấm phím tắt `F` hoặc nút phóng to trên topbar viewer.
+- **Xử lý DOM & CSS:**
+  - Thêm class `.docFocusMode` vào phần tử gốc `#viewer`.
+  - CSS ẩn toàn bộ các thanh điều khiển gây xao nhãng:
+    ```css
+    #viewer.docFocusMode .vtop,
+    #viewer.docFocusMode #rail,
+    #viewer.docFocusMode .vside,
+    #viewer.docFocusMode .vMoreWrap {
+      display: none !important;
+    }
+    #viewer.docFocusMode .stageWrap {
+      padding: 0 !important;
+      background: var(--bg-focus, #111) !important;
+    }
+    ```
+  - **Tự động ẩn chuột & Pager khi không di chuyển (Idle Auto-hide):**
+    - Đặt bộ đếm thời gian idle 1.5 giây sau sự kiện `pointermove`.
+    - Khi hết 1.5 giây không chạm chuột: Thêm class `.idleHide` để ẩn con trỏ chuột (`cursor: none;`) và làm mờ hoàn toàn thanh phân trang pager, đem lại không gian đọc thuần khiết. Bấm `Esc` hoặc `F` để thoát chế độ.
 
 ---
 
