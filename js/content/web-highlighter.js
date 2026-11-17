@@ -42,10 +42,6 @@ globalThis.LHNWebHighlighter = (() => {
       const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
       return !!element?.closest?.(".pdfTextLayer");
     };
-    const pdfHighlightColor = color => {
-      const hex = String(color || "").match(/^#([\da-f]{6})$/i)?.[1];
-      return hex ? `rgba(${parseInt(hex.slice(0,2),16)},${parseInt(hex.slice(2,4),16)},${parseInt(hex.slice(4,6),16)},.42)` : color;
-    };
     const collectSegments = range => {
       const segments = [];
       const root = range.commonAncestorContainer.nodeType === Node.TEXT_NODE ? range.commonAncestorContainer.parentNode : range.commonAncestorContainer;
@@ -85,9 +81,9 @@ globalThis.LHNWebHighlighter = (() => {
           const textStyle = getComputedStyle(node.parentElement || document.documentElement);
           const whiteText = isWhiteTextColor(textStyle.color) || isWhiteTextColor(textStyle.webkitTextFillColor);
           const part = document.createRange(); part.setStart(node, start); part.setEnd(node, end);
-          const preview = document.createElement("mark"); preview.className = "lhn-selection-preview-mark notranslate"; preview.setAttribute("translate", "no");
+          const preview = document.createElement("mark"); preview.className = `lhn-selection-preview-mark notranslate${pdf ? " lhn-pdf-highlight" : ""}`; preview.setAttribute("translate", "no");
           const highlightColor = config.HIGHLIGHT_COLORS[config.normalizeColor(color)];
-          preview.style.setProperty("background-color", pdf ? pdfHighlightColor(highlightColor) : highlightColor, "important");
+          preview.style.setProperty("background-color", highlightColor, "important");
           preview.style.setProperty("color", whiteText ? "#000" : textStyle.color, "important");
           preview.style.setProperty("border-radius", segments.length > 1 ? "0" : "2px");
           preview.style.setProperty("box-decoration-break", "clone");
@@ -103,7 +99,7 @@ globalThis.LHNWebHighlighter = (() => {
     }
     function updatePreviewColor(color) {
       const highlightColor = config.HIGHLIGHT_COLORS[config.normalizeColor(color)];
-      for (const preview of previewSegments || []) preview.element.style.setProperty("background-color", preview.pdf ? pdfHighlightColor(highlightColor) : highlightColor, "important");
+      for (const preview of previewSegments || []) preview.element.style.setProperty("background-color", highlightColor, "important");
     }
     function commitPreview(item) {
       const previews = previewSegments || [];
