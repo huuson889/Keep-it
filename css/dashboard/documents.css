@@ -692,7 +692,7 @@ body{overflow:auto}
 /* Shared app tools are not a second Document implementation. */
 .documents-native-inactive #lhn-sidebar-edge-toggle,.documents-native-inactive #lhn-sidebar,.documents-native-inactive #lhn-panel,.documents-native-inactive #lhn-direct-translation,.documents-native-inactive #lhn-translate-icon,.documents-native-inactive #lhn-full-english-dictionary{display:none!important}
 .nativeTranslationSlot .lhn-bilingual-card,.readFrame .reflow .lhn-bilingual-card{font-size:inherit!important}
-.nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;width:auto;max-width:100%;box-sizing:border-box}
+.nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;padding-top:0!important;padding-bottom:0!important;width:auto;max-width:100%;box-sizing:border-box}
 .docsSource .pdfTextLayer .para.lhn-bilingual-reading{outline:none!important;outline-offset:0!important;background-color:transparent!important;border-radius:0!important}
 .docsSource .docsReaderParagraphHighlight{position:absolute;z-index:9;box-sizing:border-box;outline:2px solid var(--lhn-br-accent);outline-offset:4px;background-color:rgba(var(--lhn-br-accent-rgb),.08);border-radius:6px;pointer-events:none}
 .docsSource .lhn-mark,.docsSource .lhn-selection-preview-mark{font:inherit;line-height:inherit}
