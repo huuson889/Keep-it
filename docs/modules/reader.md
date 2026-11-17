@@ -21,7 +21,7 @@ Một Reader chung chọn nội dung, dịch song ngữ và đọc liên tục c
 2. `LHN_READER_MAIN_SOURCE.getTextBlocks({forceRefresh})` cung cấp text cho Web Study; force chỉ bỏ cache, không đổi extractor. `LHN_READER_BAR` giữ API rate/tile/blockAt/mainBlocks cho thanh Keepit/POS.
 3. `LHN_READER_API` là facade gọi chính Reader: `start`, `toggle`, `stop`, `reset`, `translate`, `setTranslation`, `refreshSource`, `refreshTranslations`, `state`. Không phải engine thứ hai. Document pager chỉ nhường chỗ theo trạng thái native bar.
 4. `translateBlock()` dùng cùng native card/provider/style. Trên web card nằm cạnh paragraph; file adapter có thể đặt chính card đó trong sidebar để không phá PDF. Helper `translationCard`/`translationBlock` giữ liên kết source; không dựng card/translation queue riêng.
-5. `LHN_TTS` phát với voice/rate chung; adapter xử lý page boundary. Double-click nhảy vào queue hiện hành. PDF Original dùng speaker icon chung trên overlay không scale, neo cuối paragraph; hover span nào thì hiện icon đoạn đó.
+5. `LHN_TTS` phát với voice/rate chung; adapter xử lý page boundary. Double-click nhảy vào queue hiện hành. PDF Original dùng speaker icon chung trên overlay không scale, neo cuối paragraph; hit-test theo span/paragraph bounds để hover nội dung hiện icon đoạn tương ứng.
 6. Các command/event `lhn-bilingual-reader-*` và pause-state/start event giữ nguyên; Web Study và Reader tiếp tục loại trừ nhau. More trên file mở cài đặt Reader hiện có của Dashboard.
 
 ## 4. Hợp đồng và quy tắc cần giữ
