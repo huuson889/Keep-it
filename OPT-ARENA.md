@@ -7,6 +7,45 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | Ý TƯỞNG - Đồng bộ dữ liệu qua Google Drive cá nhân (Zero-backend)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+- **Mục tiêu:** Đồng bộ Highlights, Notes, Flashcards, Settings và Thư viện Tài liệu (PDF, Office, ảnh) giữa nhiều máy tính/thiết bị mà không cần máy chủ trung gian (Zero-backend).
+- **Cơ chế xác thực & Phân quyền:**
+  - Dùng chuẩn OAuth 2.0 (Chromium dùng `chrome.identity.getAuthToken`; Firefox và APK dùng luồng OAuth Web Auth flow / popup).
+  - Scope tối thiểu: `drive.appdata` (thư mục ẩn Application Data chuyên biệt của app) hoặc `drive.file` (chỉ truy cập file do chính Keepit tạo ra). Tuyệt đối không đọc file hay dữ liệu cá nhân khác trên Drive.
+  - Bản APK WebView đã xác nhận đăng nhập Google bình thường, có thể tái sử dụng chung toàn bộ logic JavaScript OAuth như extension.
+- **Phân tách và lưu trữ dữ liệu:**
+  - *Dữ liệu chữ (Highlights, Notes, Flashcards, Settings):* Đóng gói thành file JSON/snapshot nén kèm mốc thời gian UTC (`updated_at`) để đồng bộ nhanh.
+  - *Tài liệu lớn (PDF, DOCX, PPTX, Ảnh trong tab Tài liệu):* Lưu từng file riêng lẻ theo mã băm nội dung `content_hash` trong thư mục Keepit trên Drive.
+- **Ưu điểm:**
+  - Bảo mật & riêng tư tuyệt đối (dữ liệu đi thẳng giữa trình duyệt và Google Drive cá nhân, không qua máy chủ thứ ba).
+  - Chi phí vận hành = 0 đồng; tận dụng dung lượng miễn phí 15GB của Google Drive để lưu cả tài liệu nặng.
+- **Câu hỏi còn mở:**
+  1. Xử lý xung đột (conflict resolution) khi sửa cùng ghi chú trên 2 máy: Last-Write-Wins hay giữ cả 2 bản nháp?
+  2. Tự động đồng bộ ngầm định kỳ (khi mở app hoặc sau X phút) hay chỉ đồng bộ khi bấm nút/sự kiện thay đổi?
+
+---
+
+## 2026-11-17 | Ý TƯỞNG - Tái ngộ từ vựng trong ngữ cảnh (Contextual Re-encounter)
+
+**Trạng thái:** Đã chốt ý tưởng, chưa triển khai, chưa có spec chi tiết.
+
+- **Mục tiêu:** Tự động kích hoạt phản xạ gợi nhớ từ vựng đã lưu/cần ôn ngay khi người dùng duyệt web hàng ngày, giải quyết vấn đề lười mở Flashcard để ôn tập.
+- **Trải nghiệm người dùng (UX):**
+  - Khi duyệt web, nếu trang xuất hiện từ nằm trong danh sách cần ôn của Flashcards/Highlights, từ đó được gạch chân chấm mờ nhẹ (dotted underline, tinh tế, không làm rối mắt bài đọc).
+  - Rê chuột (hoặc chạm trên mobile) mở mini tooltip: hiển thị nghĩa tiếng Việt, IPA, **câu ngữ cảnh gốc** lúc người dùng lưu từ lần đầu, nút nghe phát âm và nút 1 chạm "Đã nhớ" để tính điểm tiến độ Flashcard.
+- **Tối ưu hiệu năng:**
+  - Danh sách từ cần ôn được nạp thành cấu trúc Trie/Set trong content script để tra cứu $O(L)$ siêu tốc.
+  - Chỉ quét trong vùng nội dung bài đọc chính (`Readability` của Reader), kết hợp `IntersectionObserver` khi cuộn tới đoạn nào mới quét đoạn đó, không duyệt toàn bộ DOM cùng lúc.
+  - Hỗ trợ Lemmatization nhẹ (nhận diện các biến thể thì/số nhiều như `struggling`, `struggled` của từ gốc `struggle`).
+- **Câu hỏi còn mở:**
+  1. Phạm vi hiển thị: chỉ nhắc từ có trạng thái "đang học / cần ôn" trong SRS hay toàn bộ từ đã từng lưu?
+  2. Có cần danh sách loại trừ (blacklist) tự động cho các trang làm việc/code/mạng xã hội không?
+
+---
+
 ## 2026-11-16 | Ý TƯỞNG - Loại từ cả trang: bước B5 — độ tự tin của mô hình
 
 **Trạng thái:** Đề xuất, chờ người dùng quyết. Chưa đưa vào code.
