@@ -39,12 +39,16 @@
     }
     return fragment;
   }
-  function attachBlocks(root, page, texts) {
+  function attachBlocks(root, page, texts, edgePositions=[]) {
     const candidates = [...root.querySelectorAll('p,td,h1,h2,h3,h4,h5,h6,li')].filter(el => !el.querySelector('p,td,li') && el.textContent.trim());
     if (!candidates.length) for (const el of root.querySelectorAll('div')) if (!el.querySelector('div,p,table,svg,img') && el.textContent.trim()) candidates.push(el);
+    const bounds=root.getBoundingClientRect(),height=Math.max(1,bounds.height);
     for (const el of candidates) {
       const text = el.textContent.replace(/\s+/g, ' ').trim(); if (!text) continue;
-      const index = texts.length; el.classList.add('para'); el.dataset.page = page; el.dataset.i = index; el.dataset.paragraphIndex = index; el.dataset.paragraphStart = 'true';
+      const index = texts.length, rect=el.getBoundingClientRect(), skip=!!el.closest('header,footer,[class*="header" i],[class*="footer" i]');
+      el.classList.add('para'); el.dataset.page = page; el.dataset.i = index; el.dataset.paragraphIndex = index; el.dataset.paragraphStart = 'true';
+      if(skip)el.dataset.readerSkip='true';
+      if(bounds.height>0){const edgeTop=Math.max(0,Math.min(1,(rect.top-bounds.top)/height)),edgeBottom=Math.max(0,Math.min(1,(rect.bottom-bounds.top)/height));el.dataset.edgeTop=edgeTop;el.dataset.edgeBottom=edgeBottom;edgePositions[index]={edgeTop,edgeBottom,skip};}
       const en = document.createElement('span'); en.className = 'en'; while (el.firstChild) en.append(el.firstChild); el.append(en); texts.push(text);
     }
   }
@@ -160,7 +164,7 @@
       current.items.push(...line.parts.map(part=>part.index));
     }
     const fragmentToParagraph=Array(items.length).fill(-1);
-    const clean=paragraphs.map((paragraph,index)=>{for(const fragment of paragraph.items)fragmentToParagraph[fragment]=index;const text=paragraph.tableId?paragraph.rows.map(normPdfText).filter(Boolean).join('\n'):normPdfText(paragraph.text);return {text,items:paragraph.items,...(paragraph.tableId?{isTable:true,rows:paragraph.rows.map(normPdfText).filter(Boolean)}:{})};}).filter(paragraph=>paragraph.text);
+    const clean=paragraphs.map((paragraph,index)=>{for(const fragment of paragraph.items)fragmentToParagraph[fragment]=index;const text=paragraph.tableId?paragraph.rows.map(normPdfText).filter(Boolean).join('\n'):normPdfText(paragraph.text),top=Math.min(...paragraph.lines.map(line=>line.top)),bottom=Math.max(...paragraph.lines.map(line=>line.bottom)),height=Math.max(1,viewport.height);return {text,items:paragraph.items,edgeTop:Math.max(0,Math.min(1,top/height)),edgeBottom:Math.max(0,Math.min(1,bottom/height)),...(paragraph.tableId?{isTable:true,rows:paragraph.rows.map(normPdfText).filter(Boolean)}:{})};}).filter(paragraph=>paragraph.text);
     // Filtering is normally a no-op; rebuild indices defensively if an empty paragraph was discarded.
     if(clean.length!==paragraphs.length){fragmentToParagraph.fill(-1);clean.forEach((p,i)=>p.items.forEach(index=>fragmentToParagraph[index]=i));}
     return {paragraphs:clean,fragmentToParagraph};
@@ -240,7 +244,8 @@
           for (let i = 0; i < textDivs.length; i++) {
             const el = textDivs[i], paragraphIndex = mapped[i].paragraphIndex;
             el.classList.add('para'); el.dataset.page = number; el.dataset.i = i; el.dataset.paragraphIndex = paragraphIndex;
-            if (spec.paragraphs[paragraphIndex]?.isTable) el.dataset.pdfTable = 'true';
+            const paragraph=spec.paragraphs[paragraphIndex];if(Number.isFinite(paragraph?.edgeTop))el.dataset.edgeTop=paragraph.edgeTop;if(Number.isFinite(paragraph?.edgeBottom))el.dataset.edgeBottom=paragraph.edgeBottom;
+            if (paragraph?.isTable) el.dataset.pdfTable = 'true';
             if (!seenParagraphs.has(paragraphIndex)) { el.dataset.paragraphStart = 'true'; seenParagraphs.add(paragraphIndex); }
             // Keep PDF.js' positioned text span untouched; its child owns marks and selections.
             const en = window.document.createElement('span'); en.className = 'en'; en.textContent = el.textContent; el.replaceChildren(en);
@@ -272,8 +277,8 @@
         for (const section of [...holder.querySelectorAll('section.keepitDocx')]) {
           const clean = document.createElement('section'); clean.append(sanitizeOffice(section.outerHTML, lib.purify)); const page = clean.firstElementChild;
           section.replaceWith(page); const rect = page.getBoundingClientRect();
-          const spec = { width:px(rect.width || 794), height:px(Math.max(page.scrollHeight, rect.height, 1123)), texts:[] };
-          attachBlocks(page, pages.length + 1, spec.texts); pages.push(spec); nodes.push(page);
+          const spec = { width:px(rect.width || 794), height:px(Math.max(page.scrollHeight, rect.height, 1123)), texts:[], edgePositions:[] };
+          attachBlocks(page, pages.length + 1, spec.texts, spec.edgePositions); pages.push(spec); nodes.push(page);
         }
       } else {
         const presentation = zip.file('ppt/presentation.xml'); if (!presentation) throw new Error('documentsBadFile');
@@ -282,8 +287,8 @@
         const notes = await speakerNotes(zip, xml);
         const html = await lib.pptxToHtml(await blob.arrayBuffer(), { width, height, scaleToFit:true, letterbox:false });
         for (const source of html) {
-          hooks.check?.(); const page = document.createElement('div'); page.append(sanitizeOffice(source, lib.purify));
-          const spec = { width, height, texts:[], notes:notes[pages.length]||'' }; attachBlocks(page, pages.length + 1, spec.texts); pages.push(spec); nodes.push(page);
+          hooks.check?.(); const page = document.createElement('div'); page.append(sanitizeOffice(source, lib.purify)); holder.append(page);
+          const spec = { width, height, texts:[], notes:notes[pages.length]||'', edgePositions:[] }; attachBlocks(page, pages.length + 1, spec.texts, spec.edgePositions); pages.push(spec); nodes.push(page);
         }
       }
       if (!pages.length || pages.length > MAX_PAGES) throw new Error('documentsPageLimit');
