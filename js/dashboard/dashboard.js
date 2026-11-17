@@ -2871,6 +2871,7 @@ function togglePin() {
   dashboardSidebarPin.setAttribute("aria-label", label);
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
+const dashboardDocumentsView = $("dashboardDocumentsView"), dashboardDocumentsFrame = $("dashboardDocumentsFrame");
 const dashboardOverviewView = $("dashboardOverviewView"), dashboardDictationView = $("dashboardDictationView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
 const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2";
 const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
@@ -2908,7 +2909,7 @@ function readDashboardScrollPosition(view) {
   return 0;
 }
 function saveDashboardScrollPosition(view = activeDashboardView) {
-  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "dictation", "highlights-notes"].includes(view)) return;
+  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "dictation", "highlights-notes", "documents"].includes(view)) return;
   const positions = readDashboardScrollPositions();
   positions[view] = Math.max(0, dashboardScrollTargetForView(view).scrollTop);
   try {
@@ -3190,7 +3191,7 @@ function savedDashboardView() {
   try {
     const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY);
     const migrated = saved === "listening" ? "dictation" : saved;
-    return ["overview", "dictation", "highlights-notes"].includes(migrated) ? migrated : "overview";
+    return ["overview", "dictation", "highlights-notes", "documents"].includes(migrated) ? migrated : "overview";
   } catch { return "overview"; }
 }
 let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
@@ -3216,19 +3217,27 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
       dashboardScrollRestoring = false;
       if (!overviewInitialDataReady) return;
       if (view === "overview") resetOverviewEntranceEffects();
-      else resetDashboardPanelEntranceEffects(view);
+      else if (view !== "documents") resetDashboardPanelEntranceEffects(view);
     });
   });
 }
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
-  if (!["overview", "dictation", "highlights-notes"].includes(view)) view = "overview";
+  if (!["overview", "dictation", "highlights-notes", "documents"].includes(view)) view = "overview";
   const previousView = activeDashboardView;
   if (previousView && previousView !== view && !dashboardScrollRestoring) {
     if (dashboardScrollSaveTimer !== null) { clearTimeout(dashboardScrollSaveTimer); dashboardScrollSaveTimer = null; }
     saveDashboardScrollPosition(previousView);
   }
+  if (previousView === "documents" && view !== "documents") {
+    document.body.classList.remove("documents-viewer-open");
+    dashboardDocumentsFrame.contentWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_SUSPEND" }, location.origin);
+  }
   activeDashboardView = view;
+  const showDocuments = view === "documents";
+  dashboardDocumentsView.hidden = !showDocuments;
+  document.body.classList.toggle("dashboard-documents-active", showDocuments);
+  if (showDocuments && !dashboardDocumentsFrame.hasAttribute("src")) dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
   const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
   dashboardOverviewView.hidden = !showOverview;
   dashboardDictationView.hidden = !showDictation;
@@ -3251,6 +3260,10 @@ document.querySelector('[data-dashboard-action="highlights-notes"]')?.addEventLi
 dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEventListener("click", event => {
   event.preventDefault();
   startStudySession({ allSources:true });
+});
+window.addEventListener("message", event => {
+  if (event.origin !== location.origin || event.source !== dashboardDocumentsFrame.contentWindow || event.data?.type !== "KEEPIT_DOCUMENTS_VIEWER") return;
+  document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
 });
 setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });

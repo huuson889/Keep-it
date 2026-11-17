@@ -1,0 +1,9 @@
+/* The documents route owns its v13 top bar and scroll viewport; existing routes keep their shell. */
+body.dashboard-documents-active #dashboardSharedTopbarPortal{display:none!important}
+body.dashboard-documents-active #dashboardScroller{padding:0!important;overflow:hidden!important}
+#dashboardScroller>#dashboardDocumentsView{display:block!important;height:100dvh!important;min-height:0!important;max-width:none!important;padding:0!important;margin:0!important;overflow:hidden!important;background:transparent!important}
+#dashboardScroller>#dashboardDocumentsView[hidden]{display:none!important}
+#dashboardDocumentsFrame{display:block;width:100%;height:100%;border:0;background:transparent}
+body.documents-viewer-open #dashboardDocumentsFrame{position:fixed;inset:0;z-index:1800;width:100vw;height:100dvh}
+body.documents-viewer-open .rn-tabbar,body.documents-viewer-open .rn-sheet,body.documents-viewer-open .rn-backdrop{display:none!important}
+@media(max-width:599.98px){body.dashboard-documents-active #dashboardScroller>#dashboardDocumentsView{height:calc(100dvh - 72px - env(safe-area-inset-bottom,0px))!important}}

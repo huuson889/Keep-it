@@ -8,6 +8,16 @@ The interface is available in English, Vietnamese, and Korean, will extend more 
 
 ## Features
 
+### Local documents and images
+- Dashboard → **Documents** (inside **More** on phones): choose or drag in PDF, DOCX, PPTX, JPG/JPEG, PNG or WebP. The library starts empty and shows your actual files, not sample pages.
+- Original bytes, reading position, document notes, highlights and translation cache are kept locally in IndexedDB. Reopening the browser restores the library. Files are not uploaded to a conversion server; explicit translation, dictionary, read-aloud and AI actions use the existing services for text only.
+- Original/Read modes, continuous/single-page flow, zoom, page thumbnails, guarded ←/→ navigation, a one-second idle fade, resizable translation/notes panels, optional translation follow and the shared theme follow the approved v13 UI. Images keep their aspect ratio and original colours; the image dock shows zoom only.
+- PDF uses a packaged local renderer and selectable text layer. Passwords are checked by the PDF reader and are not saved. Decrypted thumbnails of password-protected PDFs are not saved either.
+- Word and PowerPoint are **read-only previews**. Fonts, advanced objects and pagination may differ from Microsoft Office; use a static PDF for precise page layout. Speaker notes are read from PPTX. OCR, XFA, interactive PDF form editing, Office animations and embedded audio/video are not implemented.
+- Limit: 50 MB per document, 30 MB per image, 2,000 pages; expanded Office archives also have safety bounds. Corrupt/unsupported files show an error rather than fabricated content. Notes/translations use the file's content hash, and duplicate imports reuse that file.
+- Document files and their document-specific notes are **not included in the existing JSON backup** for web highlights/notes. This library is local to the browser profile and is not cloud-synced.
+
+
 ### Highlights and notes
 - Select text to open a note composer (configurable), or press the shortcut for the current selection.
 - Color highlights with editable notes; hover a highlight to see its note and edit or delete it.

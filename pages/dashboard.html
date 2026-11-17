@@ -2,7 +2,7 @@
 <html lang="en" class="dashboard-theme-pending">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Keepit - Keep Exploring</title><link rel="icon" type="image/svg+xml" href="../assets/icons/icon.svg"><link rel="stylesheet" href="../css/shared/ui-tokens.css"><link rel="stylesheet" href="../css/shared/selection-toolbar.css"><link rel="stylesheet" href="../css/dashboard/dashboard.css"><link rel="stylesheet" href="../css/shared/ui-theme.css"><link rel="stylesheet" href="../css/shared/flags.css"><link rel="stylesheet" href="../css/dashboard/overview.css"><link rel="stylesheet" href="../css/dashboard/dictation.css"><link rel="stylesheet" href="../css/dashboard/highlights-notes-embedded.css"><link rel="stylesheet" href="../css/dashboard/responsive.css"><link rel="stylesheet" href="../css/dashboard/settings.css">
+<title>Keepit - Keep Exploring</title><link rel="icon" type="image/svg+xml" href="../assets/icons/icon.svg"><link rel="stylesheet" href="../css/shared/ui-tokens.css"><link rel="stylesheet" href="../css/shared/selection-toolbar.css"><link rel="stylesheet" href="../css/dashboard/dashboard.css"><link rel="stylesheet" href="../css/shared/ui-theme.css"><link rel="stylesheet" href="../css/shared/flags.css"><link rel="stylesheet" href="../css/dashboard/overview.css"><link rel="stylesheet" href="../css/dashboard/dictation.css"><link rel="stylesheet" href="../css/dashboard/highlights-notes-embedded.css"><link rel="stylesheet" href="../css/dashboard/responsive.css"><link rel="stylesheet" href="../css/dashboard/settings.css"><link rel="stylesheet" href="../css/dashboard/documents-host.css">
 </head>
 <body class="dashboard-overview-active dashboard-sidebar-pinned">
 
@@ -26,6 +26,7 @@
   <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
   <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
   <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></svg></span><span class="nav-label" data-i18n="ovMenuHighlightsNotes">Tô sáng &amp; Ghi chú</span></a>
+    <a href="#" class="reference-nav-item" data-dashboard-view="documents" data-i18n-aria-label="docs_title"><span class="reference-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5M8 13h8M8 17h6"/></svg></span><span class="nav-label" data-i18n="docs_title">Tài liệu</span></a>
   </nav>
   <div class="dashboard-reference-footer">
     <button id="dashboardSidebarThemeToggle" class="reference-footer-button" type="button" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối"><span class="reference-nav-icon"><svg class="dashboard-theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg><svg class="dashboard-theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></span><span id="dashboardSidebarThemeText" class="nav-label">Giao diện tối</span></button>
@@ -93,6 +94,7 @@
   <div class="dashboard-shared-topbar-right"><div id="dashboardSharedTopbarStatus" class="ov-demo">✨ <span id="dashboardSharedTopbarStatusText">Dữ liệu cục bộ</span></div><div id="dashboardSharedTopbarActionsSlot" hidden></div></div>
 </div>
   </div>
+<main id="dashboardDocumentsView" class="dashboard-documents-view" hidden data-i18n-aria-label="docs_title" aria-label="Documents"><iframe id="dashboardDocumentsFrame" data-src="documents.html" title="Documents" data-i18n-title="docs_title" allow="autoplay"></iframe></main>
 <main id="dashboardOverviewView" class="dashboard-overview-view" aria-label="Tổng quan" data-i18n-aria-label="ovNavOverview">
 <div class="ov-content">
 

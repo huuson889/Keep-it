@@ -9,7 +9,8 @@
 | [Background](modules/background.md) | Service worker, runtime router, IndexedDB annotations, usage, TTS | Sửa router message, annotation storage, usage hoặc TTS. |
 | [Content](modules/content.md) | Tương tác trang: highlight, note, Sidebar trang, selection, restore | Sửa luồng website, DOM observer, sidebar trang hoặc annotation UI. |
 | [Core](modules/core.md) | Defaults, config, settings, messaging, languages, cache | Sửa nền tảng dùng chung hoặc thứ tự nạp. |
-| [Dashboard](modules/dashboard.md) | Overview, Listening, Highlights & Notes (LR), flashcards/settings | Sửa `pages/dashboard.html`, LR bridge hoặc chức năng Dashboard. |
+| [Tài liệu cục bộ](documents.md) | PDF/Office/ảnh, IndexedDB, công cụ Dịch/TTS/POS/AI | Sửa import, viewer v13, lưu tệp, notes hoặc vòng đời công cụ Tài liệu. |
+| [Dashboard](modules/dashboard.md) | Overview, Dictation, Highlights & Notes, Tài liệu, flashcards/settings | Sửa `pages/dashboard.html`, LR bridge hoặc chức năng Dashboard. |
 | [Overlay](modules/overlay.md) | Overlay Video/Web, tab Xem · Nói · Chép · Rạp, chấm điểm và lưu tiến độ Study (gộp `dictation.md` ở v3.5.199) | Sửa overlay, nguồn Video/Web, Nói/Chép, chấm điểm, tiến độ hoặc chế độ hiển thị. |
 | [Popup](modules/popup.md) | Popup settings và website controls | Sửa popup, shortcut/settings controls hoặc mở Dashboard. |
 | [Reader](modules/reader.md) | Bilingual Reader và TTS | Sửa dịch trên trang, đọc liên tục, voice hoặc audio fallback. |
@@ -46,6 +47,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | AI panel | `js/ask-ai/` (`service.js`, `providers.js`, `prompt-format.js` chạy nền; `toolbar.js`, `panel/`, `page/`) |
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Icon trang web (Trang chủ + Dashboard) | `js/shared/site-brands.js` (`LHN_SITE_BRANDS`) |
+| Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`; `pages/documents.html`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader, sheet overlay khi bật Hiệu ứng nền) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
 | Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>` |

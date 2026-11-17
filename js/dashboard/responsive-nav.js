@@ -49,6 +49,7 @@
     const themeIcon = document.querySelector("#dashboardSidebarThemeToggle .reference-nav-icon")?.innerHTML || "";
     sheet.innerHTML = `<div class="rn-grab"></div>
       <div class="rn-sh-head"><span class="rn-logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="kpLogoNav" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpLogoNav)" stroke="none"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg></span><span>Keepit</span><button type="button" class="rn-x" data-rn="close" aria-label="${tr("close")}">×</button></div>
+      <button type="button" class="rn-row" data-rn="documents">${iconOf('[data-dashboard-view="documents"]')}<span>${globalThis.LHN_LANGUAGES.t("docs_title", {}, lang())}</span></button>
       <button type="button" class="rn-row" data-rn="settings">${svg(SVG.gear)}<span>${tr("settings")}</span></button>
       <button type="button" class="rn-row" data-rn="theme">${themeIcon}<span>${themeText}</span></button>
       <button type="button" class="rn-row" data-rn="account">${svg(SVG.user)}<span>${tr("account")}</span><span class="rn-sub">${document.getElementById("profileMenuToggleName")?.textContent || ""}</span></button>`;
@@ -60,7 +61,8 @@
     const action = event.target.closest("[data-rn]")?.dataset.rn;
     if (!action) return;
     closeSheet();
-    if (action === "settings") click(document.querySelector('#profileMenu [data-profile-menu-action="settings"]'));
+    if (action === "documents") click(navItem('[data-dashboard-view="documents"]'));
+    else if (action === "settings") click(document.querySelector('#profileMenu [data-profile-menu-action="settings"]'));
     else if (action === "account") { wantSettingsPanel = true; click(document.querySelector('#profileMenu [data-profile-menu-action="account"]')); }
     else if (action === "theme") click(document.getElementById("dashboardSidebarThemeToggle"));
   });
@@ -85,7 +87,7 @@
   }
   function syncActive() {
     const view = sidebar.querySelector("[data-dashboard-view].is-active")?.dataset.dashboardView || "overview";
-    const id = { overview:"overview", "highlights-notes":"notes", dictation:"dictation" }[view] || "overview";
+    const id = { overview:"overview", "highlights-notes":"notes", dictation:"dictation", documents:"more" }[view] || "overview";
     tabbar.querySelectorAll("[data-rn-tab]").forEach(button => button.classList.toggle("is-active", button.dataset.rnTab === id));
     if (view !== "highlights-notes") closeNotesDetail(false);
   }
