@@ -348,7 +348,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     let tab=Number.isInteger(ownedTab?.id)&&/^https?:\/\//i.test(ownedTab.url||"")?ownedTab:null;
     if(!tab){const [active]=await browser.tabs.query({active:true,lastFocusedWindow:true}).catch(()=>[]);tab=active;}
     if (!Number.isInteger(tab?.id) || !/^https?:\/\//i.test(tab.url || "")) return { ok:false };
-    try { return await browser.tabs.sendMessage(tab.id, { type:"KEEPIT_DOCUMENTS_MAIN_SHEET", toggle:message.toggle === true }); }
+    try { return await browser.tabs.sendMessage(tab.id, { type:"KEEPIT_DOCUMENTS_MAIN_SHEET", toggle:message.toggle === true, reader:message.reader === true }); }
     catch { return { ok:false }; }
   }
   if (message.type === "OPEN_DASHBOARD") return openDashboard();

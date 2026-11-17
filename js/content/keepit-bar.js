@@ -134,7 +134,7 @@
   let settings = {}, host = null, root = null, mounted = false, picking = false;
   const S = {
     hidden:false, siteHidden:false, peek:false, scrollHide:false, sOff:0, five:false, autoFive:false, btop:true, gest:{ translate:true, nav:true }, navOff:{},
-    coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main",
+    coachSeen:false, coachRe:false, introSeen:true, introOn:false, recent:[], scope:"all", active:0, sheetPane:"main", documentsSheet:false,
     kbd:false, vfs:false, navGuide:0, yieldBar:false, yieldH:0, yieldToast:false, offline:navigator.onLine === false, pendingTr:null, extYield:false, notesOn:false, offPos:null
   };
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
@@ -654,7 +654,7 @@
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && wcOn()) || (id === "wclegend" && !!globalThis.LHN_WORD_CLASS?.legendShown?.()), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id)).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation"].includes(id))).map(navTile).join(""); };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   let fontOn = false;
@@ -702,7 +702,7 @@
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${tile("dashboard", "dashboard", t("dashboard"))}${tile("hist", "hist", t("hist"))}${hiddenTools()}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard")) + tile("hist", "hist", t("hist"))}${hiddenTools()}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("pageSec"))}</div><div class="quick">${tile("reload", "reload", t("reload"))}${tile("share", "share", t("brShare"))}${tile("mark", marked ? "starOn" : "star", t("brMark"), marked) + tile("addhome", "addhome", t("brHome"))}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}</div>
     <div class="divider"></div>
@@ -788,7 +788,8 @@
     panel.style.left = clamp(cx - w / 2, 12, W - w - 12) + "px";
     panel.style.bottom = (innerHeight - br.top) * k + 10 + "px";
   }
-  function openSheet() {
+  function openSheet({ documents = false } = {}) {
+    S.documentsSheet = documents;
     introDone(); closePop(); hideCoach(); S.sheetPane = "main"; const panel = $("panel");
     panel.classList.remove("full"); panel.style.maxHeight = ""; fontOn = globalThis.LHN_READER_BAR?.webFont?.() ?? fontOn; renderSheet(); setTimeout(updFade, 320);
     $("sheet").classList.add("open"); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); anchorPanel();
@@ -1312,10 +1313,11 @@
     toast(text) { if (mounted) toast(String(text || "")); },
     // the Reader's ☰ opens this main sheet above the Reader bar (v3.5.160 touch; v3.5.161 every device) with its
     // Trình đọc row in the vertical middle of the sheet
-    openMainSheet(fromRect) {
+    openMainSheet(fromRect, options = {}) {
       if (!mounted) return;
       S.sheetFrom = fromRect ? { left:fromRect.left, top:fromRect.top, width:fromRect.width } : { left:innerWidth - 40, top:innerHeight - 70, width:40 };
-      host.style.zIndex = "2147483647"; openSheet();
+      host.style.zIndex = "2147483647"; openSheet({ documents:options.documents === true });
+      if (options.focusReader !== true) return;
       const b = $("panel").querySelector(".sbody"), sec = $("panel").querySelector('[data-sec="rd"]');
       if (b && sec) {
         const center = () => { const br = b.getBoundingClientRect(), top = sec.getBoundingClientRect().top, bottom = (sec.nextElementSibling || sec).getBoundingClientRect().bottom; b.scrollTop += ((top + bottom) / 2 - (br.top + br.height / 2)) * Z(); updFade(); };
@@ -1334,7 +1336,7 @@
     if (!mounted) return { ok:false };
     const alreadyOpen = $("sheet").classList.contains("open");
     const shouldOpen = message.toggle === true ? !alreadyOpen : true;
-    if (shouldOpen) globalThis.LHN_BAR_HOOKS.openMainSheet(); else closeSheet();
+    if (shouldOpen) globalThis.LHN_BAR_HOOKS.openMainSheet(undefined, { documents:true, focusReader:message.reader === true }); else closeSheet();
     return { ok:true, open:shouldOpen };
   });
 
