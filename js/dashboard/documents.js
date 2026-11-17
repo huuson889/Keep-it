@@ -131,8 +131,8 @@ const FLOW_ICONS = {
 /* The page bar stays discoverable; fading never blocks its controls. */
 const pageBar = $('.pager');
 const PAGER_IDLE_MS = 1000;
-let pagerTimer = 0, pagerNear = false;
-function pagerHeld() { return pagerNear || !!pageBar.querySelector(':focus'); }
+let pagerTimer = 0;
+function pagerHeld() { return !!pageBar.querySelector(':focus'); }
 function armPagerFade() {
   clearTimeout(pagerTimer);
   if (!$('#viewer').classList.contains('show') || $('#viewer').classList.contains('ttsOn') || document.hidden) return;
@@ -142,22 +142,15 @@ function wakePager() {
   if (!$('#viewer').classList.contains('show') || $('#viewer').classList.contains('ttsOn')) return;
   pageBar.classList.remove('dimmed'); armPagerFade();
 }
-function resetPagerFade() { clearTimeout(pagerTimer); pagerNear = false; pageBar.classList.remove('dimmed'); }
-pageBar.addEventListener('pointerdown', wakePager, { passive:true });
-pageBar.addEventListener('focusin', wakePager);
-pageBar.addEventListener('focusout', () => requestAnimationFrame(wakePager));
-pageBar.addEventListener('keydown', wakePager);
-$('.stageWrap').addEventListener('pointermove', e => {
-  if (e.pointerType !== 'mouse' || $('#viewer').classList.contains('ttsOn')) return;
-  const r = pageBar.getBoundingClientRect();
-  const near = e.clientX >= r.left - 28 && e.clientX <= r.right + 28 && e.clientY >= r.top - 24 && e.clientY <= r.bottom + 24;
-  if (near === pagerNear) return;
-  pagerNear = near; if (near) wakePager(); else armPagerFade();
-}, { passive:true });
-$('.stageWrap').addEventListener('pointerleave', () => { pagerNear = false; armPagerFade(); });
+function resetPagerFade() { clearTimeout(pagerTimer); pageBar.classList.remove('dimmed'); }
+// Avoid changing pager opacity in the same gesture that opens a native select picker.
+pageBar.addEventListener('pointerdown', e => { if (!e.target.closest('select')) wakePager(); }, { passive:true });
+pageBar.addEventListener('focusin', e => { if (!e.target.matches('select') || e.target.matches(':focus-visible')) wakePager(); });
+pageBar.addEventListener('focusout', e => requestAnimationFrame(e.target.matches('select') ? armPagerFade : wakePager));
+pageBar.addEventListener('keydown', e => { if (!e.target.closest('select')) wakePager(); });
 $('#stage').addEventListener('scroll', wakePager, { passive:true });
 $('#stage').addEventListener('pointerdown', e => { if (e.pointerType === 'touch') wakePager(); }, { passive:true });
-addEventListener('resize', () => { pagerNear = false; wakePager(); });
+addEventListener('resize', wakePager);
 document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pagerTimer); else wakePager(); });
 
 
