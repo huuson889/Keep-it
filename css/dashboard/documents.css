@@ -239,6 +239,8 @@ html:not(.wcOn) .wc{text-decoration:none}
 @media  (prefers-reduced-motion:reduce){.pager,.pager.dimmed{transition:none}}
 .pager button{width:30px;height:30px;border:0;border-radius:50%;background:none;display:grid;place-items:center}
 .pager button:hover{background:var(--soft)}
+.pager .pageMenu{width:36px;height:36px;flex:none;margin-left:2px;border-left:1px solid var(--line2);border-radius:8px}
+.morePanel.anchored-bottom{top:auto;transform:none}
 .stageWrap{position:relative;flex:1;min-width:0;display:flex}
 /* ---------- toast / demo ---------- */
 .toast{position:fixed;left:50%;top:18px;z-index:90;transform:translate(-50%,-30px);opacity:0;pointer-events:none;padding:10px 16px;border-radius:12px;background:#1f2433;color:#fff;font-size:13px;box-shadow:0 10px 30px #0004;transition:.25s}
@@ -574,7 +576,7 @@ html.dark .tour button{background:#0000000f}
 .vbar.compact #vMore,.vbar #vTheme{width:44px}
 .morePanel{top:68px;max-height:calc(100dvh - 84px)}
 .moreTools .vbtn{height:44px}
-.pager button{width:36px;height:36px}}
+.pager button{width:36px;height:36px}.pager .pageMenu{width:44px;height:44px}}
 @media  (pointer:coarse) and (orientation:portrait){.morePanel{top:auto;max-height:85dvh}}
 @media  (orientation:landscape) and (max-width:1050px){.rail{width:88px;padding:10px 8px}
 .side2{--panel-base:420px;width:420px}}

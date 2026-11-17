@@ -259,14 +259,23 @@ const toolbarHomes = new Map(toolbarItems.map(el => {
 }));
 const moreSlots = { mode:$('#moreMode'), flow:$('#moreFlow'), zoom:$('#moreZoom'), tools:$('#moreTools') };
 const moveOrder = [ $('[data-t="wc"]'), $('[data-t="ai"]'), $('[data-t="notes"]'), $('#vMode'), $('[data-t="tts"]'), $('[data-t="translate"]') ];
-let toolbarRAF = 0;
+let toolbarRAF = 0,forceMoreSheet=false;
 function moreFocusables() { return [...$('#vMorePanel').querySelectorAll('button,select')].filter(el => !el.disabled && el.getClientRects().length && getComputedStyle(el).display !== 'none'); }
-function setMore(open, focus = true) {
-  if (open && $('#vMore').hidden) return;
+function positionMorePanel(rect){
+ const panel=$('#vMorePanel');
+ if(!rect||matchMedia('(orientation:portrait)').matches){panel.classList.remove('anchored-bottom');for(const property of['left','right','top','bottom','transform'])panel.style.removeProperty(property);return;}
+ const width=panel.getBoundingClientRect().width||350,left=Math.max(8,Math.min(innerWidth-width-8,rect.left+(rect.width-width)/2));
+ panel.classList.add('anchored-bottom');panel.style.left=left+'px';panel.style.right='auto';panel.style.top='auto';panel.style.bottom=Math.max(8,innerHeight-rect.top+8)+'px';panel.style.transform='none';
+}
+function setMore(open, focus = true, anchorRect = null) {
+  const changed=forceMoreSheet!==open||$('#vMorePanel').hidden===open;forceMoreSheet=open;
   $('#vMorePanel').hidden = !open; $('#moreScrim').hidden = !open;
   $('#vMore').setAttribute('aria-expanded', String(open)); $('#vMore').classList.toggle('on', open);
+  $('#pageMenu').setAttribute('aria-expanded',String(open));$('#pageMenu').classList.toggle('on',open);
+  positionMorePanel(open?anchorRect:null);
   if (open) { hideSel(); if (focus) moreFocusables()[0]?.focus({ preventScroll:true }); }
   else if (focus && $('#viewer').classList.contains('show') && !$('#vMore').hidden) $('#vMore').focus({ preventScroll:true });
+  if(changed)requestAnimationFrame(()=>{fitToolbar();if(open&&focus)moreFocusables()[0]?.focus({preventScroll:true});if(open&&anchorRect)positionMorePanel(anchorRect);});
 }
 function updateDocLabels() {
   const flow=$('#vFlow'); flow.value=V.flow;
@@ -279,6 +288,7 @@ function fitToolbar() {
   if (!$('#viewer').classList.contains('show')) return;
   const bar = $('#vBar'), title = $('.vtitle'), more = $('#vMore'), focused = document.activeElement, dock = $('#docControls');
   toolbarItems.forEach(el => toolbarHomes.get(el).before(el));
+  if(forceMoreSheet)for(const el of toolbarItems){const slot=moreSlots[el.dataset.dock];if(slot)slot.append(el);}
   dock.hidden = false; pageBar.classList.remove('simple');
   // Portrait and a narrow reading area keep navigation only. The same controls
   // move into More, including while the speech player occupies the bottom.
@@ -315,6 +325,7 @@ new ResizeObserver(() => { requestToolbarFit(); wakePager(); }).observe($('.stag
 matchMedia('(pointer:coarse)').addEventListener('change', requestToolbarFit);
 addEventListener('resize', requestToolbarFit);
 $('#vMore').onclick = () => setMore($('#vMorePanel').hidden);
+$('#pageMenu').onclick = () => setMore($('#vMorePanel').hidden,true,$('#pageMenu').getBoundingClientRect());
 $('#moreClose').onclick = () => setMore(false);
 $('#moreScrim').onclick = () => setMore(false);
 let moreStartY = 0;
@@ -494,7 +505,7 @@ LHN_DOCUMENT_CONTEXT.attach({
  openSettings:()=>parent.postMessage({type:'KEEPIT_DOCUMENTS_SETTINGS',tab:'bilingualReader'},location.origin)
 });
 // The Reader's existing More action opens the app's existing Reader settings, not a copied menu.
-globalThis.LHN_BAR_HOOKS=Object.freeze({openMainSheet:()=>LHN_PAGE_CONTEXT.openSettings(),translateOffline:()=>toast(t('trError'))});
+globalThis.LHN_BAR_HOOKS=Object.freeze({openMainSheet:rect=>setMore(true,false,rect),translateOffline:()=>toast(t('trError'))});
 
 $('#viewer').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b||b.disabled)return;setMore(false,false);if(b.dataset.t==='notes'){void openNativeNotes();return;}if(b.dataset.t==='ai'){void LHN_CONTENT_TOOLS.askAI();return;}if(b.dataset.t==='tts'){void startNativeReader();return;}if(b.dataset.t==='wc'){void toggleWordClass().catch(()=>toast(t('wcError')));return;}if(b.dataset.t==='translate')setPanel('translation');});
 for(const header of $$('.side2 header')){let y=null;header.addEventListener('touchstart',e=>{y=e.target.closest('button,select,input')?null:e.touches[0].clientY;},{passive:true});header.addEventListener('touchend',e=>{if(y!==null&&matchMedia('(orientation:portrait)').matches&&e.changedTouches[0].clientY-y>55&&V.panel)setPanel(V.panel);y=null;},{passive:true});}
