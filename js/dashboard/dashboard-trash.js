@@ -198,6 +198,8 @@
     note: { label:'', path:'<path d="M4 21h16"/><path d="m9 14 1.2 4h3.6L15 14"/><path d="m11 4 5 5-6.2 6.2L5 17l1.8-4.8Z"/>' }
   };
   const kindOf = item => KIND[item.type] || KIND.pdf;
+  /* Icon "trang web" cho hàng gộp: cùng path quả địa cầu app đang dùng ở thanh Keepit. */
+  const WEB_ICON_PATH = '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>';
 
   const trim = (value, max) => {
     const text = String(value || '').replace(/\s+/g, ' ').trim();
@@ -276,7 +278,7 @@
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(rowItem.deletedAt)) }));
     return `<div class="trash-row trash-page${open ? ' is-open' : ''}${checked ? ' is-picked' : ''}" data-id="${escapeHtml(rowItem.id)}" data-page-row="1">
       <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${escapeHtml(rowItem.id)}"${checked ? ' checked' : ''}><span class="trash-box"></span></label>
-      <span class="trash-ico kind-note"><svg viewBox="0 0 24 24" aria-hidden="true">${kindOf(rowItem.notes[0] || {}).path}</svg></span>
+      <span class="trash-ico kind-web"><svg viewBox="0 0 24 24" aria-hidden="true">${WEB_ICON_PATH}</svg></span>
       <span class="trash-main">
         <b class="with-caret"><span class="t">${escapeHtml(title)}</span><button type="button" class="trash-expand${open ? ' is-open' : ''}" aria-expanded="${open}" aria-label="${escapeHtml(open ? t('trashCollapseNotes') : t('trashExpandNotes'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></b>
         <span>${escapeHtml(parts.join(' · '))}</span>
