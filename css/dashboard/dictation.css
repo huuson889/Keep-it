@@ -30,7 +30,7 @@
 .dictation-root .rail-tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);padding:6px 9px;border:1px solid #e9e7f2;border-radius:8px;background:#fff;color:#41445c;font-size:14px;white-space:nowrap;box-shadow:0 6px 16px #29224418;opacity:0;pointer-events:none;transition:opacity .12s}
 .dictation-root .rail-item:hover .rail-tip{opacity:1}
 .dictation-root main{width:calc(100% - 64px);min-height:100vh;margin-left:64px;padding:21px clamp(16px,3vw,42px) 34px}
-.dictation-root .content{width:100%;max-width:1320px;margin:auto}
+.dictation-root .content{width:100%;max-width:none;margin:auto}
 .dictation-root .topbar{min-height:54px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding:0 18px;border:1px solid var(--line);border-radius:28px;background:#fff;box-shadow:0 4px 14px #6156a30a}
 .dictation-root .crumb{display:flex;align-items:center;gap:9px;color:#8d93a6;font-size:12px}
 .dictation-root .crumb strong{color:#695bd6;font-size:13px;font-weight:800}

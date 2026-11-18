@@ -2951,7 +2951,6 @@ function syncDashboardGutter() {
   const width = dashboardScroller.clientWidth;
   const gutter = narrow ? 12 : width < 980 ? 22 : 44;
   dashboardScroller.style.setProperty("--dash-gutter", `${gutter}px`);
-  dashboardScroller.style.setProperty("--dash-scrollbar", `${Math.max(0, dashboardScroller.offsetWidth - dashboardScroller.clientWidth)}px`);
 }
 syncDashboardGutter();
 window.addEventListener("resize", syncDashboardGutter, { passive: true });

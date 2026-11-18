@@ -43,7 +43,7 @@
   #dashboardSharedTopbarLabel { padding:0!important;font-size:16px;font-weight:600;color:var(--lhn-ui-text,#354056); }
   #dashboardSharedTopbar .ov-crumb { min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
   #dashboardSharedTopbarPortal { display:contents!important; }
-  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { position:sticky;top:10px;width:calc(100% - 24px);max-width:none;height:48px;min-height:48px;margin:10px auto 14px;padding:0 12px;justify-content:space-between;border:1px solid #eeedf5;border-radius:999px; }
+  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { position:sticky;top:10px;width:calc(100% - (var(--dash-gutter) * 2));max-width:none;height:48px;min-height:48px;margin:10px var(--dash-gutter) 14px;padding:0 12px;justify-content:space-between;border:1px solid #eeedf5;border-radius:999px; }
   #dashboardSharedTopbar .dashboard-shared-topbar-right { margin-left:auto;gap:10px; }
 
   /* bottom tab bar */

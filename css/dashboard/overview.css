@@ -604,7 +604,7 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 #dashboardSharedTopbarPortal::before,#dashboardSharedTopbarPortal::after { content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;outline:0!important; }
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
-  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(100% - (var(--dash-gutter) * 2) - var(--dash-scrollbar,0px));max-width:none;height:55px;min-height:55px;
+  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(100% - (var(--dash-gutter) * 2));max-width:none;height:55px;min-height:55px;
   display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:0 var(--dash-gutter) 20px;padding:0 20px;
   border:1px solid #eeedf5;border-top:0;border-radius:0 0 22px 22px;background:var(--lhn-ui-surface,#fff);box-shadow:0 9px 25px rgba(68,61,133,.065);
   transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease;
