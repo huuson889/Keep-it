@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.386**, nhánh `Keepit-Optimize-Test`; shared header follows v3.5.379 Documents `.topbar`: desktop 55px, border-top 0, bottom corners 22px, 20px below; mobile 48px pill/12px inset. Portal uses `display:contents` (0×0). Actual Chromium extension screenshot QA passed on Documents desktop (1032×600) and mobile (390×844); full route matrix remains untested. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.388**, nhánh `Keepit-Optimize-Test`; shared header follows v3.5.379 Documents `.topbar`: desktop 55px, border-top 0, bottom corners 22px; full content width, zero outer margin. Mobile 48px pill, full width and zero outer margin. Portal uses `display:contents` (0×0). Actual Chromium extension screenshot QA passed on Documents desktop (1032×600) and mobile (390×844); full route matrix remains untested. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Dashboard shared header — v3.5.386
-- Chromium screenshot QA: Documents route at 1032×600 and 390×844. Header geometry matches v3.5.379 Documents CSS; portal is 0×0 via `display:contents`; iframe header hidden; no JS/console errors. Still verify Overview, Dictation, Highlights & Notes and viewer full-screen on Chrome.
+### Dashboard shared header — v3.5.388
+- Chromium screenshot QA: Documents route at 1032×600 and 390×844. Header geometry matches v3.5.379 Documents CSS; portal is 0×0 via `display:contents`; outer margin is 0 on all sides (removes DevTools highlighted spacing); iframe header hidden; no JS/console errors. Still verify Overview, Dictation, Highlights & Notes and viewer full-screen on Chrome.
 
 ### Documents PDF permission guide — v3.5.380
 - Browser-test local PDF with file URL access denied: confirm Keepit logo, purple step markers in light/dark themes, 12px instructions, secondary picker, and permission polling dismissal. Static checks and mock polling passed; not browser-tested.
@@ -243,11 +243,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.386 | Arena.ai Agent sửa:**
+**2026-11-17 | v3.5.388 | Arena.ai Agent sửa:**
 
-- Đối chiếu đúng header Tài liệu của v3.5.379 (`pages/documents.html` + `.topbar`): desktop 55px, border-top 0, bo hai góc dưới 22px, bóng 0 9px 25px, cách nội dung 20px; mobile 48px pill/inset 12px. Portal ngoài `display:contents`, không có box nền riêng.
+- Bỏ khoảng ngoài quanh header được DevTools highlight: thanh rộng hết vùng nội dung (`width:100%`), `margin:0` desktop/mobile. Giữ hình học Tài liệu v3.5.379; portal ngoài vẫn `display:contents`.
 - File: `manifest.json`, `css/dashboard/overview.css`, `css/dashboard/responsive.css`, `PROJECT.md`.
-- Kiểm tra: đối chiếu CSS v3.5.379; `node --check` Dashboard/Documents; static selectors/manifest/brace balance, `git diff --check` PASS. Chromium extension thật: screenshot Documents 1032×600 và mobile 390×844 PASS; portal rect 0×0, header 55px/48px, inner iframe header display:none, không JS/console errors.
+- Kiểm tra: node --check Dashboard/Documents, `git diff --check`; Chromium extension v3.5.388 screenshot Documents 1032×600: header x=56, width=973, margin=0, iframe bắt đầu ngay dưới header y=55, portal 0×0, không JS/console errors — PASS.
+
+**2026-11-17 | v3.5.387 | Arena.ai Agent sửa:**
+
+- Bỏ vùng vàng/cam ở dưới header: `margin-bottom` desktop 20px và mobile 14px thành 0; giữ hình học còn lại của header Tài liệu v3.5.379.
+- File: `manifest.json`, `css/dashboard/overview.css`, `css/dashboard/responsive.css`, `PROJECT.md`.
+- Kiểm tra: node --check Dashboard/Documents, `git diff --check`; Chromium extension v3.5.387 screenshot Documents 1032×600: `margin-bottom:0px`, iframe bắt đầu ngay dưới header (y=55), portal 0×0, iframe header ẩn, không JS/console errors — PASS.
 
 **2026-11-17 | v3.5.380 | Arena.ai Agent sửa:**
 

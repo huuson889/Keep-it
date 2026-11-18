@@ -42,7 +42,7 @@
   #dashboardSharedTopbarLabel { font-size:14px;font-weight:650;color:inherit; }
   #dashboardSharedTopbar .ov-crumb { min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
   #dashboardSharedTopbarPortal { display:contents!important; }
-  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { position:sticky;top:10px;width:calc(100% - 24px);max-width:none;height:48px;min-height:48px;margin:10px auto 14px;padding:0 12px;border:1px solid #eeedf5;border-radius:999px; }
+  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { position:sticky;top:0;width:100%;max-width:none;height:48px;min-height:48px;margin:0;padding:0 12px;border:1px solid #eeedf5;border-radius:999px; }
 
   /* bottom tab bar */
   .rn-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid #e2e8f0; transition: transform .3s cubic-bezier(.2, .8, .2, 1); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
