@@ -732,7 +732,7 @@ body{overflow:auto}
 /* ---------- embedded in the dashboard shell ---------- */
 /* The dashboard owns the scroll root and the shared topbar, so this page renders
    as flat content that reports its height instead of scrolling on its own. */
-html.dash-embedded,html.dash-embedded body{height:auto;min-height:0;overflow:hidden}
+html.dash-embedded,html.dash-embedded body{height:auto;min-height:0;overflow:hidden;background:transparent}
 html.dash-embedded .app{display:block;min-height:0}
 html.dash-embedded .main{padding:0 0 24px}
 html.dash-embedded .topbar{display:none!important}

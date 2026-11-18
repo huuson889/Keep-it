@@ -3216,8 +3216,14 @@ function setDashboardView(view) {
   const showDocuments = view === "documents";
   dashboardDocumentsView.hidden = !showDocuments;
   document.body.classList.toggle("dashboard-documents-active", showDocuments);
-  if (showDocuments && !dashboardDocumentsFrame.hasAttribute("src")) dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
-  if (showDocuments) window.setTimeout(resizeDashboardDocumentsFrame, 60);
+  if (showDocuments) {
+    if (!dashboardDocumentsFrame.hasAttribute("src")) {
+      document.body.classList.remove("documents-frame-ready");
+      dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
+    }
+    watchDashboardDocumentsFrameAtParse();
+    window.setTimeout(resizeDashboardDocumentsFrame, 60);
+  }
   const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
   dashboardOverviewView.hidden = !showOverview;
   dashboardDictationView.hidden = !showDictation;
@@ -3279,6 +3285,7 @@ function syncDashboardDocumentsTheme() {
   doc.documentElement.classList.add("dash-embedded");
   doc.documentElement.classList.toggle("dark", document.documentElement.classList.contains("dark"));
   resizeDashboardDocumentsFrame();
+  document.body.classList.add("documents-frame-ready");
 }
 function watchDashboardDocumentsFrame() {
   syncDashboardDocumentsTheme();
@@ -3289,6 +3296,15 @@ function watchDashboardDocumentsFrame() {
   dashboardDocumentsObserver = new ResizeObserver(() => resizeDashboardDocumentsFrame());
   dashboardDocumentsObserver.observe(doc.documentElement);
   if (doc.body) dashboardDocumentsObserver.observe(doc.body);
+}
+function watchDashboardDocumentsFrameAtParse() {
+  const frame = $("dashboardDocumentsFrame");
+  try {
+    const doc = frame?.contentDocument;
+    if (!doc || doc.__kpParseHooked) return;
+    doc.__kpParseHooked = true;
+    doc.addEventListener("DOMContentLoaded", watchDashboardDocumentsFrame, { once:true });
+  } catch { /* frame not reachable yet */ }
 }
 $("dashboardDocumentsFrame")?.addEventListener("load", watchDashboardDocumentsFrame);
 window.addEventListener("resize", resizeDashboardDocumentsFrame, { passive:true });

@@ -3,7 +3,9 @@
 body.dashboard-documents-active #dashboardScroller{overflow-y:auto!important}
 #dashboardScroller>#dashboardDocumentsView{display:block!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:0 clamp(16px,3vw,42px) 42px!important;overflow:visible!important;background:transparent!important}
 #dashboardScroller>#dashboardDocumentsView[hidden]{display:none!important}
-#dashboardDocumentsFrame{display:block;width:100%;max-width:1320px;margin:0 auto;height:0;min-height:420px;border:0;background:transparent;overflow:hidden}
+#dashboardDocumentsFrame{display:block;width:100%;max-width:1320px;margin:0 auto;height:0;min-height:420px;border:0;background:transparent;overflow:hidden;opacity:0;transition:opacity .14s ease}
+body.documents-frame-ready #dashboardDocumentsFrame{opacity:1}
+@media(prefers-reduced-motion:reduce){#dashboardDocumentsFrame{transition:none}}
 body.documents-viewer-open #dashboardDocumentsFrame{position:fixed;inset:0;z-index:1800;width:100vw;max-width:none;height:100dvh;min-height:0}
 body.documents-viewer-open .rn-tabbar,body.documents-viewer-open .rn-sheet,body.documents-viewer-open .rn-backdrop{display:none!important}
 @media(max-width:760px){#dashboardScroller>#dashboardDocumentsView{padding:0 14px 30px!important}}
