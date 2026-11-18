@@ -115,6 +115,13 @@ function syncDashboardTheme() {
     sidebarThemeButton.setAttribute("aria-label", label);
     sidebarThemeButton.title = "Đổi giao diện Sáng / Tối";
   }
+  const topbarThemeButton = $("dashboardSharedTopbarThemeToggle");
+  if (topbarThemeButton) {
+    const label = dark ? "Giao diện tối" : "Giao diện sáng";
+    topbarThemeButton.setAttribute("aria-pressed", String(dark));
+    topbarThemeButton.setAttribute("aria-label", label);
+    topbarThemeButton.title = "Đổi giao diện Sáng / Tối";
+  }
 }
 function showDashboardSettingsPanel(name) {
   const requestedPanel = DASHBOARD_SETTINGS_TAB_NAMES.has(name) ? name : "account";
@@ -3745,6 +3752,7 @@ async function toggleDashboardTheme() {
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 }
 $("dashboardSidebarThemeToggle").addEventListener("click", toggleDashboardTheme);
+$("dashboardSharedTopbarThemeToggle").addEventListener("click", toggleDashboardTheme);
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();

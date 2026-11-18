@@ -22,7 +22,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 
 1. `load()` lấy settings, favorites, annotations; cập nhật Overview và event snapshot H&N. Dữ liệu thật rỗng phải có empty state, không chèn mẫu.
 2. `setDashboardView()` đổi `overview`, `dictation`, `highlights-notes`, `documents`; route không active dùng `hidden`. Flashcards vẫn là action. `listening` cũ migrate sang `dictation`; lưu last-route/scroll theo tab.
-3. Overview/Dictation dùng viewport cuộn riêng; H&N và Documents dùng `#dashboardScroller`. Cả bốn route chia sẻ topbar Keepit/tab-name. Documents ẩn header lồng khi embedded và lấp viewport còn lại; viewer mở thì bridge phủ màn hình, ẩn bottom nav. Rời route gửi suspend để dừng audio.
+3. Overview/Dictation dùng viewport cuộn riêng; H&N và Documents dùng `#dashboardScroller`. Cả bốn route chia sẻ topbar Keepit/tab-name theo geometry cũ của Documents; một surface inset, desktop bo đáy, mobile pill. Documents ẩn header lồng ngay từ markup khi embedded và lấp viewport còn lại; viewer mở thì bridge phủ màn hình, ẩn bottom nav. Rời route gửi suspend để dừng audio.
 4. Dictation đối soát session index với record thật, khôi phục nguồn/tiêu đề/tổng câu từ cache. Continue YouTube mở thẳng Dictation khi captions đang tải; web giữ URL nguồn. Cards và continue-art dùng `LHN_THUMBNAILS`; favicon dùng `LHN_SITE_ICONS`.
 5. H&N nhận snapshot protocol `1` qua `keepit:highlights-notes-*`; CRUD/favorite/export/review/jump/speak quay lại handler Dashboard. Background IndexedDB là nguồn annotations web.
 6. Popup stats nhận OPEN/UPDATE/CLOSE cùng origin, theme từ parent; records schema v3 là nguồn chính, index chỉ bổ sung metadata. Chỉ reveal khi mở/đổi lọc, không khi snapshot refresh.
