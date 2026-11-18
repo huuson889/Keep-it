@@ -34,6 +34,7 @@
       solvedCount:totalCount > 0 ? Math.min(solvedCount, totalCount) : solvedCount,
       updatedAt:safeTimestamp(value.updatedAt),
       status:value.status === "complete" ? "complete" : "in_progress",
+      deletedAt:safeTimestamp(value.deletedAt), // >0 = đang ở Thùng rác
       legacy:value.legacy === true
     };
   }

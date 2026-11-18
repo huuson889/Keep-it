@@ -15,7 +15,8 @@
     ['dictation', 'trashTypeDictation'],
     ['speak', 'trashTypeSpeak']
   ];
-  const WIRED = new Set(['all', 'document', 'note']);
+  const WIRED = new Set(['all', 'document', 'note', 'dictation']);
+  const DICTATION_KEY = 'dictation:session-index:v1';
   const GROUPS = [
     ['today', 'trashGroupToday', 0],
     ['yesterday', 'trashGroupYesterday', 1],
@@ -160,10 +161,65 @@
       return Array.isArray(records) ? records.map(record => ({ ...record, kind:'note' })) : [];
     } catch { return []; }
   }
+  /* Chép chính tả: buổi học nằm trong `dictation:session-index:v1`; xoá = đặt deletedAt,
+     khôi phục = bỏ deletedAt, xoá vĩnh viễn = bỏ khỏi danh sách. */
+  const emptyIndex = () => ({ version:1, updatedAt:0, legacyMigrationComplete:true, sessions:[] });
+  async function readDictationIndex() {
+    try {
+      const data = await browser.storage.local.get(DICTATION_KEY);
+      const raw = data?.[DICTATION_KEY];
+      return raw && Array.isArray(raw.sessions) ? { ...emptyIndex(), ...raw, sessions:raw.sessions } : emptyIndex();
+    } catch { return emptyIndex(); }
+  }
+  async function writeDictationSessions(sessions) {
+    const index = await readDictationIndex();
+    await browser.storage.local.set({ [DICTATION_KEY]: { ...index, version:index.version || 1, legacyMigrationComplete:true, updatedAt:Date.now(), sessions } });
+  }
+  async function loadDictation() {
+    const index = await readDictationIndex();
+    return index.sessions.filter(session => Number(session.deletedAt) > 0).map(session => {
+      const sessionId = String(session.sessionId || `${session.sourceType}:${session.sourceId}`);
+      return {
+        kind:'dictation', type:'dictation', id:`dictation:${sessionId}`, sessionId,
+        title:String(session.title || ''), url:String(session.url || ''),
+        solved:Number(session.solvedCount) || 0, total:Number(session.totalCount) || 0,
+        updatedAt:Number(session.updatedAt) || 0, deletedAt:Number(session.deletedAt)
+      };
+    });
+  }
+  async function restoreDictation(ids) {
+    if (!ids.length) return 0;
+    const want = new Set(ids.map(id => id.slice('dictation:'.length)));
+    const index = await readDictationIndex();
+    let count = 0;
+    const sessions = index.sessions.map(session => {
+      const sessionId = String(session.sessionId || `${session.sourceType}:${session.sourceId}`);
+      if (!want.has(sessionId) || !Number(session.deletedAt)) return session;
+      count += 1;
+      return { ...session, deletedAt:0 };
+    });
+    if (count) await writeDictationSessions(sessions);
+    return count;
+  }
+  async function purgeDictation(ids) {
+    if (!ids.length) return;
+    const want = new Set(ids.map(id => id.slice('dictation:'.length)));
+    const index = await readDictationIndex();
+    const keep = index.sessions.filter(session => !want.has(String(session.sessionId || `${session.sourceType}:${session.sourceId}`)));
+    if (keep.length !== index.sessions.length) await writeDictationSessions(keep);
+  }
+  async function sweepDictation() {
+    const index = await readDictationIndex();
+    const now = Date.now();
+    const keep = index.sessions.filter(session => !(Number(session.deletedAt) > 0 && Number(session.deletedAt) + RETAIN_DAYS * DAY <= now));
+    if (keep.length !== index.sessions.length) await writeDictationSessions(keep);
+    return index.sessions.length - keep.length;
+  }
+
   async function load() {
     const now = Date.now();
-    const [documents, notes] = await Promise.all([loadDocuments(), loadNotes()]);
-    return [...documents, ...notes]
+    const [documents, notes, dictation] = await Promise.all([loadDocuments(), loadNotes(), loadDictation()]);
+    return [...documents, ...notes, ...dictation]
       .map(item => ({ ...item, expires: Number(item.deletedAt) + RETAIN_DAYS * DAY }))
       .filter(item => item.expires > now)
       .sort((a, b) => b.deletedAt - a.deletedAt);
@@ -172,7 +228,10 @@
   async function purgeExpired() {
     const db = await openExisting();
     if (!db) {
-      try { return Number((await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_SWEEP' }))?.purged) || 0; } catch { return 0; }
+      let notesOnly = 0;
+      try { notesOnly = Number((await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_SWEEP' }))?.purged) || 0; } catch { /* keep going */ }
+      try { notesOnly += await sweepDictation(); } catch { /* keep going */ }
+      return notesOnly;
     }
     const metas = await readAll(db, 'meta');
     db.close();
@@ -182,7 +241,9 @@
     let notes = 0;
     try { notes = Number((await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_SWEEP' }))?.purged) || 0; }
     catch { /* annotations store unavailable: keep the documents result */ }
-    return dead.length + notes;
+    let dictation = 0;
+    try { dictation = await sweepDictation(); } catch { /* keep the rest */ }
+    return dead.length + notes + dictation;
   }
   function refreshDocumentsFrame() {
     const frame = $('dashboardDocumentsFrame');
@@ -195,7 +256,8 @@
     docx: { label:'Word', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="m8 12 1.6 5L12 13l2.4 4L16 12"/>' },
     pptx: { label:'PowerPoint', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M9 17v-5h2.2a1.9 1.9 0 0 1 0 3.8H9"/>' },
     image:{ label:'', path:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 4.6-4.3a2 2 0 0 1 2.7 0L16 17"/>' },
-    note: { label:'', path:'<path d="M4 21h16"/><path d="m9 14 1.2 4h3.6L15 14"/><path d="m11 4 5 5-6.2 6.2L5 17l1.8-4.8Z"/>' }
+    note: { label:'', path:'<path d="M4 21h16"/><path d="m9 14 1.2 4h3.6L15 14"/><path d="m11 4 5 5-6.2 6.2L5 17l1.8-4.8Z"/>' },
+    dictation: { label:'', path:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>' }
   };
   const kindOf = item => KIND[item.type] || KIND.pdf;
   /* Icon "trang web" cho hàng gộp: cùng path quả địa cầu app đang dùng ở thanh Keepit. */
@@ -213,6 +275,11 @@
       const site = hostOf(item.url);
       if (site) parts.push(site);
       if (String(item.note || '').trim()) parts.push(trim(item.note, 60));
+    } else if (item.kind === 'dictation') {
+      const site = hostOf(item.url);
+      if (site) parts.push(site);
+      if (item.total) parts.push(`${item.solved} / ${item.total} ${t('dictationSentences')}`);
+      else if (item.solved) parts.push(`${item.solved} ${t('dictationSentences')}`);
     } else {
       parts.push(kind.label || t('docs_image'));
       if (item.pages && item.type !== 'image') parts.push(`${item.pages} ${t('pagesShort')}`);
@@ -224,7 +291,7 @@
     return `<div class="trash-row${options.sub ? ' sub' : ''}${checked ? ' is-picked' : ''}" data-id="${item.id}">
       <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${item.id}"${checked}><span class="trash-box"></span></label>
       <span class="trash-ico kind-${item.kind === 'note' ? 'note' : (item.type || 'pdf')}"><svg viewBox="0 0 24 24" aria-hidden="true">${kind.path}</svg></span>
-      <span class="trash-main"><b>${escapeHtml(item.kind === 'note' ? (trim(item.quote, 120) || t('trashTypeNote')) : (item.title || item.name || item.id))}</b>
+      <span class="trash-main"><b>${escapeHtml(item.kind === 'note' ? (trim(item.quote, 120) || t('trashTypeNote')) : item.kind === 'dictation' ? (trim(item.title, 120) || hostOf(item.url) || t('trashTypeDictation')) : (item.title || item.name || item.id))}</b>
         <span>${parts.join(' · ')}</span></span>
       <span class="trash-left">${t('trashDaysLeft', { days: daysLeft(item.expires) })}</span>
       <span class="trash-actions">
@@ -250,7 +317,7 @@
     };
   }
   function buildRows(items) {
-    const documents = items.filter(item => item.kind === 'document');
+    const documents = items.filter(item => item.kind !== 'note');
     const byPage = new Map(), singles = [];
     for (const note of items.filter(item => item.kind === 'note')) {
       const url = pageKeyOf(note);
@@ -413,16 +480,19 @@
     itemsCache = items;
     const docs = items.filter(item => item.kind === 'document');
     const notes = items.filter(item => item.kind === 'note');
+    const dictations = items.filter(item => item.kind === 'dictation');
     const totalBytes = docs.reduce((sum, item) => sum + (Number(item.bytes) || 0), 0);
     const filterOn = Boolean(query.trim()) || whenActive();
     if (chips) {
       chips.innerHTML = TYPES.map(([key, label]) => {
-        const count = key === 'all' ? items.length : key === 'document' ? docs.length : key === 'note' ? notes.length : 0;
+        const count = key === 'all' ? items.length : key === 'document' ? docs.length
+          : key === 'note' ? notes.length : key === 'dictation' ? dictations.length : 0;
         const suffix = WIRED.has(key) ? `<i>${count}</i>` : `<i>${t('trashPending')}</i>`;
         return `<button type="button" class="trash-chip${typeFilter === key ? ' on' : ''}" data-t="${key}">${t(label)}${suffix}</button>`;
       }).join('');
     }
-    const byType = typeFilter === 'all' ? items : typeFilter === 'document' ? docs : typeFilter === 'note' ? notes : [];
+    const byType = typeFilter === 'all' ? items : typeFilter === 'document' ? docs
+      : typeFilter === 'note' ? notes : typeFilter === 'dictation' ? dictations : [];
     const text = query.trim().toLocaleLowerCase();
     const matches = rowItem => [rowItem.title, rowItem.name, rowItem.quote, rowItem.note, rowItem.host,
       ...(rowItem.notes || []).flatMap(note => [note.quote, note.note])]
@@ -628,9 +698,12 @@
   });
 
   const splitKinds = ids => {
-    const noteIds = [], documentIds = [];
-    for (const id of ids) (itemById(id)?.kind === 'note' ? noteIds : documentIds).push(id);
-    return { noteIds, documentIds };
+    const noteIds = [], documentIds = [], dictationIds = [];
+    for (const id of ids) {
+      const kind = itemById(id)?.kind;
+      (kind === 'note' ? noteIds : kind === 'dictation' ? dictationIds : documentIds).push(id);
+    }
+    return { noteIds, documentIds, dictationIds };
   };
   async function restoreNotes(noteIds) {
     if (!noteIds.length) return 0;
@@ -650,9 +723,10 @@
   }
   async function restoreItems(rawIds) {
     const ids = expandIds(rawIds);
-    const { noteIds, documentIds } = splitKinds(ids);
+    const { noteIds, documentIds, dictationIds } = splitKinds(ids);
     for (const id of documentIds) { try { await restoreRecord(id); } catch { /* keep going */ } }
     await restoreNotes(noteIds);
+    try { await restoreDictation(dictationIds); } catch { /* keep going */ }
     for (const id of ids) selected.delete(id);
     if (documentIds.length) refreshDocumentsFrame();
     await readQuota();
@@ -663,14 +737,23 @@
      Undo disappears, so the undo can put the very same rows (ids included) back. */
   async function purgeForever(rawIds) {
     const ids = expandIds(rawIds);
-    const { noteIds, documentIds } = splitKinds(ids);
-    const documents = [], notes = [];
+    const { noteIds, documentIds, dictationIds } = splitKinds(ids);
+    const documents = [], notes = [], dictations = [];
+    if (dictationIds.length) {
+      const index = await readDictationIndex();
+      const want = new Set(dictationIds.map(id => id.slice('dictation:'.length)));
+      for (const session of index.sessions) {
+        const sessionId = String(session.sessionId || `${session.sourceType}:${session.sourceId}`);
+        if (want.has(sessionId)) dictations.push({ ...session });
+      }
+    }
     for (const id of documentIds) {
       try { const snapshot = await snapshotDocument(id); if (snapshot) documents.push(snapshot); } catch { /* keep going */ }
     }
     for (const id of noteIds) { const item = itemById(id); if (item) { const { kind, expires, ...record } = item; notes.push(record); } }
     for (const id of documentIds) { try { await removeForever(id); } catch { /* keep going */ } }
     await purgeNotes(noteIds);
+    try { await purgeDictation(dictationIds); } catch { /* keep going */ }
     for (const id of ids) selected.delete(id);
     if (documentIds.length) refreshDocumentsFrame();
     await readQuota();
@@ -679,6 +762,12 @@
       for (const snapshot of documents) { try { await restoreDocument(snapshot); } catch { /* keep going */ } }
       if (notes.length) {
         try { await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_INSERT', items:notes }); } catch { /* keep going */ }
+      }
+      if (dictations.length) {
+        try {
+          const index = await readDictationIndex();
+          await writeDictationSessions([...index.sessions, ...dictations]);
+        } catch { /* keep going */ }
       }
       if (documentIds.length) refreshDocumentsFrame();
       await readQuota();

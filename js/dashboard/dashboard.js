@@ -855,7 +855,7 @@ function dictationSessionTitle(session) {
   return String(session?.title || "").trim() || String(session?.sourceId || "").trim() || t("dictationUntitledSession");
 }
 function sortedDictationSessions() {
-  const sessions = [...(overviewSessionEntries || [])];
+  const sessions = [...(overviewSessionEntries || [])].filter(session => !session.deletedAt);
   if (dictationSortMode === "title") sessions.sort((a,b) => dictationSessionTitle(a).localeCompare(dictationSessionTitle(b), currentLang));
   else if (dictationSortMode === "progress") sessions.sort((a,b) => {
     const progress = x => x.totalCount > 0 ? x.solvedCount / x.totalCount : x.solvedCount;
@@ -863,6 +863,31 @@ function sortedDictationSessions() {
   });
   else sessions.sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId));
   return sessions;
+}
+/* Chuyển một buổi Chép chính tả vào Thùng rác: đặt deletedAt, có Hoàn tác như thẻ Tài liệu. */
+async function writeDictationSessionTrash(sessionId, deletedAt) {
+  const data = await browser.storage.local.get(OVERVIEW_STUDY_SESSION_INDEX_KEY);
+  const index = normalizeOverviewSessionIndex(data?.[OVERVIEW_STUDY_SESSION_INDEX_KEY]);
+  const sessions = index.sessions.map(session => (session.sessionId === sessionId ? { ...session, deletedAt } : session));
+  await browser.storage.local.set({
+    [OVERVIEW_STUDY_SESSION_INDEX_KEY]: {
+      ...index, version:index.version || 1, legacyMigrationComplete:true, updatedAt:Date.now(), sessions
+    }
+  });
+  overviewSessionEntries = mergeOverviewSessions(overviewSessionEntries, sessions);
+  renderOverviewDictationSessions();
+}
+async function moveDictationToTrash(sessionId) {
+  const session = (overviewSessionEntries || []).find(item => item.sessionId === sessionId);
+  if (!session) return;
+  if (!confirm(`${t("docs_trashMove")}: ${dictationSessionTitle(session)}?`)) return;
+  try {
+    await writeDictationSessionTrash(sessionId, Date.now());
+    toast(t("docs_trashMoved"), { label:t("trashUndo"), run:async () => {
+      try { await writeDictationSessionTrash(sessionId, 0); toast(t("docs_trashRestored")); }
+      catch { toast(t("noteRestoreFailed")); }
+    } });
+  } catch { toast(t("noteRestoreFailed")); }
 }
 function renderDictationSessionCards() {
   const grid = $("dictationSessionGrid");
@@ -885,7 +910,7 @@ function renderDictationSessionCards() {
     const sessionId = String(session.sessionId || `${sourceType}:${session.sourceId || ""}`);
     return `<article class="session-card" data-session-id="${escapeHtml(sessionId)}" data-source="${escapeHtml(sourceType)}" data-source-id="${escapeHtml(videoId)}" data-search="${escapeHtml(`${title} ${domain} ${source}`.toLocaleLowerCase(currentLang))}">
       <div class="thumb ${artClass}">${thumbnail}<span class="source-chip${sourceType === "web" ? " web" : ""}"><i class="source-dot"></i>${escapeHtml(source)}</span><span class="thumb-word">Dictation</span><div class="thumb-art"><span class="thumb-symbol"><svg class="icon"><use href="#dictation-i-play"></use></svg></span></div><span class="thumb-title">${escapeHtml(title)}</span></div>
-      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain || t("dictationNoPageLink"))}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText} <span>${escapeHtml(t("dictationSentences"))}</span></strong></div><div class="progress-track"${total ? "" : ` style="visibility:hidden"`}><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}</div></div>
+      <div class="card-body"><h3 class="card-title">${escapeHtml(title)}</h3><div class="card-domain"><svg class="icon"><use href="#dictation-i-globe"></use></svg> ${escapeHtml(domain || t("dictationNoPageLink"))}</div><div class="card-progress"><div class="progress-label"><span>${escapeHtml(t("dictationProgress"))}</span><strong>${progressText} <span>${escapeHtml(t("dictationSentences"))}</span></strong></div><div class="progress-track"${total ? "" : ` style="visibility:hidden"`}><div class="progress-fill" style="width:${progress}%"></div></div></div><div class="card-footer"><span class="last-practiced"><svg class="icon"><use href="#dictation-i-clock"></use></svg>${escapeHtml(session.updatedAt ? fmtDate(session.updatedAt) : t("dictationSavedTimeUnknown"))}</span>${isComplete ? `<span class="complete-badge"><svg class="icon"><use href="#dictation-i-check"></use></svg>${escapeHtml(t("dictationComplete"))}</span><button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationOpenSession"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>` : `<button class="resume-link" type="button" data-dictation-open="${escapeHtml(sessionId)}" data-dictation-auto-open="true"><span>${escapeHtml(t("dictationResume"))}</span><svg class="icon"><use href="#dictation-i-arrow"></use></svg></button>`}<button class="cardDel" type="button" data-dictation-trash="${escapeHtml(sessionId)}" title="${escapeHtml(t("docs_trashMove"))}" aria-label="${escapeHtml(t("docs_trashMove"))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button></div></div>
     </article>`;
   }).join("");
   grid.querySelectorAll(".dictation-thumb-image").forEach(image => {
@@ -918,7 +943,7 @@ function updateDictationContinueThumbnail(session) {
 }
 function renderDictationContinueCard() {
   const session = [...(overviewSessionEntries || [])]
-    .filter(item => item.status !== "complete")
+    .filter(item => !item.deletedAt && item.status !== "complete")
     .sort((a,b) => b.updatedAt - a.updatedAt || a.sessionId.localeCompare(b.sessionId))[0] || null;
   updateDictationContinueThumbnail(session);
   const title = $("dictationContinueTitle"), description = $("dictationContinueDescription"), meta = $("dictationContinueMeta");
@@ -1059,6 +1084,11 @@ function initDictationView() {
   const dictationView = $("dashboardDictationView");
   dictationView.addEventListener("click", event => {
     const target = event.target instanceof Element ? event.target : null;
+    const trashButton = target?.closest("[data-dictation-trash]");
+    if (trashButton?.dataset.dictationTrash) {
+      void moveDictationToTrash(trashButton.dataset.dictationTrash);
+      return;
+    }
     const button = target?.closest("[data-dictation-open]");
     if (button?.dataset.dictationOpen) {
       void openSession(button.dataset.dictationOpen, { autoOpenDictation:button.dataset.dictationAutoOpen === "true" });
@@ -1951,7 +1981,7 @@ async function loadOverviewDictationSessions() {
   void renderDictationErrorSummary();
 }
 function chooseOverviewDictationSession() {
-  const sessions = overviewSessionEntries;
+  const sessions = (overviewSessionEntries || []).filter(item => !item.deletedAt);
   const datedInProgress = sessions.filter(item => item.updatedAt > 0 && item.status !== "complete").sort((a, b) => b.updatedAt - a.updatedAt);
   if (datedInProgress.length) return datedInProgress[0];
   const dated = sessions.filter(item => item.updatedAt > 0).sort((a, b) => b.updatedAt - a.updatedAt);

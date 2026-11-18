@@ -413,3 +413,9 @@ html.dark #dashboardDictationView .toast { border-color:#2b3a52!important; backg
 /* Detailed Dictation popup is isolated in its own CSP-safe extension page. */
 #dictationStatsPopupFrame{position:fixed;inset:0;z-index:2400;width:100vw;height:100vh;height:100dvh;border:0;background:transparent}
 #dictationStatsPopupFrame[hidden]{display:none!important}
+
+/* v3.5.428: nút chuyển buổi Chép chính tả vào Thùng rác (giống nút trên thẻ Tài liệu) */
+.session-card .card-footer .cardDel{flex:none;display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--line,#eeedf5);border-radius:9px;background:transparent;color:var(--muted,#8790a4);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.session-card .card-footer .cardDel:hover{color:#c9484a;border-color:#f0cfcf;background:#fdf1f1}
+.session-card .card-footer .cardDel svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:640px){.session-card .card-footer .cardDel{width:34px;height:34px}}
