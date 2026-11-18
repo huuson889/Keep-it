@@ -603,9 +603,9 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 #dashboardSharedTopbarPortal::before,#dashboardSharedTopbarPortal::after { content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;outline:0!important; }
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
-  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(100% - clamp(16px,3vw,42px) - clamp(16px,3vw,42px));max-width:1320px;height:55px;min-height:55px;
-  display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 auto 20px;padding:0 20px;
-  border:1px solid #eeedf7;border-top:0;border-radius:0 0 22px 22px;background:var(--lhn-ui-surface,#fff);box-shadow:0 9px 25px rgba(68,61,133,.065);
+  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(100% - clamp(16px,3vw,42px) - clamp(16px,3vw,42px));max-width:none;height:56px;min-height:56px;
+  display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 auto 20px;padding:0 19px;
+  border:1px solid #eeedf7;border-radius:30px;background:var(--lhn-ui-surface,#fff);box-shadow:0 4px 14px #6156a30a;
   transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease;
 }
 #dashboardSharedTopbar .ov-crumb { min-width:0;display:flex;align-items:center;color:var(--lhn-ui-muted,#8790a4);font-size:15px;white-space:nowrap; }
@@ -629,7 +629,7 @@ html.dark #dashboardSharedTopbarThemeToggle .dashboard-theme-sun { display:block
 #dashboardSharedTopbarActionsSlot .demo-export-all { display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #e5e2fa;border-radius:22px;background:#fff;color:#665ac9;font-size:11px;font-weight:750; }
 #dashboardSharedTopbarActionsSlot .demo-export-all .lucide { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
 #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#f8f6ff;filter:none; }
-html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:#2b3a52;background:var(--lhn-ui-surface,#111a2b);box-shadow:0 9px 25px rgba(0,0,0,.2); }
+html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:#2b3a52;background:var(--lhn-ui-surface,#111a2b);box-shadow:0 4px 14px rgba(0,0,0,.18); }
 @media (max-width:599.98px) { html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:#2b3a52; } }
 html.dark #dashboardSharedTopbar .ov-crumb { color:var(--lhn-ui-muted,#a4b0c3); }
 html.dark #dashboardSharedTopbar .ov-crumb strong { color:var(--lhn-ui-text,#e8edf6); }
