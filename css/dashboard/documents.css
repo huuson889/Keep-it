@@ -741,3 +741,34 @@ html.dash-embedded .modalWrap{top:var(--dash-vp-top,0px);bottom:auto;height:100v
 html.dash-embedded .dropAll{top:calc(var(--dash-vp-top,0px) + 10px);bottom:auto;height:calc(100vh - 20px)}
 html.dash-embedded .toast{top:calc(var(--dash-vp-top,0px) + 18px)}
 html.dash-embedded .tour{top:calc(var(--dash-vp-top,0px) + 100vh - 18px);bottom:auto;transform:translateY(-100%)}
+
+/* The embedded frame is always taller than the window, so the library must follow its WIDTH,
+   not its aspect ratio: the portrait block above would otherwise force the phone layout. */
+html.dash-embedded .hero{min-height:220px;padding:25px 30px}
+html.dash-embedded .hero h1{font-size:31px}
+html.dash-embedded .heroIcon{display:grid}
+html.dash-embedded .continue{padding:22px}
+html.dash-embedded .cThumb{width:150px}
+html.dash-embedded .cBody h2{font-size:18px}
+html.dash-embedded .drop{padding:16px;margin-bottom:22px}
+html.dash-embedded .dz{flex-wrap:nowrap}
+html.dash-embedded .types{margin-left:auto}
+html.dash-embedded .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+html.dash-embedded .aside{display:flex}
+html.dash-embedded .tools .search{order:0;flex-basis:auto}
+html.dash-embedded .seg{overflow:visible;max-width:none}
+@media(max-width:1180px){ html.dash-embedded .aside{display:grid;grid-template-columns:1fr 1fr} }
+@media(max-width:860px){
+  html.dash-embedded .hero{min-height:0;padding:20px}
+  html.dash-embedded .hero h1{font-size:24px}
+  html.dash-embedded .heroIcon{display:none}
+  html.dash-embedded .continue{padding:16px}
+  html.dash-embedded .cThumb{width:96px}
+  html.dash-embedded .cBody h2{font-size:16px}
+  html.dash-embedded .drop{padding:12px;margin-bottom:16px}
+  html.dash-embedded .dz{flex-wrap:wrap}
+  html.dash-embedded .types{margin-left:0}
+  html.dash-embedded .grid{grid-template-columns:1fr}
+  html.dash-embedded .tools .search{order:3;flex-basis:100%}
+  html.dash-embedded .seg{overflow-x:auto;max-width:100%}
+}
