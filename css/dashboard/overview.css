@@ -600,7 +600,9 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 /* One sticky topbar is mounted once above all three routes. */
 #dashboardSharedTopbarPortal {
   position:sticky;top:0;z-index:30;box-sizing:border-box;width:100%;max-width:1404px;margin:0 auto;padding:0 clamp(16px,3vw,42px);
+  background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important;
 }
+#dashboardSharedTopbarPortal::before,#dashboardSharedTopbarPortal::after { content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;outline:0!important; }
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
   position:relative;top:auto;z-index:30;box-sizing:border-box;width:100%;height:55px;min-height:55px;
   display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 0 20px;padding:0 20px;
