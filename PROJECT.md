@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.429**, nhánh `Keepit-Optimize-Test`; Thùng rác gộp ghi chú của một trang thành một hàng (chevron sau tên trang, bấm hàng để mở, công tắc "Xem từng ghi chú" mở tất cả), khôi phục/xoá vĩnh viễn theo trang; đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
+- Version **3.5.430**, nhánh `Keepit-Optimize-Test`; Thùng rác gộp ghi chú của một trang thành một hàng (chevron sau tên trang, bấm hàng để mở, công tắc "Xem từng ghi chú" mở tất cả), khôi phục/xoá vĩnh viễn theo trang; đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
 - Version **3.5.424**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
@@ -248,6 +248,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.430 | Arena.ai Agent sửa:**
+
+- Toast của khung Tài liệu (xoá tài liệu, khôi phục…) dùng chung toast của Dashboard nên giống các tab khác: `documents.js` gửi `KEEPIT_DOCUMENTS_TOAST` lên trang cha khi nhúng; Dashboard hiện toast của mình và giữ Hoàn tác qua `KEEPIT_DOCUMENTS_TOAST_RUN` trả về khung (nên Ctrl+Z vẫn chạy hành động trong khung).
+- File: `js/dashboard/documents.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `qa/docstoast430.js` 1512×950 và 390×844 — xoá tài liệu trong khung → toast `<dialog>` ở đỉnh Dashboard "Đã chuyển vào Thùng rác + Hoàn tác" (13px/600, radius 10px, cùng phần tử như tab Thùng rác), toast riêng trong khung **không** hiện, thẻ biến mất; Ctrl+Z → thẻ trở lại + toast "Đã đưa lại vào thư viện"; `errors []`.
+- Tiếp theo: "Nói" vào Thùng rác.
 
 **2026-11-17 | v3.5.429 | Arena.ai Agent sửa:**
 

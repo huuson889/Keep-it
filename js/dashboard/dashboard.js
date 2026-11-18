@@ -3378,6 +3378,14 @@ LHN_MESSAGING.onMessage.addListener(message=>{
 window.addEventListener("message", event => {
   if (event.origin !== location.origin || event.source !== dashboardDocumentsFrame.contentWindow) return;
   if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){openDashboardSettings("bilingualReader");return;}
+  if(event.data?.type==="KEEPIT_DOCUMENTS_TOAST"){
+    const message=String(event.data.message||"");
+    if(!message)return;
+    const action=event.data.action;
+    const frameWindow=event.source;
+    toast(message, action?.label ? { label:action.label, run:() => { try { frameWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_TOAST_RUN", id:action.id }, location.origin); } catch { /* frame gone */ } } } : null);
+    return;
+  }
   if(event.data?.type!=="KEEPIT_DOCUMENTS_VIEWER")return;
   document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
   dashboardDocumentsFrameHeight = 0;
