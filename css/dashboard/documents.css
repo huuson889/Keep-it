@@ -245,6 +245,9 @@ html:not(.wcOn) .wc{text-decoration:none}
 .toast{position:fixed;left:50%;top:18px;z-index:90;transform:translate(-50%,-30px);opacity:0;pointer-events:none;padding:10px 16px;border-radius:12px;background:#1f2433;color:#fff;font-size:13px;box-shadow:0 10px 30px #0004;transition:.25s}
 html.dark .toast{background:#e8edf6;color:#111a2b}
 .toast.show{transform:translate(-50%,0);opacity:1}
+.toast.hasAction{display:flex;align-items:center;gap:14px;pointer-events:auto;text-align:left}
+.toastAction{padding:0;border:0;background:none;font:inherit;font-weight:700;color:#c7d2fe;text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
+.toastAction:hover{color:#eef2ff}
 .demoChip{margin-left:auto;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:6px;background:var(--orangeSoft);color:var(--orange);font-size:11px;font-weight:800;letter-spacing:.8px}
 .demoChip+.topPill{margin-left:0}
 /* ---------- phone ---------- */

@@ -34,6 +34,7 @@
   const PAGE_SIZE = 20;
   let typeFilter = 'all', when = 'any', customFrom = '', customTo = '';
   let query = '', selected = new Set(), page = 1;
+  let freeBytes = null;
 
   /* Never create the documents database from here: opening it with a version would make
      the library's own upgrade never run and leave it without object stores. */
@@ -243,7 +244,8 @@
       const body = filterOn
         ? t('trashSummaryFiltered', { shown: visible.length, count: items.length, size: fmtSize(totalBytes) })
         : t('trashSummary', { count: items.length, size: fmtSize(totalBytes) });
-      summary.textContent = `${body} — ${t('trashRetention', { days: RETAIN_DAYS })}`;
+      const free = freeBytes === null ? '' : ` · ${t('trashFree', { free: fmtSize(freeBytes) })}`;
+      summary.textContent = `${body} — ${t('trashRetention', { days: RETAIN_DAYS })}${free}`;
     }
     for (const id of [...selected]) if (!visible.some(item => item.id === id)) selected.delete(id);
 
@@ -312,8 +314,18 @@
     if (emptyAll) emptyAll.disabled = !$('trashList')?.querySelector('.trash-row');
   }
 
+  /* Real free space for this origin (IndexedDB lives in it), so the number is measured
+     instead of guessed from the item sizes. */
+  async function readQuota() {
+    try {
+      const { usage = 0, quota = 0 } = await navigator.storage?.estimate?.() || {};
+      freeBytes = quota ? Math.max(0, quota - usage) : null;
+    } catch { freeBytes = null; }
+  }
+
   async function mount() {
     await purgeExpired();
+    await readQuota();
     selected = new Set();
     when = 'any'; customFrom = ''; customTo = ''; page = 1;
     setMenu(false);
@@ -420,5 +432,5 @@
     await render();
   }
 
-  globalThis.KeepitTrash = { mount, refresh: render };
+  globalThis.KeepitTrash = { mount, refresh: render, sweep: purgeExpired };
 })();

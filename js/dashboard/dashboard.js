@@ -3929,6 +3929,9 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus()
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
   overviewInitialDataReady = true;
+  /* Purge anything past its 30-day retention as soon as the app opens, not only when the
+     Trash route is visited (a browser that was closed for weeks never swept otherwise). */
+  window.setTimeout(() => { window.KeepitTrash?.sweep?.(); }, 1200);
   const loadedView = activeDashboardView;
   const loadCycle = dashboardViewSwitchCycle;
   restoreDashboardViewAndReveal(loadedView, loadCycle);
