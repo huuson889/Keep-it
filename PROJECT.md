@@ -164,6 +164,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.438 | Arena.ai Agent sửa:**
+
+- Sửa tiếp hệ quả của bước quét màu: icon loại tệp trong Thùng rác (tối) đã bị đổi — Word mất nền xanh `#14233f`/`#9db6ff` thành nền xám + icon tím, lệch với icon Word ở nền sáng (vẫn xanh `#e9f0fd`/`#2f6fe4`). Đã khôi phục nguyên bản: `.kind-docx` `#14233f`/`#9db6ff`, `.kind-web` `#25264a`/`#b9b3ff`.
+- File: `css/dashboard/trash.css`, `manifest.json`.
+- Kiểm tra: `git diff 080bad8^ -- css/dashboard/trash.css | grep trash-ico` → **rỗng**, tức 7 rule màu icon trong Thùng rác đã giống hệt bản 3.5.433 trước khi sửa. **Chưa chụp ảnh được**: sandbox sau reset mất `xvfb-run` và các lib Chromium (`libnspr4.so`), không có quyền root để cài lại; `qa/trashico438.js` đã viết sẵn, chạy lại khi môi trường có xvfb.
+
 **2026-11-18 | v3.5.437 | Arena.ai Agent sửa:**
 
 - Sửa lỗi ở 3.5.436: bước quét màu đã đổi **cả họ tím** (hero `#5144a7/#43388e/#342a78` → `#4a3f8a/#403679/#332a66`), nên khối tím nhạt đi và lệch màu cũ. Đã khôi phục nguyên vẹn toàn bộ hex họ tím (hero Tổng quan + Chép chính tả, chip, nền tím đậm), chỉ giữ phần đổi navy → đen trung tính và xanh dương nhấn → tím.
