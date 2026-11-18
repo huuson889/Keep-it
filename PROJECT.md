@@ -1,6 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
+- Version **3.5.425**, nhánh `Keepit-Optimize-Test`; Thùng rác gộp ghi chú của một trang thành một hàng (chevron sau tên trang, bấm hàng để mở, công tắc "Xem từng ghi chú" mở tất cả), khôi phục/xoá vĩnh viễn theo trang; đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
 - Version **3.5.424**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
@@ -8,6 +9,10 @@
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Thùng rác — gộp ghi chú theo trang (v3.5.425)
+- Đã kiểm bằng automation trên extension unpacked: 1512 và 390, sáng/tối, hàng trang + chevron + hiệu ứng + công tắc + khôi phục/xoá vĩnh viễn/hoàn tác, `errors []`.
+- Chưa kiểm: profile Chrome thật của người dùng, trang có hơn 20 ghi chú (phân trang + hàng trang), ghi chú không có URL, và trang trùng URL nhưng khác tiêu đề.
+- Việc kế tiếp theo thứ tự đã chốt: **Chép chính tả → Nói** cũng vào danh sách Thùng rác (chip "sắp có" hiện vẫn để nguyên).
 ### Documents PDF permission guide — v3.5.379
 - Browser-test local PDF with file URL access denied: confirm green warning in light/dark themes, 12px instructions, secondary picker, and permission polling dismissal. Static checks and mock polling passed; not browser-tested.
 
@@ -239,6 +244,18 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.425 | Arena.ai Agent sửa:**
+
+- Thùng rác: ghi chú của cùng một trang nguồn gộp thành một hàng (`page:<url>`), trang chỉ có 1 ghi chú vẫn là hàng riêng.
+- Hàng trang: chevron nằm sau tên trang (trong cột tên, trước 2 nút), bấm vào thân hàng để mở/đóng, chỉ trừ ô chọn và 2 nút Khôi phục/Xoá vĩnh viễn; nút ghi "Khôi phục" (bỏ chữ "cả trang").
+- Hiệu ứng mở/thu gọn bằng `max-height` 0,26s + mờ dần + chevron xoay; tôn trọng `prefers-reduced-motion`; `flex: none` để không bị co trong danh sách cuộn ở 390.
+- Công tắc "Xem từng ghi chú" (`#trashExpandAll`, dùng `.settings-switch` sẵn có) mở/đóng tất cả hàng trang, chỉ hiện khi có hàng trang.
+- Icon hàng trang lấy `kindOf()` của chính ghi chú (giống icon ghi chú trong app), không thêm icon riêng.
+- Hàng trang đại diện nhiều bản ghi: Khôi phục / Xoá vĩnh viễn / chọn tất cả / hoàn tác đều mở rộng ra id ghi chú thật; "Chọn tất cả" bỏ qua hàng con.
+- File: `js/dashboard/dashboard-trash.js`, `css/dashboard/trash.css`, `pages/dashboard.html`, `js/core/languages.js` (en/vi/ko: trashRestorePage, trashPageNotes, trashExpandNotes, trashCollapseNotes, trashShowAllNotes), `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `qa/trash425.js` trên extension unpacked 1512×950 và 390×844 — icon trùng hàng ghi chú (`sameAsNote true`), chevron `gapPx 6` / trong cột tên, mở 0→178px (1512) và 0→436px (390) rồi `maxHeight none`, đóng về 0, ô chọn không mở hàng, công tắc mở 3 ghi chú, "Khôi phục" 3 mục quay lại Ghi chú với toast, xoá vĩnh viễn cả trang + Ctrl+Z hoàn tác 1→2 hàng, `errors []`; `qa/undo424.js` vẫn đạt (không hồi quy).
+- Tiếp theo: "Chép chính tả" rồi "Nói" vào Thùng rác.
 
 **2026-11-17 | v3.5.424 | Arena.ai Agent sửa:**
 

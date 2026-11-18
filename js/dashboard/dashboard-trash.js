@@ -35,7 +35,9 @@
   const PAGE_SIZE = 20;
   let typeFilter = 'all', when = 'any', customFrom = '', customTo = '';
   let query = '', selected = new Set(), page = 1;
-  let freeBytes = null, itemsCache = [];
+  let freeBytes = null, itemsCache = [], expanded = new Set(), expandAll = false;
+  const PAGE_PREFIX = 'page:';
+  const pageKeyOf = item => String(item?.url || '');
 
   /* Never create the documents database from here: opening it with a version would make
      the library's own upgrade never run and leave it without object stores. */
@@ -202,7 +204,7 @@
     return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
   };
   const hostOf = url => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; } };
-  function row(item) {
+  function row(item, options = {}) {
     const kind = kindOf(item);
     const parts = [];
     if (item.kind === 'note') {
@@ -217,7 +219,7 @@
     if (addedAt(item)) parts.push(t('trashAddedOn', { date: fmtDate(addedAt(item)) }));
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(item.deletedAt)) }));
     const checked = selected.has(item.id) ? ' checked' : '';
-    return `<div class="trash-row${checked ? ' is-picked' : ''}" data-id="${item.id}">
+    return `<div class="trash-row${options.sub ? ' sub' : ''}${checked ? ' is-picked' : ''}" data-id="${item.id}">
       <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${item.id}"${checked}><span class="trash-box"></span></label>
       <span class="trash-ico kind-${item.kind === 'note' ? 'note' : (item.type || 'pdf')}"><svg viewBox="0 0 24 24" aria-hidden="true">${kind.path}</svg></span>
       <span class="trash-main"><b>${escapeHtml(item.kind === 'note' ? (trim(item.quote, 120) || t('trashTypeNote')) : (item.title || item.name || item.id))}</b>
@@ -228,6 +230,112 @@
         <button type="button" class="trash-action danger" data-purge="${item.id}">${t('trashPurge')}</button>
       </span>
     </div>`;
+  }
+
+  /* Ghi chú của cùng một trang đứng chung một hàng: khôi phục cả trang chỉ cần 1 nút.
+     Trang chỉ có 1 ghi chú vẫn là hàng riêng. */
+  function pageRowOf(url, notes) {
+    const created = notes.map(addedAt).filter(Boolean);
+    return {
+      kind: 'note-page', id: PAGE_PREFIX + url, url,
+      host: hostOf(url),
+      title: notes.map(note => String(note.title || '').trim()).find(Boolean) || '',
+      notes: [...notes].sort((a, b) => Number(b.deletedAt) - Number(a.deletedAt)),
+      count: notes.length,
+      deletedAt: Math.max(...notes.map(note => Number(note.deletedAt))),
+      imported: created.length ? Math.min(...created) : 0,
+      expires: Math.min(...notes.map(note => Number(note.deletedAt))) + RETAIN_DAYS * DAY
+    };
+  }
+  function buildRows(items) {
+    const documents = items.filter(item => item.kind === 'document');
+    const byPage = new Map(), singles = [];
+    for (const note of items.filter(item => item.kind === 'note')) {
+      const url = pageKeyOf(note);
+      if (!url) { singles.push(note); continue; }
+      if (!byPage.has(url)) byPage.set(url, []);
+      byPage.get(url).push(note);
+    }
+    const rows = [...documents, ...singles];
+    for (const [url, notes] of byPage) rows.push(notes.length > 1 ? pageRowOf(url, notes) : notes[0]);
+    return rows.sort((a, b) => Number(b.deletedAt) - Number(a.deletedAt));
+  }
+  const recordsOf = rowItem => rowItem.kind === 'note-page' ? rowItem.notes : [rowItem];
+  const notesOfPage = url => itemsCache.filter(item => item.kind === 'note' && pageKeyOf(item) === url);
+  /* Hàng trang đại diện cho nhiều bản ghi: mọi thao tác mở rộng ra danh sách ghi chú thật. */
+  const expandIds = ids => ids.flatMap(id => id.startsWith(PAGE_PREFIX)
+    ? notesOfPage(id.slice(PAGE_PREFIX.length)).map(note => note.id)
+    : [id]);
+
+  function pageRow(rowItem) {
+    const open = expanded.has(rowItem.id), checked = selected.has(rowItem.id);
+    const title = rowItem.title || rowItem.host || t('trashTypeNote');
+    const parts = [t('trashPageNotes', { count: rowItem.count })];
+    if (rowItem.host && rowItem.host !== title) parts.push(rowItem.host);
+    if (rowItem.imported) parts.push(t('trashAddedOn', { date: fmtDate(rowItem.imported) }));
+    parts.push(t('trashDeletedOn', { date: fmtDate(Number(rowItem.deletedAt)) }));
+    return `<div class="trash-row trash-page${open ? ' is-open' : ''}${checked ? ' is-picked' : ''}" data-id="${escapeHtml(rowItem.id)}" data-page-row="1">
+      <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${escapeHtml(rowItem.id)}"${checked ? ' checked' : ''}><span class="trash-box"></span></label>
+      <span class="trash-ico kind-note"><svg viewBox="0 0 24 24" aria-hidden="true">${kindOf(rowItem.notes[0] || {}).path}</svg></span>
+      <span class="trash-main">
+        <b class="with-caret"><span class="t">${escapeHtml(title)}</span><button type="button" class="trash-expand${open ? ' is-open' : ''}" aria-expanded="${open}" aria-label="${escapeHtml(open ? t('trashCollapseNotes') : t('trashExpandNotes'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></b>
+        <span>${escapeHtml(parts.join(' · '))}</span>
+      </span>
+      <span class="trash-left">${t('trashDaysLeft', { days: daysLeft(rowItem.expires) })}</span>
+      <span class="trash-actions">
+        <button type="button" class="trash-action primary" data-restore="${escapeHtml(rowItem.id)}">${t('trashRestore')}</button>
+        <button type="button" class="trash-action danger" data-purge="${escapeHtml(rowItem.id)}">${t('trashPurge')}</button>
+      </span>
+    </div>
+    <div class="trash-subs${open ? ' is-open' : ''}">${rowItem.notes.map(note => row(note, { sub:true })).join('')}</div>`;
+  }
+  function renderRow(rowItem) { return rowItem.kind === 'note-page' ? pageRow(rowItem) : row(rowItem); }
+
+  /* Mở/thu gọn nhẹ nhàng: đổi max-height, không dựng lại danh sách. */
+  const motionOff = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+  function setPanel(rowNode, open, animate) {
+    const panel = rowNode?.nextElementSibling;
+    if (!panel || !panel.classList.contains('trash-subs')) return;
+    if (!animate || motionOff()) {
+      panel.classList.toggle('is-open', open);
+      panel.style.maxHeight = open ? 'none' : '0px';
+    } else if (open) {
+      panel.classList.add('is-open');
+      panel.style.maxHeight = `${panel.scrollHeight}px`;
+      const clearHeight = event => {
+        if (event.propertyName !== 'max-height') return;
+        panel.removeEventListener('transitionend', clearHeight);
+        if (panel.classList.contains('is-open')) panel.style.maxHeight = 'none';
+      };
+      panel.addEventListener('transitionend', clearHeight);
+    } else {
+      if (!panel.style.maxHeight || panel.style.maxHeight === 'none') panel.style.maxHeight = `${panel.scrollHeight}px`;
+      void panel.offsetHeight;
+      panel.classList.remove('is-open');
+      panel.style.maxHeight = '0px';
+    }
+    rowNode.classList.toggle('is-open', open);
+    const caret = rowNode.querySelector('.trash-expand');
+    if (caret) {
+      caret.classList.toggle('is-open', open);
+      caret.setAttribute('aria-expanded', String(open));
+      caret.setAttribute('aria-label', open ? t('trashCollapseNotes') : t('trashExpandNotes'));
+    }
+  }
+  const pageRowNodes = () => [...document.querySelectorAll('#trashList .trash-row[data-page-row]')];
+  function toggleRow(rowNode) {
+    const id = rowNode?.dataset.id;
+    if (!id?.startsWith(PAGE_PREFIX)) return;
+    const open = !expanded.has(id);
+    if (open) expanded.add(id); else expanded.delete(id);
+    setPanel(rowNode, open, true);
+  }
+  function toggleAllRows(open) {
+    expandAll = open;
+    for (const rowNode of pageRowNodes()) {
+      if (open) expanded.add(rowNode.dataset.id); else expanded.delete(rowNode.dataset.id);
+      setPanel(rowNode, open, true);
+    }
   }
 
   function groupOf(item) {
@@ -307,17 +415,21 @@
     }
     const byType = typeFilter === 'all' ? items : typeFilter === 'document' ? docs : typeFilter === 'note' ? notes : [];
     const text = query.trim().toLocaleLowerCase();
-    const visible = byType
-      .filter(item => whenOk(item))
-      .filter(item => !text || [item.title, item.name, item.quote, item.note].some(value => String(value || '').toLocaleLowerCase().includes(text)));
+    const matches = rowItem => [rowItem.title, rowItem.name, rowItem.quote, rowItem.note, rowItem.host,
+      ...(rowItem.notes || []).flatMap(note => [note.quote, note.note])]
+      .some(value => String(value || '').toLocaleLowerCase().includes(text));
+    const visible = buildRows(byType)
+      .filter(rowItem => whenOk(rowItem))
+      .filter(rowItem => !text || matches(rowItem));
+    const visibleRecords = visible.reduce((sum, rowItem) => sum + recordsOf(rowItem).length, 0);
     if (summary) {
       const body = filterOn
-        ? t('trashSummaryFiltered', { shown: visible.length, count: items.length, size: fmtSize(totalBytes) })
+        ? t('trashSummaryFiltered', { shown: visibleRecords, count: items.length, size: fmtSize(totalBytes) })
         : t('trashSummary', { count: items.length, size: fmtSize(totalBytes) });
       const free = freeBytes === null ? '' : ` · ${t('trashFree', { free: fmtSize(freeBytes) })}`;
       summary.textContent = `${body} — ${t('trashRetention', { days: RETAIN_DAYS })}${free}`;
     }
-    for (const id of [...selected]) if (!visible.some(item => item.id === id)) selected.delete(id);
+    for (const id of [...selected]) if (!visible.some(rowItem => rowItem.id === id)) selected.delete(id);
 
     const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
     if (page > pageCount) page = pageCount;
@@ -329,19 +441,26 @@
       list.innerHTML = `<div class="trash-empty">${items.length && filterOn ? t('trashNoMatch') : t('trashEmpty')}</div>`;
     } else {
       const buckets = new Map();
-      for (const item of onPage) {
-        const key = groupOf(item);
+      for (const rowItem of onPage) {
+        const key = groupOf(rowItem);
         if (!buckets.has(key)) buckets.set(key, []);
-        buckets.get(key).push(item);
+        buckets.get(key).push(rowItem);
       }
       const order = [...GROUPS.map(([key]) => key), 'older'];
       list.innerHTML = order.filter(key => buckets.has(key)).map(key => {
         const label = key === 'older' ? t('trashGroupOlder') : t(GROUPS.find(([k]) => k === key)[1]);
-        return `<h3 class="trash-group">${label}<i>${buckets.get(key).length}</i></h3>${buckets.get(key).map(row).join('')}`;
+        const bucket = buckets.get(key);
+        const count = bucket.reduce((sum, rowItem) => sum + recordsOf(rowItem).length, 0);
+        return `<h3 class="trash-group">${label}<i>${count}</i></h3>${bucket.map(renderRow).join('')}`;
       }).join('');
+      // giữ trạng thái mở/đóng sau mỗi lần vẽ lại (chọn, lọc, phân trang)
+      for (const rowNode of pageRowNodes()) setPanel(rowNode, expanded.has(rowNode.dataset.id), false);
     }
     syncBulkBar(visible, onPage);
     syncPager(visible.length, start, onPage.length);
+    const expandWrap = $('trashExpandAllWrap'), expandSwitch = $('trashExpandAll');
+    if (expandWrap) expandWrap.hidden = !visible.some(rowItem => rowItem.kind === 'note-page');
+    if (expandSwitch) expandSwitch.checked = Boolean(expandWrap && !expandWrap.hidden && expandAll);
   }
 
   /* Gmail-style paging: only one page of rows is built, so a big trash never renders
@@ -397,6 +516,8 @@
     await purgeExpired();
     await readQuota();
     selected = new Set();
+    expanded = new Set();
+    expandAll = false;
     when = 'any'; customFrom = ''; customTo = ''; page = 1;
     setMenu(false);
     renderWhen();
@@ -434,6 +555,8 @@
       void render();
       return;
     }
+    const pageRowHit = event.target.closest('.trash-row[data-page-row]');
+    if (pageRowHit && !event.target.closest('.trash-check, .trash-actions')) { toggleRow(pageRowHit); return; }
     const chip = event.target.closest('[data-t]');
     if (chip) { typeFilter = chip.dataset.t; page = 1; void render(); return; }
     const restore = event.target.closest('[data-restore]');
@@ -464,8 +587,12 @@
       void render();
       return;
     }
+    if (event.target.id === 'trashExpandAll') {
+      toggleAllRows(event.target.checked);
+      return;
+    }
     if (event.target.id === 'trashSelectAll') {
-      const ids = [...document.querySelectorAll('#trashList .trash-row')].map(node => node.dataset.id);
+      const ids = [...document.querySelectorAll('#trashList .trash-row:not(.sub)')].map(node => node.dataset.id);
       selected = event.target.checked ? new Set(ids) : new Set();
       void render();
     }
@@ -498,7 +625,8 @@
     if (!noteIds.length) return;
     try { await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_PURGE', ids:noteIds }); } catch { /* keep going */ }
   }
-  async function restoreItems(ids) {
+  async function restoreItems(rawIds) {
+    const ids = expandIds(rawIds);
     const { noteIds, documentIds } = splitKinds(ids);
     for (const id of documentIds) { try { await restoreRecord(id); } catch { /* keep going */ } }
     await restoreNotes(noteIds);
@@ -510,7 +638,8 @@
   }
   /* Everything that is about to be deleted forever is kept in memory until the toast with
      Undo disappears, so the undo can put the very same rows (ids included) back. */
-  async function purgeForever(ids) {
+  async function purgeForever(rawIds) {
+    const ids = expandIds(rawIds);
     const { noteIds, documentIds } = splitKinds(ids);
     const documents = [], notes = [];
     for (const id of documentIds) {
@@ -535,7 +664,8 @@
     };
     if (ids.length && globalThis.toast) globalThis.toast(t('trashPurgeDone', { count:ids.length }), { label:t('trashUndo'), run:undo });
   }
-  async function purgeItems(ids) {
+  async function purgeItems(rawIds) {
+    const ids = expandIds(rawIds);
     if (!ids.length) return;
     if (!confirm(t(ids.length > 1 ? 'trashPurgeManyConfirm' : 'trashPurgeConfirm'))) return;
     await purgeForever(ids);
