@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.426**, nhánh `Keepit-Optimize-Test`; Thùng rác gộp ghi chú của một trang thành một hàng (chevron sau tên trang, bấm hàng để mở, công tắc "Xem từng ghi chú" mở tất cả), khôi phục/xoá vĩnh viễn theo trang; đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
+- Version **3.5.427**, nhánh `Keepit-Optimize-Test`; Thùng rác gộp ghi chú của một trang thành một hàng (chevron sau tên trang, bấm hàng để mở, công tắc "Xem từng ghi chú" mở tất cả), khôi phục/xoá vĩnh viễn theo trang; đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
 - Version **3.5.424**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
@@ -244,6 +244,16 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.427 | Arena.ai Agent sửa:**
+
+- Sửa lệch trạng thái chọn trong Thùng rác khi ghi chú được gộp theo trang: `selected` chỉ lưu id bản ghi thật (id ghi chú/tài liệu), không lưu `page:<url>`.
+- Ô chọn của hàng trang suy ra từ các ghi chú con: đủ → ✓, một phần → gạch ngang (`indeterminate`), không có → trống; tick/bỏ tick ở hàng trang áp cho mọi ghi chú của trang.
+- Bộ đếm "Đã chọn N" và ô "Chọn tất cả" tính theo số ghi chú thật, không theo số hàng.
+- Nút Khôi phục/Xoá vĩnh viễn trên hàng trang khi trang đang chọn một phần chỉ tác động các ghi chú đang tick (phương án B người dùng chọn); trang không chọn gì thì tác động cả trang.
+- File: `js/dashboard/dashboard-trash.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `qa/sel427.js` trên extension unpacked 1512×950 và 390×844 — tick trang → 3 con tick, "Đã chọn 3", Chọn tất cả thành một phần; bỏ tick 1 con → hàng trang gạch ngang, "Đã chọn 2"; bấm Khôi phục trên hàng trang → chỉ 2 ghi chú về Ghi chú, còn 1 trong Thùng rác, toast "Đã khôi phục 2 mục"; Chọn tất cả → ✓; `errors []`.
+- Tiếp theo: "Chép chính tả" rồi "Nói" vào Thùng rác.
 
 **2026-11-17 | v3.5.426 | Arena.ai Agent sửa:**
 

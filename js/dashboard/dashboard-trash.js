@@ -265,19 +265,26 @@
   const recordsOf = rowItem => rowItem.kind === 'note-page' ? rowItem.notes : [rowItem];
   const notesOfPage = url => itemsCache.filter(item => item.kind === 'note' && pageKeyOf(item) === url);
   /* Hàng trang đại diện cho nhiều bản ghi: mọi thao tác mở rộng ra danh sách ghi chú thật. */
-  const expandIds = ids => ids.flatMap(id => id.startsWith(PAGE_PREFIX)
-    ? notesOfPage(id.slice(PAGE_PREFIX.length)).map(note => note.id)
-    : [id]);
+  /* Nút trên hàng trang: trang đang chọn một phần thì chỉ áp dụng cho ghi chú đang tick. */
+  const idsForRow = id => {
+    if (!id.startsWith(PAGE_PREFIX)) return [id];
+    const notes = notesOfPage(id.slice(PAGE_PREFIX.length));
+    const picked = notes.filter(note => selected.has(note.id));
+    return (picked.length && picked.length < notes.length ? picked : notes).map(note => note.id);
+  };
+  const expandIds = ids => ids.flatMap(idsForRow);
 
   function pageRow(rowItem) {
-    const open = expanded.has(rowItem.id), checked = selected.has(rowItem.id);
+    const open = expanded.has(rowItem.id);
+    const picked = rowItem.notes.filter(note => selected.has(note.id)).length;
+    const checked = picked > 0 && picked === rowItem.count, partial = picked > 0 && !checked;
     const title = rowItem.title || rowItem.host || t('trashTypeNote');
     const parts = [t('trashPageNotes', { count: rowItem.count })];
     if (rowItem.host && rowItem.host !== title) parts.push(rowItem.host);
     if (rowItem.imported) parts.push(t('trashAddedOn', { date: fmtDate(rowItem.imported) }));
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(rowItem.deletedAt)) }));
-    return `<div class="trash-row trash-page${open ? ' is-open' : ''}${checked ? ' is-picked' : ''}" data-id="${escapeHtml(rowItem.id)}" data-page-row="1">
-      <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${escapeHtml(rowItem.id)}"${checked ? ' checked' : ''}><span class="trash-box"></span></label>
+    return `<div class="trash-row trash-page${open ? ' is-open' : ''}${picked > 0 ? ' is-picked' : ''}" data-id="${escapeHtml(rowItem.id)}" data-page-row="1">
+      <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick-page="${escapeHtml(rowItem.url)}"${checked ? ' checked' : ''} data-partial="${partial ? 1 : 0}"><span class="trash-box"></span></label>
       <span class="trash-ico kind-web"><svg viewBox="0 0 24 24" aria-hidden="true">${WEB_ICON_PATH}</svg></span>
       <span class="trash-main">
         <b class="with-caret"><span class="t">${escapeHtml(title)}</span><button type="button" class="trash-expand${open ? ' is-open' : ''}" aria-expanded="${open}" aria-label="${escapeHtml(open ? t('trashCollapseNotes') : t('trashExpandNotes'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></b>
@@ -431,7 +438,8 @@
       const free = freeBytes === null ? '' : ` · ${t('trashFree', { free: fmtSize(freeBytes) })}`;
       summary.textContent = `${body} — ${t('trashRetention', { days: RETAIN_DAYS })}${free}`;
     }
-    for (const id of [...selected]) if (!visible.some(rowItem => rowItem.id === id)) selected.delete(id);
+    const visibleIds = new Set(visible.flatMap(recordsOf).map(record => record.id));
+    for (const id of [...selected]) if (!visibleIds.has(id)) selected.delete(id);
 
     const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
     if (page > pageCount) page = pageCount;
@@ -457,6 +465,7 @@
       }).join('');
       // giữ trạng thái mở/đóng sau mỗi lần vẽ lại (chọn, lọc, phân trang)
       for (const rowNode of pageRowNodes()) setPanel(rowNode, expanded.has(rowNode.dataset.id), false);
+      for (const box of list.querySelectorAll('[data-pick-page]')) box.indeterminate = box.dataset.partial === '1';
     }
     syncBulkBar(visible, onPage);
     syncPager(visible.length, start, onPage.length);
@@ -490,15 +499,16 @@
     if (!bar) return;
     // "Select all" covers the rows of the current page, like Gmail's page checkbox.
     const pageRows = onPage || visible || [];
-    const pickedOnPage = pageRows.filter(item => selected.has(item.id)).length;
+    const pageRecords = pageRows.flatMap(recordsOf).map(record => record.id);
+    const pickedOnPage = pageRecords.filter(recordId => selected.has(recordId)).length;
     bar.hidden = !(visible && visible.length > 0);
     if (count) count.textContent = selected.size ? t('trashSelected', { count: selected.size }) : '';
     const clearSel = $('trashClearSel');
     if (clearSel) clearSel.hidden = selected.size === 0;
     if (all) {
-      all.checked = pageRows.length > 0 && pickedOnPage === pageRows.length;
-      all.indeterminate = pickedOnPage > 0 && pickedOnPage < pageRows.length;
-      all.disabled = pageRows.length === 0;
+      all.checked = pageRecords.length > 0 && pickedOnPage === pageRecords.length;
+      all.indeterminate = pickedOnPage > 0 && pickedOnPage < pageRecords.length;
+      all.disabled = pageRecords.length === 0;
     }
     for (const button of bar.querySelectorAll('[data-bulk]')) button.disabled = selected.size === 0;
     const emptyAll = $('trashEmptyAll');
@@ -582,6 +592,14 @@
     if (menu && !menu.hidden) { setMenu(false); $('trashWhen')?.focus(); }
   });
   document.addEventListener('change', event => {
+    const pickPage = event.target.closest('[data-pick-page]');
+    if (pickPage) {
+      for (const note of notesOfPage(pickPage.dataset.pickPage)) {
+        if (pickPage.checked) selected.add(note.id); else selected.delete(note.id);
+      }
+      void render();
+      return;
+    }
     const pick = event.target.closest('[data-pick]');
     if (pick) {
       if (pick.checked) selected.add(pick.dataset.pick); else selected.delete(pick.dataset.pick);
@@ -594,7 +612,10 @@
       return;
     }
     if (event.target.id === 'trashSelectAll') {
-      const ids = [...document.querySelectorAll('#trashList .trash-row:not(.sub)')].map(node => node.dataset.id);
+      const ids = [...document.querySelectorAll('#trashList .trash-row[data-id]')]
+        .flatMap(node => node.dataset.id.startsWith(PAGE_PREFIX)
+          ? notesOfPage(node.dataset.id.slice(PAGE_PREFIX.length)).map(note => note.id)
+          : [node.dataset.id]);
       selected = event.target.checked ? new Set(ids) : new Set();
       void render();
     }
