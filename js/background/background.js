@@ -490,8 +490,21 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     if (resetCount) ANNOTATIONS.notifyAnnotationsChanged({ type:"refresh" }, message.origin);
     return { updated: true, resetCount };
   }
-  if (message.type === "DELETE") { const result = await ANNOTATIONS.deleteOne(message.id); ANNOTATIONS.notifyAnnotationsChanged({ type: "delete", id: message.id }, message.origin); return result; }
-  if (message.type === "DELETE_PAGE") { const result = await ANNOTATIONS.deletePage(message.url); if (result.deletedCount) ANNOTATIONS.notifyAnnotationsChanged({ type: "deletePage", url: message.url }, message.origin); return result; }
+  if (message.type === "DELETE") {
+    // Deleting a note moves it to the Trash for 30 days; only the Trash purges for real (or a caller that passes hard:true).
+    const result = message.hard ? await ANNOTATIONS.deleteOne(message.id) : await ANNOTATIONS.softDelete(message.id);
+    ANNOTATIONS.notifyAnnotationsChanged({ type: "delete", id: message.id }, message.origin);
+    return result;
+  }
+  if (message.type === "DELETE_PAGE") { const result = await ANNOTATIONS.softDeletePage(message.url); if (result.deletedCount) ANNOTATIONS.notifyAnnotationsChanged({ type: "deletePage", url: message.url }, message.origin); return result; }
+  if (message.type === "TRASH_NOTES_LIST") return ANNOTATIONS.listTrashed();
+  if (message.type === "TRASH_NOTES_RESTORE") {
+    const items = await ANNOTATIONS.restoreMany(message.ids);
+    if (items.length) ANNOTATIONS.notifyAnnotationsChanged({ type: "refresh" }, message.origin);
+    return { restored: items.length, items };
+  }
+  if (message.type === "TRASH_NOTES_PURGE") return { purged: await ANNOTATIONS.purgeMany(message.ids) };
+  if (message.type === "TRASH_NOTES_SWEEP") return { purged: await ANNOTATIONS.purgeExpiredTrashed() };
   if (message.type === "IMPORT") return ANNOTATIONS.importItems(message.items, message.origin);
   if (message.type === "SYNC_PAGE_ORDER") return ANNOTATIONS.syncPageOrder(message.url, message.ids);
   if (message.type === "EXPORT") return ANNOTATIONS.getAll();

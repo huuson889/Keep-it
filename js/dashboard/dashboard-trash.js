@@ -1,6 +1,7 @@
 /* Trash route for the dashboard: every soft-deleted item lives here for 30 days.
-   Today only documents are wired; notes, dictation and speaking have chips ready for
-   the same data shape (deletedAt on the record). */
+   Documents come from the documents IndexedDB, notes (highlights/annotations) come from
+   the background annotations store through messages; dictation and speaking still show
+   the "coming soon" chip. */
 (() => {
   'use strict';
   const DB_NAME = 'keepit-documents', DB_VERSION = 1;
@@ -14,7 +15,7 @@
     ['dictation', 'trashTypeDictation'],
     ['speak', 'trashTypeSpeak']
   ];
-  const WIRED = new Set(['all', 'document']);
+  const WIRED = new Set(['all', 'document', 'note']);
   const GROUPS = [
     ['today', 'trashGroupToday', 0],
     ['yesterday', 'trashGroupYesterday', 1],
@@ -34,7 +35,7 @@
   const PAGE_SIZE = 20;
   let typeFilter = 'all', when = 'any', customFrom = '', customTo = '';
   let query = '', selected = new Set(), page = 1;
-  let freeBytes = null;
+  let freeBytes = null, itemsCache = [];
 
   /* Never create the documents database from here: opening it with a version would make
      the library's own upgrade never run and leave it without object stores. */
@@ -104,27 +105,46 @@
   };
   const escapeHtml = value => String(value).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
 
-  async function load() {
+  async function loadDocuments() {
     const db = await openExisting();
     if (!db) return [];
     const metas = await readAll(db, 'meta');
     db.close();
-    const now = Date.now();
     return metas
       .filter(meta => Number(meta.deletedAt) > 0)
-      .map(meta => ({ ...meta, kind:'document', expires: Number(meta.deletedAt) + RETAIN_DAYS * DAY }))
+      .map(meta => ({ ...meta, kind:'document' }));
+  }
+  /* Notes live in the background annotations store, so the dashboard reaches them through
+     messages — never by opening that IndexedDB from this page (v3.5.406). */
+  async function loadNotes() {
+    try {
+      const records = await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_LIST' });
+      return Array.isArray(records) ? records.map(record => ({ ...record, kind:'note' })) : [];
+    } catch { return []; }
+  }
+  async function load() {
+    const now = Date.now();
+    const [documents, notes] = await Promise.all([loadDocuments(), loadNotes()]);
+    return [...documents, ...notes]
+      .map(item => ({ ...item, expires: Number(item.deletedAt) + RETAIN_DAYS * DAY }))
       .filter(item => item.expires > now)
       .sort((a, b) => b.deletedAt - a.deletedAt);
   }
+  const itemById = id => itemsCache.find(item => item.id === id) || null;
   async function purgeExpired() {
     const db = await openExisting();
-    if (!db) return 0;
+    if (!db) {
+      try { return Number((await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_SWEEP' }))?.purged) || 0; } catch { return 0; }
+    }
     const metas = await readAll(db, 'meta');
     db.close();
     const now = Date.now();
     const dead = metas.filter(meta => Number(meta.deletedAt) > 0 && Number(meta.deletedAt) + RETAIN_DAYS * DAY <= now);
     for (const meta of dead) { try { await removeForever(meta.id); } catch { /* keep going */ } }
-    return dead.length;
+    let notes = 0;
+    try { notes = Number((await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_SWEEP' }))?.purged) || 0; }
+    catch { /* annotations store unavailable: keep the documents result */ }
+    return dead.length + notes;
   }
   function refreshDocumentsFrame() {
     const frame = $('dashboardDocumentsFrame');
@@ -136,23 +156,35 @@
     pdf:  { label:'PDF', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h4"/>' },
     docx: { label:'Word', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="m8 12 1.6 5L12 13l2.4 4L16 12"/>' },
     pptx: { label:'PowerPoint', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M9 17v-5h2.2a1.9 1.9 0 0 1 0 3.8H9"/>' },
-    image:{ label:'', path:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 4.6-4.3a2 2 0 0 1 2.7 0L16 17"/>' }
+    image:{ label:'', path:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 4.6-4.3a2 2 0 0 1 2.7 0L16 17"/>' },
+    note: { label:'', path:'<path d="M4 21h16"/><path d="m9 14 1.2 4h3.6L15 14"/><path d="m11 4 5 5-6.2 6.2L5 17l1.8-4.8Z"/>' }
   };
   const kindOf = item => KIND[item.type] || KIND.pdf;
 
+  const trim = (value, max) => {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+  };
+  const hostOf = url => { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; } };
   function row(item) {
     const kind = kindOf(item);
-    const label = kind.label || t('docs_image');
-    const parts = [label];
-    if (item.pages && item.type !== 'image') parts.push(`${item.pages} ${t('pagesShort')}`);
-    parts.push(fmtSize(item.bytes));
+    const parts = [];
+    if (item.kind === 'note') {
+      const site = hostOf(item.url);
+      if (site) parts.push(site);
+      if (String(item.note || '').trim()) parts.push(trim(item.note, 60));
+    } else {
+      parts.push(kind.label || t('docs_image'));
+      if (item.pages && item.type !== 'image') parts.push(`${item.pages} ${t('pagesShort')}`);
+      parts.push(fmtSize(item.bytes));
+    }
     if (addedAt(item)) parts.push(t('trashAddedOn', { date: fmtDate(addedAt(item)) }));
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(item.deletedAt)) }));
     const checked = selected.has(item.id) ? ' checked' : '';
     return `<div class="trash-row${checked ? ' is-picked' : ''}" data-id="${item.id}">
       <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${item.id}"${checked}><span class="trash-box"></span></label>
-      <span class="trash-ico kind-${item.type || 'pdf'}"><svg viewBox="0 0 24 24" aria-hidden="true">${kind.path}</svg></span>
-      <span class="trash-main"><b>${escapeHtml(item.title || item.name || item.id)}</b>
+      <span class="trash-ico kind-${item.kind === 'note' ? 'note' : (item.type || 'pdf')}"><svg viewBox="0 0 24 24" aria-hidden="true">${kind.path}</svg></span>
+      <span class="trash-main"><b>${escapeHtml(item.kind === 'note' ? (trim(item.quote, 120) || t('trashTypeNote')) : (item.title || item.name || item.id))}</b>
         <span>${parts.join(' · ')}</span></span>
       <span class="trash-left">${t('trashDaysLeft', { days: daysLeft(item.expires) })}</span>
       <span class="trash-actions">
@@ -225,21 +257,23 @@
     if (!list) return;
     let items = [];
     try { items = await load(); } catch { items = []; }
+    itemsCache = items;
     const docs = items.filter(item => item.kind === 'document');
+    const notes = items.filter(item => item.kind === 'note');
     const totalBytes = docs.reduce((sum, item) => sum + (Number(item.bytes) || 0), 0);
     const filterOn = Boolean(query.trim()) || whenActive();
     if (chips) {
       chips.innerHTML = TYPES.map(([key, label]) => {
-        const count = key === 'all' ? items.length : key === 'document' ? docs.length : 0;
+        const count = key === 'all' ? items.length : key === 'document' ? docs.length : key === 'note' ? notes.length : 0;
         const suffix = WIRED.has(key) ? `<i>${count}</i>` : `<i>${t('trashPending')}</i>`;
         return `<button type="button" class="trash-chip${typeFilter === key ? ' on' : ''}" data-t="${key}">${t(label)}${suffix}</button>`;
       }).join('');
     }
-    const byType = typeFilter === 'all' || typeFilter === 'document' ? docs : [];
+    const byType = typeFilter === 'all' ? items : typeFilter === 'document' ? docs : typeFilter === 'note' ? notes : [];
     const text = query.trim().toLocaleLowerCase();
     const visible = byType
       .filter(item => whenOk(item))
-      .filter(item => !text || String(item.title || item.name || '').toLocaleLowerCase().includes(text));
+      .filter(item => !text || [item.title, item.name, item.quote, item.note].some(value => String(value || '').toLocaleLowerCase().includes(text)));
     if (summary) {
       const body = filterOn
         ? t('trashSummaryFiltered', { shown: visible.length, count: items.length, size: fmtSize(totalBytes) })
@@ -407,18 +441,43 @@
     void render();
   });
 
+  const splitKinds = ids => {
+    const noteIds = [], documentIds = [];
+    for (const id of ids) (itemById(id)?.kind === 'note' ? noteIds : documentIds).push(id);
+    return { noteIds, documentIds };
+  };
+  async function restoreNotes(noteIds) {
+    if (!noteIds.length) return 0;
+    try {
+      const result = await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_RESTORE', ids:noteIds });
+      const restored = Array.isArray(result?.items) ? result.items : [];
+      try {
+        const tabs = await browser.tabs.query({});
+        await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type:'RESTORE_HIGHLIGHTS' }).catch(() => null)));
+      } catch { /* no open tab to refresh */ }
+      return restored.length;
+    } catch { return 0; }
+  }
+  async function purgeNotes(noteIds) {
+    if (!noteIds.length) return;
+    try { await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_PURGE', ids:noteIds }); } catch { /* keep going */ }
+  }
   async function restoreItems(ids) {
-    for (const id of ids) { try { await restoreRecord(id); } catch { /* keep going */ } }
+    const { noteIds, documentIds } = splitKinds(ids);
+    for (const id of documentIds) { try { await restoreRecord(id); } catch { /* keep going */ } }
+    await restoreNotes(noteIds);
     for (const id of ids) selected.delete(id);
-    refreshDocumentsFrame();
+    if (documentIds.length) refreshDocumentsFrame();
     await render();
   }
   async function purgeItems(ids) {
     if (!ids.length) return;
     if (!confirm(t(ids.length > 1 ? 'trashPurgeManyConfirm' : 'trashPurgeConfirm'))) return;
-    for (const id of ids) { try { await removeForever(id); } catch { /* keep going */ } }
+    const { noteIds, documentIds } = splitKinds(ids);
+    for (const id of documentIds) { try { await removeForever(id); } catch { /* keep going */ } }
+    await purgeNotes(noteIds);
     for (const id of ids) selected.delete(id);
-    refreshDocumentsFrame();
+    if (documentIds.length) refreshDocumentsFrame();
     await render();
   }
   async function emptyAll() {
@@ -426,9 +485,12 @@
     try { items = await load(); } catch { items = []; }
     if (!items.length) return;
     if (!confirm(t('trashEmptyAllConfirm', { count: items.length }))) return;
-    for (const item of items) { try { await removeForever(item.id); } catch { /* keep going */ } }
+    const documentIds = items.filter(item => item.kind !== 'note').map(item => item.id);
+    const noteIds = items.filter(item => item.kind === 'note').map(item => item.id);
+    for (const id of documentIds) { try { await removeForever(id); } catch { /* keep going */ } }
+    await purgeNotes(noteIds);
     selected = new Set();
-    refreshDocumentsFrame();
+    if (documentIds.length) refreshDocumentsFrame();
     await render();
   }
 

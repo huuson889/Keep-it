@@ -5,6 +5,10 @@
   const DB_VERSION = CONFIG.DATABASE.VERSION;
   const STORE_NAME = CONFIG.DATABASE.ANNOTATIONS_STORE;
   const MIGRATION_KEY = CONFIG.DATABASE.LEGACY_MIGRATION_KEY;
+  /* Soft delete: a record with deletedAt goes to the dashboard Trash for 30 days.
+     Every read path below hides trashed records; the Trash route reads them on purpose. */
+  const TRASH_RETAIN_DAYS = 30, TRASH_DAY = 86400000;
+  const isTrashed = item => Number(item?.deletedAt) > 0;
   let dbPromise, readyPromise;
   const requestResult = request => new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
   const transactionDone = tx => new Promise((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onabort = tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed')); });
@@ -50,9 +54,13 @@ async function ensureDatabaseReady() {
   })().catch(error => { readyPromise = null; throw error; });
   return readyPromise;
 }
-async function getAll() {
+async function readAllRaw() {
   const db = await ensureDatabaseReady();
   return requestResult(db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll());
+}
+async function getAll() {
+  const items = await readAllRaw();
+  return items.filter(item => !isTrashed(item));
 }
 async function getBatch({ after = null, limit = 500, url = null } = {}) {
   const db = await ensureDatabaseReady();
@@ -70,6 +78,7 @@ async function getBatch({ after = null, limit = 500, url = null } = {}) {
       if (!cursor) { resolve({ items, nextAfter: items.at(-1)?.id || after, done: true }); return; }
       const id = String(cursor.primaryKey);
       if (hasUrl && after !== null && id <= String(after)) { cursor.continue(); return; }
+      if (isTrashed(cursor.value)) { cursor.continue(); return; }
       items.push(cursor.value);
       if (items.length >= size) { resolve({ items, nextAfter: id, done: false }); return; }
       cursor.continue();
@@ -80,7 +89,7 @@ async function getPage(url) {
   if (typeof url !== "string" || !url) return [];
   const db = await ensureDatabaseReady();
   const items = await requestResult(db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).index("url").getAll(url));
-  return items.sort((a, b) => (Number(a.pageOrder) || Number(a.createdAt) || 0) - (Number(b.pageOrder) || Number(b.createdAt) || 0));
+  return items.filter(item => !isTrashed(item)).sort((a, b) => (Number(a.pageOrder) || Number(a.createdAt) || 0) - (Number(b.pageOrder) || Number(b.createdAt) || 0));
 }
 async function getOne(id) {
   if (typeof id !== "string" || !id) return null;
@@ -152,6 +161,84 @@ async function deletePage(url) {
     tx.onabort = tx.onerror = () => reject(tx.error || new Error("Could not delete page annotations"));
   });
 }
+/* ---- Trash (soft delete) ---- */
+async function softDelete(id) {
+  if (typeof id !== "string" || !id) return { deleted: false };
+  const db = await ensureDatabaseReady();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite"), store = tx.objectStore(STORE_NAME);
+    let found = false;
+    const now = Date.now(), request = store.get(id);
+    request.onsuccess = () => {
+      const item = request.result;
+      if (!item) return;
+      found = true;
+      store.put({ ...item, deletedAt: now, updatedAt: now });
+    };
+    tx.oncomplete = () => resolve({ deleted: found });
+    tx.onabort = tx.onerror = () => reject(tx.error || request.error || new Error("Could not move annotation to trash"));
+  });
+}
+async function softDeletePage(url) {
+  if (typeof url !== "string" || !url) return { deletedCount: 0 };
+  const db = await ensureDatabaseReady();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite"), index = tx.objectStore(STORE_NAME).index("url");
+    const now = Date.now();
+    let deletedCount = 0;
+    index.openCursor(IDBKeyRange.only(url)).onsuccess = event => {
+      const cursor = event.target.result;
+      if (!cursor) return;
+      if (!isTrashed(cursor.value)) { cursor.update({ ...cursor.value, deletedAt: now, updatedAt: now }); deletedCount++; }
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve({ deletedCount });
+    tx.onabort = tx.onerror = () => reject(tx.error || new Error("Could not move page annotations to trash"));
+  });
+}
+async function listTrashed() {
+  const items = await readAllRaw();
+  return items.filter(isTrashed).sort((a, b) => Number(b.deletedAt) - Number(a.deletedAt));
+}
+async function restoreMany(ids) {
+  const wanted = new Set((Array.isArray(ids) ? ids : []).filter(id => typeof id === "string" && id));
+  if (!wanted.size) return [];
+  const db = await ensureDatabaseReady();
+  const restored = await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite"), store = tx.objectStore(STORE_NAME), out = [];
+    const now = Date.now();
+    for (const id of wanted) {
+      const request = store.get(id);
+      request.onsuccess = () => {
+        const item = request.result;
+        if (!item) return;
+        const revived = { ...item, deletedAt: null, updatedAt: now };
+        delete revived.deletedAt;
+        store.put(revived);
+        out.push(revived);
+      };
+    }
+    tx.oncomplete = () => resolve(out);
+    tx.onabort = tx.onerror = () => reject(tx.error || new Error("Could not restore annotations"));
+  });
+  return restored;
+}
+async function purgeMany(ids) {
+  let purged = 0;
+  for (const id of Array.isArray(ids) ? ids : []) {
+    if (typeof id !== "string" || !id) continue;
+    try { await deleteOne(id); purged++; } catch { /* keep going */ }
+  }
+  return purged;
+}
+async function purgeExpiredTrashed() {
+  const items = await readAllRaw();
+  const now = Date.now();
+  const dead = items.filter(item => isTrashed(item) && Number(item.deletedAt) + TRASH_RETAIN_DAYS * TRASH_DAY <= now);
+  let purged = 0;
+  for (const item of dead) { try { await deleteOne(item.id); purged++; } catch { /* keep going */ } }
+  return purged;
+}
 async function syncPageOrder(url, ids) {
   if (typeof url !== "string" || !Array.isArray(ids)) return { updated: 0 };
   const orderById = new Map(ids.filter(id => typeof id === "string").map((id, index) => [id, index]));
@@ -192,5 +279,5 @@ async function syncPageOrder(url, ids) {
     if (imported) notifyAnnotationsChanged({ type: 'refresh' }, origin);
     return { imported };
   }
-  globalThis.LHN_ANNOTATIONS = Object.freeze({ getAll, getBatch, getPage, getOne, addOne, updateOne, updateReview, resetReviews, deleteOne, deletePage, syncPageOrder, importItems, notifyAnnotationsChanged });
+  globalThis.LHN_ANNOTATIONS = Object.freeze({ getAll, getBatch, getPage, getOne, addOne, updateOne, updateReview, resetReviews, deleteOne, deletePage, syncPageOrder, importItems, notifyAnnotationsChanged, softDelete, softDeletePage, listTrashed, restoreMany, purgeMany, purgeExpiredTrashed, TRASH_RETAIN_DAYS });
 })();

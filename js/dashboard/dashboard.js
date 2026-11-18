@@ -590,25 +590,72 @@ function slightlyDarkerHighlight(hex) {
   return `hsl(${hue} ${saturation * 100}% ${lightness * 80}%)`;
 }
 let toastTimer = null, activeToastElement = null;
-function toast(message) {
+/* A toast may carry one action (the Undo of a move to Trash). It lives as long as the
+   action is offered, so the user still has time to click it. */
+function toast(message, action = null) {
   clearTimeout(toastTimer);
   if (activeToastElement) {
     if (activeToastElement instanceof HTMLDialogElement) { if (activeToastElement.open) activeToastElement.close(); }
     else activeToastElement.hidden = true;
+    activeToastElement.classList.remove("hasAction");
   }
   const inDashboardSettings = $("dashboardSettingsDialog")?.open;
   const inFlashcardSettings = $("studyShortcutDialog")?.open;
   const inFlashcard = $("studyDialog")?.open;
   const el = $(inDashboardSettings ? "settingsToast" : inFlashcardSettings ? "studySettingsToast" : inFlashcard ? "studyToast" : "toast");
   el.textContent = message;
+  el.classList.toggle("hasAction", Boolean(action));
+  if (action) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "toastAction";
+    button.textContent = action.label;
+    button.addEventListener("click", () => {
+      clearTimeout(toastTimer);
+      if (el instanceof HTMLDialogElement) { if (el.open) el.close(); } else el.hidden = true;
+      if (activeToastElement === el) activeToastElement = null;
+      void action.run();
+    }, { once:true });
+    el.append(button);
+  }
   if (inDashboardSettings || inFlashcardSettings || inFlashcard) el.hidden = false;
-  else { if (el.open) el.close(); el.show(); }
+  else {
+    // show() focuses the first focusable child (the Undo button), which would paint a focus
+    // ring nobody asked for; a toast must never take the focus away from the page.
+    const previousFocus = document.activeElement;
+    if (el.open) el.close();
+    el.show();
+    if (el.contains(document.activeElement)) {
+      try { previousFocus?.focus?.({ preventScroll:true }); } catch { /* not focusable */ }
+      if (el.contains(document.activeElement)) document.activeElement?.blur?.();
+    }
+  }
   activeToastElement = el;
   toastTimer = setTimeout(() => {
     if (el instanceof HTMLDialogElement) { if (el.open) el.close(); }
     else el.hidden = true;
+    el.classList.remove("hasAction");
     if (activeToastElement === el) activeToastElement = null;
-  }, CONFIG.TIMINGS.TOAST_MS);
+  }, action ? CONFIG.TIMINGS.TOAST_LONG_MS || 6000 : CONFIG.TIMINGS.TOAST_MS);
+}
+/* Trashed notes are hidden from every page, so a restore has to ask the open tabs to
+   draw their highlights again. */
+async function refreshOpenPages(urls) {
+  try {
+    const wanted = new Set((urls || []).filter(url => typeof url === "string" && url));
+    const tabs = await browser.tabs.query({});
+    await Promise.all(tabs.filter(tab => tab.id != null).map(tab => {
+      if (!wanted.size) return browser.tabs.sendMessage(tab.id, { type:"RESTORE_HIGHLIGHTS" }).catch(() => null);
+      return Promise.all([...wanted].map(url => browser.tabs.sendMessage(tab.id, { type:"RESTORE_HIGHLIGHTS", url }).catch(() => null)));
+    }));
+  } catch (error) { console.warn("Could not refresh page highlights", error); }
+}
+async function restoreTrashedNotes(ids) {
+  const result = await LHN_MESSAGING.sendMessage({ type:"TRASH_NOTES_RESTORE", ids, origin:DASHBOARD_INSTANCE_ID });
+  const restored = Array.isArray(result?.items) ? result.items : [];
+  for (const item of restored) applyAnnotationChange({ type:"upsert", item });
+  if (restored.length) void refreshOpenPages(restored.map(item => item.url));
+  return restored;
 }
 function siteOf(item) { return ANNOTATION_UTILS.siteOf(item); }
 function tagsOf(item) { return ANNOTATION_UTILS.tagsOf(item); }
@@ -1239,7 +1286,13 @@ async function handleHighlightsNotesAction(data) {
         if (!item) throw new Error("Highlight not found");
         if (!confirm(t("deleteAnnotationConfirm"))) { replyToHighlightsNotes(requestId, true); return; }
         await LHN_MESSAGING.sendMessage({ type:"DELETE", id:item.id, origin:DASHBOARD_INSTANCE_ID });
-        applyAnnotationChange({ type:"delete", id:item.id }); toast(t("deleted"));
+        applyAnnotationChange({ type:"delete", id:item.id });
+        toast(t("noteMovedToTrash"), { label:t("trashUndo"), run:async () => {
+          try {
+            const restored = await restoreTrashedNotes([item.id]);
+            toast(restored.length ? t("noteRestored") : t("noteRestoreFailed"));
+          } catch (error) { console.warn("Could not undo note deletion", error); toast(t("noteRestoreFailed")); }
+        } });
         replyToHighlightsNotes(requestId, true); return;
       case "toggle-note-favorite": {
         if (!item) throw new Error("Highlight not found");
@@ -1288,13 +1341,19 @@ async function handleHighlightsNotesAction(data) {
         const pageItems = annotations.filter(annotation => pageKey(annotation) === key);
         if (!pageItems.length) throw new Error("Source page not found");
         if (!confirm(t("deletePageConfirm"))) { replyToHighlightsNotes(requestId, true); return; }
+        const removedIds = pageItems.map(pageItem => pageItem.id);
         const result = await LHN_MESSAGING.sendMessage({ type:"DELETE_PAGE", url:key, origin:DASHBOARD_INSTANCE_ID });
         applyAnnotationChange({ type:"deletePage", url:key });
         try {
           const tabs = await browser.tabs.query({});
           await Promise.all(tabs.filter(tab => tab.id != null).map(tab => browser.tabs.sendMessage(tab.id, { type:"REMOVE_HIGHLIGHT_PAGE", url:key }).catch(() => null)));
         } catch (error) { console.warn("Could not remove visible page highlights", error); }
-        toast(t("deletePageDone", { count:result?.deletedCount ?? pageItems.length }));
+        toast(t("deletePageDone", { count:result?.deletedCount ?? pageItems.length }), { label:t("trashUndo"), run:async () => {
+          try {
+            const restored = await restoreTrashedNotes(removedIds);
+            toast(restored.length ? t("notesRestored", { count:restored.length }) : t("noteRestoreFailed"));
+          } catch (error) { console.warn("Could not undo page deletion", error); toast(t("noteRestoreFailed")); }
+        } });
         replyToHighlightsNotes(requestId, true); return;
       }
       case "export": {

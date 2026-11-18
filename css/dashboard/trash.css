@@ -100,6 +100,7 @@ html.dark .trash-row.is-picked { background: #1b1a33; border-color: #3f3d70; }
 .trash-row .trash-ico.kind-docx { background:#e9f0fd; color:#2f6fe4; }
 .trash-row .trash-ico.kind-pptx { background:#fdf0e7; color:#e2702b; }
 .trash-row .trash-ico.kind-image { background:#e9f8f1; color:#269b7b; }
+.trash-row .trash-ico.kind-note { background:#fdf4e3; color:#b2781a; }
 .trash-row .trash-ico svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .trash-row .trash-main { min-width: 0; flex: 1; }
 .trash-row .trash-main b { display: block; font-size: 13.5px; color: var(--lhn-ui-text,#252640); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -121,6 +122,7 @@ html.dark .trash-row .trash-ico.kind-pdf { background:#3a1719; color:#f2a3a5; }
 html.dark .trash-row .trash-ico.kind-docx { background:#14233f; color:#9db6ff; }
 html.dark .trash-row .trash-ico.kind-pptx { background:#3a2213; color:#eeb389; }
 html.dark .trash-row .trash-ico.kind-image { background:#123329; color:#7fd8ba; }
+html.dark .trash-row .trash-ico.kind-note { background:#332812; color:#e8c07a; }
 html.dark .trash-row .trash-main b { color: var(--lhn-ui-text,#e8edf6); }
 html.dark .trash-row .trash-left { background: #33260f; border-color: #4a3a1c; color: #e0a65a; }
 html.dark .trash-action { background: #172338; border-color: #2b3a52; color: #d7deeb; }

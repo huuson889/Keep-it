@@ -444,7 +444,8 @@
     popup._lhnHeartBusy = true;
     try {
       if (saved) {
-        await LHN_MESSAGING.sendMessage({ type: "DELETE", id: saved.id });
+        // Un-saving a dictionary word is a toggle, not a delete: it never goes to the Trash.
+        await LHN_MESSAGING.sendMessage({ type: "DELETE", id: saved.id, hard: true });
         pageAnnotationCache.delete(saved.id);
         const marks = [...document.querySelectorAll(`[data-lhn-id="${CSS.escape(saved.id)}"]`)];
         const first = marks[0]?.firstChild, last = marks.at(-1)?.lastChild;

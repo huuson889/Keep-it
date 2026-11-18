@@ -1182,3 +1182,17 @@ html.dark .settings-logo-action-tab.lhn-action-ai .settings-logo-action-icon { c
   .settings-icon-display-option { grid-template-columns:18px minmax(0,1fr); }
   .settings-icon-preview-stage { padding:12px 8px; justify-content:flex-start; }
 }
+
+/* Toast with one action (Undo of a move to Trash): the dialog is pointer-events:none by
+   default, so only the action is made clickable, and it stays long enough to be used. */
+/* The dashboard toast is a non-modal <dialog>, so it is NOT in the top layer: without a
+   z-index it paints under the sticky shared topbar and the action can't be clicked.
+   It also sits below that topbar instead of underneath it. */
+dialog#toast { z-index:2147483000; top:66px; }
+dialog#toast.hasAction { display:flex; align-items:center; gap:14px; pointer-events:auto; text-align:left; }
+.toastAction { padding:0; border:0; background:none; font:inherit; font-weight:700; color:#4338ca; text-decoration:underline; text-underline-offset:2px; cursor:pointer; white-space:nowrap; }
+.toastAction:hover { color:#312e81; filter:none; }
+/* In dark theme the dashboard toast is a dark chip (html.dark #toast), so the action
+   needs a light ink — the opposite of the documents toast. */
+html.dark .toastAction { color:#c7d2fe; }
+html.dark .toastAction:hover { color:#eef2ff; }

@@ -248,6 +248,9 @@ html.dark .toast{background:#e8edf6;color:#111a2b}
 .toast.hasAction{display:flex;align-items:center;gap:14px;pointer-events:auto;text-align:left}
 .toastAction{padding:0;border:0;background:none;font:inherit;font-weight:700;color:#c7d2fe;text-decoration:underline;text-underline-offset:2px;cursor:pointer;white-space:nowrap}
 .toastAction:hover{color:#eef2ff}
+/* In dark theme the toast itself turns light, so the action needs a dark ink to stay readable. */
+html.dark .toastAction{color:#4338ca}
+html.dark .toastAction:hover{color:#312e81}
 .demoChip{margin-left:auto;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:6px;background:var(--orangeSoft);color:var(--orange);font-size:11px;font-weight:800;letter-spacing:.8px}
 .demoChip+.topPill{margin-left:0}
 /* ---------- phone ---------- */
