@@ -1,8 +1,8 @@
 /* Cute Dashboard Overview prototype. Scoped so existing Library/Settings styles remain untouched. */
 #dashboardOverviewView[hidden],#dashboardDictationView[hidden]{display:none!important}
-body.dashboard-overview-active>main#dashboardOverviewView{display:block!important;width:auto!important;max-width:none!important;min-width:0!important;height:100vh!important;min-height:0!important;flex:1 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;margin:0!important;padding:0 clamp(16px,3vw,42px) 42px!important;background:#f5f5ff;color:#252640;font-family:var(--lhn-app-font-family);}
+body.dashboard-overview-active>main#dashboardOverviewView{display:block!important;width:auto!important;max-width:none!important;min-width:0!important;height:100vh!important;min-height:0!important;flex:1 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;margin:0!important;padding:0 var(--dash-gutter) 42px!important;background:#f5f5ff;color:#252640;font-family:var(--lhn-app-font-family);}
 body.dashboard-sidebar-pinned.dashboard-overview-active>main#dashboardOverviewView{margin-left:0!important}
-#dashboardOverviewView .ov-content,#dashboardDictationView .ov-content{width:100%;max-width:1320px;margin:0 auto}
+#dashboardOverviewView .ov-content,#dashboardDictationView .ov-content{width:100%;max-width:none;margin:0}
 #dashboardOverviewView .ov-content{padding-top:22px}
 #dashboardOverviewView .ov-topbar,#dashboardDictationView .ov-topbar{min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:20px;padding:0 19px;border:1px solid #eeedf7;border-radius:30px;background:#fff;box-shadow:0 4px 14px #6156a30a}
 #dashboardOverviewView .ov-crumb,#dashboardDictationView .ov-crumb{color:#8d93a6;font-size:13px}
@@ -135,7 +135,7 @@ body.dashboard-sidebar-pinned.dashboard-overview-active>main#dashboardOverviewVi
 #dashboardOverviewView .ov-note{margin-top:12px;padding:12px 13px;border-left:3px solid #9a8df2;border-radius:0 10px 10px 0;background:#f8f6ff;color:#657088;font-size:10px;line-height:1.55}
 #dashboardOverviewView .ov-note strong{display:block;margin-bottom:4px;color:#8579d6;font-size:8px;letter-spacing:.4px;text-transform:uppercase}
 #dashboardOverviewView .ov-footer{display:flex;justify-content:space-between;gap:10px;margin-top:17px;color:#9da4b2;font-size:9px}
-#dashboardDictationView{display:block!important;width:auto!important;max-width:none!important;min-width:0!important;height:100vh!important;min-height:0!important;flex:1 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;margin:0!important;padding:0 24px 24px!important;background:#f5f5ff}
+#dashboardDictationView{display:block!important;width:auto!important;max-width:none!important;min-width:0!important;height:100vh!important;min-height:0!important;flex:1 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;margin:0!important;padding:0 var(--dash-gutter) 24px!important;background:#f5f5ff}
 #dashboardDictationView::before{content:"";display:block;height:24px}
 #dashboardDictationView>.ov-topbar{width:100%;max-width:1320px;margin-left:auto;margin-right:auto}
 body.dashboard-sidebar-pinned>#dashboardDictationView{margin-left:0!important}
@@ -148,8 +148,8 @@ body.dashboard-sidebar-pinned>#dashboardDictationView{margin-left:0!important}
 @keyframes ov-heart{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 @media(max-width:1100px){#dashboardOverviewView .ov-intro-row{grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr)}#dashboardOverviewView .ov-resume-progress{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
 @media(max-width:900px){#dashboardOverviewView .ov-intro-row,#dashboardOverviewView .ov-resume-progress{grid-template-columns:1fr}#dashboardOverviewView .ov-welcome{min-height:210px}#dashboardOverviewView .ov-resume{min-height:270px}}
-@media(max-width:760px){body.dashboard-overview-active>main#dashboardOverviewView{padding:0 14px 30px!important}#dashboardOverviewView .ov-welcome{align-items:flex-start;flex-direction:column;padding:21px}#dashboardOverviewView .ov-today-card{min-width:0;width:100%;max-width:310px}#dashboardOverviewView .ov-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#dashboardOverviewView .ov-mode-grid{grid-template-columns:1fr}#dashboardOverviewView .ov-lower{grid-template-columns:1fr}#dashboardOverviewView .ov-progress-head{flex-direction:column}#dashboardOverviewView .ov-active-days{align-self:flex-start}}
-@media(max-width:480px){#dashboardOverviewView .ov-topbar,#dashboardDictationView .ov-topbar{min-height:48px;padding:0 11px}#dashboardOverviewView .ov-welcome{padding:18px}#dashboardOverviewView .ov-welcome h1{font-size:24px}#dashboardOverviewView .ov-welcome p{font-size:12px}#dashboardOverviewView .ov-pills span{font-size:9px}#dashboardOverviewView .ov-stats{gap:8px}#dashboardOverviewView .ov-stat{min-height:103px;padding:12px}#dashboardOverviewView .ov-stat-label{font-size:10px}#dashboardOverviewView .ov-stat-value{font-size:23px}#dashboardOverviewView .ov-stat-foot{font-size:9px}#dashboardOverviewView .ov-panel{padding:16px}#dashboardOverviewView .ov-resume{min-height:unset;padding:17px}#dashboardOverviewView .ov-resume-art{display:none}#dashboardOverviewView .ov-resume h2{font-size:19px}#dashboardOverviewView .ov-resume p{font-size:12px}#dashboardOverviewView .ov-dist-row{grid-template-columns:85px minmax(0,1fr) 25px;gap:7px}#dashboardOverviewView .ov-footer{flex-direction:column}#dashboardDictationView{padding:0 15px 15px!important}#dashboardDictationView::before{height:15px}#dashboardDictationView .ov-dictation-card{margin-top:7vh;padding:28px 19px}}
+@media(max-width:760px){body.dashboard-overview-active>main#dashboardOverviewView{padding:0 var(--dash-gutter) 30px!important}#dashboardOverviewView .ov-welcome{align-items:flex-start;flex-direction:column;padding:21px}#dashboardOverviewView .ov-today-card{min-width:0;width:100%;max-width:310px}#dashboardOverviewView .ov-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#dashboardOverviewView .ov-mode-grid{grid-template-columns:1fr}#dashboardOverviewView .ov-lower{grid-template-columns:1fr}#dashboardOverviewView .ov-progress-head{flex-direction:column}#dashboardOverviewView .ov-active-days{align-self:flex-start}}
+@media(max-width:480px){#dashboardOverviewView .ov-topbar,#dashboardDictationView .ov-topbar{min-height:48px;padding:0 11px}#dashboardOverviewView .ov-welcome{padding:18px}#dashboardOverviewView .ov-welcome h1{font-size:24px}#dashboardOverviewView .ov-welcome p{font-size:12px}#dashboardOverviewView .ov-pills span{font-size:9px}#dashboardOverviewView .ov-stats{gap:8px}#dashboardOverviewView .ov-stat{min-height:103px;padding:12px}#dashboardOverviewView .ov-stat-label{font-size:10px}#dashboardOverviewView .ov-stat-value{font-size:23px}#dashboardOverviewView .ov-stat-foot{font-size:9px}#dashboardOverviewView .ov-panel{padding:16px}#dashboardOverviewView .ov-resume{min-height:unset;padding:17px}#dashboardOverviewView .ov-resume-art{display:none}#dashboardOverviewView .ov-resume h2{font-size:19px}#dashboardOverviewView .ov-resume p{font-size:12px}#dashboardOverviewView .ov-dist-row{grid-template-columns:85px minmax(0,1fr) 25px;gap:7px}#dashboardOverviewView .ov-footer{flex-direction:column}#dashboardDictationView{padding:0 var(--dash-gutter) 15px!important}#dashboardDictationView::before{height:15px}#dashboardDictationView .ov-dictation-card{margin-top:7vh;padding:28px 19px}}
 @media(prefers-reduced-motion:reduce){#dashboardOverviewView *,#dashboardDictationView *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 
 /* Match Overview surfaces and contrast to the shared Dashboard dark palette. */
@@ -401,7 +401,7 @@ html.dark #dashboardOverviewView .ov-note strong { color:#c4b5fd; }
 #dashboardDictationView .dictation-footer{display:flex;justify-content:space-between;gap:12px;margin-top:18px;padding:0 2px;color:#9da4b2;font-size:12px}
 @media(max-width:1100px){#dashboardDictationView .dictation-layout{grid-template-columns:minmax(0,1.4fr) minmax(270px,.8fr)}#dashboardDictationView .dictation-continue-card{grid-template-columns:minmax(0,1fr) 145px}}
 @media(max-width:850px){#dashboardDictationView .dictation-layout{grid-template-columns:1fr}#dashboardDictationView .dictation-aside{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}#dashboardDictationView .dictation-continue-card{grid-template-columns:minmax(0,1fr) 190px}}
-@media(max-width:620px){#dashboardDictationView{padding:0 15px 15px!important}#dashboardDictationView::before{height:15px}#dashboardDictationView .dictation-hero{min-height:0;padding:19px 18px}#dashboardDictationView .dictation-hero-art{width:71px;height:71px;border-radius:23px;font-size:31px}#dashboardDictationView .dictation-hero p{font-size:14px}#dashboardDictationView .dictation-hero-tags{gap:5px}#dashboardDictationView .dictation-hero-tags span{padding:5px 7px;font-size:12px}#dashboardDictationView .dictation-search-panel{margin:11px 0 13px;padding:10px}#dashboardDictationView .dictation-search-row{min-height:43px;padding:0 9px}#dashboardDictationView .dictation-search-row input{font-size:14px}#dashboardDictationView .dictation-search-help{align-items:flex-start;flex-direction:column;font-size:12px}#dashboardDictationView .dictation-continue-card{grid-template-columns:minmax(0,1fr) 102px;gap:9px;padding:14px}#dashboardDictationView .dictation-continue-copy h2{font-size:15px}#dashboardDictationView .dictation-continue-copy p{font-size:12px}#dashboardDictationView .dictation-continue-art{height:82px;padding:7px}#dashboardDictationView .dictation-sun{width:35px;height:35px;right:11px;top:12px}#dashboardDictationView .dictation-continue-actions{gap:5px;flex-wrap:wrap;margin-top:9px}#dashboardDictationView .dictation-primary-button{min-height:30px;padding:0 9px;font-size:12px}#dashboardDictationView .dictation-text-button{font-size:12px}#dashboardDictationView .dictation-session-grid{gap:8px}#dashboardDictationView .dictation-thumb{height:88px;padding:8px}#dashboardDictationView .dictation-thumb-symbol{width:47px;height:47px;border-radius:17px}#dashboardDictationView .dictation-card-body{padding:9px}#dashboardDictationView .dictation-card-body h3{font-size:13px}#dashboardDictationView .dictation-card-domain{font-size:11px}#dashboardDictationView .dictation-card-footer{align-items:flex-start;flex-direction:column}#dashboardDictationView .dictation-aside{grid-template-columns:1fr}#dashboardDictationView .dictation-panel{padding:14px}#dashboardDictationView .dictation-footer{flex-direction:column}}
+@media(max-width:620px){#dashboardDictationView{padding:0 var(--dash-gutter) 15px!important}#dashboardDictationView::before{height:15px}#dashboardDictationView .dictation-hero{min-height:0;padding:19px 18px}#dashboardDictationView .dictation-hero-art{width:71px;height:71px;border-radius:23px;font-size:31px}#dashboardDictationView .dictation-hero p{font-size:14px}#dashboardDictationView .dictation-hero-tags{gap:5px}#dashboardDictationView .dictation-hero-tags span{padding:5px 7px;font-size:12px}#dashboardDictationView .dictation-search-panel{margin:11px 0 13px;padding:10px}#dashboardDictationView .dictation-search-row{min-height:43px;padding:0 9px}#dashboardDictationView .dictation-search-row input{font-size:14px}#dashboardDictationView .dictation-search-help{align-items:flex-start;flex-direction:column;font-size:12px}#dashboardDictationView .dictation-continue-card{grid-template-columns:minmax(0,1fr) 102px;gap:9px;padding:14px}#dashboardDictationView .dictation-continue-copy h2{font-size:15px}#dashboardDictationView .dictation-continue-copy p{font-size:12px}#dashboardDictationView .dictation-continue-art{height:82px;padding:7px}#dashboardDictationView .dictation-sun{width:35px;height:35px;right:11px;top:12px}#dashboardDictationView .dictation-continue-actions{gap:5px;flex-wrap:wrap;margin-top:9px}#dashboardDictationView .dictation-primary-button{min-height:30px;padding:0 9px;font-size:12px}#dashboardDictationView .dictation-text-button{font-size:12px}#dashboardDictationView .dictation-session-grid{gap:8px}#dashboardDictationView .dictation-thumb{height:88px;padding:8px}#dashboardDictationView .dictation-thumb-symbol{width:47px;height:47px;border-radius:17px}#dashboardDictationView .dictation-card-body{padding:9px}#dashboardDictationView .dictation-card-body h3{font-size:13px}#dashboardDictationView .dictation-card-domain{font-size:11px}#dashboardDictationView .dictation-card-footer{align-items:flex-start;flex-direction:column}#dashboardDictationView .dictation-aside{grid-template-columns:1fr}#dashboardDictationView .dictation-panel{padding:14px}#dashboardDictationView .dictation-footer{flex-direction:column}}
 @media(max-width:390px){#dashboardDictationView .dictation-hero-art{display:none}#dashboardDictationView .dictation-session-grid{grid-template-columns:1fr}#dashboardDictationView .dictation-thumb{height:120px}#dashboardDictationView .dictation-card-footer{align-items:center;flex-direction:row}#dashboardDictationView .dictation-continue-card{grid-template-columns:minmax(0,1fr) 83px}#dashboardDictationView .dictation-continue-art{height:75px}}
 @media(prefers-reduced-motion:reduce){#dashboardDictationView .dictation-hero-art{animation:none}}
 html.dark #dashboardDictationView{background:var(--lhn-ui-page,#0b1120);color:var(--lhn-ui-text,#d7deeb)}
@@ -575,6 +575,7 @@ html.dark #dashboardOverviewView .ov-mode:not(.ov-mode-shadow):hover {
 /* Shared Dashboard shell: one page-level scroll root for every active view. */
 body { height:100vh!important;min-height:0!important;overflow:hidden!important; }
 #dashboardScroller {
+  --dash-gutter:44px;
   box-sizing:border-box;display:block;width:auto;height:100vh;min-width:0;min-height:0;flex:1 1 0;
   overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;
   background:#f5f5ff;color:#252640;scrollbar-gutter:stable;
@@ -586,12 +587,12 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 #dashboardScroller > #dashboardOverviewView {
   height:calc(100vh - 98px)!important;overflow-y:auto!important;
-  padding:0 clamp(16px,3vw,42px) 42px!important;background:transparent!important;color:inherit;
+  padding:0 var(--dash-gutter) 42px!important;background:transparent!important;color:inherit;
 }
 #dashboardOverviewView .ov-content { padding-top:0!important; }
 #dashboardScroller > #dashboardDictationView {
   height:calc(100vh - 98px)!important;overflow-y:auto!important;
-  padding:0 clamp(16px,3vw,42px) 34px!important;background:transparent!important;color:inherit;
+  padding:0 var(--dash-gutter) 34px!important;background:transparent!important;color:inherit;
 }
 #dashboardScroller > #dashboardDictationView::before { display:none!important;height:0!important; }
 #dashboardScroller > #dashboardHighlightsNotesView { background:transparent!important; }
@@ -603,8 +604,8 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 #dashboardSharedTopbarPortal::before,#dashboardSharedTopbarPortal::after { content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;outline:0!important; }
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
-  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(min(100%,1404px) - clamp(16px,3vw,42px) - clamp(16px,3vw,42px));max-width:1320px;height:55px;min-height:55px;
-  display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:0 auto 20px;padding:0 20px;
+  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(100% - (var(--dash-gutter) * 2) - var(--dash-scrollbar,0px));max-width:none;height:55px;min-height:55px;
+  display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:0 var(--dash-gutter) 20px;padding:0 20px;
   border:1px solid #eeedf5;border-top:0;border-radius:0 0 22px 22px;background:var(--lhn-ui-surface,#fff);box-shadow:0 9px 25px rgba(68,61,133,.065);
   transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease;
 }
@@ -662,11 +663,11 @@ html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:
   #dashboardScroller > main .dashboard-reveal.dashboard-revealed { transition:none!important;will-change:auto;transform:none!important;opacity:1!important; }
 }
 @media(max-width:760px) {
-  #dashboardScroller > #dashboardOverviewView { padding:0 14px 30px!important; }
-  #dashboardScroller > #dashboardDictationView { padding:0 18px 28px!important; }
+  #dashboardScroller > #dashboardOverviewView { padding:0 var(--dash-gutter) 30px!important; }
+  #dashboardScroller > #dashboardDictationView { padding:0 var(--dash-gutter) 28px!important; }
 }
 @media(max-width:560px) {
-  #dashboardScroller > #dashboardDictationView { padding:0 11px 25px!important; }
+  #dashboardScroller > #dashboardDictationView { padding:0 var(--dash-gutter) 25px!important; }
   #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { height:48px;min-height:48px;padding-left:12px;padding-right:12px; }
   #dashboardSharedTopbar .ov-crumb { font-size:11px; }
   #dashboardSharedTopbar .ov-crumb strong { font-size:12px; }
@@ -675,7 +676,7 @@ html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:
   #dashboardSharedTopbarActionsSlot .demo-export-all { padding:7px; }
   #dashboardSharedTopbarActionsSlot .demo-export-all span { display:none; }
 }
-@media(max-width:480px) { #dashboardScroller > #dashboardOverviewView { padding:0 14px 30px!important; } }
+@media(max-width:480px) { #dashboardScroller > #dashboardOverviewView { padding:0 var(--dash-gutter) 30px!important; } }
 
 
 /* H&N export controls are portaled into the shared topbar, outside the route-local stylesheet scope. */

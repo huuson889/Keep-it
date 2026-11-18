@@ -2942,6 +2942,19 @@ dashboardDictationView.addEventListener("scroll", scheduleDashboardScrollPositio
 window.addEventListener("pagehide", saveDashboardScrollState);
 window.addEventListener("beforeunload", saveDashboardScrollState);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
+
+// One content gutter for every route so the shared header always sits exactly on the content edges,
+// matching the Documents route's own .main (44px desktop, 22px under 980px, 12px on mobile).
+function syncDashboardGutter() {
+  if (!dashboardScroller) return;
+  const narrow = window.matchMedia("(max-width: 599.98px)").matches;
+  const width = dashboardScroller.clientWidth;
+  const gutter = narrow ? 12 : width < 980 ? 22 : 44;
+  dashboardScroller.style.setProperty("--dash-gutter", `${gutter}px`);
+  dashboardScroller.style.setProperty("--dash-scrollbar", `${Math.max(0, dashboardScroller.offsetWidth - dashboardScroller.clientWidth)}px`);
+}
+syncDashboardGutter();
+window.addEventListener("resize", syncDashboardGutter, { passive: true });
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = null;
 function updateSharedTopbarContent(view) {
