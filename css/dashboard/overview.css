@@ -603,6 +603,10 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 /* The bar always spans the active route's content column. */
 #dashboardScroller:has(> #dashboardHighlightsNotesView:not([hidden])) > #dashboardSharedTopbarPortal { max-width:none;padding-left:clamp(18px,2.2vw,34px);padding-right:clamp(18px,2.2vw,34px); }
+#dashboardScroller:has(> #dashboardDocumentsView:not([hidden])) > #dashboardSharedTopbarPortal { max-width:none;padding-left:44px;padding-right:44px; }
+@media(max-width:980px) { #dashboardScroller:has(> #dashboardDocumentsView:not([hidden])) > #dashboardSharedTopbarPortal { padding-left:22px;padding-right:22px; } }
+@media(max-width:760px) { #dashboardScroller:has(> #dashboardDocumentsView:not([hidden])) > #dashboardSharedTopbarPortal { padding-left:12px;padding-right:12px; } }
+
 @media(max-width:800px) {
   #dashboardScroller:has(> #dashboardHighlightsNotesView:not([hidden])) > #dashboardSharedTopbarPortal { padding-left:18px;padding-right:18px; }
 }
