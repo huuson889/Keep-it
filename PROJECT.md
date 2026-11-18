@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.390**, nhánh `Keepit-Optimize-Test`; shared header is a content-width central capsule; only the capsule is white, side regions transparent; no external vertical margin. Mobile uses a compact content-width capsule. Portal uses `display:contents` (0×0). Actual Chromium extension screenshot QA passed on Documents desktop (1032×600) and mobile (390×844); full route matrix remains untested. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.391**, nhánh `Keepit-Optimize-Test`; shared header is a centered wide capsule (restored v3.5.389 width); only the capsule is white, side gutters transparent; no external vertical margin. Mobile is full-width within 12px gutters. Portal uses `display:contents` (0×0). Actual Chromium extension screenshot QA passed on Documents desktop (1032×600) and mobile (390×844); full route matrix remains untested. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Dashboard shared header — v3.5.390
-- Chromium screenshot QA: Documents route at 1032×600 and 390×844. Header is a centered content-width capsule; side regions transparent; vertical margins 0; portal 0×0 via `display:contents`; iframe header hidden; no JS/console errors. Still verify Overview, Dictation, Highlights & Notes and viewer full-screen on Chrome.
+### Dashboard shared header — v3.5.391
+- Chromium screenshot QA: Documents route at 1032×600 and 390×844. Header remains wide (desktop ~911px at 1032px viewport), centered; side gutters transparent; vertical margins 0; portal 0×0 via `display:contents`; iframe header hidden; no JS/console errors. Still verify Overview, Dictation, Highlights & Notes and viewer full-screen on Chrome.
 
 ### Documents PDF permission guide — v3.5.380
 - Browser-test local PDF with file URL access denied: confirm Keepit logo, purple step markers in light/dark themes, 12px instructions, secondary picker, and permission polling dismissal. Static checks and mock polling passed; not browser-tested.
@@ -242,6 +242,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation, Highlights & Notes và Documents dưới một `#dashboardScroller`, shared theme và topbar Keepit/logo + tên route; Documents dùng iframe nội dung riêng nhưng ẩn header nội bộ trong embedded mode, còn topbar dùng chung cho mọi tab. Mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.391 | Arena.ai Agent sửa:**
+
+- Khôi phục bề rộng viên thuốc desktop của v3.5.389 (~911px tại viewport 1032px) thay vì content-width 458px; bo tròn toàn bộ capsule, lề hai bên trong suốt, margin dọc 0. Mobile dùng full chiều rộng trong inset 12px.
+- File: `manifest.json`, `css/dashboard/overview.css`, `css/dashboard/responsive.css`, `PROJECT.md`.
+- Kiểm tra: node --check Dashboard/Documents, `git diff --check`; Chromium extension v3.5.391 screenshot Documents: desktop 1032px viewport → header 911px, side gutters 31px each; mobile 390px → header ~363px, gutters 12px; both fully rounded, vertical margins 0, no JS/console errors — PASS.
 
 **2026-11-17 | v3.5.390 | Arena.ai Agent sửa:**
 
