@@ -149,7 +149,7 @@
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(item.deletedAt)) }));
     const checked = selected.has(item.id) ? ' checked' : '';
     return `<div class="trash-row${checked ? ' is-picked' : ''}" data-id="${item.id}">
-      <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${item.id}"${checked}><span></span></label>
+      <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${item.id}"${checked}><span class="trash-box"></span></label>
       <span class="trash-ico kind-${item.type || 'pdf'}"><svg viewBox="0 0 24 24" aria-hidden="true">${kind.path}</svg></span>
       <span class="trash-main"><b>${escapeHtml(item.title || item.name || item.id)}</b>
         <span>${parts.join(' · ')}</span></span>

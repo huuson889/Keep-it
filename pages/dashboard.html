@@ -122,9 +122,16 @@
 <button type="button" class="trash-action danger" id="trashEmptyAll" data-i18n="trashEmptyAll">Dọn sạch thùng rác</button>
 </div>
 </div>
-<div class="trash-chips" id="trashChips"></div>
+<div class="trash-filters"><div class="trash-chips" id="trashChips"></div>
+<div class="trash-pager" id="trashPager" hidden>
+<span id="trashPageInfo"></span>
+<span class="trash-pager-btns">
+<button type="button" class="trash-action trash-page-btn" id="trashPrev" data-pg="prev" data-i18n-aria-label="trashPrevPage" aria-label="Trang trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+<button type="button" class="trash-action trash-page-btn" id="trashNext" data-pg="next" data-i18n-aria-label="trashNextPage" aria-label="Trang sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+</span>
+</div></div>
 <div class="trash-bulk" id="trashBulk" hidden>
-<label class="trash-selectall"><input type="checkbox" id="trashSelectAll"><span data-i18n="trashSelectAll">Chọn tất cả</span></label>
+<label class="trash-selectall"><input type="checkbox" id="trashSelectAll"><span class="trash-box"></span><span data-i18n="trashSelectAll">Chọn tất cả</span></label>
 <span id="trashBulkCount"></span>
 <span class="trash-bulk-actions">
 <button type="button" class="trash-action primary" data-bulk="restore" data-i18n="trashRestore">Khôi phục</button>
@@ -132,13 +139,7 @@
 </span>
 </div>
 <div class="trash-list" id="trashList"></div>
-<div class="trash-pager" id="trashPager" hidden>
-<span id="trashPageInfo"></span>
-<span class="trash-pager-btns">
-<button type="button" class="trash-action trash-page-btn" id="trashPrev" data-pg="prev" data-i18n-aria-label="trashPrevPage" aria-label="Trang trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-<button type="button" class="trash-action trash-page-btn" id="trashNext" data-pg="next" data-i18n-aria-label="trashNextPage" aria-label="Trang sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-</span>
-</div>
+
 </div>
 </main>
 
