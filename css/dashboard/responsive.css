@@ -35,14 +35,16 @@
 
   /* Compact shared Keepit / tab-name header, consistent on each route. */
   #dashboardSharedTopbarStatus { display: none !important; }
-  #dashboardSharedTopbarThemeToggle { width:44px;height:44px;min-width:44px; }
-  #dashboardSharedTopbar .dashboard-shared-brand-icon { width:22px;height:22px;margin-right:5px; }
-  #dashboardSharedTopbar .ov-crumb strong { font-size:13px; }
-  #dashboardSharedTopbar .ov-crumb span { padding-left:5px;padding-right:5px; }
-  #dashboardSharedTopbarLabel { font-size:14px;font-weight:650;color:inherit; }
+  #dashboardSharedTopbarThemeToggle { width:36px;height:36px;min-width:36px; }
+  #dashboardSharedTopbar .dashboard-shared-brand-icon { width:26px;height:26px;margin-right:7px; }
+  #dashboardSharedTopbar .ov-crumb strong { font-size:15px; }
+  #dashboardSharedTopbar .ov-crumb span { padding:0; }
+  #dashboardSharedTopbarSlash { display:none!important; }
+  #dashboardSharedTopbarLabel { padding:0!important;font-size:16px;font-weight:600;color:var(--lhn-ui-text,#354056); }
   #dashboardSharedTopbar .ov-crumb { min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
   #dashboardSharedTopbarPortal { display:contents!important; }
-  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { position:sticky;top:0;width:calc(100% - 24px);max-width:none;height:48px;min-height:48px;margin:0 auto;padding:0 12px;justify-content:space-between;border:1px solid #eeedf5;border-radius:999px; }
+  #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { position:sticky;top:10px;width:calc(100% - 24px);max-width:none;height:48px;min-height:48px;margin:10px auto 14px;padding:0 12px;justify-content:space-between;border:1px solid #eeedf5;border-radius:999px; }
+  #dashboardSharedTopbar .dashboard-shared-topbar-right { margin-left:auto;gap:10px; }
 
   /* bottom tab bar */
   .rn-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid #e2e8f0; transition: transform .3s cubic-bezier(.2, .8, .2, 1); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
