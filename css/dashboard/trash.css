@@ -146,3 +146,6 @@ html.dark .trash-action.danger { background: #3a1719; border-color: #57282b; col
 #dashboardSidebar .reference-footer-nav .reference-nav-icon svg { color: #6366f1; }
 #dashboardSidebar .reference-footer-nav > .nav-label { margin-left: 0; font-size: 14px; font-weight: 500; }
 html.dark #dashboardSidebar .reference-footer-nav:hover { background: #1d2939; }
+/* Dark theme: the theme/account buttons never got a dark label colour, so they stayed
+   slate-600 next to the (correctly themed) Trash item. Match the nav-item colour. */
+html.dark #dashboardSidebar .reference-footer-button { color: #9ca3af; }

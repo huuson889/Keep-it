@@ -1,7 +1,9 @@
 # Keepit Working Rules for All AI Agents
 
 ## 1. Giới thiệu dự án
-- Keepit app: extension/addon cho mọi trình duyệt nhân Chromium (Chrome, Edge, Brave, …) / nhân Firefox (Firefox, Zen, Floorp,..) (một codebase, Manifest V3).
+- Keepit app — một codebase Manifest V3: extension/addon cho mọi trình duyệt nhân Chromium (Chrome, Edge, Brave, …) và nhân Firefox (Firefox, Zen, Floorp, …).
+- Ngoài extension: bản **APK Android** đóng gói riêng (ZIP nguồn để ở `Keepit-Apk-Zip`), và **iOS dự kiến** trong tương lai — không cam kết mốc thời gian.
+- Code dùng chung cho mọi nền tảng; phần khác biệt theo nền tảng nằm trong script/thư mục build riêng, không fork codebase.
 
 
 ## 2. Vai trò tài liệu & nguồn sự thật

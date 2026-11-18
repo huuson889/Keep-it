@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.418**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.420**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -239,6 +239,20 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.420 | Arena.ai Agent sửa:**
+
+- Nhãn "Giao diện tối" ở dark mode sáng hơn/xỉn khác "Thùng rác": đo được `Thùng rác` = `rgb(156,163,175)` còn `Giao diện tối` = `rgb(71,85,105)` — nút footer dùng `.reference-footer-button{color:#475569}` mà **không có biến thể `html.dark`**, trong khi mục nav (Thùng rác) lấy màu `#9ca3af` của nav-item dark. Light mode vốn đã trùng nhau (`#475569` cả hai).
+- Sửa: thêm `html.dark #dashboardSidebar .reference-footer-button { color: #9ca3af; }` trong `css/dashboard/trash.css`, để nhãn nút giao diện/tài khoản cùng màu nav-item ở dark.
+- File: `css/dashboard/trash.css`, `manifest.json`.
+- Kiểm tra: Playwright extension thật 1512, không hover (chuột đỗ ở 700,500) — light: cả hai `rgb(71,85,105)`, `lightSame: true`; dark: cả hai `rgb(156,163,175)`, `darkSame: true`; hover cả hai `rgb(243,244,246)`, `hoverSame: true`; icon hai mục cùng `rgb(99,102,241)`; tên "Bạn" vẫn `rgb(229,231,235)`, email `rgb(156,163,175)` (không đổi); 0 lỗi console. Ảnh: `side420-light.png`, `side420-dark.png`, `side420-dark-hover-trash.png`, `side420-dark-hover-theme.png`.
+
+**2026-11-17 | v3.5.419 | Arena.ai Agent sửa:**
+
+- Tóm tắt: viết lại mục 1 "Giới thiệu dự án" trong `AGENTS.md` theo bản B đã chốt — tách rõ nền tảng đang có (extension MV3 cho Chromium + Firefox, một codebase) khỏi bản APK Android đóng gói riêng và iOS dự kiến, kèm câu "code dùng chung, khác biệt nằm ở script build, không fork codebase".
+- Không đổi code extension.
+- File: `AGENTS.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: đọc lại mục 1 sau khi ghi (3 bullet, đúng bản B); ZIP v3.5.419 đóng từ HEAD có `AGENTS.md` + `PROJECT.md` mới nhất. Không có thay đổi giao diện nên không có ảnh QA mới.
 
 **2026-11-17 | v3.5.418 | Arena.ai Agent sửa:**
 
