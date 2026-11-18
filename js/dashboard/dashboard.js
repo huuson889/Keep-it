@@ -590,6 +590,35 @@ function slightlyDarkerHighlight(hex) {
   return `hsl(${hue} ${saturation * 100}% ${lightness * 80}%)`;
 }
 let toastTimer = null, activeToastElement = null;
+/* One reversible action at a time: the toast that offers Undo registers it here so Ctrl+Z
+   does the same thing while the toast is still on screen. */
+let pendingUndo = null, pendingUndoTimer = null;
+const UNDO_TTL_MS = 6000;
+function registerUndo(run, label = "") {
+  if (typeof run !== "function") return;
+  clearTimeout(pendingUndoTimer);
+  pendingUndo = { run, label };
+  pendingUndoTimer = setTimeout(() => { pendingUndo = null; }, UNDO_TTL_MS);
+}
+function runPendingUndo() {
+  const entry = pendingUndo;
+  if (!entry) return false;
+  pendingUndo = null;
+  clearTimeout(pendingUndoTimer);
+  void Promise.resolve().then(entry.run).catch(error => console.warn("Undo failed", error));
+  return true;
+}
+globalThis.KeepitUndo = { register:registerUndo, run:runPendingUndo, hasUndo:() => Boolean(pendingUndo) };
+function typingTarget(node) {
+  const el = node?.nodeType === 1 ? node : node?.parentElement;
+  return Boolean(el?.closest?.("input,textarea,select,[contenteditable]:not([contenteditable='false']),[role='textbox']"));
+}
+document.addEventListener("keydown", event => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+  if (String(event.key).toLowerCase() !== "z" || event.shiftKey) return;
+  if (typingTarget(event.target)) return;
+  if (runPendingUndo()) { event.preventDefault(); }
+});
 /* A toast may carry one action (the Undo of a move to Trash). It lives as long as the
    action is offered, so the user still has time to click it. */
 function toast(message, action = null) {
@@ -606,6 +635,7 @@ function toast(message, action = null) {
   el.textContent = message;
   el.classList.toggle("hasAction", Boolean(action));
   if (action) {
+    registerUndo(action.run, action.label);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "toastAction";

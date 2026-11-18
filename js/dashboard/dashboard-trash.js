@@ -73,6 +73,42 @@
       tx.onerror = tx.onabort = () => { db.close(); reject(tx.error); };
     }));
   }
+  /* "Delete forever" is still undoable while the toast lives: the record (and the file
+     blob) is read before the delete and written back if the user undoes it. */
+  const readOne = (db, store, pick) => new Promise((resolve, reject) => {
+    const request = pick(db.transaction([store]).objectStore(store));
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  async function snapshotDocument(id) {
+    const db = await openExisting();
+    if (!db) return null;
+    try {
+      if (!db.objectStoreNames.contains('meta')) return null;
+      const meta = await readOne(db, 'meta', store => store.get(id));
+      if (!meta) return null;
+      const file = db.objectStoreNames.contains('files') ? await readOne(db, 'files', store => store.get(id)) : null;
+      const translations = db.objectStoreNames.contains('translations') ? await readOne(db, 'translations', store => store.index('document').getAll(id)) : [];
+      return { meta, file, translations: translations || [] };
+    } catch { return null; } finally { db.close(); }
+  }
+  async function restoreDocument(snapshot) {
+    if (!snapshot?.meta) return;
+    const db = await openExisting();
+    if (!db) return;
+    try {
+      const names = ['meta', ...(snapshot.file ? ['files'] : []), ...(snapshot.translations.length ? ['translations'] : [])]
+        .filter(name => db.objectStoreNames.contains(name));
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction(names, 'readwrite');
+        tx.objectStore('meta').put(snapshot.meta);
+        if (snapshot.file) tx.objectStore('files').put(snapshot.file);
+        for (const item of snapshot.translations || []) tx.objectStore('translations').put(item);
+        tx.oncomplete = () => resolve();
+        tx.onerror = tx.onabort = () => reject(tx.error);
+      });
+    } finally { db.close(); }
+  }
   function restoreRecord(id) {
     return openDb(DB_VERSION).then(db => new Promise((resolve, reject) => {
       if (!db.objectStoreNames.contains('meta')) { db.close(); resolve(); return; }
@@ -468,30 +504,49 @@
     await restoreNotes(noteIds);
     for (const id of ids) selected.delete(id);
     if (documentIds.length) refreshDocumentsFrame();
+    await readQuota();
     await render();
+    globalThis.toast?.(t('trashRestoreDone', { count: ids.length }));
   }
-  async function purgeItems(ids) {
-    if (!ids.length) return;
-    if (!confirm(t(ids.length > 1 ? 'trashPurgeManyConfirm' : 'trashPurgeConfirm'))) return;
+  /* Everything that is about to be deleted forever is kept in memory until the toast with
+     Undo disappears, so the undo can put the very same rows (ids included) back. */
+  async function purgeForever(ids) {
     const { noteIds, documentIds } = splitKinds(ids);
+    const documents = [], notes = [];
+    for (const id of documentIds) {
+      try { const snapshot = await snapshotDocument(id); if (snapshot) documents.push(snapshot); } catch { /* keep going */ }
+    }
+    for (const id of noteIds) { const item = itemById(id); if (item) { const { kind, expires, ...record } = item; notes.push(record); } }
     for (const id of documentIds) { try { await removeForever(id); } catch { /* keep going */ } }
     await purgeNotes(noteIds);
     for (const id of ids) selected.delete(id);
     if (documentIds.length) refreshDocumentsFrame();
+    await readQuota();
     await render();
+    const undo = async () => {
+      for (const snapshot of documents) { try { await restoreDocument(snapshot); } catch { /* keep going */ } }
+      if (notes.length) {
+        try { await LHN_MESSAGING.sendMessage({ type:'TRASH_NOTES_INSERT', items:notes }); } catch { /* keep going */ }
+      }
+      if (documentIds.length) refreshDocumentsFrame();
+      await readQuota();
+      await render();
+      globalThis.toast?.(t('trashPurgeUndone'));
+    };
+    if (ids.length && globalThis.toast) globalThis.toast(t('trashPurgeDone', { count:ids.length }), { label:t('trashUndo'), run:undo });
+  }
+  async function purgeItems(ids) {
+    if (!ids.length) return;
+    if (!confirm(t(ids.length > 1 ? 'trashPurgeManyConfirm' : 'trashPurgeConfirm'))) return;
+    await purgeForever(ids);
   }
   async function emptyAll() {
     let items = [];
     try { items = await load(); } catch { items = []; }
     if (!items.length) return;
     if (!confirm(t('trashEmptyAllConfirm', { count: items.length }))) return;
-    const documentIds = items.filter(item => item.kind !== 'note').map(item => item.id);
-    const noteIds = items.filter(item => item.kind === 'note').map(item => item.id);
-    for (const id of documentIds) { try { await removeForever(id); } catch { /* keep going */ } }
-    await purgeNotes(noteIds);
+    await purgeForever(items.map(item => item.id));
     selected = new Set();
-    if (documentIds.length) refreshDocumentsFrame();
-    await render();
   }
 
   globalThis.KeepitTrash = { mount, refresh: render, sweep: purgeExpired };

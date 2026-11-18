@@ -231,6 +231,21 @@ async function purgeMany(ids) {
   }
   return purged;
 }
+/* Undoing a permanent delete writes the exact records back (same ids, so favourites,
+   study progress and document anchors survive). */
+async function putMany(items) {
+  const list = (Array.isArray(items) ? items : []).filter(item => item && typeof item.id === "string" && item.id);
+  if (!list.length) return 0;
+  const db = await ensureDatabaseReady();
+  const written = await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite"), store = tx.objectStore(STORE_NAME);
+    let count = 0;
+    for (const item of list) { store.put(item); count++; }
+    tx.oncomplete = () => resolve(count);
+    tx.onabort = tx.onerror = () => reject(tx.error || new Error("Could not restore annotations"));
+  });
+  return written;
+}
 async function purgeExpiredTrashed() {
   const items = await readAllRaw();
   const now = Date.now();
@@ -279,5 +294,5 @@ async function syncPageOrder(url, ids) {
     if (imported) notifyAnnotationsChanged({ type: 'refresh' }, origin);
     return { imported };
   }
-  globalThis.LHN_ANNOTATIONS = Object.freeze({ getAll, getBatch, getPage, getOne, addOne, updateOne, updateReview, resetReviews, deleteOne, deletePage, syncPageOrder, importItems, notifyAnnotationsChanged, softDelete, softDeletePage, listTrashed, restoreMany, purgeMany, purgeExpiredTrashed, TRASH_RETAIN_DAYS });
+  globalThis.LHN_ANNOTATIONS = Object.freeze({ getAll, getBatch, getPage, getOne, addOne, updateOne, updateReview, resetReviews, deleteOne, deletePage, syncPageOrder, importItems, notifyAnnotationsChanged, softDelete, softDeletePage, listTrashed, restoreMany, purgeMany, purgeExpiredTrashed, putMany, TRASH_RETAIN_DAYS });
 })();

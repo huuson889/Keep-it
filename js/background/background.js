@@ -504,6 +504,7 @@ LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
     return { restored: items.length, items };
   }
   if (message.type === "TRASH_NOTES_PURGE") return { purged: await ANNOTATIONS.purgeMany(message.ids) };
+  if (message.type === "TRASH_NOTES_INSERT") { const written = await ANNOTATIONS.putMany(message.items); if (written) ANNOTATIONS.notifyAnnotationsChanged({ type: "refresh" }, message.origin); return { written }; }
   if (message.type === "TRASH_NOTES_SWEEP") return { purged: await ANNOTATIONS.purgeExpiredTrashed() };
   if (message.type === "IMPORT") return ANNOTATIONS.importItems(message.items, message.origin);
   if (message.type === "SYNC_PAGE_ORDER") return ANNOTATIONS.syncPageOrder(message.url, message.ids);
