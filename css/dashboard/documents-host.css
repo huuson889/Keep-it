@@ -1,6 +1,6 @@
 /* Documents is a route inside the shared Dashboard shell. The parent owns the one common Keepit/tab header. */
 body.dashboard-documents-active #dashboardScroller{display:flex!important;flex-direction:column!important;padding:0!important;overflow:hidden!important}
-body.dashboard-documents-active #dashboardSharedTopbarPortal{display:block!important;position:relative;top:auto;flex:0 0 auto}
+body.dashboard-documents-active #dashboardSharedTopbarPortal{display:contents!important;position:static;top:auto;flex:0 0 auto}
 #dashboardScroller>#dashboardDocumentsView{display:flex!important;flex:1 1 0!important;height:auto!important;min-height:0!important;max-width:none!important;padding:0!important;margin:0!important;overflow:hidden!important;background:transparent!important}
 #dashboardScroller>#dashboardDocumentsView[hidden]{display:none!important}
 #dashboardDocumentsFrame{display:block;flex:1 1 auto;width:100%;height:100%;min-height:0;border:0;background:transparent}

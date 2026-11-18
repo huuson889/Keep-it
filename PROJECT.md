@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.383**, nhánh `Keepit-Optimize-Test`; shared header retains the old Documents bar geometry; its portal wrapper is explicitly decoration-free (no background, border, shadow, outline, or pseudo-element), leaving only one visible bar. Static checks passed; browser visual validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.384**, nhánh `Keepit-Optimize-Test`; the shared-header portal now uses `display:contents` and has no layout box; only the old-Documents-geometry header itself participates in layout. Static checks passed; browser visual validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Dashboard shared header — v3.5.383
-- Browser-test exact old Documents header geometry across Overview, Dictation, Highlights & Notes and Documents; verify portal wrapper has no visible frame and no duplicate header, mobile pill, status/theme controls, and iframe scroll/full-screen viewer. Static checks only; not browser-tested.
+### Dashboard shared header — v3.5.384
+- Browser-test exact old Documents header geometry across Overview, Dictation, Highlights & Notes and Documents; verify no portal layout box/frame and no duplicate header, mobile pill, status/theme controls, and iframe scroll/full-screen viewer. Static checks only; not browser-tested.
 
 ### Documents PDF permission guide — v3.5.380
 - Browser-test local PDF with file URL access denied: confirm Keepit logo, purple step markers in light/dark themes, 12px instructions, secondary picker, and permission polling dismissal. Static checks and mock polling passed; not browser-tested.
@@ -243,11 +243,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.383 | Arena.ai Agent sửa:**
+**2026-11-17 | v3.5.384 | Arena.ai Agent sửa:**
 
-- Sửa phần khung bị bỏ sót: loại class wrapper và đặt reset tường minh để portal ngoài không nền/viền/bóng/outline/pseudo-element; chỉ thanh Keepit/Tài liệu còn hiển thị.
-- File: `manifest.json`, `pages/dashboard.html`, `css/dashboard/overview.css`, `PROJECT.md`.
-- Kiểm tra: node --check Dashboard/Documents, markup/version, reset decoration của wrapper, CSS desktop/mobile và `git diff --check` — PASS. Chưa có Chrome QA; cần xác nhận trực quan sau khi nạp bản mới.
+- Loại box wrapper khỏi layout (`display:contents`) trên desktop/mobile và Documents host; thanh Keepit duy nhất tự nhận width/inset, chiều cao, sticky và khoảng cách theo hình học header Tài liệu cũ.
+- File: `manifest.json`, `css/dashboard/overview.css`, `css/dashboard/responsive.css`, `css/dashboard/documents-host.css`, `PROJECT.md`.
+- Kiểm tra: node --check Dashboard/Documents, manifest/markup, wrapper `display:contents`, CSS legacy desktop/mobile geometry, Documents host, CSS braces và `git diff --check` — PASS. Chrome visual QA chưa thực hiện.
 
 **2026-11-17 | v3.5.380 | Arena.ai Agent sửa:**
 
