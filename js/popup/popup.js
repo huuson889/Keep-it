@@ -3,7 +3,7 @@ const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 CONFIG.applyHighlightColors();
 const DEFAULTS = CONFIG.DEFAULT_SETTINGS;
-let settings = { ...DEFAULTS }, capturing = false, currentLang = "en", langOpen = false, currentWebsite = "", currentPdfUrl = "", activePdfTabId = null;
+let settings = { ...DEFAULTS }, capturing = false, currentLang = "en", langOpen = false, currentWebsite = "";
 const langLabel = item => `${item.flag} ${item.name} - ${item.native}`;
 function t(key, vars = {}) { return LANGUAGES.t(key, vars, currentLang); }
 const disabledTooltipTitles = new WeakMap();
@@ -27,18 +27,6 @@ function applyPopupTheme() {
   button.title = label;
   button.setAttribute("aria-label", label);
   button.setAttribute("aria-pressed", String(dark));
-}
-function pdfSourceUrl(value, depth = 0) {
-  try {
-    const url = new URL(value);
-    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) { url.hash=""; return url.href; }
-    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return "";
-    for (const key of ["src", "file", "url", "originalUrl"]) {
-      const source = url.searchParams.get(key), resolved = source && pdfSourceUrl(source, depth + 1);
-      if (resolved) return resolved;
-    }
-  } catch { /* not a PDF URL */ }
-  return "";
 }
 function syncWebsiteActiveStatus() {
   const status = $("extensionStatus");
@@ -73,9 +61,6 @@ async function load() {
   if (["autoSpeakSelectedText", "autoSpeakOnTranslate", "translateIconEnabled", "translationPopupEnabled"].some(key => storedSettings[key] !== settings[key])) await saveSettings();
   if (!["light", "dark", "system"].includes(settings.sidebarTheme)) settings.sidebarTheme = "system";
   const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
-  currentPdfUrl = pdfSourceUrl(activeTab?.url || "");
-  activePdfTabId = Number.isInteger(activeTab?.id) ? activeTab.id : null;
-  $("pdfSuggestion").hidden = !currentPdfUrl;
   try {
     const activeUrl = new URL(activeTab?.url || "");
     if (activeUrl.protocol === "http:" || activeUrl.protocol === "https:") currentWebsite = activeUrl.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
@@ -152,18 +137,6 @@ document.addEventListener("mousedown", e => { if (!e.target.closest(".language-w
 $("dashboard").addEventListener("click", async () => {
   try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard", error); $("status").textContent = t("pageRestricted"); }
-});
-$("pdfSuggestion").addEventListener("click", async () => {
-  if (!currentPdfUrl) return;
-  const isLocal = new URL(currentPdfUrl).protocol === "file:";
-  let fileAccessDenied = false;
-  if (isLocal && typeof browser.extension?.isAllowedFileSchemeAccess === "function") {
-    try { fileAccessDenied = !(await browser.extension.isAllowedFileSchemeAccess()); } catch { /* Documents will show the choose-file fallback if access fails. */ }
-  }
-  try {
-    await LHN_MESSAGING.sendMessage({ type:"OPEN_DASHBOARD_DOCUMENTS", sourceTabId:activePdfTabId, pdfUrl:currentPdfUrl, fileAccessDenied });
-    window.close();
-  } catch (error) { console.warn("Could not open this PDF in Keepit", error); $("status").textContent = t("pageRestricted"); }
 });
 $("openDashboardSettings").addEventListener("click", async () => {
   try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }

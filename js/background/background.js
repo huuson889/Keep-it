@@ -39,53 +39,50 @@ function pdfTabSource(value, depth = 0) {
   return "";
 }
 const PDF_HINT_PAGE=browser.runtime.getURL("pages/pdf-suggestion.html");
-let floatingPdfHintWindowId=null,floatingPdfHintTabId=null;
-const shownPdfHints=new Map(),pdfHintPending=new Set();
-async function closeFloatingPdfHint(tabId=null){
-  const targets=new Set();
-  if(Number.isInteger(floatingPdfHintWindowId)&&(!Number.isInteger(tabId)||floatingPdfHintTabId===tabId))targets.add(floatingPdfHintWindowId);
-  try{for(const tab of await browser.tabs.query({})){
-    if(!Number.isInteger(tab.windowId)||!tab.url)continue;
-    const url=new URL(tab.url);if(url.href.split(/[?#]/,1)[0]!==PDF_HINT_PAGE)continue;
-    const sourceTabId=Number(url.searchParams.get("sourceTabId"));if(!Number.isInteger(tabId)||sourceTabId===tabId)targets.add(tab.windowId);
-  }}catch{}
-  if(!Number.isInteger(tabId)||floatingPdfHintTabId===tabId){floatingPdfHintWindowId=floatingPdfHintTabId=null;}
-  await Promise.all([...targets].map(id=>browser.windows.remove(id).catch(()=>{})));
+const PDF_HINT_ORIGIN=new URL(PDF_HINT_PAGE).origin,PDF_HINT_FRAME_ID="keepit-pdf-suggestion-frame";
+let activePdfHintTabId=null;
+const pdfHintPending=new Set();
+async function removePdfHint(tabId){
+  if(!Number.isInteger(tabId))return;
+  try{await browser.scripting.executeScript({target:{tabId,frameIds:[0]},func:id=>{const frame=document.getElementById(id);if(!frame)return;const handler=window.__keepitPdfHintMessage;if(handler)window.removeEventListener("message",handler);delete window.__keepitPdfHintMessage;frame.remove();},args:[PDF_HINT_FRAME_ID]});}catch{}
+  if(activePdfHintTabId===tabId)activePdfHintTabId=null;
 }
-async function showFloatingPdfHint(tab,url=tab?.url||""){
+async function closeLegacyPdfHintWindows(){
+  try{const tabs=await browser.tabs.query({}),ids=[...new Set(tabs.filter(tab=>tab.url?.split(/[?#]/,1)[0]===PDF_HINT_PAGE&&Number.isInteger(tab.windowId)).map(tab=>tab.windowId))];await Promise.all(ids.map(id=>browser.windows.remove(id).catch(()=>{})));}catch{}
+}
+async function showPdfHint(tab,url=tab?.url||""){
   const tabId=tab?.id,source=pdfTabSource(url);if(!Number.isInteger(tabId)||!tab.active||!source)return;
   const pendingKey=`${tabId}:${source}`;if(pdfHintPending.has(pendingKey))return;pdfHintPending.add(pendingKey);
   try{
-    const now=Date.now(),prior=shownPdfHints.get(tabId);if(prior?.source===source&&now-prior.at<30000)return;
-    for(const[id,value]of shownPdfHints)if(now-value.at>3600000)shownPdfHints.delete(id);
-    const tabs=await browser.tabs.query({}),existing=tabs.find(item=>{
-      if(!item.url||!Number.isInteger(item.windowId))return false;
-      try{const u=new URL(item.url);return u.href.split(/[?#]/,1)[0]===PDF_HINT_PAGE&&Number(u.searchParams.get("sourceTabId"))===tabId&&u.searchParams.get("pdfUrl")===source;}catch{return false;}
-    });
-    if(existing){floatingPdfHintWindowId=existing.windowId;floatingPdfHintTabId=tabId;shownPdfHints.set(tabId,{source,at:now});return;}
-    await closeFloatingPdfHint();
-    const host=Number.isInteger(tab.windowId)?await browser.windows.get(tab.windowId).catch(()=>null):null,width=300,height=84;
-    const left=Math.max(host?.left||0,(host?.left||0)+(host?.width||1024)-width-14),top=(host?.top||0)+74;
     const hintUrl=new URL(PDF_HINT_PAGE);hintUrl.searchParams.set("sourceTabId",String(tabId));hintUrl.searchParams.set("pdfUrl",source);
-    const popup=await browser.windows.create({url:hintUrl.href,type:"popup",width,height,left,top,focused:true});
-    floatingPdfHintWindowId=popup.id;floatingPdfHintTabId=tabId;shownPdfHints.set(tabId,{source,at:now});
-  }catch(error){console.warn("Could not show the floating PDF suggestion",error);}
+    await browser.scripting.executeScript({target:{tabId,frameIds:[0]},func:(id,src,origin)=>{
+      let frame=document.getElementById(id);if(frame&&frame.tagName!=="IFRAME")return;
+      const previous=window.__keepitPdfHintMessage;if(previous)window.removeEventListener("message",previous);
+      if(!frame){frame=document.createElement("iframe");frame.id=id;frame.title="Keepit PDF suggestion";frame.setAttribute("aria-label","Keepit PDF suggestion");document.documentElement.append(frame);}
+      frame.style.cssText="position:fixed!important;z-index:2147483647!important;top:18px!important;right:18px!important;width:300px!important;height:84px!important;border:0!important;background:transparent!important;overflow:hidden!important;display:block!important;max-width:calc(100vw - 24px)!important;";
+      const handler=event=>{if(event.source!==frame.contentWindow||event.origin!==origin)return;const message=event.data;if(message?.type==="KEEPIT_PDF_HINT_RESIZE"){const collapsed=message.collapsed===true;frame.style.width=collapsed?"64px":"300px";frame.style.height=collapsed?"64px":"84px";}else if(message?.type==="KEEPIT_PDF_HINT_CLOSE"){window.removeEventListener("message",handler);delete window.__keepitPdfHintMessage;frame.remove();}};
+      window.__keepitPdfHintMessage=handler;window.addEventListener("message",handler);if(frame.src!==src)frame.src=src;
+    },args:[PDF_HINT_FRAME_ID,hintUrl.href,PDF_HINT_ORIGIN]});
+    activePdfHintTabId=tabId;
+  }catch(error){console.warn("Could not overlay the PDF suggestion on this tab",error);}
   finally{pdfHintPending.delete(pendingKey);}
 }
+void closeLegacyPdfHintWindows();
 browser.tabs.onUpdated.addListener((tabId,changeInfo,tab)=>{
   const url=changeInfo.url||tab?.url||"";
-  if(url.split(/[?#]/,1)[0]===PDF_HINT_PAGE)return;
+  if(url.split(/[?#]/,1)[0]===PDF_HINT_PAGE){if(Number.isInteger(tab?.windowId))void browser.windows.remove(tab.windowId).catch(()=>{});return;}
   if(changeInfo.url||changeInfo.status==="loading"||changeInfo.status==="complete")void syncPdfTabBadge(tabId,url);
   const source=pdfTabSource(url);
-  if(source){if(changeInfo.status==="complete"&&tab?.active)void showFloatingPdfHint({...tab,id:tabId},url);}
-  else if(changeInfo.url||changeInfo.status==="loading"){shownPdfHints.delete(tabId);void closeFloatingPdfHint(tabId);}
+  if(source){if(changeInfo.status==="complete"&&tab?.active)void showPdfHint({...tab,id:tabId},url);}
+  else if(changeInfo.url||changeInfo.status==="loading")void removePdfHint(tabId);
 });
-browser.tabs.onActivated.addListener(async({tabId})=>{
-  try{const tab=await browser.tabs.get(tabId);if(!tab.url||tab.url==="about:blank")return;if(tab.url.split(/[?#]/,1)[0]===PDF_HINT_PAGE)return;void syncPdfTabBadge(tabId,tab.url);if(pdfTabSource(tab.url))void showFloatingPdfHint(tab,tab.url);else{if(Number.isInteger(floatingPdfHintTabId))shownPdfHints.delete(floatingPdfHintTabId);void closeFloatingPdfHint();}}catch{}
+browser.tabs.onActivated.addListener(async({tabId,previousTabId})=>{
+  const previous=Number.isInteger(previousTabId)?previousTabId:activePdfHintTabId;
+  if(Number.isInteger(previous)&&previous!==tabId)void removePdfHint(previous);
+  try{const tab=await browser.tabs.get(tabId);if(!tab.url||tab.url==="about:blank")return;void syncPdfTabBadge(tabId,tab.url);if(pdfTabSource(tab.url))void showPdfHint(tab,tab.url);else void removePdfHint(tabId);}catch{}
 });
-browser.tabs.onRemoved.addListener(tabId=>{shownPdfHints.delete(tabId);void closeFloatingPdfHint(tabId);});
-browser.windows.onRemoved.addListener(windowId=>{if(windowId===floatingPdfHintWindowId){floatingPdfHintWindowId=floatingPdfHintTabId=null;}});
-browser.tabs.query({}).then(tabs=>tabs.forEach(tab=>{if(Number.isInteger(tab.id)){void syncPdfTabBadge(tab.id,tab.url);if(tab.active&&pdfTabSource(tab.url))void showFloatingPdfHint(tab,tab.url);}})).catch(()=>{});
+browser.tabs.onRemoved.addListener(tabId=>{void removePdfHint(tabId);});
+browser.tabs.query({}).then(tabs=>tabs.forEach(tab=>{if(Number.isInteger(tab.id)){void syncPdfTabBadge(tab.id,tab.url);if(tab.active&&pdfTabSource(tab.url))void showPdfHint(tab,tab.url);}})).catch(()=>{});
 async function resetLegacyDictationWrongWordStats() {
   const storage = browser?.storage?.local;
   if (!storage) return;

@@ -7,6 +7,17 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | Sửa PDF handoff theo demo đã duyệt
+
+**Trạng thái:** Đã chốt; sửa lại ở v3.5.374, Chrome thật cần retest.
+
+- PDF suggestion phải phủ ngay trên trang PDF như demo v9; tuyệt đối không tạo cửa sổ/tab riêng.
+- Không thêm PDF card vào popup khi bấm icon toolbar. Giữ nguyên giao diện popup toolbar cũ và badge PDF đã chốt.
+- Popup trên trang có X để thu về icon; bấm icon mở lại. Bấm card mở đúng PDF trong Keepit Documents.
+- Bản ghi PDF handoff bên dưới về cửa sổ riêng/thẻ toolbar bị quyết định này thay thế.
+
+---
+
 ## 2026-11-17 | PDF toolbar handoff mở đúng tệp trong Keepit
 
 **Trạng thái:** Đã chốt; popup nổi và toolbar handoff triển khai v3.5.372, browser QA còn pending.
