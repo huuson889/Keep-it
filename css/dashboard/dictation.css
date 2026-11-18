@@ -296,29 +296,29 @@
 html.dark #dashboardDictationView.dashboard-dictation-view,
 html.dark #dashboardDictationView .dictation-root {
   color-scheme:dark!important;
-  background:#0b1120!important;
-  color:#d7deeb!important;
+  background:#000000!important;
+  color:#c8c8cc!important;
 }
 html.dark #dashboardDictationView .topbar,
 html.dark #dashboardDictationView .search-panel,
 html.dark #dashboardDictationView .session-card,
 html.dark #dashboardDictationView .panel {
-  border-color:#2b3a52!important;
-  background:#111a2b!important;
+  border-color:#2b2b30!important;
+  background:#0d0d0f!important;
   box-shadow:0 9px 25px rgba(0,0,0,.2)!important;
 }
 html.dark #dashboardDictationView .topbar { box-shadow:0 4px 14px rgba(0,0,0,.18)!important; }
 html.dark #dashboardDictationView .hero {
-  border-color:#413e6b!important;
-  background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%)!important;
+  border-color:#3a3455!important;
+  background:linear-gradient(112deg,#4a3f8a 0%,#403679 47%,#332a66 100%)!important;
   box-shadow:0 13px 30px rgba(0,0,0,.28)!important;
 }
 html.dark #dashboardDictationView .continue-card {
-  border-color:#413e6b!important;
-  background:linear-gradient(115deg,#111a2b 0%,#111a2b 65%,#191a32 100%)!important;
+  border-color:#3a3455!important;
+  background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#1a1828 100%)!important;
   box-shadow:0 9px 25px rgba(0,0,0,.2)!important;
 }
-html.dark #dashboardDictationView .continue-card:after { background:#252443!important; }
+html.dark #dashboardDictationView .continue-card:after { background:#241f36!important; }
 html.dark #dashboardDictationView .search-row,
 html.dark #dashboardDictationView .mini-stat,
 html.dark #dashboardDictationView .filters,
@@ -326,18 +326,18 @@ html.dark #dashboardDictationView .mistake-filter,
 html.dark #dashboardDictationView .key-hint,
 html.dark #dashboardDictationView .engine-link,
 html.dark #dashboardDictationView .no-results {
-  border-color:#2b3a52!important;
-  background:#172338!important;
+  border-color:#2b2b30!important;
+  background:#151517!important;
 }
-html.dark #dashboardDictationView .search-row:focus-within { border-color:#7773bf!important; }
+html.dark #dashboardDictationView .search-row:focus-within { border-color:#8f86f2!important; }
 html.dark #dashboardDictationView .search-row input,
 html.dark #dashboardDictationView .sort-select { color:#f1f5fb!important; }
-html.dark #dashboardDictationView .search-row input::placeholder { color:#8492a8!important; }
+html.dark #dashboardDictationView .search-row input::placeholder { color:#8a8a91!important; }
 html.dark #dashboardDictationView .search-row>.icon,
 html.dark #dashboardDictationView .crumb strong,
 html.dark #dashboardDictationView .progress-label strong,
 html.dark #dashboardDictationView .text-btn,
-html.dark #dashboardDictationView .resume-link { color:#b8b7ff!important; }
+html.dark #dashboardDictationView .resume-link { color:#c0c2ff!important; }
 html.dark #dashboardDictationView .crumb,
 html.dark #dashboardDictationView .crumb .slash,
 html.dark #dashboardDictationView .search-help,
@@ -356,17 +356,17 @@ html.dark #dashboardDictationView .mini-foot,
 html.dark #dashboardDictationView .mistake-source,
 html.dark #dashboardDictationView .pair-arrow,
 html.dark #dashboardDictationView .tiny-warning,
-html.dark #dashboardDictationView .footer { color:#a4b0c3!important; }
-html.dark #dashboardDictationView .dictation-badge { border-color:#413e6b!important; background:#252443!important; color:#c4b5fd!important; }
-html.dark #dashboardDictationView .dictation-dot { background:#a5a9ff!important; box-shadow:0 0 0 3px #34315d!important; }
+html.dark #dashboardDictationView .footer { color:#95959c!important; }
+html.dark #dashboardDictationView .dictation-badge { border-color:#3a3455!important; background:#241f36!important; color:#c4b5fd!important; }
+html.dark #dashboardDictationView .dictation-dot { background:#a5a9ff!important; box-shadow:0 0 0 3px #2c2742!important; }
 html.dark #dashboardDictationView .external-btn,
 html.dark #dashboardDictationView .sort-select {
-  border-color:#2b3a52!important;
-  background:#172338!important;
+  border-color:#2b2b30!important;
+  background:#151517!important;
 }
-html.dark #dashboardDictationView .external-btn { color:#d7deeb!important; }
+html.dark #dashboardDictationView .external-btn { color:#c8c8cc!important; }
 html.dark #dashboardDictationView .external-btn:hover,
-html.dark #dashboardDictationView .engine-link:hover { border-color:#413e6b!important; background:#1e2b41!important; }
+html.dark #dashboardDictationView .engine-link:hover { border-color:#3a3455!important; background:#1a1a1d!important; }
 html.dark #dashboardDictationView .section-eyebrow { color:#f0a8bd!important; }
 html.dark #dashboardDictationView .continue-copy h2,
 html.dark #dashboardDictationView .section-head h2,
@@ -375,41 +375,41 @@ html.dark #dashboardDictationView .panel-head h2,
 html.dark #dashboardDictationView .mini-value,
 html.dark #dashboardDictationView .mistake-head h3,
 html.dark #dashboardDictationView .search-elsewhere h2 { color:#f1f5fb!important; }
-html.dark #dashboardDictationView .meta-pill { background:#172338!important; }
+html.dark #dashboardDictationView .meta-pill { background:#151517!important; }
 html.dark #dashboardDictationView .count-badge,
 html.dark #dashboardDictationView .filter.active,
 html.dark #dashboardDictationView .mistake-count,
 html.dark #dashboardDictationView .stats-note {
-  background:#252443!important;
+  background:#241f36!important;
   color:#c4b5fd!important;
 }
-html.dark #dashboardDictationView .filter { color:#a4b0c3!important; }
-html.dark #dashboardDictationView .filter.active { box-shadow:inset 0 0 0 1px #413e6b!important; }
+html.dark #dashboardDictationView .filter { color:#95959c!important; }
+html.dark #dashboardDictationView .filter.active { box-shadow:inset 0 0 0 1px #3a3455!important; }
 html.dark #dashboardDictationView .source-chip { border-color:#334155!important; background:#172338e8!important; color:#e2e8f0!important; }
-html.dark #dashboardDictationView .progress-track { background:#1e2b41!important; }
-html.dark #dashboardDictationView .resume-link { border-color:#413e6b!important; background:#252443!important; }
+html.dark #dashboardDictationView .progress-track { background:#1a1a1d!important; }
+html.dark #dashboardDictationView .resume-link { border-color:#3a3455!important; background:#241f36!important; }
 html.dark #dashboardDictationView .resume-link:hover { background:#302d58!important; }
 html.dark #dashboardDictationView .complete-badge,
 html.dark #dashboardDictationView .right-word { background:#173226!important; color:#6ee7b7!important; }
-html.dark #dashboardDictationView .no-results { border-color:#394760!important; color:#a4b0c3!important; }
-html.dark #dashboardDictationView .panel-icon { background:#29264a!important; color:#c4b5fd!important; }
-html.dark #dashboardDictationView .stats-divider { background:#233149!important; }
-html.dark #dashboardDictationView .mistake-row { border-color:#233149!important; }
-html.dark #dashboardDictationView .mistake-filter button { color:#a4b0c3!important; }
-html.dark #dashboardDictationView .mistake-filter button.active { background:#252443!important; color:#c4b5fd!important; }
+html.dark #dashboardDictationView .no-results { border-color:#2e2e33!important; color:#95959c!important; }
+html.dark #dashboardDictationView .panel-icon { background:#2a2440!important; color:#c4b5fd!important; }
+html.dark #dashboardDictationView .stats-divider { background:#1c1c1f!important; }
+html.dark #dashboardDictationView .mistake-row { border-color:#1c1c1f!important; }
+html.dark #dashboardDictationView .mistake-filter button { color:#95959c!important; }
+html.dark #dashboardDictationView .mistake-filter button.active { background:#241f36!important; color:#c4b5fd!important; }
 html.dark #dashboardDictationView .wrong-word { background:#3b2029!important; color:#fda4af!important; }
 html.dark #dashboardDictationView .mistake-count { color:#c4b5fd!important; }
 html.dark #dashboardDictationView .all-mistakes,
 html.dark #dashboardDictationView .mistake-all-sessions,
-html.dark #dashboardDictationView .engine-link { border-color:#2b3a52!important; background:#172338!important; color:#d7deeb!important; }
+html.dark #dashboardDictationView .engine-link { border-color:#2b2b30!important; background:#151517!important; color:#c8c8cc!important; }
 html.dark #dashboardDictationView .all-mistakes:hover,
-html.dark #dashboardDictationView .mistake-all-sessions:hover { background:#1e2b41!important; }
+html.dark #dashboardDictationView .mistake-all-sessions:hover { background:#1a1a1d!important; }
 html.dark #dashboardDictationView .engine-icon { background:#3b2029!important; color:#fda4af!important; }
 html.dark #dashboardDictationView .engine-icon.web { background:#173226!important; color:#6ee7b7!important; }
-html.dark #dashboardDictationView .engine-arrow { color:#8492a8!important; }
-html.dark #dashboardDictationView .search-elsewhere { border-color:#413e6b!important; background:linear-gradient(145deg,#111a2b,#191a32)!important; }
-html.dark #dashboardDictationView .search-elsewhere p { color:#a4b0c3!important; }
-html.dark #dashboardDictationView .toast { border-color:#2b3a52!important; background:#172338!important; color:#f1f5fb!important; box-shadow:0 10px 30px rgba(0,0,0,.35)!important; }
+html.dark #dashboardDictationView .engine-arrow { color:#8a8a91!important; }
+html.dark #dashboardDictationView .search-elsewhere { border-color:#3a3455!important; background:linear-gradient(145deg,#0d0d0f,#1a1828)!important; }
+html.dark #dashboardDictationView .search-elsewhere p { color:#95959c!important; }
+html.dark #dashboardDictationView .toast { border-color:#2b2b30!important; background:#151517!important; color:#f1f5fb!important; box-shadow:0 10px 30px rgba(0,0,0,.35)!important; }
 /* Detailed Dictation popup is isolated in its own CSP-safe extension page. */
 #dictationStatsPopupFrame{position:fixed;inset:0;z-index:2400;width:100vw;height:100vh;height:100dvh;border:0;background:transparent}
 #dictationStatsPopupFrame[hidden]{display:none!important}
@@ -419,5 +419,5 @@ html.dark #dashboardDictationView .toast { border-color:#2b3a52!important; backg
 .session-card .card-footer .cardDel{flex:none;display:grid;place-items:center;width:30px;height:30px;margin-left:auto;margin-right:6px;padding:0;border:1px solid var(--lhn-ui-border,#eeedf5);border-radius:9px;background:var(--lhn-ui-surface,#fff);color:var(--lhn-ui-muted,#8790a4);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
 .session-card .card-footer .cardDel:hover{color:#c9484a;border-color:#f0cfcf;background:#fdf1f1}
 .session-card .card-footer .cardDel svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-html.dark .session-card .card-footer .cardDel{background:var(--lhn-ui-surface,#111a2b);border-color:var(--lhn-ui-border,#2b3a52);color:var(--lhn-ui-muted,#a9b3c6)}
+html.dark .session-card .card-footer .cardDel{background:var(--lhn-ui-surface,#0d0d0f);border-color:var(--lhn-ui-border,#2b2b30);color:var(--lhn-ui-muted,#9c9ca3)}
 html.dark .session-card .card-footer .cardDel:hover{color:#f2a3a5;border-color:#57282b;background:#3a1719}

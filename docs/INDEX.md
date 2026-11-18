@@ -4,6 +4,7 @@
 
 | Tài liệu | Phạm vi | Đọc khi |
 |---|---|---|
+| [Quy tắc code](code-rules.md) | Tìm file, cây thư mục, nhãn i18n, màu theme, cấm khối vá `/* v3.5.xxx */`/`legacy`, cách tách file | Thêm/sửa file, nhãn, màu, hoặc tách file. |
 | [Nguyên tắc giao diện](ui-layout.md) | Bố cục dọc/ngang, chạm/chuột, dồn nút vào ☰, kiểu menu/popup cho mọi module | Sửa giao diện, bố cục, responsive, thanh Keepit, menu/sheet, popup dịch/từ điển, Overlay, Reader hoặc Dashboard. |
 | [Ask AI](modules/ask-ai.md) | AI panel ChatGPT/Gemini/Claude: providers, panel, script trong trang AI, background service | Sửa AI panel, chọn provider, route/mapping, prompt/Send hoặc Alt+X/Hỏi AI. |
 | [Background](modules/background.md) | Service worker, runtime router, IndexedDB annotations, usage, TTS | Sửa router message, annotation storage, usage hoặc TTS. |
@@ -55,3 +56,16 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>` |
 | Cài đặt mặc định, khoá lưu trữ | `js/core/defaults.js`, `js/core/config.js` |
 | Thứ tự nạp script | `manifest.json` (`content_scripts`, `background`) |
+
+## Quy ước viết trang module
+
+Đọc mục này trước khi tạo hoặc sửa trang trong `docs/`.
+
+- Mỗi module first-party dưới `js/` (`ask-ai`, `background`, `content`, `core`, `dashboard`, `overlay`, `popup`, `reader`, `shared`, `translate`) có một trang `docs/modules/<slug>.md`; module mới phải thêm trang và thêm dòng vào bảng mục lục ở trên. Không viết tài liệu cho từng file mã nguồn hay cho `vendor/`.
+- Trang dùng chung nhiều module đặt ở `docs/<tên>.md` (ví dụ `ui-layout.md`), vẫn phải có trong bảng mục lục. `docs/changelog/`, `docs/supabase/` không theo mẫu trang module và không giới hạn 700 từ.
+- Mẫu trang module: một H1 `# <Tên module> — Hướng dẫn kỹ thuật`, rồi đúng 5 H2 theo thứ tự: `1. Mục đích và phạm vi` · `2. File chính và điểm vào` · `3. Luồng chính` · `4. Hợp đồng và quy tắc cần giữ` · `5. Kiểm tra và xác minh`; không thêm H2 khác. Mục tiêu 300–600 từ, tối đa 700 (không thêm chữ để đạt mức tối thiểu; ngắn hơn được nếu module đơn giản).
+- Nội dung từng mục: (1) 1–3 câu trách nhiệm và ranh giới; (2) bảng 3–10 dòng `File | Điểm vào/symbol | Vai trò`; (3) 3–8 bước từ điểm vào đến kết quả; (4) 3–10 bullet contract/dữ liệu/invariant/fallback/rủi ro; (5) lệnh static/mock + bước kiểm thử, phân biệt rõ đã chạy với đề xuất.
+- Hai bảng ở trên là duy nhất: bảng mục lục 3 cột và bảng `Sửa nhanh` 2 cột — cập nhật cả hai khi thêm, xoá, đổi tên hoặc chuyển file. Chỉ đọc trang liên quan tới yêu cầu.
+- Viết tiếng Việt; link Markdown tương đối và symbol trong backticks; không dùng số dòng, không chép code dài, không lặp changelog hay trạng thái của `PROJECT.md`; code là nguồn sự thật khi docs mâu thuẫn.
+- Trước khi sửa code chỉ đọc trang module liên quan; cập nhật docs cùng thay đổi nếu đổi ranh giới/điểm vào/luồng/contract/storage/message/invariant/cách kiểm tra; cập nhật bảng mục lục khi thêm/xoá/đổi tên trang.
+

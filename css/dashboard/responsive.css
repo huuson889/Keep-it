@@ -92,14 +92,14 @@
 
   /* dark */
   html.dark .rn-tabbar { background: rgba(17, 24, 39, .94); border-color: #1f2937; }
-  html.dark .rn-tab { color: #9ca3af; }
+  html.dark .rn-tab { color: #95959c; }
   html.dark .rn-tab:active .rn-ico { background: #1f2937; }
   html.dark .rn-tab.is-active { color: #c4b5fd; }
   html.dark .rn-tab.is-active .rn-ico { background: rgba(124, 58, 237, .22); }
-  html.dark .rn-sheet { background: #111a2b; color: #e2e8f0; }
+  html.dark .rn-sheet { background: #0d0d0f; color: #e2e8f0; }
   html.dark .rn-grab { background: #334155; }
   html.dark .rn-sh-head .rn-x, html.dark .rn-back { background: #1e293b; color: #cbd5e1; }
   html.dark .rn-row:active { background: #1e293b; }
-  html.dark .rn-row svg { color: #a78bfa; }
-  html.dark #studyDialog .study-ratings:not([hidden]) { background: rgba(17, 26, 43, .96); border-color: #2b3a52; }
+  html.dark .rn-row svg { color: #a5a9ff; }
+  html.dark #studyDialog .study-ratings:not([hidden]) { background: rgba(17, 26, 43, .96); border-color: #2b2b30; }
 }
