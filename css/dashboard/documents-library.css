@@ -4,32 +4,31 @@
    Token nội bộ của trang Tài liệu (--line/--surface/--muted/--brand…) chỉ sống trong khối này,
    nên không rò sang các tab khác và không bị lỗi "trắng toát" ở chế độ tối như v3.5.428. */
 
+/* Bảng token giữ NGUYÊN giá trị của trang Tài liệu (css/dashboard/documents.css) để giao diện
+   không đổi một ly so với bản cũ; chỉ sống trong #dashboardDocumentsView nên không rò sang tab khác. */
 #dashboardDocumentsView.dashboard-documents-view{
-  --surface:var(--lhn-ui-surface);
-  --soft:var(--lhn-ui-raised);
-  --ink:var(--lhn-ui-strong);
-  --ink2:var(--lhn-ui-text);
-  --muted:var(--lhn-ui-muted);
-  --line:var(--lhn-ui-border);
-  --line2:var(--lhn-ui-border);
-  --brand:var(--lhn-ui-brand);
-  --brand2:#8c7bee;
-  --brandSoft:var(--lhn-ui-brand-soft);
-  --paper:var(--lhn-ui-surface);
-  --chip:#ffffffe6;
-  --green:#269b7b;
-  --pdf:#e5484d;
-  --docx:#2f6fe4;
-  --pptx:#e2702b;
-  --shadow:0 9px 25px rgba(68,61,133,.065);
-  --shadowH:0 14px 30px rgba(88,75,183,.13);
+  font:14px/1.45 var(--lhn-app-font-family,Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif);
+  -webkit-font-smoothing:antialiased;
+  --page:#f5f5ff;--surface:#fff;--soft:#fbfaff;--ink:#252640;--ink2:#354056;--muted:#8790a4;--line:#eeedf5;--line2:#e4e2f0;
+  --brand:#7262df;--brand2:#8c7bee;--brandSoft:#f2efff;--green:#269b7b;--greenSoft:#e9f8f1;--orange:#ba7b2b;--orangeSoft:#fff5e6;
+  --shadow:0 9px 25px rgba(68,61,133,.065);--shadowH:0 14px 30px rgba(88,75,183,.13);
+  --pdf:#e5484d;--pdfSoft:#fdecec;--docx:#2f6fe4;--docxSoft:#e9f0fd;--pptx:#e2702b;--pptxSoft:#fdf0e7;
+  --paper:#fff;--paperInk:#1f2433;--chip:#ffffffe6;
+  color:var(--ink);
 }
 html.dark #dashboardDocumentsView.dashboard-documents-view{
-  --paper:#1a2336;
-  --chip:#111a2bd9;
-  --shadow:0 9px 25px rgba(0,0,0,.2);
-  --shadowH:0 14px 30px rgba(0,0,0,.35);
+  --page:#0b1120;--surface:#111a2b;--soft:#172338;--ink:#e8edf6;--ink2:#c9d2e2;--muted:#8492a8;--line:#2b3a52;--line2:#2b3a52;
+  --brand:#8f86f2;--brand2:#a49cf7;--brandSoft:#25264a;--green:#45c79f;
+  --shadow:0 9px 25px rgba(0,0,0,.2);--shadowH:0 14px 30px rgba(0,0,0,.35);
+  --pdfSoft:#3a1719;--docxSoft:#14233f;--pptxSoft:#3a2213;--paper:#1a2336;--paperInk:#dfe6f3;--chip:#111a2bd9;
+  color-scheme:dark;
 }
+/* Nút trong thư viện: bỏ kiểu nút mặc định của Dashboard (nền xanh, padding 10px 13px, chữ 13px/600),
+   nếu không nút xoá 30×30 và nút "Mở" sẽ dày và đậm hơn bản cũ. */
+#dashboardDocumentsView button{
+  font:inherit;color:inherit;background:none;border:0;border-radius:0;padding:0;cursor:pointer;white-space:nowrap;
+}
+#dashboardDocumentsView input,#dashboardDocumentsView select{font:inherit;color:inherit}
 
 #dashboardDocumentsView .dlib{display:block;padding:0 clamp(16px,3vw,42px) 34px}
 #dashboardDocumentsView .dlib svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
@@ -37,6 +36,7 @@ html.dark #dashboardDocumentsView.dashboard-documents-view{
 /* ---------- hero + đọc tiếp ---------- */
 #dashboardDocumentsView .row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
 #dashboardDocumentsView .hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:220px;padding:25px 30px;border:1px solid #e3dcff;border-radius:24px;background:linear-gradient(112deg,#a999fa 0%,#8d7aee 47%,#7563e4 100%);color:#fff;box-shadow:0 13px 30px #7664dc2e}
+html.dark #dashboardDocumentsView .hero{border-color:#413e6b;background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%);box-shadow:0 13px 30px rgba(0,0,0,.28)}
 #dashboardDocumentsView .hero:before,#dashboardDocumentsView .hero:after{content:"";position:absolute;border:1px solid #ffffff2a;border-radius:50%;pointer-events:none}
 #dashboardDocumentsView .hero:before{width:260px;height:260px;left:46%;top:-170px}
 #dashboardDocumentsView .hero:after{width:220px;height:220px;right:-40px;bottom:-150px}
@@ -48,7 +48,7 @@ html.dark #dashboardDocumentsView.dashboard-documents-view{
 #dashboardDocumentsView .heroIcon{position:relative;z-index:1;width:112px;height:112px;flex:none;display:grid;place-items:center;border:1px solid #ffffff4d;border-radius:44% 56% 52% 48%;background:#ffffff1c}
 #dashboardDocumentsView .heroIcon span{width:74px;height:74px;display:grid;place-items:center;border-radius:20px;background:#fff;color:var(--brand);box-shadow:0 10px 25px #2d1f8a33}
 html.dark #dashboardDocumentsView .heroIcon span{background:#f3f1ff}
-#dashboardDocumentsView .heroIcon svg{width:34px;height:34px}
+#dashboardDocumentsView .heroIcon svg.i{width:34px;height:34px}
 
 #dashboardDocumentsView .continue{position:relative;overflow:hidden;display:flex;gap:18px;align-items:center;padding:22px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(115deg,var(--surface) 0%,var(--surface) 62%,var(--brandSoft) 100%);box-shadow:var(--shadow)}
 html.dark #dashboardDocumentsView .continue{border-color:#413e6b;background:linear-gradient(115deg,#111a2b 0%,#111a2b 65%,#191a32 100%)}
@@ -64,7 +64,7 @@ html.dark #dashboardDocumentsView .cEyebrow{color:#f08bab}
 #dashboardDocumentsView .btnP{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px;border:0;border-radius:11px;background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;font-weight:600;font-size:13.5px;box-shadow:0 8px 18px #7262df40}
 #dashboardDocumentsView .btnL{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 10px;border:0;background:none;color:var(--brand);font-weight:600;font-size:13.5px}
 #dashboardDocumentsView .cThumb{position:relative;z-index:1;width:150px;flex:none;aspect-ratio:3/4;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:0 10px 22px #2a245a1f;background:var(--paper)}
-#dashboardDocumentsView .cThumb img{width:100%;height:100%;object-fit:cover;display:block}
+#dashboardDocumentsView .cThumb img{width:100%;height:100%;object-fit:contain;display:block}
 
 /* ---------- nhập tệp ---------- */
 #dashboardDocumentsView .panel{border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
@@ -97,28 +97,26 @@ html.dark #dashboardDocumentsView .seg button.on{background:#25304a;color:#c3c0f
 #dashboardDocumentsView .search input::placeholder{color:var(--muted)}
 #dashboardDocumentsView .sort{height:38px;padding:0 10px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:13px;color:var(--ink)}
 #dashboardDocumentsView .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-#dashboardDocumentsView .card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s;cursor:pointer}
+#dashboardDocumentsView .card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s;cursor:pointer}
 #dashboardDocumentsView .card:hover{transform:translateY(-2px);box-shadow:var(--shadowH)}
 #dashboardDocumentsView .thumb{position:relative;height:126px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-top:16px}
 #dashboardDocumentsView .thumb.pdf{background:linear-gradient(135deg,#ffd9d6,#f59a92 50%,#b8505a)}
 #dashboardDocumentsView .thumb.docx{background:linear-gradient(135deg,#d8e6ff,#8fb3f5 50%,#3c66b9)}
 #dashboardDocumentsView .thumb.pptx{background:linear-gradient(135deg,#ffe3c8,#f4a96a 50%,#b85f2c)}
-#dashboardDocumentsView .thumb.image{background:linear-gradient(135deg,#d6f2e6,#8fd7bd 50%,#3f9a7c)}
 html.dark #dashboardDocumentsView .thumb.pdf{background:linear-gradient(135deg,#5b2a33,#7a3540 50%,#3a1a24)}
 html.dark #dashboardDocumentsView .thumb.docx{background:linear-gradient(135deg,#253a63,#2f4f8a 50%,#1a2a4c)}
 html.dark #dashboardDocumentsView .thumb.pptx{background:linear-gradient(135deg,#5c3a22,#7b4a26 50%,#3a2414)}
-html.dark #dashboardDocumentsView .thumb.image{background:linear-gradient(135deg,#1d4034,#255c47 50%,#153a2c)}
 #dashboardDocumentsView .thumb .pg{width:62%;height:118px;border-radius:8px 8px 0 0;background:var(--paper);box-shadow:0 -4px 18px #00000026;overflow:hidden}
 #dashboardDocumentsView .thumb.pptx .pg{width:76%;height:104px;border-radius:7px;margin-bottom:12px}
 #dashboardDocumentsView .thumb .pg img{width:100%;height:100%;object-fit:cover;display:block}
-#dashboardDocumentsView .fileFallback{display:grid;place-items:center;width:100%;height:100%;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px}
+
 #dashboardDocumentsView .type{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;background:var(--chip);font-size:11.5px;font-weight:700;color:var(--ink);backdrop-filter:blur(6px)}
 #dashboardDocumentsView .type i{width:7px;height:7px;border-radius:50%}
 #dashboardDocumentsView .cardBody{padding:12px 14px 13px;display:flex;flex-direction:column;gap:7px;flex:1}
 #dashboardDocumentsView .cardBody h4{margin:0;font-size:14.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #dashboardDocumentsView .meta{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
-#dashboardDocumentsView .meta svg{width:14px;height:14px}
-#dashboardDocumentsView .imageMeta{color:var(--muted);font-size:12.5px}
+#dashboardDocumentsView .meta svg.i{width:14px;height:14px}
+#dashboardDocumentsView .imageMeta{color:var(--muted);font-size:12px;line-height:1.6}
 #dashboardDocumentsView .prog .lbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
 #dashboardDocumentsView .prog .lbl strong{color:var(--brand)}
 html.dark #dashboardDocumentsView .prog .lbl strong{color:#b8b7ff}
@@ -128,12 +126,20 @@ html.dark #dashboardDocumentsView .prog .lbl strong{color:#b8b7ff}
 #dashboardDocumentsView .foot .stats{display:flex;gap:10px;color:var(--muted);font-size:12px}
 #dashboardDocumentsView .go{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border:1px solid var(--line2);border-radius:9px;background:var(--brandSoft);color:var(--brand);font-size:12.5px;font-weight:700;cursor:pointer}
 html.dark #dashboardDocumentsView .go{background:#25264a;border-color:#3a3a6a;color:#c3c0ff}
-#dashboardDocumentsView .go svg{width:13px;height:13px}
+#dashboardDocumentsView .go svg.i{width:13px;height:13px}
 /* Nút xoá trên thẻ: cùng thông số với thẻ Chép chính tả/Tài liệu (30×30). */
 #dashboardDocumentsView .card .foot .cardDel{flex:none;display:grid;place-items:center;width:30px;height:30px;margin-left:auto;margin-right:6px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
 #dashboardDocumentsView .card .foot .cardDel:hover{color:#c9484a;border-color:#f0cfcf;background:#fdf1f1}
 html.dark #dashboardDocumentsView .card .foot .cardDel:hover{color:#f08b8b;border-color:#4a2a30;background:#2a1a1d}
-#dashboardDocumentsView .card .foot .cardDel svg{width:15px;height:15px}
+#dashboardDocumentsView .card .foot .cardDel svg.i{width:15px;height:15px}
+/* Raster previews: giữ đúng như bản gốc — ảnh không có gradient, page phủ kín khung thumb. */
+#dashboardDocumentsView .thumb.image{padding-top:0;background:var(--soft)}
+#dashboardDocumentsView .thumb.image .pg{width:100%;height:100%;border-radius:0;background:none;box-shadow:none;margin:0}
+#dashboardDocumentsView .thumb.image .pg img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+#dashboardDocumentsView .thumb.image .type{z-index:1}
+#dashboardDocumentsView .card .thumb .pg img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+#dashboardDocumentsView .card .thumb .pg .fileFallback{display:grid;place-items:center;height:100%;color:var(--brand);font-size:26px}
+#dashboardDocumentsView .fileSelectButton{margin-top:12px}
 #dashboardDocumentsView .empty{grid-column:1/-1;padding:28px;text-align:center;color:var(--muted);border:1.5px dashed var(--line2);border-radius:18px}
 #dashboardDocumentsView .aside{display:flex;flex-direction:column;gap:16px}
 #dashboardDocumentsView .aside .panel{padding:16px}
@@ -168,3 +174,40 @@ html.dark #dashboardDocumentsView .card .foot .cardDel:hover{color:#f08b8b;borde
   #dashboardDocumentsView .tools .search{order:3;flex-basis:100%}
   #dashboardDocumentsView .seg{overflow-x:auto;max-width:100%}
 }
+
+/* ---------- chặn quy tắc dark toàn cục của ui-theme.css ----------
+   ui-theme.css đặt `html.dark p{color:var(--lhn-ui-muted)!important}` và
+   `html.dark h1,h2,h3{color:var(--lhn-ui-strong)!important}`, nên chữ trắng trong khối tím
+   bị đổi sang màu xám khi bật chế độ tối (đúng lỗi thấy ở ảnh chụp). Trả lại màu của trang Tài liệu. */
+html.dark #dashboardDocumentsView .hero h1,
+html.dark #dashboardDocumentsView .hero p,
+#dashboardDocumentsView .hero h1,
+#dashboardDocumentsView .hero p{color:#fff!important}
+#dashboardDocumentsView .hero .eyebrow,#dashboardDocumentsView .hero .chip{color:#fff}
+html.dark #dashboardDocumentsView .continue .cBody h2,
+html.dark #dashboardDocumentsView .libHead h3,
+html.dark #dashboardDocumentsView .aside h5,
+html.dark #dashboardDocumentsView .cardBody h4,
+html.dark #dashboardDocumentsView .cBody h2{color:var(--ink)!important}
+html.dark #dashboardDocumentsView .libHead p,
+html.dark #dashboardDocumentsView .aside .sub,
+html.dark #dashboardDocumentsView .cBody .desc,
+html.dark #dashboardDocumentsView .imageMeta,
+html.dark #dashboardDocumentsView .dzNote,
+html.dark #dashboardDocumentsView .dz small,
+html.dark #dashboardDocumentsView .mini small,
+html.dark #dashboardDocumentsView .foot .stats,
+html.dark #dashboardDocumentsView .prog .lbl,
+html.dark #dashboardDocumentsView .meta,
+html.dark #dashboardDocumentsView .search input::placeholder{color:var(--muted)!important}
+html.dark #dashboardDocumentsView .card{
+  background:var(--surface)!important;border-color:var(--line)!important;color:var(--ink)!important;box-shadow:var(--shadow)!important;
+}
+html.dark #dashboardDocumentsView .dz{background:var(--soft)!important;border-color:var(--line2)!important;color:var(--ink)!important}
+html.dark #dashboardDocumentsView .search,html.dark #dashboardDocumentsView .sort,html.dark #dashboardDocumentsView .seg{background:var(--surface)!important;border-color:var(--line)!important;color:var(--ink)!important}
+html.dark #dashboardDocumentsView .seg button{color:var(--muted)!important}
+html.dark #dashboardDocumentsView .seg button.on{background:#25304a!important;color:#c3c0ff!important}
+html.dark #dashboardDocumentsView .mini div{background:var(--soft)!important;border-color:var(--line)!important}
+html.dark #dashboardDocumentsView .card .foot .cardDel{background:var(--surface)!important;border-color:var(--line)!important;color:var(--muted)!important}
+html.dark #dashboardDocumentsView .go{background:#25264a!important;border-color:#3a3a6a!important;color:#c3c0ff!important}
+html.dark #dashboardDocumentsView .count{background:var(--brandSoft)!important;color:var(--brand)!important}

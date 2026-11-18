@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.431**, nhánh `Keepit-Optimize-Test`; Thư viện Tài liệu vẽ thẳng trong Dashboard (thẻ, tìm/lọc/sắp xếp, thống kê, đọc tiếp, xoá, nhập tệp), khung chỉ còn việc xem tệp; đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
+- Version **3.5.432**, nhánh `Keepit-Optimize-Test`; Thư viện Tài liệu vẽ thẳng trong Dashboard và giữ đúng giao diện/token của trang Tài liệu cũ (khung chỉ còn việc xem tệp); đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
 - Version **3.5.424**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
@@ -248,6 +248,11 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.432 | Arena.ai Agent sửa:**
+
+- Sửa theo ảnh chụp của người dùng (thư viện mới khác bản cũ ở vài chỗ): dùng **đúng bảng token của trang Tài liệu** thay vì ánh xạ sang `--lhn-ui-*`; thêm `font:14px/1.45` cho khối (Dashboard đặt 12px nên mọi chữ nhỏ hơn); bỏ kiểu nút toàn cục của Dashboard trong phạm vi thư viện (`padding:10px 13px`, chữ 13px/600 làm nút xoá/"Mở" dày và đậm hơn); bổ sung các rule đã thiếu (`.thumb.image*`, `.card .thumb .pg img`, `.card .thumb .pg .fileFallback`, `.imageMeta`, `.fileSelectButton`, `html.dark .hero`) và bỏ gradient xanh tự chế cho ảnh; chặn `html.dark p{…!important}` / `html.dark h1…` của `ui-theme.css` làm chữ trắng trong khối tím bị xám ở chế độ tối; sửa icon mũi tên 18px → 13px (rule `.dlib svg.i` đè `.go svg`).
+- Kiểm lại: `qa/diff431.js` so từng phần tử giữa thư viện cũ (`documents.html`) và mới ở sáng + tối — chỉ còn khác bề rộng do Dashboard có sidebar (`.card` 525→416px), còn màu/cỡ chữ/bo góc/viền/khoảng đệm giống hệt; nút "Mở" 89×28 với icon 13px, nút xoá 30×30/icon 15px như cũ; `qa/lib431.js` 1512 và 390 vẫn `errors []`.
 
 **2026-11-17 | v3.5.431 | Arena.ai Agent sửa:**
 
