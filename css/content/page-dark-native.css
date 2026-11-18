@@ -1,0 +1,5 @@
+/* Trang tối (v3.5.220) — chỉ cho các trang đã nhớ là vốn tối (lhnPageDarkNative; js/background/background.js syncPageDarkScripts).
+   Các trang này không nhận lớp tối nạp sẵn, nên trước khi trang vẽ xong trình duyệt hiện nền trắng mặc định → chớp trắng.
+   color-scheme:dark cho nền mặc định tối ngay từ đầu; js/content/page-dark.js gắn html[data-keepit-pd-off] (trước khi xét
+   trang sáng / tối) để gỡ. */
+html:not([data-keepit-pd-off]){color-scheme:dark!important}

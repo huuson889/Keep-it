@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keepit · PDF</title>
+  <link rel="stylesheet" href="../css/popup/pdf-suggestion.css">
+</head>
+<body>
+  <div id="hintShell" class="hint-shell">
+    <button id="pdfHint" class="hint" type="button" aria-label="Mở PDF bằng Keepit">
+      <img class="keepit-logo" src="../assets/icons/icon.svg" alt="">
+      <span class="hint-copy">
+        <strong data-i18n="pdfFloatingTitle">Mở bằng Keepit</strong>
+        <small id="pdfName" title=""></small>
+      </span>
+      <span class="primary" data-i18n="pdfFloatingAction">Mở PDF</span>
+    </button>
+    <button id="collapseHint" class="collapse-hint" type="button" aria-label="Thu gọn gợi ý" title="Thu gọn">×</button>
+    <button id="collapsedHint" class="collapsed-hint" type="button" aria-label="Mở lại gợi ý Keepit" title="Mở lại gợi ý Keepit" hidden><img class="keepit-logo" src="../assets/icons/icon.svg" alt=""></button>
+  </div>
+  <script src="../js/core/browser-polyfill.js"></script>
+  <script src="../js/core/languages.js"></script>
+  <script src="../js/popup/pdf-suggestion.js"></script>
+</body>
+</html>
