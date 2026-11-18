@@ -2979,7 +2979,6 @@ function closeSharedTopbarExportMenu() {
 }
 function mountSharedTopbarInParent(view) {
   closeSharedTopbarExportMenu();
-  dashboardSharedTopbar?.classList.remove("is-compact");
   if(view==="documents")dashboardSharedTopbar?.classList.add("ov-revealed");
   updateSharedTopbarContent(view);
   if (dashboardSharedTopbar && dashboardSharedTopbar.parentElement !== dashboardSharedTopbarPortal) dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
