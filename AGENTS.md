@@ -60,6 +60,16 @@
 - Tự kiểm tra trước khi báo: chạy thử, chụp màn hình sáng/tối và các thiết bị; phần chưa kiểm chứng được thì nói rõ là chưa kiểm.
 
 
+**4.4. Kiểm thử giao diện: bắt buộc bằng ảnh chụp trên extension thật**
+- Chỉ coi là xong khi có ảnh chụp từ chính extension đang build. Không dùng HTML demo/mockup thay thế, không đoán CSS rồi báo đạt.
+- Mở extension unpacked thật: Chromium + `--load-extension=<repo>`, chạy dưới `xvfb-run`, profile mới tinh mỗi lần; điều khiển bằng Playwright persistent context, lấy ID qua service worker rồi mở `chrome-extension://<id>/pages/dashboard.html`.
+- Seed dữ liệu bằng IndexedDB **bên trong iframe của route tương ứng sau khi route đó đã mở**; tuyệt đối không mở DB với version từ phía test trước khi app tự tạo object store (sẽ làm hỏng `onupgradeneeded` của thư viện).
+- Assert bằng số đo, không bằng cảm nhận: đọc DOM thật, `getComputedStyle`, `getBoundingClientRect()`, `scrollTop`. Ví dụ để chứng minh "chỉ danh sách cuộn": cuộn danh sách rồi kiểm header giữ nguyên `top` và `#dashboardScroller.scrollTop` = 0.
+- Chụp tối thiểu 4 ảnh: desktop 1512 và mobile 390, mỗi cỡ cả light và dark; dark phải bật bằng đúng nút đổi giao diện của app, không gắn class bằng tay. Chi tiết nhỏ (dấu tick, icon, viền, khoảng cách 1–2px) phải có thêm ảnh phóng to (`deviceScaleFactor: 4` + clip quanh phần tử) và ảnh 1× để đối chiếu.
+- Thu `console.error` và `pageerror` của mọi page/frame; còn lỗi thì chưa được báo đạt. Ảnh và số đo lưu ngoài repo (`/home/user/shots380`), tên `<tag>-<width>-<mô tả>.png` kèm file `.json` chứa số đo.
+- Báo cáo phải tách rõ hai phần: **đã xác minh bằng ảnh/số đo** và **chưa kiểm được** (profile Chrome thật của người dùng, tệp PDF/Office thật, cảm giác dùng, tốc độ).
+- Giữ nguyên harness hiện tại, không đổi sang công cụ khác khi chưa có lý do; harness và lệnh chạy ghi ở `/home/user/qa/README.md`.
+
 ## 5. Quy trình sau khi sửa
 
 **5.1. Version**
@@ -129,3 +139,5 @@
 Các quy tắc dưới đây **chỉ áp dụng khi tác nhân thực hiện là Arena.ai Agent** và ưu tiên hơn quy tắc chung nếu có mâu thuẫn:
 - Sau khi dùng xong tệp đính kèm, xóa toàn bộ tệp bên trong `/home/user/uploads` (kể cả thư mục con); chỉ xóa sau khi hoàn tất mọi thao tác cần chúng.
 - Trong `/home/user/Keepit-Zip`, chỉ giữ lại ZIP `Keepit - Optimize Test-v<version>.zip` có version cao nhất. Chỉ xóa các ZIP version cũ sau khi ZIP mới đã được đóng gói và xác minh thành công; nếu build mới lỗi thì giữ nguyên ZIP hiện có.
+- Harness kiểm thử hiện tại: `/home/user/qa/README.md`; file mới nhất `pager411.js` (layout/phân trang/checkbox), `boxzoom.js` (phóng 4× ô chọn). Sandbox reset thì phải cài lại `npm i playwright-core@1.55.0`, `npx playwright-core install chromium`, `apt-get install -y xvfb` + các lib của Chromium, và `git config user.name "Arena.ai Agent"` / `user.email "arena-agent@local.invalid"`.
+- Sandbox Arena chưa có khoá ký CRX (`/home/user/Keepit-key/*.pem` hoặc `KEEPIT_CRX_KEY`), nên chỉ đóng ZIP ở `/home/user/Keepit-Zip`; khi báo cáo phải nói rõ là không tạo CRX vì thiếu khoá, không được im lặng bỏ qua.

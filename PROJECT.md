@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.412**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.414**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -239,6 +239,21 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.414 | Arena.ai Agent sửa:**
+
+- Thêm nút **Bỏ chọn** ngay sau "Đã chọn N" trong thanh chọn (cùng hàng Chọn tất cả / Khôi phục / Xoá vĩnh viễn), kiểu link gạch chân màu tím như Gmail; chỉ hiện khi đang có mục được chọn.
+- Bấm sẽ xoá toàn bộ lựa chọn và render lại: đếm về rỗng, nút Khôi phục/Xoá vĩnh viễn disable lại, ô "Chọn tất cả" bỏ tích, chính nút Bỏ chọn tự ẩn.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard-trash.js` (`syncBulkBar` + handler `#trashClearSel`), `js/core/languages.js` (`trashClearSel` en/vi/ko), `css/dashboard/trash.css` (light + dark).
+- Kiểm tra: `node --check` hai file JS; Playwright trên extension thật 1512 + 390 (vi) — chọn 2 dòng → nút hiện, cách "Đã chọn 2" 12px, nằm trong thanh chọn; bấm → `hidden=true`, đếm rỗng, 0 dòng `is-picked`, `selectAll.checked=false`, nút Khôi phục `disabled=true`; 0 lỗi console. Ảnh: `clear414-1512-bulkrow.png`, `clear414-1512-dark.png`, `clear414-390-selected.png`.
+
+**2026-11-17 | v3.5.413 | Arena.ai Agent sửa:**
+
+- Tóm tắt: thêm mục **4.4** vào `AGENTS.md` buộc kiểm thử giao diện bằng ảnh chụp từ extension thật — mở extension unpacked dưới `xvfb-run` với profile mới, seed IndexedDB trong iframe của route sau khi route mở, assert bằng `getComputedStyle`/`getBoundingClientRect()`/`scrollTop`, tối thiểu 4 ảnh 1512 và 390 cho light + dark (dark bật bằng nút thật), chi tiết nhỏ phải phóng 4×, `console.error`/`pageerror` phải rỗng, báo cáo tách rõ phần đã xác minh và phần chưa kiểm được. Bổ sung 2 bullet ở mục 7 về vị trí harness `/home/user/qa/README.md` và việc sandbox không có khoá `.pem` nên chỉ đóng ZIP.
+- Không đổi code extension; chỉ đổi tài liệu quy tắc.
+- File: `AGENTS.md`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: đọc lại mục 4.4 và mục 7 sau khi ghi; ZIP v3.5.413 đóng từ HEAD có `AGENTS.md` + `PROJECT.md` mới nhất, `manifest.json` = 3.5.413, không kèm `.git`. Không chạy lại Playwright vì không có thay đổi giao diện nên version này không có ảnh mới — đúng phạm vi sửa quy tắc.
+- Lưu ý: chưa tạo CRX vì sandbox không có khoá ký (`/home/user/Keepit-key` rỗng).
 
 **2026-11-17 | v3.5.412 | Arena.ai Agent sửa:**
 

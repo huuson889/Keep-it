@@ -300,6 +300,8 @@
     const pickedOnPage = pageRows.filter(item => selected.has(item.id)).length;
     bar.hidden = !(visible && visible.length > 0);
     if (count) count.textContent = selected.size ? t('trashSelected', { count: selected.size }) : '';
+    const clearSel = $('trashClearSel');
+    if (clearSel) clearSel.hidden = selected.size === 0;
     if (all) {
       all.checked = pageRows.length > 0 && pickedOnPage === pageRows.length;
       all.indeterminate = pickedOnPage > 0 && pickedOnPage < pageRows.length;
@@ -358,6 +360,11 @@
     if (purge) { void purgeItems([purge.dataset.purge]); return; }
     const bulk = event.target.closest('[data-bulk]');
     if (bulk) { void (bulk.dataset.bulk === 'restore' ? restoreItems([...selected]) : purgeItems([...selected])); return; }
+    if (event.target.closest('#trashClearSel')) {
+      selected = new Set();
+      void render();
+      return;
+    }
     if (event.target.closest('#trashEmptyAll')) { void emptyAll(); return; }
     const pg = event.target.closest('[data-pg]');
     if (pg) { goPage(pg.dataset.pg === 'next' ? 1 : -1); }
