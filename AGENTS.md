@@ -57,6 +57,9 @@
 - Người dùng chất vấn ("sao…?", "lỗi:") = báo lỗi: tra code tìm nguyên nhân, xác định lỗi chỉ ở demo hay cả app thật, sửa rồi báo ngắn gọn.
 - Câu có thể hiểu hai cách: chọn cách gần ngữ cảnh và các mẫu đã duyệt nhất, nói rõ cách đã chọn để người dùng chỉnh; chỉ hỏi trước khi đoán sai sẽ tốn nhiều công.
 - Ghi lại các lần hiểu sai từ ngữ (ví dụ "bằng nhau" = chiều cao, "nghiêng" = vị trí) và không nhầm lại.
+- Yêu cầu về **hình thức** mà hiểu được nhiều cách — "giống 2 nút kia" (nút có khung hay chữ?), "làm giống cái kia" (phần tử nào?), "đẹp hơn", "gọn hơn" — phải **hỏi lại một câu kèm 2–3 phương án cụ thể** rồi mới sửa. Không đoán, không thử lần lượt.
+- Người dùng đã gửi ảnh chụp thì **ảnh là đặc tả**: chỉ đối chiếu với đúng những phần tử xuất hiện trong ảnh đó. Nếu ảnh không chứa phần tử mình định so sánh thì phải hỏi, không suy ra từ nơi khác.
+- Thay đổi nhỏ (một nhãn, một nút, 1–2px) vẫn phải đúng ngay lần đầu như thay đổi lớn; không được coi là chi tiết nhỏ nên làm đại rồi sửa sau.
 - Tự kiểm tra trước khi báo: chạy thử, chụp màn hình sáng/tối và các thiết bị; phần chưa kiểm chứng được thì nói rõ là chưa kiểm.
 
 

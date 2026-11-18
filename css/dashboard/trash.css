@@ -62,9 +62,8 @@ html.dark .trash-when-custom input { background: #0e1626; border-color: #2b3a52;
 .trash-bulk #trashBulkCount { font-size: 12.5px; font-weight: 700; color: #5a4bd0; }
 .trash-action[hidden] { display: none; }
 /* "Bỏ chọn" is a label like "Chọn tất cả" / "Đã chọn N": same font, size, weight and colour,
-   no border, no underline — only the cursor and a hover shade tell it is clickable. */
+   no border, no underline and no hover change — identical to the label next to it. */
 .trash-bulk #trashClearSel { padding: 0; border: 0; border-radius: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 600; color: #5a4bd0; cursor: pointer; }
-.trash-bulk #trashClearSel:hover { color: #4338b8; }
 .trash-bulk #trashClearSel[hidden] { display: none; }
 .trash-bulk-actions { display: flex; gap: 6px; margin-left: auto; }
 .trash-group { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; font-size: 12px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: var(--lhn-ui-muted,#8790a4); }
