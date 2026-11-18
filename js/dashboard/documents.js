@@ -1,6 +1,7 @@
 // Document library and v13 viewer. All file data is local; external tools are explicit user actions.
 (() => {
 'use strict';
+if(window.parent!==window)document.documentElement.classList.add('dashboard-embedded');
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], api=globalThis.browser, Store=KeepitDocumentsStore;
 const PREF_KEY='lhnDocumentsPrefs', MB=1048576;
 let settings={},lang='en',docs=[],filter='all',q='',sort='recent',activeEngine=null,viewCycle=0,importCycle=0,loading=false;

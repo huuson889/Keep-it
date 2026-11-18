@@ -22,22 +22,20 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 
 1. `load()` lấy settings, favorites, annotations; cập nhật Overview và event snapshot H&N. Dữ liệu thật rỗng phải có empty state, không chèn mẫu.
 2. `setDashboardView()` đổi `overview`, `dictation`, `highlights-notes`, `documents`; route không active dùng `hidden`. Flashcards vẫn là action. `listening` cũ migrate sang `dictation`; lưu last-route/scroll theo tab.
-3. Overview/Dictation dùng viewport cuộn riêng; H&N dùng `#dashboardScroller`. Ba route cũ giữ một shared topbar. Chỉ Tài liệu ẩn portal đó và dùng topbar riêng trong iframe; khi viewer mở, bridge tin cậy phủ viewport và ẩn bottom nav. Rời route gửi suspend để dừng audio.
+3. Overview/Dictation dùng viewport cuộn riêng; H&N và Documents dùng `#dashboardScroller`. Cả bốn route chia sẻ topbar Keepit/tab-name. Documents ẩn header lồng khi embedded và lấp viewport còn lại; viewer mở thì bridge phủ màn hình, ẩn bottom nav. Rời route gửi suspend để dừng audio.
 4. Dictation đối soát session index với record thật, khôi phục nguồn/tiêu đề/tổng câu từ cache. Continue YouTube mở thẳng Dictation khi captions đang tải; web giữ URL nguồn. Cards và continue-art dùng `LHN_THUMBNAILS`; favicon dùng `LHN_SITE_ICONS`.
 5. H&N nhận snapshot protocol `1` qua `keepit:highlights-notes-*`; CRUD/favorite/export/review/jump/speak quay lại handler Dashboard. Background IndexedDB là nguồn annotations web.
 6. Popup stats nhận OPEN/UPDATE/CLOSE cùng origin, theme từ parent; records schema v3 là nguồn chính, index chỉ bổ sung metadata. Chỉ reveal khi mở/đổi lọc, không khi snapshot refresh.
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
-- Không khôi phục Grammar/Library dự phòng hay route Flashcards. Sidebar chỉ chứa route/action thực; pin giữ 220px/56px và không tự bung khi hover.
-- Settings master tắt thì dependent `inert`; ba lựa chọn icon/popup độc quyền không bị khóa. Dịch tắt khóa Reader song ngữ. AI luôn còn một provider; auto-send mặc định tắt, user-written prompt không tự gửi.
-- Nhãn mới nằm ở `languages.js`, đủ en/vi/ko. Theme theo `sidebarTheme` chung.
-- Reveal/counter dùng module chung, cycle guard và reduced motion; không tạo timer/observer presentation trùng ở consumer. Không animation giả số liệu.
-- H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
-- Thống kê lỗi giữ ngưỡng/lọc/critical và per-view state hiện có; metadata không được ghi đè bằng videoId hoặc mã nguồn web.
-- Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng annotations chung. Chỉ owned references được mở/jump, blob không backup. PDF adapter gom hàng bảng thẳng cột vào một block và giữ queue/TTS chung.
-- Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks dùng chung `setPanel('translation')`/`startNativeReader()` với toolbar top. Điều khiển Ẩn/Hiện thanh không hiện trong sheet Documents.
-- `OPEN_DASHBOARD_DOCUMENTS` chuyển view hiện tại sang Tài liệu; route mới `?view=documents` là fallback. PDF local bị chặn quyền hiển thị hướng dẫn ngắn; CTA mở trang Tiện ích Chrome tới Keepit nhưng giữ modal mở, polling quyền đến khi được cấp mới đóng. Nút chọn PDF là lựa chọn phụ; lỗi mở PDF thông thường vẫn giữ picker chính.
+- Sidebar chỉ chứa route/action thực; không khôi phục Grammar/Library dự phòng. Pin 220px/56px, không tự bung khi rê chuột.
+- Settings master tắt thì dependent `inert`; Dịch tắt khóa Reader song ngữ. Giữ provider hiện có và không tự gửi prompt. Nhãn mới đủ en/vi/ko; theme dùng `sidebarTheme` chung.
+- Reveal/counter dùng cycle guard và reduced motion; tránh observer/timer trùng và animation giả số liệu. Mọi `display:…!important` phải tôn trọng `[hidden]`.
+- H&N giữ source selection khi đổi note, dùng hai vùng cuộn và không thêm scroll root cấp trang. CRUD/favorite/export/review/jump/speak đi qua handler/annotations chung.
+- Thống kê giữ ngưỡng, bộ lọc và per-view state; không ghi đè metadata bằng videoId hay mã nguồn web.
+- Tệp/tiến độ Documents lưu riêng; Notes/Flashcards/backup dùng annotations chung, blob không backup. PDF table rows, Reader/TTS và main-sheet actions dùng adapter/handler chung.
+- Mọi route dùng chung topbar Keepit/logo + tên tab. Documents iframe ẩn header nội bộ; modal quyền PDF giữ mở đến khi quyền được cấp, Chọn PDF là phụ, lỗi mở thường vẫn có picker chính.
 
 ## 5. Kiểm tra và xác minh
 

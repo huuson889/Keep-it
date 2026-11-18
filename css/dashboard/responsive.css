@@ -33,10 +33,13 @@
   body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { display: none !important; }
   #dashboardScroller { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; scroll-padding-bottom: 80px; }
 
-  /* compact shared top bar */
-  #dashboardSharedTopbar .ov-crumb strong, #dashboardSharedTopbarSlash, #dashboardSharedTopbarStatus { display: none !important; }
-  #dashboardSharedTopbarLabel { font-size: 17px; font-weight: 750; color: inherit; }
-  #dashboardSharedTopbar .ov-crumb { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Compact shared Keepit / tab-name header, consistent on each route. */
+  #dashboardSharedTopbarStatus { display: none !important; }
+  #dashboardSharedTopbar .dashboard-shared-brand-icon { width:22px;height:22px;margin-right:5px; }
+  #dashboardSharedTopbar .ov-crumb strong { font-size:13px; }
+  #dashboardSharedTopbar .ov-crumb span { padding-left:5px;padding-right:5px; }
+  #dashboardSharedTopbarLabel { font-size:14px;font-weight:650;color:inherit; }
+  #dashboardSharedTopbar .ov-crumb { min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 
   /* bottom tab bar */
   .rn-tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 900; padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); background: rgba(255, 255, 255, .94); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border-top: 1px solid #e2e8f0; transition: transform .3s cubic-bezier(.2, .8, .2, 1); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
