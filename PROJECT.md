@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.407**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.408**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -239,6 +239,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.408 | Arena.ai Agent sửa:**
+
+- Thùng rác có bộ lọc thời gian xoá dạng menu giống Gmail: `Mọi lúc / Hơn 3 ngày trước / Hơn 1 tuần trước / Hơn 2 tuần trước / Phạm vi tuỳ chỉnh...`. Preset là tuổi xoá tương đối (đúng với hạn lưu 30 ngày), không copy các mốc 6 tháng/1 năm của Gmail vì thùng rác không giữ tới mốc đó.
+- `Phạm vi tuỳ chỉnh` mở hai ô `Từ ngày` / `Đến ngày` (`input type=date`, mốc ngày địa phương) + `Áp dụng` / `Xoá lọc`. Nút lọc đổi nhãn thành khoảng ngày khi áp dụng và chỉ tô màu "đang lọc" khi thật sự có tác dụng.
+- Dòng tổng đổi thành `Hiển thị 2/6 mục · 11.9 MB — giữ 30 ngày rồi xoá vĩnh viễn` khi có lọc; dòng bị lọc ẩn cũng tự bỏ khỏi danh sách chọn. Menu đóng bằng click ngoài hoặc Esc.
+- Browser-test extension thật ở 1512 và 390 (vi): 6 mục, preset 1 tuần còn 3 dòng, tuỳ chỉnh 06/11–16/11 còn 2 dòng, `Xoá lọc` về 6 dòng, lọc + tìm kiếm cùng lúc còn 1 dòng, chọn 1 rồi lọc 2 tuần thì bỏ chọn; 0 lỗi console.
 
 **2026-11-17 | v3.5.407 | Arena.ai Agent sửa:**
 

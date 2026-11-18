@@ -20,7 +20,16 @@
     ['yesterday', 'trashGroupYesterday', 1],
     ['week', 'trashGroupWeek', 7]
   ];
-  let typeFilter = 'all', query = '', selected = new Set();
+  /* Time filter on the deletion date. Presets are relative ages, which is what a 30-day
+     retention makes meaningful, plus an absolute custom range. */
+  const WHEN = [
+    ['any', 'trashWhenAnyTime', 0],
+    ['3d', 'trashWhen3d', 3],
+    ['week', 'trashWhenWeek', 7],
+    ['2w', 'trashWhen2w', 14]
+  ];
+  let typeFilter = 'all', when = 'any', customFrom = '', customTo = '';
+  let query = '', selected = new Set();
 
   /* Never create the documents database from here: opening it with a version would make
      the library's own upgrade never run and leave it without object stores. */
@@ -80,6 +89,14 @@
   const fmtDate = stamp => new Date(stamp).toLocaleDateString(undefined, { day:'2-digit', month:'2-digit', year:'numeric' });
   const daysLeft = expires => Math.max(0, Math.ceil((expires - Date.now()) / DAY));
   const daysSince = stamp => Math.floor((Date.now() - stamp) / DAY);
+  const dayStart = value => {
+    const [y, m, d] = String(value).split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+  };
+  const dayEnd = value => {
+    const [y, m, d] = String(value).split('-').map(Number);
+    return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+  };
   const escapeHtml = value => String(value).replace(/[&<>"']/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]));
 
   async function load() {
@@ -145,6 +162,55 @@
     return 'older';
   }
 
+  const whenActive = () => when !== 'any' && (when !== 'custom' || Boolean(customFrom || customTo));
+  function whenOk(item) {
+    const stamp = Number(item.deletedAt) || 0;
+    if (when === 'custom') {
+      if (!customFrom && !customTo) return true;
+      if (customFrom && stamp < dayStart(customFrom)) return false;
+      if (customTo && stamp > dayEnd(customTo)) return false;
+      return true;
+    }
+    const preset = WHEN.find(([key]) => key === when);
+    const minDays = preset ? preset[2] : 0;
+    return minDays === 0 || Date.now() - stamp >= minDays * DAY;
+  }
+  function whenText() {
+    if (when === 'custom') {
+      const from = customFrom ? fmtDate(dayStart(customFrom)) : '';
+      const to = customTo ? fmtDate(dayEnd(customTo)) : '';
+      if (from && to) return `${from} – ${to}`;
+      if (from) return `${from} –`;
+      if (to) return `– ${to}`;
+      return t('trashWhenCustom');
+    }
+    const preset = WHEN.find(([key]) => key === when);
+    return t(preset ? preset[1] : 'trashWhenAnyTime');
+  }
+  function renderWhen() {
+    const opts = $('trashWhenOpts'), label = $('trashWhenLabel'), button = $('trashWhen');
+    if (opts) opts.innerHTML = WHEN.map(([key, name]) => `<button type="button" class="trash-when-item${when === key ? ' on' : ''}" role="menuitemradio" aria-checked="${when === key}" data-when-item="${key}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 6"/></svg><span>${t(name)}</span></button>`).join('');
+    if (label) label.textContent = whenText();
+    if (button) button.classList.toggle('is-filtered', whenActive());
+    const customItem = document.querySelector('#trashWhenMenu [data-when-item="custom"]');
+    if (customItem) {
+      customItem.classList.toggle('on', when === 'custom');
+      customItem.setAttribute('aria-checked', String(when === 'custom'));
+    }
+    const panel = $('trashWhenCustom');
+    if (panel) panel.hidden = when !== 'custom';
+    const fromInput = $('trashWhenFrom'), toInput = $('trashWhenTo');
+    if (fromInput && document.activeElement !== fromInput) fromInput.value = customFrom;
+    if (toInput && document.activeElement !== toInput) toInput.value = customTo;
+  }
+  function setMenu(open) {
+    const menu = $('trashWhenMenu'), button = $('trashWhen');
+    if (!menu || !button) return;
+    menu.hidden = !open;
+    button.setAttribute('aria-expanded', String(open));
+    if (open) renderWhen();
+  }
+
   async function render() {
     const list = $('trashList'), chips = $('trashChips'), summary = $('trashSummary');
     if (!list) return;
@@ -152,7 +218,7 @@
     try { items = await load(); } catch { items = []; }
     const docs = items.filter(item => item.kind === 'document');
     const totalBytes = docs.reduce((sum, item) => sum + (Number(item.bytes) || 0), 0);
-    if (summary) summary.textContent = `${t('trashSummary', { count: items.length, size: fmtSize(totalBytes) })} — ${t('trashRetention', { days: RETAIN_DAYS })}`;
+    const filterOn = Boolean(query.trim()) || whenActive();
     if (chips) {
       chips.innerHTML = TYPES.map(([key, label]) => {
         const count = key === 'all' ? items.length : key === 'document' ? docs.length : 0;
@@ -162,11 +228,19 @@
     }
     const byType = typeFilter === 'all' || typeFilter === 'document' ? docs : [];
     const text = query.trim().toLocaleLowerCase();
-    const visible = text ? byType.filter(item => String(item.title || item.name || '').toLocaleLowerCase().includes(text)) : byType;
+    const visible = byType
+      .filter(item => whenOk(item))
+      .filter(item => !text || String(item.title || item.name || '').toLocaleLowerCase().includes(text));
+    if (summary) {
+      const body = filterOn
+        ? t('trashSummaryFiltered', { shown: visible.length, count: items.length, size: fmtSize(totalBytes) })
+        : t('trashSummary', { count: items.length, size: fmtSize(totalBytes) });
+      summary.textContent = `${body} — ${t('trashRetention', { days: RETAIN_DAYS })}`;
+    }
     for (const id of [...selected]) if (!visible.some(item => item.id === id)) selected.delete(id);
 
     if (!visible.length) {
-      list.innerHTML = `<div class="trash-empty">${items.length && text ? t('trashNoMatch') : t('trashEmpty')}</div>`;
+      list.innerHTML = `<div class="trash-empty">${items.length && filterOn ? t('trashNoMatch') : t('trashEmpty')}</div>`;
     } else {
       const buckets = new Map();
       for (const item of visible) {
@@ -202,10 +276,40 @@
   async function mount() {
     await purgeExpired();
     selected = new Set();
+    when = 'any'; customFrom = ''; customTo = '';
+    setMenu(false);
+    renderWhen();
     await render();
   }
 
   document.addEventListener('click', event => {
+    const menu = $('trashWhenMenu');
+    if (menu && !menu.hidden && !event.target.closest('.trash-when')) setMenu(false);
+    if (event.target.closest('#trashWhen')) { setMenu(menu ? menu.hidden : false); return; }
+    const whenItem = event.target.closest('[data-when-item]');
+    if (whenItem) {
+      when = whenItem.dataset.whenItem;
+      if (when !== 'custom') { customFrom = ''; customTo = ''; setMenu(false); }
+      renderWhen();
+      void render();
+      return;
+    }
+    if (event.target.closest('#trashWhenApply')) {
+      customFrom = $('trashWhenFrom')?.value || '';
+      customTo = $('trashWhenTo')?.value || '';
+      if (!customFrom && !customTo) when = 'any';
+      renderWhen();
+      setMenu(false);
+      void render();
+      return;
+    }
+    if (event.target.closest('#trashWhenClear')) {
+      when = 'any'; customFrom = ''; customTo = '';
+      renderWhen();
+      setMenu(false);
+      void render();
+      return;
+    }
     const chip = event.target.closest('[data-t]');
     if (chip) { typeFilter = chip.dataset.t; void render(); return; }
     const restore = event.target.closest('[data-restore]');
@@ -215,6 +319,11 @@
     const bulk = event.target.closest('[data-bulk]');
     if (bulk) { void (bulk.dataset.bulk === 'restore' ? restoreItems([...selected]) : purgeItems([...selected])); return; }
     if (event.target.closest('#trashEmptyAll')) { void emptyAll(); }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    const menu = $('trashWhenMenu');
+    if (menu && !menu.hidden) { setMenu(false); $('trashWhen')?.focus(); }
   });
   document.addEventListener('change', event => {
     const pick = event.target.closest('[data-pick]');

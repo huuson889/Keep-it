@@ -103,6 +103,22 @@
 <div class="trash-title"><h2 data-i18n="ovMenuTrash">Thùng rác</h2><p id="trashSummary"></p></div>
 <div class="trash-tools">
 <label class="trash-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="trashSearch" type="search" data-i18n-placeholder="trashSearchPlaceholder" data-i18n-aria-label="trashSearchPlaceholder" aria-label="Tìm trong Thùng rác" placeholder="Tìm trong Thùng rác"></label>
+<div class="trash-when">
+<button type="button" class="trash-when-btn" id="trashWhen" aria-haspopup="menu" aria-expanded="false" aria-controls="trashWhenMenu" data-i18n-aria-label="trashWhenFilter" aria-label="Thời gian xoá"><span id="trashWhenLabel">Mọi lúc</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<div class="trash-when-menu" id="trashWhenMenu" role="menu" hidden>
+<div class="trash-when-opts" id="trashWhenOpts"></div>
+<div class="trash-when-sep" role="separator"></div>
+<button type="button" class="trash-when-item" role="menuitemradio" aria-checked="false" data-when-item="custom"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 6"/></svg><span data-i18n="trashWhenCustom">Phạm vi tuỳ chỉnh...</span></button>
+<div class="trash-when-custom" id="trashWhenCustom" hidden>
+<label><span data-i18n="trashWhenFrom">Từ ngày</span><input type="date" id="trashWhenFrom"></label>
+<label><span data-i18n="trashWhenTo">Đến ngày</span><input type="date" id="trashWhenTo"></label>
+<div class="trash-when-actions">
+<button type="button" class="trash-action primary" id="trashWhenApply" data-i18n="trashWhenApply">Áp dụng</button>
+<button type="button" class="trash-action" id="trashWhenClear" data-i18n="trashWhenClear">Xoá lọc</button>
+</div>
+</div>
+</div>
+</div>
 <button type="button" class="trash-action danger" id="trashEmptyAll" data-i18n="trashEmptyAll">Dọn sạch thùng rác</button>
 </div>
 </div>

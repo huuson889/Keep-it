@@ -13,6 +13,35 @@
 .trash-search svg { width: 15px; height: 15px; flex: none; fill: none; stroke: var(--lhn-ui-muted,#8790a4); stroke-width: 2; stroke-linecap: round; }
 .trash-search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 13px; color: var(--lhn-ui-text,#252640); outline: none; }
 .trash-search input::-webkit-search-cancel-button { filter: grayscale(1); }
+.trash-when { position: relative; }
+.trash-when-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--lhn-ui-border,#eeedf5); border-radius: 999px; background: var(--lhn-ui-surface,#fff); color: var(--lhn-ui-text,#354056); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.trash-when-btn svg { width: 14px; height: 14px; flex: none; fill: none; stroke: var(--lhn-ui-muted,#8790a4); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.trash-when-btn:hover { border-color: #d8d3f6; }
+.trash-when-btn.is-filtered { border-color: #c9c2f8; background: #f2efff; color: #5a4bd0; }
+.trash-when-btn.is-filtered svg { stroke: #6f5fe0; }
+.trash-when-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 236px; max-width: 300px; padding: 6px; border: 1px solid var(--lhn-ui-border,#eeedf5); border-radius: 14px; background: var(--lhn-ui-surface,#fff); box-shadow: 0 18px 40px rgba(43,38,94,.16); }
+.trash-when-menu[hidden] { display: none; }
+.trash-when-item { display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: none; color: var(--lhn-ui-text,#354056); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.trash-when-item span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trash-when-item svg { width: 15px; height: 15px; flex: none; fill: none; stroke: #6f5fe0; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.trash-when-item:hover { background: #f6f4ff; }
+.trash-when-item.on { background: #f2efff; color: #5a4bd0; font-weight: 600; }
+.trash-when-item.on svg { opacity: 1; }
+.trash-when-sep { height: 1px; margin: 6px 4px; background: var(--lhn-ui-border,#eeedf5); }
+.trash-when-custom { display: grid; gap: 8px; padding: 8px 10px 10px; }
+.trash-when-custom[hidden] { display: none; }
+.trash-when-custom label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--lhn-ui-muted,#8790a4); }
+.trash-when-custom input { height: 32px; padding: 0 8px; border: 1px solid var(--lhn-ui-border,#eeedf5); border-radius: 9px; background: var(--lhn-ui-surface,#fff); color: var(--lhn-ui-text,#354056); font: inherit; font-size: 12.5px; }
+.trash-when-custom input:focus { outline: none; border-color: #a99cf5; }
+.trash-when-actions { display: flex; gap: 6px; margin-top: 2px; }
+.trash-when-actions .trash-action { flex: 1; height: 30px; }
+html.dark .trash-when-btn { background: var(--lhn-ui-surface,#111a2b); border-color: var(--lhn-ui-border,#2b3a52); color: var(--lhn-ui-text,#e8edf6); }
+html.dark .trash-when-btn.is-filtered { background: #25264a; border-color: #3f3d70; color: #b9b3ff; }
+html.dark .trash-when-menu { background: #131c2d; border-color: #2b3a52; }
+html.dark .trash-when-item { color: var(--lhn-ui-text,#e8edf6); }
+html.dark .trash-when-item:hover { background: #1c2740; }
+html.dark .trash-when-item.on { background: #25264a; color: #b9b3ff; }
+html.dark .trash-when-custom input { background: #0e1626; border-color: #2b3a52; color: var(--lhn-ui-text,#e8edf6); }
 .trash-bulk { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; padding: 8px 12px; border: 1px solid #ddd6fb; border-radius: 12px; background: #f6f3ff; }
 .trash-bulk[hidden] { display: none; }
 .trash-selectall { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #5a4bd0; cursor: pointer; }
@@ -75,6 +104,9 @@ html.dark .trash-action.danger { background: #3a1719; border-color: #57282b; col
   #dashboardScroller > #dashboardTrashView { padding: 0 14px 30px !important; }
   .trash-tools { width: 100%; }
   .trash-search { flex: 1; min-width: 0; }
+  .trash-when { flex: 1; }
+  .trash-when-btn { width: 100%; justify-content: space-between; }
+  .trash-when-menu { left: 0; right: auto; width: min(300px, calc(100vw - 44px)); max-width: none; }
   .trash-bulk-actions { width: 100%; margin-left: 0; }
   .trash-bulk-actions .trash-action { flex: 1; }
   .trash-row { flex-wrap: wrap; }
