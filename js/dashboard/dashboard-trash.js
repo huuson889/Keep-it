@@ -31,8 +31,9 @@
     ['1y', 'trashWhenYear', 365]
   ];
   const addedAt = item => Number(item.imported || item.createdAt || item.opened || 0);
+  const PAGE_SIZE = 20;
   let typeFilter = 'all', when = 'any', customFrom = '', customTo = '';
-  let query = '', selected = new Set();
+  let query = '', selected = new Set(), page = 1;
 
   /* Never create the documents database from here: opening it with a version would make
      the library's own upgrade never run and leave it without object stores. */
@@ -246,11 +247,17 @@
     }
     for (const id of [...selected]) if (!visible.some(item => item.id === id)) selected.delete(id);
 
+    const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+    if (page > pageCount) page = pageCount;
+    if (page < 1) page = 1;
+    const start = (page - 1) * PAGE_SIZE;
+    const onPage = visible.slice(start, start + PAGE_SIZE);
+
     if (!visible.length) {
       list.innerHTML = `<div class="trash-empty">${items.length && filterOn ? t('trashNoMatch') : t('trashEmpty')}</div>`;
     } else {
       const buckets = new Map();
-      for (const item of visible) {
+      for (const item of onPage) {
         const key = groupOf(item);
         if (!buckets.has(key)) buckets.set(key, []);
         buckets.get(key).push(item);
@@ -261,19 +268,42 @@
         return `<h3 class="trash-group">${label}<i>${buckets.get(key).length}</i></h3>${buckets.get(key).map(row).join('')}`;
       }).join('');
     }
-    syncBulkBar(visible);
+    syncBulkBar(visible, onPage);
+    syncPager(visible.length, start, onPage.length);
   }
 
-  function syncBulkBar(visible) {
+  /* Gmail-style paging: only one page of rows is built, so a big trash never renders
+     thousands of DOM nodes at once. */
+  function syncPager(total, start, shown) {
+    const bar = $('trashPager');
+    if (!bar) return;
+    bar.hidden = total === 0;
+    const info = $('trashPageInfo');
+    if (info) info.textContent = t('trashPageInfo', { from: total ? start + 1 : 0, to: start + shown, count: total });
+    const prev = $('trashPrev'), next = $('trashNext');
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (prev) prev.disabled = page <= 1;
+    if (next) next.disabled = page >= pages;
+  }
+  function goPage(delta) {
+    const next = page + delta;
+    if (next < 1) return;
+    page = next;
+    void render().then(() => { const list = $('trashList'); if (list) list.scrollTop = 0; });
+  }
+
+  function syncBulkBar(visible, onPage) {
     const bar = $('trashBulk'), count = $('trashBulkCount'), all = $('trashSelectAll');
     if (!bar) return;
-    const total = visible ? visible.length : 0;
-    bar.hidden = !(total > 0);
+    // "Select all" covers the rows of the current page, like Gmail's page checkbox.
+    const pageRows = onPage || visible || [];
+    const pickedOnPage = pageRows.filter(item => selected.has(item.id)).length;
+    bar.hidden = !(visible && visible.length > 0);
     if (count) count.textContent = selected.size ? t('trashSelected', { count: selected.size }) : '';
     if (all) {
-      all.checked = total > 0 && selected.size === total;
-      all.indeterminate = selected.size > 0 && selected.size < total;
-      all.disabled = total === 0;
+      all.checked = pageRows.length > 0 && pickedOnPage === pageRows.length;
+      all.indeterminate = pickedOnPage > 0 && pickedOnPage < pageRows.length;
+      all.disabled = pageRows.length === 0;
     }
     for (const button of bar.querySelectorAll('[data-bulk]')) button.disabled = selected.size === 0;
     const emptyAll = $('trashEmptyAll');
@@ -283,7 +313,7 @@
   async function mount() {
     await purgeExpired();
     selected = new Set();
-    when = 'any'; customFrom = ''; customTo = '';
+    when = 'any'; customFrom = ''; customTo = ''; page = 1;
     setMenu(false);
     renderWhen();
     await render();
@@ -296,6 +326,7 @@
     const whenItem = event.target.closest('[data-when-item]');
     if (whenItem) {
       when = whenItem.dataset.whenItem;
+      page = 1;
       if (when !== 'custom') { customFrom = ''; customTo = ''; setMenu(false); }
       renderWhen();
       void render();
@@ -305,6 +336,7 @@
       customFrom = $('trashWhenFrom')?.value || '';
       customTo = $('trashWhenTo')?.value || '';
       if (!customFrom && !customTo) when = 'any';
+      page = 1;
       renderWhen();
       setMenu(false);
       void render();
@@ -312,20 +344,23 @@
     }
     if (event.target.closest('#trashWhenClear')) {
       when = 'any'; customFrom = ''; customTo = '';
+      page = 1;
       renderWhen();
       setMenu(false);
       void render();
       return;
     }
     const chip = event.target.closest('[data-t]');
-    if (chip) { typeFilter = chip.dataset.t; void render(); return; }
+    if (chip) { typeFilter = chip.dataset.t; page = 1; void render(); return; }
     const restore = event.target.closest('[data-restore]');
     if (restore) { void restoreItems([restore.dataset.restore]); return; }
     const purge = event.target.closest('[data-purge]');
     if (purge) { void purgeItems([purge.dataset.purge]); return; }
     const bulk = event.target.closest('[data-bulk]');
     if (bulk) { void (bulk.dataset.bulk === 'restore' ? restoreItems([...selected]) : purgeItems([...selected])); return; }
-    if (event.target.closest('#trashEmptyAll')) { void emptyAll(); }
+    if (event.target.closest('#trashEmptyAll')) { void emptyAll(); return; }
+    const pg = event.target.closest('[data-pg]');
+    if (pg) { goPage(pg.dataset.pg === 'next' ? 1 : -1); }
   });
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
@@ -349,6 +384,7 @@
   document.addEventListener('input', event => {
     if (event.target.id !== 'trashSearch') return;
     query = event.target.value;
+    page = 1;
     void render();
   });
 

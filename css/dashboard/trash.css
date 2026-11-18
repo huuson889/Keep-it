@@ -4,6 +4,20 @@
   background: transparent !important;
 }
 .trash-inner { width: 100%; max-width: 1320px; margin: 0 auto; }
+/* The trash route behaves like a mail list: title, search, filters and the bulk bar stay
+   put, only the rows scroll. */
+body.dashboard-trash-active #dashboardScroller { display: flex; flex-direction: column; overflow: hidden; }
+body.dashboard-trash-active #dashboardScroller > #dashboardTrashView { display: flex; flex: 1 1 auto !important; height: auto !important; min-height: 0 !important; padding-bottom: 20px !important; }
+#dashboardScroller > #dashboardTrashView[hidden] { display: none !important; }
+#dashboardTrashView .trash-inner { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+#dashboardTrashView .trash-head, #dashboardTrashView .trash-chips, #dashboardTrashView .trash-bulk { flex: 0 0 auto; }
+#dashboardTrashView .trash-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
+.trash-pager { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; padding: 10px 2px 0; border-top: 1px solid var(--lhn-ui-border,#eeedf5); font-size: 12.5px; color: var(--lhn-ui-muted,#8790a4); }
+.trash-pager[hidden] { display: none; }
+.trash-pager-btns { display: flex; gap: 6px; }
+.trash-page-btn { display: grid; place-items: center; width: 32px; height: 30px; padding: 0; }
+.trash-page-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+html.dark .trash-pager { border-color: #2b3a52; }
 .trash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
 .trash-head h2 { margin: 0 0 4px; font-size: 22px; letter-spacing: -.3px; color: var(--lhn-ui-text,#252640); }
 .trash-head p { margin: 0; color: var(--lhn-ui-muted,#8790a4); font-size: 13px; }
@@ -112,12 +126,11 @@ html.dark .trash-action.danger { background: #3a1719; border-color: #57282b; col
   .trash-row { flex-wrap: wrap; }
   .trash-row .trash-actions { width: 100%; }
   .trash-action { flex: 1; }
+  .trash-page-btn { flex: 0 0 40px; width: 40px; }
 }
-.reference-nav-sep { height: 1px; margin: 6px 4px; background: var(--lhn-ui-border,#eeedf5); }
 /* Trash lives at the bottom of the sidebar, next to the theme and account buttons. */
 #dashboardSidebar .reference-footer-nav { display: flex; width: 100%; height: 40px; min-width: 0; align-items: center; gap: 12px; padding: 0 10px; border-radius: 12px; text-decoration: none; }
 #dashboardSidebar .reference-footer-nav:hover { background: #f1f5f9; }
 #dashboardSidebar .reference-footer-nav .reference-nav-icon svg { color: #6366f1; }
 #dashboardSidebar .reference-footer-nav > .nav-label { margin-left: 0; font-size: 14px; font-weight: 500; }
 html.dark #dashboardSidebar .reference-footer-nav:hover { background: #1d2939; }
-html.dark .reference-nav-sep { background: #2b3a52; }

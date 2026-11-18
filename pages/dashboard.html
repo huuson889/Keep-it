@@ -30,7 +30,7 @@
 
   </nav>
   <div class="dashboard-reference-footer">
-    <a href="#" class="reference-nav-item reference-footer-nav" data-dashboard-view="trash" data-i18n-aria-label="ovMenuTrash"><span class="reference-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></span><span class="nav-label" data-i18n="ovMenuTrash">Thùng rác</span></a><div class="reference-nav-sep" role="separator"></div><button id="dashboardSidebarThemeToggle" class="reference-footer-button" type="button" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối"><span class="reference-nav-icon"><svg class="dashboard-theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg><svg class="dashboard-theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></span><span id="dashboardSidebarThemeText" class="nav-label">Giao diện tối</span></button>
+    <a href="#" class="reference-nav-item reference-footer-nav" data-dashboard-view="trash" data-i18n-aria-label="ovMenuTrash"><span class="reference-nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></span><span class="nav-label" data-i18n="ovMenuTrash">Thùng rác</span></a><button id="dashboardSidebarThemeToggle" class="reference-footer-button" type="button" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối"><span class="reference-nav-icon"><svg class="dashboard-theme-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg><svg class="dashboard-theme-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></span><span id="dashboardSidebarThemeText" class="nav-label">Giao diện tối</span></button>
     <div class="profile-menu-wrap dashboard-reference-profile-wrap">
       <button id="profileMenuToggle" class="reference-footer-button dashboard-reference-avatar-button" type="button" title="Cài đặt & Tài khoản" aria-label="Cài đặt & Tài khoản" aria-haspopup="true" aria-expanded="false">
         <span class="reference-nav-icon"><span id="profileMenuToggleAvatar" class="reference-avatar-letter">B</span></span>
@@ -132,6 +132,13 @@
 </span>
 </div>
 <div class="trash-list" id="trashList"></div>
+<div class="trash-pager" id="trashPager" hidden>
+<span id="trashPageInfo"></span>
+<span class="trash-pager-btns">
+<button type="button" class="trash-action trash-page-btn" id="trashPrev" data-pg="prev" data-i18n-aria-label="trashPrevPage" aria-label="Trang trước"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+<button type="button" class="trash-action trash-page-btn" id="trashNext" data-pg="next" data-i18n-aria-label="trashNextPage" aria-label="Trang sau"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+</span>
+</div>
 </div>
 </main>
 
