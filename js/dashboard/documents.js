@@ -1,6 +1,6 @@
 /* Rendered inside the dashboard shell: the dashboard owns the scroll root and the top bar. */
 const EMBEDDED=parent!==window;
-if(EMBEDDED){document.documentElement.classList.add('dash-embedded');addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin)return;const data=event.data||{};if(data.type==='KEEPIT_DOCUMENTS_VIEWPORT'&&typeof data.top==='number')document.documentElement.style.setProperty('--dash-vp-top',Math.round(data.top)+'px');});}
+if(EMBEDDED){document.documentElement.classList.add('dash-embedded','dash-embedded-library');addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin)return;const data=event.data||{};if(data.type==='KEEPIT_DOCUMENTS_VIEWPORT'&&typeof data.top==='number')document.documentElement.style.setProperty('--dash-vp-top',Math.round(data.top)+'px');});}
 // Document library and v13 viewer. All file data is local; external tools are explicit user actions.
 (() => {
 'use strict';
@@ -583,5 +583,23 @@ api.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.lh
 addEventListener('message',event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='KEEPIT_DOCUMENTS_SUSPEND'){ttsStop();if($('#viewer').classList.contains('show'))void closeViewer();}});
 addEventListener('pagehide',()=>{ttsStop();clearTimeout(savePositionTimer);if(V.doc)void Store.patch(V.doc.id,{at:V.page,opened:Date.now()});activeEngine?.dispose();});
 globalThis.KeepitDocuments=Object.freeze({importFiles,open:openViewer,close:closeViewer,get state(){return {documentId:V.doc?.id,page:V.page,mode:V.mode,flow:V.flow,zoom:V.zoom,panel:V.panel,files:docs.length};}});
+/* v3.5.431: Dashboard vẽ thư viện và ra lệnh; khung chỉ mở tệp và nhập tệp. */
+if(EMBEDDED)addEventListener('message',event=>{
+ if(event.source!==parent||event.origin!==location.origin)return;
+ const data=event.data||{};
+ if(data.type==='KEEPIT_DOCUMENTS_OPEN'&&typeof data.id==='string'&&data.id){
+  void openViewer(data.id,data.mode==='read'?'read':'orig').catch(()=>toast(t('storageFailed')));
+  return;
+ }
+ if(data.type==='KEEPIT_DOCUMENTS_IMPORT_FILES'&&Array.isArray(data.files)&&data.files.length){
+  void (async()=>{
+   let before=new Set(),count=0;
+   try{before=new Set((await Store.all('meta')).map(d=>d.id));}catch{}
+   try{await importFiles(data.files);}catch{ }
+   try{count=(await Store.all('meta')).filter(d=>!before.has(d.id)).length;}catch{}
+   try{parent.postMessage({type:'KEEPIT_DOCUMENTS_IMPORTED',count},location.origin);}catch{}
+  })();
+ }
+});
 void boot();
 })();

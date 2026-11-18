@@ -22,6 +22,8 @@ button{cursor:pointer}
 svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 ::-webkit-scrollbar{width:3px;height:3px}
 ::-webkit-scrollbar-thumb{background:#9993c766;border-radius:3px}
+/* v3.5.431: khi nhúng trong Dashboard, thư viện do Dashboard vẽ nên khung chỉ còn bộ xem tệp. */
+html.dash-embedded-library .app{display:none}
 /* ---------- layout ---------- */
 .app{display:flex;min-height:100vh}
 .side{position:sticky;top:0;height:100vh;width:220px;flex:none;display:flex;flex-direction:column;background:var(--side);border-right:1px solid var(--sideLine);color:var(--sideInk)}

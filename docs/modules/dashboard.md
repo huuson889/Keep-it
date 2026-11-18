@@ -2,7 +2,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và các action Flashcards/Settings/Account/Backup. H&N chạy cùng document; Tài liệu có iframe cục bộ để cách ly bộ đọc và giữ giao diện v13. Hợp đồng tài liệu chi tiết ở [luồng Tài liệu](../documents.md); quy tắc giao diện chung ở [ui-layout](../ui-layout.md).
+Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và các action Flashcards/Settings/Account/Backup. H&N chạy cùng document; Tài liệu vẽ thư viện ngay trong document Dashboard (`documents-library.js`, token `--lhn-ui-*`) và giữ iframe cục bộ chỉ để cách ly bộ đọc khi mở tệp. Hợp đồng tài liệu chi tiết ở [luồng Tài liệu](../documents.md); quy tắc giao diện chung ở [ui-layout](../ui-layout.md).
 
 ## 2. File chính và điểm vào
 

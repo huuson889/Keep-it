@@ -17,7 +17,7 @@ Tài liệu dùng bố cục demo v13 nhưng phải gọi module app có sẵn c
 
 ## Luồng dữ liệu
 
-1. Dashboard mở iframe route `documents`; bridge kiểm origin và `event.source`. URL dùng UUID cục bộ, không đưa hash/nội dung tệp vào URL AI.
+1. v3.5.431: Dashboard vẽ **thư viện tài liệu trong chính document của Dashboard** (`js/dashboard/documents-library.js`) và đọc thẳng kho `keepit-documents`; khung iframe ẩn khi không xem tệp và chỉ còn nhiệm vụ mở/xem tệp. Dashboard ra lệnh `KEEPIT_DOCUMENTS_OPEN` (mở tệp) và `KEEPIT_DOCUMENTS_IMPORT_FILES` (File được structured-clone sang khung để kiểm dung lượng, chống trùng, tách trang); khung trả `KEEPIT_DOCUMENTS_IMPORTED`. Bridge kiểm origin và `event.source`. URL dùng UUID cục bộ, không đưa hash/nội dung tệp vào URL AI.
 2. Import kiểm giới hạn, chống trùng SHA-256 và ghi blob/metadata nguyên tử. Không lưu mật khẩu PDF hoặc thumbnail đã giải mã của PDF khóa. PDF giữ canvas/text layer theo tọa độ; projection nhóm text thành paragraph mà không đổi bố cục. Thumbnail từng trang của rail render lazy theo vùng nhìn thấy; PDF raster riêng ở kích thước nhỏ, DOCX/PPTX dùng text preview theo trang. Office có thể khác phông/đối tượng so với bản gốc.
 3. Chọn chữ đi qua `LHN_SELECTION_TOOLBAR` và controller app. Dictionary, popup ghi chú, màu/thẻ và sidebar không có bản triển khai song song trong Tài liệu.
 4. Notes mới lưu trong annotations chung, kèm `documentAnchor` (hash tệp, trang, block, khoảng ký tự, quote). v314 notes được migrate một lần, giữ nội dung/ngày. Notes xuất hiện trong H&N/Flashcards/JSON backup; blob tệp không nằm trong backup.

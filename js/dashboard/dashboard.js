@@ -3341,6 +3341,8 @@ function setDashboardView(view) {
       dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
     }
     watchDashboardDocumentsFrameAtParse();
+    /* v3.5.431: thư viện Tài liệu do Dashboard vẽ (dùng chung thẻ/toast/token với các tab khác). */
+    window.setTimeout(() => window.KeepitDocumentsLibrary?.mount?.(), 0);
     window.setTimeout(resizeDashboardDocumentsFrame, 60);
   }
   const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
@@ -3403,8 +3405,14 @@ function dashboardDocumentsViewerOpen() { return document.body.classList.contain
 function resizeDashboardDocumentsFrame() {
   const frame = $("dashboardDocumentsFrame"), doc = dashboardDocumentsContentDoc();
   if (!frame || !doc) return;
-  if (dashboardDocumentsViewerOpen()) { dashboardDocumentsFrameHeight = 0; frame.style.removeProperty("height"); return; }
-  const height = Math.ceil(doc.documentElement.scrollHeight || doc.body?.scrollHeight || 0);
+  /* v3.5.431: khung chỉ hiện khi xem tệp (thư viện do Dashboard vẽ) nên không cần đo chiều cao;
+     khung ẩn thì document không có documentElement để đo và sẽ ném lỗi. */
+  if (dashboardDocumentsViewerOpen() || frame.getClientRects().length === 0) {
+    dashboardDocumentsFrameHeight = 0;
+    frame.style.removeProperty("height");
+    return;
+  }
+  const height = Math.ceil(doc.documentElement?.scrollHeight || doc.body?.scrollHeight || 0);
   if (!height || Math.abs(height - dashboardDocumentsFrameHeight) < 1) return;
   dashboardDocumentsFrameHeight = height;
   frame.style.height = `${height}px`;

@@ -1,0 +1,170 @@
+/* v3.5.431 — Thư viện Tài liệu vẽ thẳng trong Dashboard (Bản 1).
+   Giá trị lấy nguyên từ css/dashboard/documents.css (thư viện v13) để giao diện không đổi;
+   chỉ đổi token sang --lhn-ui-* của Dashboard và thêm phạm vi #dashboardDocumentsView.
+   Token nội bộ của trang Tài liệu (--line/--surface/--muted/--brand…) chỉ sống trong khối này,
+   nên không rò sang các tab khác và không bị lỗi "trắng toát" ở chế độ tối như v3.5.428. */
+
+#dashboardDocumentsView.dashboard-documents-view{
+  --surface:var(--lhn-ui-surface);
+  --soft:var(--lhn-ui-raised);
+  --ink:var(--lhn-ui-strong);
+  --ink2:var(--lhn-ui-text);
+  --muted:var(--lhn-ui-muted);
+  --line:var(--lhn-ui-border);
+  --line2:var(--lhn-ui-border);
+  --brand:var(--lhn-ui-brand);
+  --brand2:#8c7bee;
+  --brandSoft:var(--lhn-ui-brand-soft);
+  --paper:var(--lhn-ui-surface);
+  --chip:#ffffffe6;
+  --green:#269b7b;
+  --pdf:#e5484d;
+  --docx:#2f6fe4;
+  --pptx:#e2702b;
+  --shadow:0 9px 25px rgba(68,61,133,.065);
+  --shadowH:0 14px 30px rgba(88,75,183,.13);
+}
+html.dark #dashboardDocumentsView.dashboard-documents-view{
+  --paper:#1a2336;
+  --chip:#111a2bd9;
+  --shadow:0 9px 25px rgba(0,0,0,.2);
+  --shadowH:0 14px 30px rgba(0,0,0,.35);
+}
+
+#dashboardDocumentsView .dlib{display:block;padding:0 clamp(16px,3vw,42px) 34px}
+#dashboardDocumentsView .dlib svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- hero + đọc tiếp ---------- */
+#dashboardDocumentsView .row{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+#dashboardDocumentsView .hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:220px;padding:25px 30px;border:1px solid #e3dcff;border-radius:24px;background:linear-gradient(112deg,#a999fa 0%,#8d7aee 47%,#7563e4 100%);color:#fff;box-shadow:0 13px 30px #7664dc2e}
+#dashboardDocumentsView .hero:before,#dashboardDocumentsView .hero:after{content:"";position:absolute;border:1px solid #ffffff2a;border-radius:50%;pointer-events:none}
+#dashboardDocumentsView .hero:before{width:260px;height:260px;left:46%;top:-170px}
+#dashboardDocumentsView .hero:after{width:220px;height:220px;right:-40px;bottom:-150px}
+#dashboardDocumentsView .eyebrow{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.92}
+#dashboardDocumentsView .hero h1{margin:8px 0 8px;font-size:31px;line-height:1.14;letter-spacing:-.4px}
+#dashboardDocumentsView .hero p{margin:0 0 14px;max-width:440px;font-size:13.5px;opacity:.85}
+#dashboardDocumentsView .chips{display:flex;flex-wrap:wrap;gap:8px}
+#dashboardDocumentsView .chip{display:inline-flex;align-items:center;gap:6px;height:29px;padding:0 11px;border:1px solid #ffffff55;border-radius:999px;background:#ffffff1f;font-size:12.5px}
+#dashboardDocumentsView .heroIcon{position:relative;z-index:1;width:112px;height:112px;flex:none;display:grid;place-items:center;border:1px solid #ffffff4d;border-radius:44% 56% 52% 48%;background:#ffffff1c}
+#dashboardDocumentsView .heroIcon span{width:74px;height:74px;display:grid;place-items:center;border-radius:20px;background:#fff;color:var(--brand);box-shadow:0 10px 25px #2d1f8a33}
+html.dark #dashboardDocumentsView .heroIcon span{background:#f3f1ff}
+#dashboardDocumentsView .heroIcon svg{width:34px;height:34px}
+
+#dashboardDocumentsView .continue{position:relative;overflow:hidden;display:flex;gap:18px;align-items:center;padding:22px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(115deg,var(--surface) 0%,var(--surface) 62%,var(--brandSoft) 100%);box-shadow:var(--shadow)}
+html.dark #dashboardDocumentsView .continue{border-color:#413e6b;background:linear-gradient(115deg,#111a2b 0%,#111a2b 65%,#191a32 100%)}
+#dashboardDocumentsView .continue:after{content:"";position:absolute;width:230px;height:230px;right:70px;top:-130px;border-radius:50%;background:var(--brandSoft);pointer-events:none}
+html.dark #dashboardDocumentsView .continue:after{background:#252443}
+#dashboardDocumentsView .cBody{position:relative;z-index:1;flex:1;min-width:0}
+#dashboardDocumentsView .cEyebrow{display:flex;align-items:center;gap:6px;color:#d4567c;font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+html.dark #dashboardDocumentsView .cEyebrow{color:#f08bab}
+#dashboardDocumentsView .cBody h2{margin:6px 0 4px;font-size:18px;line-height:1.25}
+#dashboardDocumentsView .cBody .desc{color:var(--muted);font-size:14px;margin-bottom:10px}
+#dashboardDocumentsView .pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+#dashboardDocumentsView .pill{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--ink2);font-size:12px}
+#dashboardDocumentsView .btnP{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px;border:0;border-radius:11px;background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;font-weight:600;font-size:13.5px;box-shadow:0 8px 18px #7262df40}
+#dashboardDocumentsView .btnL{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 10px;border:0;background:none;color:var(--brand);font-weight:600;font-size:13.5px}
+#dashboardDocumentsView .cThumb{position:relative;z-index:1;width:150px;flex:none;aspect-ratio:3/4;border-radius:14px;overflow:hidden;border:1px solid var(--line);box-shadow:0 10px 22px #2a245a1f;background:var(--paper)}
+#dashboardDocumentsView .cThumb img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ---------- nhập tệp ---------- */
+#dashboardDocumentsView .panel{border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:var(--shadow)}
+#dashboardDocumentsView .drop{display:flex;align-items:center;gap:18px;margin-bottom:22px;padding:16px}
+#dashboardDocumentsView .dz{flex:1;display:flex;align-items:center;gap:14px;min-height:74px;padding:12px 16px;border:1.5px dashed var(--line2);border-radius:16px;background:var(--soft);transition:border-color .15s,background .15s;cursor:pointer}
+#dashboardDocumentsView .dz.over{border-color:var(--brand);background:var(--brandSoft)}
+#dashboardDocumentsView .dzIcon{width:44px;height:44px;flex:none;display:grid;place-items:center;border-radius:13px;background:var(--brandSoft);color:var(--brand)}
+html.dark #dashboardDocumentsView .dzIcon{background:#25264a}
+#dashboardDocumentsView .dz b{display:block;font-size:14.5px}
+#dashboardDocumentsView .dz small{color:var(--muted);font-size:12.5px}
+#dashboardDocumentsView .types{display:flex;gap:6px;margin-left:auto}
+#dashboardDocumentsView .types .pill{font-size:12px}
+#dashboardDocumentsView .dzNote{width:250px;flex:none;color:var(--muted);font-size:12.5px;display:flex;gap:8px;align-items:flex-start}
+#dashboardDocumentsView .dzNote svg{color:var(--green);margin-top:1px}
+
+/* ---------- thư viện ---------- */
+#dashboardDocumentsView .lib{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+#dashboardDocumentsView .libHead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:10px}
+#dashboardDocumentsView .libHead h3{margin:0;font-size:17px}
+#dashboardDocumentsView .libHead p{margin:2px 0 0;color:var(--muted);font-size:13px}
+#dashboardDocumentsView .count{height:24px;padding:0 9px;display:inline-flex;align-items:center;border-radius:999px;background:var(--brandSoft);color:var(--brand);font-size:12.5px;font-weight:700}
+#dashboardDocumentsView .tools{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+#dashboardDocumentsView .seg{display:flex;padding:3px;border-radius:11px;background:var(--soft);border:1px solid var(--line)}
+#dashboardDocumentsView .seg button{display:flex;align-items:center;gap:8px;height:30px;padding:0 11px;border:0;border-radius:8px;background:none;color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap}
+#dashboardDocumentsView .seg button i{font-style:normal;font-size:11.5px;opacity:.75}
+#dashboardDocumentsView .seg button.on{background:var(--surface);color:var(--brand);box-shadow:0 2px 6px #2b245a14}
+html.dark #dashboardDocumentsView .seg button.on{background:#25304a;color:#c3c0ff}
+#dashboardDocumentsView .search{flex:1;min-width:170px;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+#dashboardDocumentsView .search input{flex:1;min-width:0;border:0;outline:0;background:none;font-size:13.5px;color:var(--ink)}
+#dashboardDocumentsView .search input::placeholder{color:var(--muted)}
+#dashboardDocumentsView .sort{height:38px;padding:0 10px;border:1px solid var(--line);border-radius:11px;background:var(--surface);font-size:13px;color:var(--ink)}
+#dashboardDocumentsView .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+#dashboardDocumentsView .card{display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s;cursor:pointer}
+#dashboardDocumentsView .card:hover{transform:translateY(-2px);box-shadow:var(--shadowH)}
+#dashboardDocumentsView .thumb{position:relative;height:126px;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-top:16px}
+#dashboardDocumentsView .thumb.pdf{background:linear-gradient(135deg,#ffd9d6,#f59a92 50%,#b8505a)}
+#dashboardDocumentsView .thumb.docx{background:linear-gradient(135deg,#d8e6ff,#8fb3f5 50%,#3c66b9)}
+#dashboardDocumentsView .thumb.pptx{background:linear-gradient(135deg,#ffe3c8,#f4a96a 50%,#b85f2c)}
+#dashboardDocumentsView .thumb.image{background:linear-gradient(135deg,#d6f2e6,#8fd7bd 50%,#3f9a7c)}
+html.dark #dashboardDocumentsView .thumb.pdf{background:linear-gradient(135deg,#5b2a33,#7a3540 50%,#3a1a24)}
+html.dark #dashboardDocumentsView .thumb.docx{background:linear-gradient(135deg,#253a63,#2f4f8a 50%,#1a2a4c)}
+html.dark #dashboardDocumentsView .thumb.pptx{background:linear-gradient(135deg,#5c3a22,#7b4a26 50%,#3a2414)}
+html.dark #dashboardDocumentsView .thumb.image{background:linear-gradient(135deg,#1d4034,#255c47 50%,#153a2c)}
+#dashboardDocumentsView .thumb .pg{width:62%;height:118px;border-radius:8px 8px 0 0;background:var(--paper);box-shadow:0 -4px 18px #00000026;overflow:hidden}
+#dashboardDocumentsView .thumb.pptx .pg{width:76%;height:104px;border-radius:7px;margin-bottom:12px}
+#dashboardDocumentsView .thumb .pg img{width:100%;height:100%;object-fit:cover;display:block}
+#dashboardDocumentsView .fileFallback{display:grid;place-items:center;width:100%;height:100%;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.5px}
+#dashboardDocumentsView .type{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;background:var(--chip);font-size:11.5px;font-weight:700;color:var(--ink);backdrop-filter:blur(6px)}
+#dashboardDocumentsView .type i{width:7px;height:7px;border-radius:50%}
+#dashboardDocumentsView .cardBody{padding:12px 14px 13px;display:flex;flex-direction:column;gap:7px;flex:1}
+#dashboardDocumentsView .cardBody h4{margin:0;font-size:14.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#dashboardDocumentsView .meta{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px}
+#dashboardDocumentsView .meta svg{width:14px;height:14px}
+#dashboardDocumentsView .imageMeta{color:var(--muted);font-size:12.5px}
+#dashboardDocumentsView .prog .lbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+#dashboardDocumentsView .prog .lbl strong{color:var(--brand)}
+html.dark #dashboardDocumentsView .prog .lbl strong{color:#b8b7ff}
+#dashboardDocumentsView .track{height:5px;border-radius:9px;background:var(--line);margin-top:5px;overflow:hidden}
+#dashboardDocumentsView .fill{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--brand2),var(--brand))}
+#dashboardDocumentsView .foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:2px}
+#dashboardDocumentsView .foot .stats{display:flex;gap:10px;color:var(--muted);font-size:12px}
+#dashboardDocumentsView .go{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border:1px solid var(--line2);border-radius:9px;background:var(--brandSoft);color:var(--brand);font-size:12.5px;font-weight:700;cursor:pointer}
+html.dark #dashboardDocumentsView .go{background:#25264a;border-color:#3a3a6a;color:#c3c0ff}
+#dashboardDocumentsView .go svg{width:13px;height:13px}
+/* Nút xoá trên thẻ: cùng thông số với thẻ Chép chính tả/Tài liệu (30×30). */
+#dashboardDocumentsView .card .foot .cardDel{flex:none;display:grid;place-items:center;width:30px;height:30px;margin-left:auto;margin-right:6px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+#dashboardDocumentsView .card .foot .cardDel:hover{color:#c9484a;border-color:#f0cfcf;background:#fdf1f1}
+html.dark #dashboardDocumentsView .card .foot .cardDel:hover{color:#f08b8b;border-color:#4a2a30;background:#2a1a1d}
+#dashboardDocumentsView .card .foot .cardDel svg{width:15px;height:15px}
+#dashboardDocumentsView .empty{grid-column:1/-1;padding:28px;text-align:center;color:var(--muted);border:1.5px dashed var(--line2);border-radius:18px}
+#dashboardDocumentsView .aside{display:flex;flex-direction:column;gap:16px}
+#dashboardDocumentsView .aside .panel{padding:16px}
+#dashboardDocumentsView .aside h5{margin:0;font-size:15px}
+#dashboardDocumentsView .aside .sub{margin:2px 0 12px;color:var(--muted);font-size:12.5px}
+#dashboardDocumentsView .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#dashboardDocumentsView .mini div{padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--soft);text-align:center}
+#dashboardDocumentsView .mini small{display:block;color:var(--muted);font-size:11.5px;font-weight:600}
+#dashboardDocumentsView .mini b{font-size:21px}
+
+@media (max-width:1180px){
+  #dashboardDocumentsView .lib{grid-template-columns:1fr}
+  #dashboardDocumentsView .aside{display:grid;grid-template-columns:1fr 1fr}
+}
+@media (max-width:980px){
+  #dashboardDocumentsView .row{grid-template-columns:1fr}
+  #dashboardDocumentsView .dzNote{display:none}
+}
+@media (max-width:640px){
+  #dashboardDocumentsView .dlib{padding:0 11px 26px}
+  #dashboardDocumentsView .hero{min-height:0;padding:20px}
+  #dashboardDocumentsView .hero h1{font-size:24px}
+  #dashboardDocumentsView .heroIcon{display:none}
+  #dashboardDocumentsView .continue{padding:16px}
+  #dashboardDocumentsView .cThumb{width:96px}
+  #dashboardDocumentsView .cBody h2{font-size:16px}
+  #dashboardDocumentsView .drop{padding:12px;margin-bottom:16px}
+  #dashboardDocumentsView .dz{flex-wrap:wrap}
+  #dashboardDocumentsView .types{margin-left:0}
+  #dashboardDocumentsView .grid{grid-template-columns:1fr}
+  #dashboardDocumentsView .aside{display:flex}
+  #dashboardDocumentsView .tools .search{order:3;flex-basis:100%}
+  #dashboardDocumentsView .seg{overflow-x:auto;max-width:100%}
+}
