@@ -7,35 +7,13 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
-## 2026-11-17 | PDF overlay và thẻ toolbar cùng hiện
+## 2026-11-17 | PDF prompt và thẻ toolbar
 
-**Trạng thái:** Đã chốt; điều chỉnh vị trí overlay và khôi phục card toolbar ở v3.5.375, cần Chrome retest.
+**Trạng thái:** Thiết kế đã chốt.
 
-- Giữ gợi ý nổi trực tiếp trên trang PDF; không mở cửa sổ/tab riêng. Dịch overlay xuống, mép trên thẻ cách đáy thanh viewer đen 20px.
-- Popup icon toolbar cần có thẻ PDF trình bày gọn, đẹp như mẫu ảnh: biểu tượng PDF, tên tệp rút gọn, CTA mở PDF. Giữ PDF badge trên toolbar.
-- X thu overlay về icon; bấm icon mở lại. Cả card toolbar và overlay mở đúng PDF trong Documents.
-- Quyết định này thay phần “không thêm PDF card” của bản ghi ngay bên dưới.
-
----
-
-## 2026-11-17 | Sửa PDF handoff theo demo đã duyệt
-
-**Trạng thái:** Đã chốt; sửa lại ở v3.5.374, Chrome thật cần retest.
-
-- PDF suggestion phải phủ ngay trên trang PDF như demo v9; tuyệt đối không tạo cửa sổ/tab riêng.
-- Không thêm PDF card vào popup khi bấm icon toolbar. Giữ nguyên giao diện popup toolbar cũ và badge PDF đã chốt.
-- Popup trên trang có X để thu về icon; bấm icon mở lại. Bấm card mở đúng PDF trong Keepit Documents.
-- Bản ghi PDF handoff bên dưới về cửa sổ riêng/thẻ toolbar bị quyết định này thay thế.
-
----
-
-## 2026-11-17 | PDF toolbar handoff mở đúng tệp trong Keepit
-
-**Trạng thái:** Đã chốt; popup nổi và toolbar handoff triển khai v3.5.372, browser QA còn pending.
-
-- Khi tab mở PDF online hoặc file trong máy, popup nổi gọn tự hiện như demo; badge `PDF` trên toolbar giữ nguyên và popup toolbar có thẻ ở vùng nội dung.
-- Cả popup nổi và toàn thẻ toolbar đều bấm để mở đúng PDF trong Keepit Documents; popup nổi không có dấu X/thu gọn/thu phóng. Không tự chọn file nếu URL có thể được truy cập.
-- Với `file://`, hướng dẫn bật quyền “Allow access to file URLs” trong trang chi tiết extension. Nếu quyền vẫn tắt hoặc đọc URL thất bại, giữ đường dự phòng chọn PDF trong Tài liệu.
+- Khi tab mở PDF online hoặc local, gợi ý nổi nằm ngay trên trang PDF, cách mép dưới thanh viewer màu đen 20px; không mở cửa sổ/tab riêng.
+- X thu gợi ý về icon; bấm icon mở lại. Giữ PDF badge trên toolbar và thẻ PDF gọn trong popup icon (biểu tượng PDF, tên tệp rút gọn, CTA). Cả overlay và thẻ toolbar đều mở đúng PDF trong Keepit Documents.
+- Với `file://`, cần quyền “Allow access to file URLs”; giữ hướng dẫn bật quyền và picker thủ công trong Documents khi truy cập/import không thành công. Không tự chuyển hướng hay tự chọn tệp.
 
 ---
 

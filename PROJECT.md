@@ -1,13 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.375**, nhánh `Keepit-Optimize-Test`; PDF handoff v3.5.375 keeps both the in-page iframe overlay and a styled PDF card in the action popup, plus the toolbar badge; overlay is lowered 20px below Chrome’s PDF toolbar and X/icon collapse-reopen stays. Chrome 157/v3.5.374 confirmed in-page overlay; exact offset and restored toolbar card need browser retest. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.376**, nhánh `Keepit-Optimize-Test`; PDF handoff keeps in-page overlay and action-popup card; v3.5.376 updates local PDF permission guide in Documents with yellow warning, two steps and Chrome Extensions CTA. Static checks run; browser validation of the new guide and v3.5.375 PDF handoff remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Documents PDF permission guide — v3.5.376
+- Browser-test local PDF with file URL access denied: confirm yellow guide, translated two-row instructions, and **Làm ngay** opens Chrome Extensions for Keepit. Static checks only; not browser-tested.
+
 ### Browser PDF handoff — v3.5.375
 - Retest sau khi nạp v3.5.375 trên Chrome thật: overlay trên PDF nằm dưới viewer toolbar 20px; X/icon thu gọn/mở lại; không cửa sổ/tab riêng; action popup card + toolbar badge; cả hai CTA mở đúng PDF; local file permission/fallback; chuyển tab/navigation gỡ overlay. Chrome 157/v3.5.374 đã xác nhận overlay; bản v3.5.375 chưa được test.
 
@@ -236,6 +239,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.376 | Arena.ai Agent sửa:**
+
+- Áp dụng popup quyền truy cập PDF local vào Tài liệu: cảnh báo vàng, tiêu đề “Mở PDF thuận tiện bằng Keepit”, “Cách bật quyền truy cập”, hai hàng hướng dẫn chữ lớn và nút tím “Làm ngay” mở trang Tiện ích Chrome cho Keepit. Giữ picker cho lỗi mở PDF thông thường; dịch đủ en/vi/ko.
+- File: `manifest.json`, `pages/documents.html`, `js/dashboard/documents.js`, `css/dashboard/documents.css`, `js/core/languages.js`, `docs/modules/dashboard.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` Documents/languages; runtime en/vi/ko labels; manifest version, popup IDs/ARIA, two-step markup, CTA destination, normal-error picker fallback, CSS hidden-state/brace balance, `git diff --check` — PASS. Chrome UI/browser test chưa chạy.
 
 **2026-11-17 | v3.5.375 | Arena.ai Agent sửa:**
 

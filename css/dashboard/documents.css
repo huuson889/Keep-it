@@ -339,6 +339,19 @@ html.dark .sheet button.on{background:#25264a;color:#c3c0ff}
 .shake{animation:shake .3s}
 @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .errIco{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:var(--pdfSoft);color:var(--pdf);margin-bottom:12px}
+.pdfAccessModal{width:min(440px,100%);padding:20px}
+.pdfAccessModal .errHeader{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+.pdfAccessModal .errIco{width:42px;height:42px;flex:none;margin:0;background:#fff3cd;border:1px solid #f1d36a;color:#9a6700}
+.dark .pdfAccessModal .errIco{background:#443718;border-color:#725a21;color:#ffd166}
+.pdfAccessModal h4{margin:0;font-size:18px;line-height:1.25;letter-spacing:-.02em}
+.pdfAccessModal #errMsg{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:13px}
+.pdfAccessSteps{display:grid;gap:8px}
+.pdfAccessSteps[hidden]{display:none}
+.pdfAccessStep{min-height:41px;display:flex;align-items:center;gap:11px;padding:7px 11px;border:1px solid var(--line);border-radius:11px;background:var(--soft);color:var(--ink2);font-size:14.4px;line-height:1.35}
+.accessNum{width:24px;height:24px;flex:none;display:grid;place-items:center;border:1px solid #d7ba60;border-radius:8px;background:#fff3cd;color:#8a6500;font-size:11px;font-weight:800}
+.dark .accessNum{border-color:#725a21;background:#443718;color:#ffd166}
+.pdfAccessModal .mBtns{margin-top:15px}
+.pdfAccessModal #errOk.btnP{min-width:104px;height:38px;justify-content:center}
 /* ---------- viewer interactions ---------- */
 .vbanner{display:none;align-items:center;gap:8px;padding:9px 16px;background:var(--orangeSoft);color:var(--orange);font-size:13px;font-weight:600;border-bottom:1px solid var(--line);flex:none}
 .vbanner.show{display:flex}
