@@ -7,6 +7,17 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | PDF overlay và thẻ toolbar cùng hiện
+
+**Trạng thái:** Đã chốt; điều chỉnh vị trí overlay và khôi phục card toolbar ở v3.5.375, cần Chrome retest.
+
+- Giữ gợi ý nổi trực tiếp trên trang PDF; không mở cửa sổ/tab riêng. Dịch overlay xuống, mép trên thẻ cách đáy thanh viewer đen 20px.
+- Popup icon toolbar cần có thẻ PDF trình bày gọn, đẹp như mẫu ảnh: biểu tượng PDF, tên tệp rút gọn, CTA mở PDF. Giữ PDF badge trên toolbar.
+- X thu overlay về icon; bấm icon mở lại. Cả card toolbar và overlay mở đúng PDF trong Documents.
+- Quyết định này thay phần “không thêm PDF card” của bản ghi ngay bên dưới.
+
+---
+
 ## 2026-11-17 | Sửa PDF handoff theo demo đã duyệt
 
 **Trạng thái:** Đã chốt; sửa lại ở v3.5.374, Chrome thật cần retest.

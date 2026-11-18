@@ -1,15 +1,15 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.374**, nhánh `Keepit-Optimize-Test`; PDF handoff v3.5.374 mounts an iframe overlay in the active PDF tab (no separate window); X collapses to an icon and reopens. Action toolbar popup stays unchanged; PDF badge remains. Chrome 157 confirmed script injection and extension iframe resources on local/online PDF using v3.5.373, but v3.5.374 still needs full browser retest after sync. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.375**, nhánh `Keepit-Optimize-Test`; PDF handoff v3.5.375 keeps both the in-page iframe overlay and a styled PDF card in the action popup, plus the toolbar badge; overlay is lowered 20px below Chrome’s PDF toolbar and X/icon collapse-reopen stays. Chrome 157/v3.5.374 confirmed in-page overlay; exact offset and restored toolbar card need browser retest. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Browser PDF handoff — v3.5.374
-- Retest sau khi đồng bộ v3.5.374 trên Chrome thật: PDF online/local → iframe overlay nằm trong trang, không tạo cửa sổ/tab; action popup không còn thẻ PDF; toolbar PDF badge; X thu icon/mở lại; click card vào đúng PDF; chuyển tab/navigation gỡ overlay; local file permission và Documents picker fallback. Cơ chế `scripting.executeScript` + extension iframe đã probe trên Chrome 157 bằng v3.5.373; toàn bộ v3.5.374 chưa browser-test.
+### Browser PDF handoff — v3.5.375
+- Retest sau khi nạp v3.5.375 trên Chrome thật: overlay trên PDF nằm dưới viewer toolbar 20px; X/icon thu gọn/mở lại; không cửa sổ/tab riêng; action popup card + toolbar badge; cả hai CTA mở đúng PDF; local file permission/fallback; chuyển tab/navigation gỡ overlay. Chrome 157/v3.5.374 đã xác nhận overlay; bản v3.5.375 chưa được test.
 
 
 ### Documents Reader — v3.5.368
@@ -208,7 +208,7 @@ Content/commands ── OPEN_AI_PANEL / Alt+X / context menu ──> `ask-ai/ser
 Content/commands ── AI provider route workflow ──> Background exact-URL mapping lookup for ChatGPT/Gemini/Claude. Auto-send defaults off for new installs and honors saved explicit preferences. Gemini/Claude drafts keep the URL absent until send; every manual Send, including mapped-source and hand-typed prompts, adds localized label + exact current URL only after stable exact-editor verification. Failed verification sends nothing and cannot save a mapping; successful mapping requires confirmed send. URL-only and page-complete source events refresh the selected provider context; mapped context routes in Chromium/Firefox and unmapped context returns to provider start. User-written prompts are never auto-sent and their bodies are not persisted. Opt-in explicit Keepit auto-send uses `?q=` for ChatGPT; Gemini/Claude use the shared send flow. Same URL: Alt+X only reopens and focuses the composer when explicitly invoked; Ask AI on a mapped source sends only the selection + instruction (same for all three). No passive prompt/send; no page body/title/clipboard; legacy clipboard/body-text path remains unused.
 Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
 Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Documents / Flashcards / Settings / Account / Backup ──> giao diện quản lý
-Browser PDF tab (`file:`/HTTP(S) `.pdf`, kể cả URL nguồn bọc trong viewer) ──> Background đặt badge `PDF` + inject iframe overlay vào document PDF (không mở cửa sổ/tab; action popup giữ nguyên) ──> X thu icon/mở lại; card gửi `OPEN_DASHBOARD_DOCUMENTS` với source URL ──> Dashboard Documents fetch/import/mở PDF; local file cần Allow access to file URLs, khi không truy cập được vẫn có hướng dẫn/chọn file trong Documents; không redirect tab
+Browser PDF tab (`file:`/HTTP(S) `.pdf`, kể cả URL nguồn bọc trong viewer) ──> Background đặt badge `PDF` + inject iframe overlay (20px dưới viewer bar) và action popup card ──> X thu icon/mở lại; cả hai CTA gửi `OPEN_DASHBOARD_DOCUMENTS` với source URL ──> Dashboard Documents fetch/import/mở PDF; local file cần Allow access to file URLs và picker fallback; không redirect tab
 Documents main sheet ── `doc:translate` / `doc:read` ──> `LHN_DOCUMENTS_MAIN_ACTIONS` ──> same `setPanel('translation')` / `startNativeReader()` used by viewer topbar
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
@@ -236,6 +236,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.375 | Arena.ai Agent sửa:**
+
+- Điều chỉnh overlay PDF xuống để thẻ cách đáy thanh viewer Chrome 20px. Khôi phục thẻ PDF gọn trong popup icon toolbar theo mẫu người dùng gửi (PDF icon, tên tệp ellipsis, nút Open PDF); giữ badge và in-page overlay, không tạo cửa sổ/tab.
+- File: `manifest.json`, `js/background/background.js`, `pages/popup.html`, `js/popup/popup.js`, `css/popup/popup.css`, `docs/modules/popup.md`, `OPT-ARENA.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` background/toolbar popup/iframe/languages; URL resolver direct/file/viewer/invalid; toolbar markup/CSS light-dark/conditional card; localized labels, iframe top offset, no `windows.create`, mock local-permission flag/exact source URL/CTA, docs bounds, `git diff --check` — PASS. User xác nhận overlay v3.5.374 hiển thị đúng; offset mới và card toolbar v3.5.375 chưa được browser-test.
 
 **2026-11-17 | v3.5.374 | Arena.ai Agent sửa:**
 
@@ -385,8 +391,3 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - Sửa vị trí blend PDF: áp `mix-blend-mode:multiply` lên stacking context của text span PDF có highlight, để màu tô hòa với canvas gốc thay vì thành dải che chữ.
 - Kiểm tra cú pháp/CSS selector/static class, `git diff --check`; chưa browser-test trên PDF thật.
-
-**2026-11-17 | v3.5.343 | Arena.ai Agent sửa:**
-
-- Thay alpha highlight PDF bằng màu đầy đủ + `mix-blend-mode:multiply`: nền tô đậm, glyph tối giữ màu rõ; web không đổi. Màu chữ gốc khác đen có thể bị pha tint nhẹ.
-- Kiểm tra cú pháp, static checks màu/blend, `git diff --check`; chưa browser-test Chrome PDF thật.

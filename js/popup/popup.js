@@ -3,7 +3,7 @@ const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 CONFIG.applyHighlightColors();
 const DEFAULTS = CONFIG.DEFAULT_SETTINGS;
-let settings = { ...DEFAULTS }, capturing = false, currentLang = "en", langOpen = false, currentWebsite = "";
+let settings = { ...DEFAULTS }, capturing = false, currentLang = "en", langOpen = false, currentWebsite = "", currentPdfUrl = "", activePdfTabId = null;
 const langLabel = item => `${item.flag} ${item.name} - ${item.native}`;
 function t(key, vars = {}) { return LANGUAGES.t(key, vars, currentLang); }
 const disabledTooltipTitles = new WeakMap();
@@ -28,6 +28,18 @@ function applyPopupTheme() {
   button.setAttribute("aria-label", label);
   button.setAttribute("aria-pressed", String(dark));
 }
+function pdfSourceUrl(value, depth = 0) {
+  try {
+    const url = new URL(value);
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) { url.hash=""; return url.href; }
+    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return "";
+    for (const key of ["src", "file", "url", "originalUrl"]) {
+      const source = url.searchParams.get(key), resolved = source && pdfSourceUrl(source, depth + 1);
+      if (resolved) return resolved;
+    }
+  } catch { /* not a PDF URL */ }
+  return "";
+}
 function syncWebsiteActiveStatus() {
   const status = $("extensionStatus");
   if (!status) return;
@@ -40,6 +52,7 @@ function syncWebsiteActiveStatus() {
 function applyTranslations() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  if(currentPdfUrl)$("pdfSuggestion").setAttribute("aria-label",`${t("pdfFloatingTitle")} · ${$("pdfFileName").textContent} · ${t("pdfFloatingAction")}`);
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll("[data-i18n-aria-label]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel)); });
@@ -61,6 +74,13 @@ async function load() {
   if (["autoSpeakSelectedText", "autoSpeakOnTranslate", "translateIconEnabled", "translationPopupEnabled"].some(key => storedSettings[key] !== settings[key])) await saveSettings();
   if (!["light", "dark", "system"].includes(settings.sidebarTheme)) settings.sidebarTheme = "system";
   const [activeTab] = await browser.tabs.query({ active: true, currentWindow: true });
+  currentPdfUrl = pdfSourceUrl(activeTab?.url || "");
+  activePdfTabId = Number.isInteger(activeTab?.id) ? activeTab.id : null;
+  $("pdfSuggestion").hidden = !currentPdfUrl;
+  if (currentPdfUrl) {
+    let filename="PDF";try{filename=decodeURIComponent(new URL(currentPdfUrl).pathname.split("/").pop()||"PDF");}catch{}
+    $("pdfFileName").textContent=filename;$("pdfFileName").title=filename;
+  }
   try {
     const activeUrl = new URL(activeTab?.url || "");
     if (activeUrl.protocol === "http:" || activeUrl.protocol === "https:") currentWebsite = activeUrl.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
@@ -137,6 +157,13 @@ document.addEventListener("mousedown", e => { if (!e.target.closest(".language-w
 $("dashboard").addEventListener("click", async () => {
   try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD" }); window.close(); }
   catch (error) { console.warn("Could not open dashboard", error); $("status").textContent = t("pageRestricted"); }
+});
+$("pdfSuggestion").addEventListener("click", async () => {
+  if(!currentPdfUrl)return;
+  let fileAccessDenied=false;
+  if(currentPdfUrl.startsWith("file:")&&typeof browser.extension?.isAllowedFileSchemeAccess==="function")try{fileAccessDenied=!(await browser.extension.isAllowedFileSchemeAccess());}catch{}
+  try{await LHN_MESSAGING.sendMessage({type:"OPEN_DASHBOARD_DOCUMENTS",sourceTabId:activePdfTabId,pdfUrl:currentPdfUrl,fileAccessDenied});window.close();}
+  catch(error){console.warn("Could not open PDF in Keepit",error);$("status").textContent=t("pageRestricted");}
 });
 $("openDashboardSettings").addEventListener("click", async () => {
   try { await LHN_MESSAGING.sendMessage({ type: "OPEN_DASHBOARD_SETTINGS" }); window.close(); }

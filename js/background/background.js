@@ -59,7 +59,7 @@ async function showPdfHint(tab,url=tab?.url||""){
       let frame=document.getElementById(id);if(frame&&frame.tagName!=="IFRAME")return;
       const previous=window.__keepitPdfHintMessage;if(previous)window.removeEventListener("message",previous);
       if(!frame){frame=document.createElement("iframe");frame.id=id;frame.title="Keepit PDF suggestion";frame.setAttribute("aria-label","Keepit PDF suggestion");document.documentElement.append(frame);}
-      frame.style.cssText="position:fixed!important;z-index:2147483647!important;top:18px!important;right:18px!important;width:300px!important;height:84px!important;border:0!important;background:transparent!important;overflow:hidden!important;display:block!important;max-width:calc(100vw - 24px)!important;";
+      frame.style.cssText="position:fixed!important;z-index:2147483647!important;top:72px!important;right:18px!important;width:300px!important;height:84px!important;border:0!important;background:transparent!important;overflow:hidden!important;display:block!important;max-width:calc(100vw - 24px)!important;";
       const handler=event=>{if(event.source!==frame.contentWindow||event.origin!==origin)return;const message=event.data;if(message?.type==="KEEPIT_PDF_HINT_RESIZE"){const collapsed=message.collapsed===true;frame.style.width=collapsed?"64px":"300px";frame.style.height=collapsed?"64px":"84px";}else if(message?.type==="KEEPIT_PDF_HINT_CLOSE"){window.removeEventListener("message",handler);delete window.__keepitPdfHintMessage;frame.remove();}};
       window.__keepitPdfHintMessage=handler;window.addEventListener("message",handler);if(frame.src!==src)frame.src=src;
     },args:[PDF_HINT_FRAME_ID,hintUrl.href,PDF_HINT_ORIGIN]});
