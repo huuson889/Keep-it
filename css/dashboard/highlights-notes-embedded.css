@@ -20,7 +20,9 @@ html.dark #dashboardHighlightsNotesView { --lhn-ui-page:#0b1120; --lhn-ui-surfac
 #dashboardHighlightsNotesView header { min-height: 56px;
   background: #fff;
   border-bottom: 1px solid var(--line);
-  padding: 0px var(--dash-gutter,22px);
+  padding: 0px max(22px,calc((100vw - 1440px)/2));
+  padding-right: max(22px, -720px + 50vw);
+  padding-left: max(22px, -720px + 50vw);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -45,7 +47,7 @@ html.dark #dashboardHighlightsNotesView { --lhn-ui-page:#0b1120; --lhn-ui-surfac
 #dashboardHighlightsNotesView .file-icon.csv { color:#16845c }
 #dashboardHighlightsNotesView .file-icon.md { color:#7757b7 }
 #dashboardHighlightsNotesView .file-icon.json { color:#b17b19 }
-#dashboardHighlightsNotesView main { max-width:none;margin:19px auto;padding:0 var(--dash-gutter,22px) }
+#dashboardHighlightsNotesView main { max-width:1480px;margin:19px auto;padding:0 22px }
 #dashboardHighlightsNotesView .toolbar { display:flex;align-items:center;gap:9px;margin-bottom:15px;flex-wrap:wrap }
 #dashboardHighlightsNotesView .search-box { display:flex;align-items:center;gap:8px;flex:1;min-width:200px;background:white;border:1px solid #dce2eb;border-radius:9px;padding:0 11px;color:#7a8494 }
 #dashboardHighlightsNotesView .search-box span { font-size:22px;line-height:1 }
@@ -2223,7 +2225,8 @@ html.dark #dashboardHighlightsNotesView .sources-panel > .panel-heading .study-m
 #dashboardHighlightsNotesView .ld-metric { min-height:66px }
 #dashboardHighlightsNotesView .ld-activity { overflow:hidden }
 }
-#dashboardHighlightsNotesView { grid-template-rows:auto auto auto auto minmax(0,1fr)!important;row-gap:10px!important;padding:16px var(--dash-gutter,22px)!important }
+#dashboardHighlightsNotesView { grid-template-rows:auto auto auto auto minmax(0,1fr)!important;row-gap:10px!important;padding:16px clamp(18px,2.2vw,34px)!important }
+#dashboardHighlightsNotesView>#dashboardSharedTopbar { grid-column:1!important;grid-row:1!important }
 #dashboardHighlightsNotesView>.demo-hero { grid-column:1!important;grid-row:2!important }
 #dashboardHighlightsNotesView>.toolbar { grid-column:1!important;grid-row:4!important }
 #dashboardHighlightsNotesView>.library-demo-stats { grid-column:1!important;grid-row:3!important }
@@ -2631,12 +2634,31 @@ html.dark #dashboardHighlightsNotesView .demo-quick-filters button:hover { backg
 html.dark #dashboardHighlightsNotesView .demo-quick-filters button.active { background:#252443!important;
   color:#c4b5fd!important;
   box-shadow:0 1px 4px rgba(0,0,0,.24)!important; }
+#dashboardHighlightsNotesView #dashboardSharedTopbar.ov-topbar { position:sticky;top:0;z-index:30;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:15px;align-self:start;height:56px;min-height:56px;margin-bottom:0;padding:0 19px;border:1px solid #eeedf7;border-radius:30px;background:#fff;box-shadow:0 4px 14px #6156a30a;transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease }
+#dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb { color:#8d93a6;font-size:13px }
+#dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb strong { color:#695bd6;font-size:14px;font-weight:800 }
+#dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { padding:0 8px;color:#c3c6d2 }
+#dashboardHighlightsNotesView #dashboardSharedTopbar .dashboard-shared-topbar-right { min-width:0;display:flex;align-items:center;gap:9px }
+#dashboardHighlightsNotesView #dashboardSharedTopbarActionsSlot:not([hidden]) { min-width:0;display:flex;align-items:center }
+#dashboardHighlightsNotesView #dashboardSharedTopbar.is-compact { height:46px;min-height:46px;padding-left:14px;padding-right:14px;border-radius:24px;margin-bottom:10px;box-shadow:0 7px 18px rgba(49,43,92,.10) }
+html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar.ov-topbar { border-color:#2b3a52;background:#111a2b;color:#d7deeb;box-shadow:0 4px 14px rgba(0,0,0,.18) }
+html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb { color:#a4b0c3 }
+html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb strong { color:#a5a9ff }
+html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { color:#64748b }
+@media (max-width:560px) {
+#dashboardHighlightsNotesView #dashboardSharedTopbar.ov-topbar { height:48px;min-height:48px;padding-left:12px;padding-right:12px }
+#dashboardHighlightsNotesView #dashboardSharedTopbar.is-compact { height:42px;min-height:42px;margin-bottom:6px }
+}
+@media (prefers-reduced-motion:reduce) {
+#dashboardHighlightsNotesView #dashboardSharedTopbar.ov-topbar { transition:none }
+}
+
 /* Embedded route: all page-level movement belongs to #dashboardScroller. */
 #dashboardHighlightsNotesView {
   display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto auto!important;
   row-gap:10px!important;align-content:start!important;width:auto!important;max-width:none!important;min-width:0!important;
   height:auto!important;min-height:0!important;flex:0 0 auto!important;overflow:visible!important;
-  margin:0!important;padding:16px var(--dash-gutter,22px) 20px!important;background:transparent!important;
+  margin:0!important;padding:16px clamp(18px,2.2vw,34px) 20px!important;background:transparent!important;
   color:var(--lhn-ui-text,#334155);
 }
 #dashboardHighlightsNotesView[hidden] { display:none!important; }
@@ -2677,7 +2699,7 @@ html.dark #dashboardHighlightsNotesView .demo-quick-filters button.active { back
   min-height:calc(100vh - 98px)!important;
   max-height:none!important;
   overflow:visible!important;
-  padding:16px var(--dash-gutter,22px) 20px!important;
+  padding:16px clamp(18px,2.2vw,34px) 20px!important;
 }
 /* An inactive route must not take layout space: the display:grid!important rule above outranks the generic [hidden] rules. */
 #dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important; }

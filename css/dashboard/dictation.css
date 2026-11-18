@@ -30,7 +30,7 @@
 .dictation-root .rail-tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);padding:6px 9px;border:1px solid #e9e7f2;border-radius:8px;background:#fff;color:#41445c;font-size:14px;white-space:nowrap;box-shadow:0 6px 16px #29224418;opacity:0;pointer-events:none;transition:opacity .12s}
 .dictation-root .rail-item:hover .rail-tip{opacity:1}
 .dictation-root main{width:calc(100% - 64px);min-height:100vh;margin-left:64px;padding:21px clamp(16px,3vw,42px) 34px}
-.dictation-root .content{width:100%;max-width:none;margin:auto}
+.dictation-root .content{width:100%;max-width:1320px;margin:auto}
 .dictation-root .topbar{min-height:54px;display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;padding:0 18px;border:1px solid var(--line);border-radius:28px;background:#fff;box-shadow:0 4px 14px #6156a30a}
 .dictation-root .crumb{display:flex;align-items:center;gap:9px;color:#8d93a6;font-size:12px}
 .dictation-root .crumb strong{color:#695bd6;font-size:13px;font-weight:800}
@@ -275,7 +275,7 @@
 #dashboardDictationView .dictation-root{box-sizing:border-box;min-height:100%;background:#f5f5ff;color:#252640}
 #dashboardDictationView .dictation-root,#dashboardDictationView .dictation-root *{box-sizing:border-box}
 .dictation-root [hidden]{display:none!important}
-@media(max-width:620px){#dashboardDictationView.dashboard-dictation-view{padding:0 var(--dash-gutter) 25px!important}}
+@media(max-width:620px){#dashboardDictationView.dashboard-dictation-view{padding:0 11px 25px!important}}
 
 /* Session cards reveal row-major; the observer orders visible cards in DOM/grid order. */
 .dictation-root .session-card.dictation-session-reveal{opacity:0;transform:translateY(24px) scale(.98);will-change:opacity,transform;transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1),border-color .2s ease,box-shadow .2s ease;transition-delay:var(--dictation-card-reveal-delay,100ms)}
@@ -284,7 +284,7 @@
 @media(prefers-reduced-motion:reduce){.dictation-root .session-card.dictation-session-reveal,.dictation-root .session-card.dictation-session-reveal.dictation-session-revealed,.dictation-root .session-card.dictation-session-reveal.dictation-session-revealed:hover{opacity:1!important;transform:none!important;transition:none!important;will-change:auto}}
 
 @media(max-width:850px){#dashboardDictationView.dashboard-dictation-view{padding:0 18px 28px!important}}
-@media(max-width:620px){#dashboardDictationView.dashboard-dictation-view{padding:0 var(--dash-gutter) 25px!important}}
+@media(max-width:620px){#dashboardDictationView.dashboard-dictation-view{padding:0 11px 25px!important}}
 
 /* Separate top-row panels: the purple hero and white continue card are siblings. */
 #dashboardDictationView .dictation-hero-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}

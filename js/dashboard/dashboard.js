@@ -107,6 +107,7 @@ function syncDashboardTheme() {
   }
   const state = $("profileAppearanceState");
   if (state) state.textContent = t(dark ? "darkMode" : "lightMode");
+  syncDashboardDocumentsTheme();
   const sidebarThemeLabel = $("dashboardSidebarThemeText"), sidebarThemeButton = $("dashboardSidebarThemeToggle");
   if (sidebarThemeLabel) sidebarThemeLabel.textContent = dark ? "Giao diện tối" : "Giao diện sáng";
   if (sidebarThemeButton) {
@@ -114,13 +115,6 @@ function syncDashboardTheme() {
     sidebarThemeButton.setAttribute("aria-pressed", String(dark));
     sidebarThemeButton.setAttribute("aria-label", label);
     sidebarThemeButton.title = "Đổi giao diện Sáng / Tối";
-  }
-  const topbarThemeButton = $("dashboardSharedTopbarThemeToggle");
-  if (topbarThemeButton) {
-    const label = dark ? "Giao diện tối" : "Giao diện sáng";
-    topbarThemeButton.setAttribute("aria-pressed", String(dark));
-    topbarThemeButton.setAttribute("aria-label", label);
-    topbarThemeButton.title = "Đổi giao diện Sáng / Tối";
   }
 }
 function showDashboardSettingsPanel(name) {
@@ -2942,29 +2936,17 @@ dashboardDictationView.addEventListener("scroll", scheduleDashboardScrollPositio
 window.addEventListener("pagehide", saveDashboardScrollState);
 window.addEventListener("beforeunload", saveDashboardScrollState);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
-
-// One content gutter for every route so the shared header always sits exactly on the content edges,
-// matching the Documents route's own .main (44px desktop, 22px under 980px, 12px on mobile).
-function syncDashboardGutter() {
-  if (!dashboardScroller) return;
-  const narrow = window.matchMedia("(max-width: 599.98px)").matches;
-  const width = dashboardScroller.clientWidth;
-  const gutter = narrow ? 12 : width < 980 ? 22 : 44;
-  dashboardScroller.style.setProperty("--dash-gutter", `${gutter}px`);
-}
-syncDashboardGutter();
-window.addEventListener("resize", syncDashboardGutter, { passive: true });
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = null;
 function updateSharedTopbarContent(view) {
-  const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : view === "documents" ? "docs_title" : "ovNavOverview";
+  const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
   const sidebarItem = dashboardSidebar.querySelector(`[data-dashboard-view="${view}"]`);
   const sidebarLabel = sidebarItem?.dataset.i18n || sidebarItem?.querySelector("[data-i18n]")?.dataset.i18n;
   const labelKey = sidebarLabel || fallbackKey;
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
   const inHighlightsNotes = view === "highlights-notes";
   if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
-  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : view === "documents" ? "docs_local" : "ovPreview");
+  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : "ovPreview");
   if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
   if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
     const actions = dashboardHighlightsNotesView.querySelector("#dashboardSharedTopbarActions");
@@ -2979,7 +2961,6 @@ function closeSharedTopbarExportMenu() {
 }
 function mountSharedTopbarInParent(view) {
   closeSharedTopbarExportMenu();
-  if(view==="documents")dashboardSharedTopbar?.classList.add("ov-revealed");
   updateSharedTopbarContent(view);
   if (dashboardSharedTopbar && dashboardSharedTopbar.parentElement !== dashboardSharedTopbarPortal) dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
 }
@@ -3236,6 +3217,7 @@ function setDashboardView(view) {
   dashboardDocumentsView.hidden = !showDocuments;
   document.body.classList.toggle("dashboard-documents-active", showDocuments);
   if (showDocuments && !dashboardDocumentsFrame.hasAttribute("src")) dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
+  if (showDocuments) window.setTimeout(resizeDashboardDocumentsFrame, 60);
   const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
   dashboardOverviewView.hidden = !showOverview;
   dashboardDictationView.hidden = !showDictation;
@@ -3269,8 +3251,60 @@ window.addEventListener("message", event => {
   if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){openDashboardSettings("bilingualReader");return;}
   if(event.data?.type!=="KEEPIT_DOCUMENTS_VIEWER")return;
   document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
+  dashboardDocumentsFrameHeight = 0;
+  window.setTimeout(resizeDashboardDocumentsFrame, 60);
   const address=new URL(location.href);if(event.data.open===true&&activeDashboardView==="documents"&&/^[a-zA-Z0-9-]{16,80}$/.test(event.data.sourceKey||""))address.searchParams.set("document",event.data.sourceKey);else if(event.data.open!==true){address.searchParams.delete("document");address.searchParams.delete("highlight");}history.replaceState(history.state,"",address.href);
 });
+/* Documents renders as flat content inside this scroller, so the frame reports its own height
+   instead of owning a second scrollbar; it also follows the dashboard theme. */
+let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null;
+function dashboardDocumentsContentDoc() {
+  const frame = $("dashboardDocumentsFrame");
+  try { return frame?.contentDocument || null; } catch { return null; }
+}
+function dashboardDocumentsViewerOpen() { return document.body.classList.contains("documents-viewer-open"); }
+function resizeDashboardDocumentsFrame() {
+  const frame = $("dashboardDocumentsFrame"), doc = dashboardDocumentsContentDoc();
+  if (!frame || !doc) return;
+  if (dashboardDocumentsViewerOpen()) { dashboardDocumentsFrameHeight = 0; frame.style.removeProperty("height"); return; }
+  const height = Math.ceil(doc.documentElement.scrollHeight || doc.body?.scrollHeight || 0);
+  if (!height || Math.abs(height - dashboardDocumentsFrameHeight) < 1) return;
+  dashboardDocumentsFrameHeight = height;
+  frame.style.height = `${height}px`;
+  syncDashboardDocumentsViewport();
+}
+function syncDashboardDocumentsTheme() {
+  const doc = dashboardDocumentsContentDoc();
+  if (!doc?.documentElement) return;
+  doc.documentElement.classList.add("dash-embedded");
+  doc.documentElement.classList.toggle("dark", document.documentElement.classList.contains("dark"));
+  resizeDashboardDocumentsFrame();
+}
+function watchDashboardDocumentsFrame() {
+  syncDashboardDocumentsTheme();
+  dashboardDocumentsObserver?.disconnect();
+  dashboardDocumentsObserver = null;
+  const doc = dashboardDocumentsContentDoc();
+  if (!doc || typeof ResizeObserver !== "function") return;
+  dashboardDocumentsObserver = new ResizeObserver(() => resizeDashboardDocumentsFrame());
+  dashboardDocumentsObserver.observe(doc.documentElement);
+  if (doc.body) dashboardDocumentsObserver.observe(doc.body);
+}
+$("dashboardDocumentsFrame")?.addEventListener("load", watchDashboardDocumentsFrame);
+window.addEventListener("resize", resizeDashboardDocumentsFrame, { passive:true });
+
+/* Overlays inside the frame (toasts, dialogs, drop target) are viewport-fixed, so the frame
+   is told where the visible viewport starts inside its own, taller document. */
+function syncDashboardDocumentsViewport() {
+  const frame = $("dashboardDocumentsFrame");
+  if (!frame || activeDashboardView !== "documents" || dashboardDocumentsViewerOpen()) return;
+  try {
+    const top = Math.round(dashboardScroller.getBoundingClientRect().top - frame.getBoundingClientRect().top);
+    frame.contentWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_VIEWPORT", top }, location.origin);
+  } catch { /* frame not ready */ }
+}
+dashboardScroller?.addEventListener("scroll", syncDashboardDocumentsViewport, { passive:true });
+
 const dashboardParams=new URL(location.href).searchParams,requestedDocument=dashboardParams.get("document"),requestedView=dashboardParams.get("view"),requestedPdf=dashboardParams.get("openPdf"),requestedPdfHelp=dashboardParams.get("pdfHelp");
 if(/^[a-zA-Z0-9-]{16,80}$/.test(requestedDocument||"")){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("document",requestedDocument);const annotation=dashboardParams.get("highlight");if(annotation)uri.searchParams.set("highlight",annotation);dashboardDocumentsFrame.dataset.src=uri.href;setDashboardView("documents");}else if(requestedView==="documents"&&requestedPdf){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("openPdf",requestedPdf);if(requestedPdfHelp)uri.searchParams.set("pdfHelp",requestedPdfHelp);dashboardDocumentsFrame.dataset.src=uri.href;const address=new URL(location.href);address.searchParams.delete("view");address.searchParams.delete("openPdf");address.searchParams.delete("pdfHelp");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else if(requestedView==="documents"){const address=new URL(location.href);address.searchParams.delete("view");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
@@ -3763,7 +3797,6 @@ async function toggleDashboardTheme() {
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 }
 $("dashboardSidebarThemeToggle").addEventListener("click", toggleDashboardTheme);
-$("dashboardSharedTopbarThemeToggle").addEventListener("click", toggleDashboardTheme);
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();

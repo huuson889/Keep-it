@@ -1,7 +1,9 @@
+/* Rendered inside the dashboard shell: the dashboard owns the scroll root and the top bar. */
+const EMBEDDED=parent!==window;
+if(EMBEDDED){document.documentElement.classList.add('dash-embedded');addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin)return;const data=event.data||{};if(data.type==='KEEPIT_DOCUMENTS_VIEWPORT'&&typeof data.top==='number')document.documentElement.style.setProperty('--dash-vp-top',Math.round(data.top)+'px');});}
 // Document library and v13 viewer. All file data is local; external tools are explicit user actions.
 (() => {
 'use strict';
-
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], api=globalThis.browser, Store=KeepitDocumentsStore;
 const PREF_KEY='lhnDocumentsPrefs', MB=1048576;
 let settings={},lang='en',docs=[],filter='all',q='',sort='recent',activeEngine=null,viewCycle=0,importCycle=0,loading=false;
