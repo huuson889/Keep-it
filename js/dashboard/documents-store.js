@@ -48,5 +48,16 @@
   // v314 compatibility data is never a second Notes source after a confirmed common-store migration.
   const forgetMigratedNote = id => run(['notes'], 'readwrite', tx => tx.objectStore('notes').delete(id));
   const clearObsoleteTranslationCache = () => run(['translations'], 'readwrite', tx => tx.objectStore('translations').clear());
-  globalThis.KeepitDocumentsStore = Object.freeze({ open, get, all, put, patch, importFile, fingerprint, changes, forgetMigratedNote, clearObsoleteTranslationCache });
+  // Soft delete only stamps deletedAt: the bytes stay until the trash purges the record.
+  const softDelete = id => patch(id, { deletedAt: Date.now() });
+  const restore = id => patch(id, { deletedAt: null });
+  function purge(id) {
+    return run(['meta', 'files', 'translations'], 'readwrite', tx => {
+      tx.objectStore('meta').delete(id);
+      tx.objectStore('files').delete(id);
+      const keys = tx.objectStore('translations').index('document').getAllKeys(id);
+      keys.onsuccess = () => { for (const key of keys.result || []) tx.objectStore('translations').delete(key); };
+    }).then(() => { changes?.postMessage({ documentId:id }); return true; });
+  }
+  globalThis.KeepitDocumentsStore = Object.freeze({ open, get, all, put, patch, importFile, fingerprint, changes, softDelete, restore, purge, forgetMigratedNote, clearObsoleteTranslationCache });
 })();

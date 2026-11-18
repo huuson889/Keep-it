@@ -2874,7 +2874,7 @@ function togglePin() {
 }
 dashboardSidebarPin.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); togglePin(); });
 const dashboardDocumentsView = $("dashboardDocumentsView"), dashboardDocumentsFrame = $("dashboardDocumentsFrame");
-const dashboardOverviewView = $("dashboardOverviewView"), dashboardDictationView = $("dashboardDictationView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardScroller = $("dashboardScroller");
+const dashboardOverviewView = $("dashboardOverviewView"), dashboardDictationView = $("dashboardDictationView"), dashboardHighlightsNotesView = $("dashboardHighlightsNotesView"), dashboardTrashView = $("dashboardTrashView"), dashboardScroller = $("dashboardScroller");
 const DASHBOARD_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV2";
 const DASHBOARD_LEGACY_SCROLL_POSITIONS_KEY = "keepitDashboardScrollPositionsV1";
 const DASHBOARD_ACTIVE_VIEW_KEY = "keepitDashboardActiveViewV1";
@@ -2939,13 +2939,13 @@ const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarP
 const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = null;
 function updateSharedTopbarContent(view) {
-  const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : "ovNavOverview";
+  const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : view === "trash" ? "ovMenuTrash" : "ovNavOverview";
   const sidebarItem = dashboardSidebar.querySelector(`[data-dashboard-view="${view}"]`);
   const sidebarLabel = sidebarItem?.dataset.i18n || sidebarItem?.querySelector("[data-i18n]")?.dataset.i18n;
   const labelKey = sidebarLabel || fallbackKey;
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
   const inHighlightsNotes = view === "highlights-notes";
-  if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes;
+  if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes || view === "trash";
   if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : "ovPreview");
   if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
   if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
@@ -3201,7 +3201,7 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
 }
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
-  if (!["overview", "dictation", "highlights-notes", "documents"].includes(view)) view = "overview";
+  if (!["overview", "dictation", "highlights-notes", "documents", "trash"].includes(view)) view = "overview";
   const previousView = activeDashboardView;
   if (previousView && previousView !== view && !dashboardScrollRestoring) {
     if (dashboardScrollSaveTimer !== null) { clearTimeout(dashboardScrollSaveTimer); dashboardScrollSaveTimer = null; }
@@ -3228,7 +3228,11 @@ function setDashboardView(view) {
   dashboardOverviewView.hidden = !showOverview;
   dashboardDictationView.hidden = !showDictation;
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
+  const showTrash = view === "trash";
+  if (dashboardTrashView) dashboardTrashView.hidden = !showTrash;
+  if (showTrash) window.setTimeout(() => window.KeepitTrash?.mount?.(), 0);
   document.body.classList.toggle("dashboard-overview-active", showOverview);
+  document.body.classList.toggle("dashboard-trash-active", view === "trash");
   try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, view); } catch { /* session storage may be unavailable */ }
   cancelDashboardEntranceEffects();
   const switchCycle = ++dashboardViewSwitchCycle;

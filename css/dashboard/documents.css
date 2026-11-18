@@ -729,6 +729,11 @@ body{overflow:auto}
 #viewer{transition:right .26s cubic-bezier(.2,.8,.2,1)}
 @media(pointer:coarse){#viewer{transition:none}}
 
+/* Delete control on a library card: quiet until hovered. */
+.card .foot .cardDel{flex:none;display:grid;place-items:center;width:30px;height:30px;margin-left:auto;margin-right:6px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--muted);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.card .foot .cardDel:hover{color:#c9484a;border-color:#f0cfcf;background:#fdf1f1}
+.card .foot .cardDel svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
 /* ---------- embedded in the dashboard shell ---------- */
 /* The dashboard owns the scroll root and the shared topbar, so this page renders
    as flat content that reports its height instead of scrolling on its own. */
