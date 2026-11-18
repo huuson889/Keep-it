@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.404**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.406**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -239,6 +239,21 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.406 | Arena.ai Agent sửa:**
+
+- Chuyển mục **Thùng rác** xuống sát đáy sidebar (ngay trên "Giao diện / Tài khoản"), tách bằng đường kẻ, thay vì nằm trong nhóm điều hướng chính.
+- Sửa lỗi nặng: Thùng rác mở IndexedDB `keepit-documents` với version trước khi trang Tài liệu kịp tạo store → trên profile mới, DB bị tạo rỗng và `onupgradeneeded` của thư viện vĩnh viễn không chạy. Nay chỉ mở DB nếu đã tồn tại và có store `meta`; nếu chưa có thì coi như thùng rác trống, không tạo DB.
+- Tổng dung lượng hiện `0 KB` khi thùng rác trống (trước đó làm tròn thành 1 KB).
+- File: `manifest.json`, `pages/dashboard.html`, `css/dashboard/trash.css`, `js/dashboard/dashboard-trash.js`, `PROJECT.md`.
+- Kiểm tra (profile mới, Chromium thật): mở Thùng rác trước → không tạo DB, hiện "0 mục · 0 KB"; sau đó mở Tài liệu → DB có đủ 4 store; xoá 1 tài liệu → hiện trong Thùng rác; mục Thùng rác ở y 797–837, nút Giao diện ở 858–898 (đúng sát đáy); 0 lỗi console.
+
+**2026-11-17 | v3.5.405 | Arena.ai Agent sửa:**
+
+- Thùng rác: mỗi dòng dùng icon theo loại tệp như thẻ trong thư viện — PDF đỏ, Word xanh dương, PowerPoint cam, Ảnh xanh lá (có bản dark), thay cho icon thùng rác chung.
+- Dòng mô tả đổi sang nhãn loại thật (`PDF · 10 trang · 5,4 MB · xoá 18/11/2026`), sửa lỗi thiếu dấu `·`; ảnh không hiện số trang.
+- File: `manifest.json`, `js/dashboard/dashboard-trash.js`, `css/dashboard/trash.css`, `PROJECT.md`.
+- Kiểm tra: 4 loại tệp hiển thị đúng nhãn/icon ở light + dark, 0 lỗi console.
 
 **2026-11-17 | v3.5.404 | Arena.ai Agent sửa (demo Thùng rác):**
 

@@ -15,6 +15,10 @@
 .trash-list { display: flex; flex-direction: column; gap: 8px; }
 .trash-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--lhn-ui-border,#eeedf5); border-radius: 14px; background: var(--lhn-ui-surface,#fff); box-shadow: 0 9px 25px rgba(68,61,133,.05); }
 .trash-row .trash-ico { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px; background: #f4f1ff; color: #7262df; }
+.trash-row .trash-ico.kind-pdf { background:#fdecec; color:#e5484d; }
+.trash-row .trash-ico.kind-docx { background:#e9f0fd; color:#2f6fe4; }
+.trash-row .trash-ico.kind-pptx { background:#fdf0e7; color:#e2702b; }
+.trash-row .trash-ico.kind-image { background:#e9f8f1; color:#269b7b; }
 .trash-row .trash-ico svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .trash-row .trash-main { min-width: 0; flex: 1; }
 .trash-row .trash-main b { display: block; font-size: 13.5px; color: var(--lhn-ui-text,#252640); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -31,7 +35,10 @@ html.dark #dashboardScroller > #dashboardTrashView { color: var(--lhn-ui-text,#e
 html.dark .trash-head h2 { color: var(--lhn-ui-text,#e8edf6); }
 html.dark .trash-row, html.dark .trash-chip { background: var(--lhn-ui-surface,#111a2b); border-color: var(--lhn-ui-border,#2b3a52); }
 html.dark .trash-chip.on { background: #25264a; border-color: #3f3d70; color: #b9b3ff; }
-html.dark .trash-row .trash-ico { background: #25264a; color: #a79dff; }
+html.dark .trash-row .trash-ico.kind-pdf { background:#3a1719; color:#f2a3a5; }
+html.dark .trash-row .trash-ico.kind-docx { background:#14233f; color:#9db6ff; }
+html.dark .trash-row .trash-ico.kind-pptx { background:#3a2213; color:#eeb389; }
+html.dark .trash-row .trash-ico.kind-image { background:#123329; color:#7fd8ba; }
 html.dark .trash-row .trash-main b { color: var(--lhn-ui-text,#e8edf6); }
 html.dark .trash-row .trash-left { background: #33260f; border-color: #4a3a1c; color: #e0a65a; }
 html.dark .trash-action { background: #172338; border-color: #2b3a52; color: #d7deeb; }
@@ -43,5 +50,11 @@ html.dark .trash-action.danger { background: #3a1719; border-color: #57282b; col
   .trash-row .trash-actions { width: 100%; }
   .trash-action { flex: 1; }
 }
-.reference-nav-sep { height: 1px; margin: 8px 12px; background: var(--lhn-ui-border,#eeedf5); }
+.reference-nav-sep { height: 1px; margin: 6px 4px; background: var(--lhn-ui-border,#eeedf5); }
+/* Trash lives at the bottom of the sidebar, next to the theme and account buttons. */
+#dashboardSidebar .reference-footer-nav { display: flex; width: 100%; height: 40px; min-width: 0; align-items: center; gap: 12px; padding: 0 10px; border-radius: 12px; text-decoration: none; }
+#dashboardSidebar .reference-footer-nav:hover { background: #f1f5f9; }
+#dashboardSidebar .reference-footer-nav .reference-nav-icon svg { color: #6366f1; }
+#dashboardSidebar .reference-footer-nav > .nav-label { margin-left: 0; font-size: 14px; font-weight: 500; }
+html.dark #dashboardSidebar .reference-footer-nav:hover { background: #1d2939; }
 html.dark .reference-nav-sep { background: #2b3a52; }
