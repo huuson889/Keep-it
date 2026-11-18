@@ -20,14 +20,17 @@
     ['yesterday', 'trashGroupYesterday', 1],
     ['week', 'trashGroupWeek', 7]
   ];
-  /* Time filter on the deletion date. Presets are relative ages, which is what a 30-day
-     retention makes meaningful, plus an absolute custom range. */
+  /* Time filter follows Gmail: it compares the age of the item itself (when the file was
+     added to Keepit), not when it was deleted — the deleted date only spans the 30-day
+     retention, so it cannot carry month/year steps. */
   const WHEN = [
     ['any', 'trashWhenAnyTime', 0],
-    ['3d', 'trashWhen3d', 3],
-    ['week', 'trashWhenWeek', 7],
-    ['2w', 'trashWhen2w', 14]
+    ['1w', 'trashWhenWeek', 7],
+    ['1m', 'trashWhenMonth', 30],
+    ['6m', 'trashWhen6Months', 182],
+    ['1y', 'trashWhenYear', 365]
   ];
+  const addedAt = item => Number(item.imported || item.createdAt || item.opened || 0);
   let typeFilter = 'all', when = 'any', customFrom = '', customTo = '';
   let query = '', selected = new Set();
 
@@ -141,6 +144,7 @@
     const parts = [label];
     if (item.pages && item.type !== 'image') parts.push(`${item.pages} ${t('pagesShort')}`);
     parts.push(fmtSize(item.bytes));
+    if (addedAt(item)) parts.push(t('trashAddedOn', { date: fmtDate(addedAt(item)) }));
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(item.deletedAt)) }));
     const checked = selected.has(item.id) ? ' checked' : '';
     return `<div class="trash-row${checked ? ' is-picked' : ''}" data-id="${item.id}">
@@ -164,13 +168,16 @@
 
   const whenActive = () => when !== 'any' && (when !== 'custom' || Boolean(customFrom || customTo));
   function whenOk(item) {
-    const stamp = Number(item.deletedAt) || 0;
+    const stamp = addedAt(item);
     if (when === 'custom') {
       if (!customFrom && !customTo) return true;
+      if (!stamp) return false;
       if (customFrom && stamp < dayStart(customFrom)) return false;
       if (customTo && stamp > dayEnd(customTo)) return false;
       return true;
     }
+    if (when === 'any') return true;
+    if (!stamp) return false;
     const preset = WHEN.find(([key]) => key === when);
     const minDays = preset ? preset[2] : 0;
     return minDays === 0 || Date.now() - stamp >= minDays * DAY;
