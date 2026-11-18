@@ -1,15 +1,16 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.372**, nhánh `Keepit-Optimize-Test`; PDF tabs auto-show a compact floating Keepit popup and retain the toolbar `PDF` badge/card; both open the active PDF in Documents. Local file access requires the browser permission; when denied, Documents explains and provides manual file selection. Static syntax/i18n/markup checks and mocked popup lifecycle pass (v3.5.372 log); browser QA not run. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.373**, nhánh `Keepit-Optimize-Test`; PDF tabs auto-show a compact floating Keepit popup with X collapse/icon reopen and retain the toolbar `PDF` badge/card; both open the active PDF in Documents. Local file access requires the browser permission; when denied, Documents explains and provides manual file selection. v3.5.373 adds a blank-URL activation guard targeting the popup-close race; the changed build still needs real-browser retest. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
-### Browser PDF handoff — v3.5.372
-- Browser-test trên Chrome/Firefox thật: mở PDF online/local → popup nổi tự hiện đúng demo, không X/thu phóng; click toàn card mở đúng PDF; badge + card trong popup toolbar; quyền file URL bật/tắt và hướng dẫn/chọn file dự phòng; auto-dismiss 18 giây, switch tab, Dashboard reuse, tab thường không hiện. Chưa browser-test.
+### Browser PDF handoff — v3.5.373
+- Retest trên Chrome/Firefox thật sau khi nạp v3.5.373: mở PDF online/local → popup tự hiện và không tự đóng khi tab popup còn URL rỗng/`about:blank`; X thu gọn thành icon, bấm icon mở lại; click card mở đúng PDF; badge + card toolbar; file URL permission/hướng dẫn/picker fallback; switch tab, Dashboard reuse, tab thường không hiện. Static + mock đạt; Chrome trên tunnel vẫn chạy bản unpacked riêng, chưa kiểm tra code mới trên trình duyệt.
+
 
 ### Documents Reader — v3.5.368
 - v3.5.365/3.5.368 Documents sheet: bỏ điều khiển Ẩn/Hiện thanh; Dịch/Đọc to nằm ở footer cố định cạnh Cài đặt và gọi chung handler với viewer topbar. Static checks đạt; Chrome thật chưa test.
@@ -236,6 +237,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.373 | Arena.ai Agent sửa:**
+
+- Sửa race Chrome: tab popup có thể nhận onActivated khi URL còn rỗng/`about:blank`; listener nay chờ URL thật thay vì đóng nhầm cửa sổ. Popup PDF có X thu gọn thành icon, bấm icon mở lại và không tự hết hạn sau 18 giây.
+- Giữ toolbar PDF badge/card, luồng mở đúng URL, hướng dẫn quyền file URL và picker fallback; nhãn X/icon được dịch en/vi/ko.
+- File: `manifest.json`, `js/background/background.js`, `pages/pdf-suggestion.html`, `js/popup/pdf-suggestion.js`, `css/popup/pdf-suggestion.css`, `js/core/languages.js`, `docs/modules/popup.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` background/floating popup/languages; manifest, DOM ID/assets, en/vi/ko labels, blank-URL guard và `git diff --check`; mocked lifecycle xác nhận URL rỗng không tự đóng, X thu gọn/icon mở lại/đổi kích thước và tab khác đóng popup — PASS. Chrome đang chạy bản unpacked ngoài workspace nên browser retest trên code mới chưa chạy.
+
 **2026-11-17 | v3.5.372 | Arena.ai Agent sửa:**
 
 - Khôi phục popup PDF nổi tự hiện khi PDF tab active/tải xong; popup nhỏ theo demo, không có X/thu gọn, toàn card mở PDF. Giữ cả badge `PDF` và thẻ click toàn vùng trong popup toolbar; chia sẻ URL/open/fallback flow, local permission guide và manual picker.
@@ -380,8 +388,3 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 - PDF highlight/preview dùng alpha 0.42 để giữ chữ canvas bên dưới nhìn rõ. Thêm marker class riêng cho PDF; web giữ nguyên màu đục.
 - Kiểm tra cú pháp, static regression alpha/classes, `git diff --check`; chưa browser-test PDF thật.
-
-**2026-11-17 | v3.5.341 | Arena.ai Agent sửa:**
-
-- PDF hover dùng đúng tooltip từ `LHN_WORD_CLASS_CORE.tip` như trên web (từ + nghĩa song ngữ), bỏ con trỏ help/question.
-- Kiểm tra cú pháp và diff; chưa browser-test Chrome.

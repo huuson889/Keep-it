@@ -81,7 +81,7 @@ browser.tabs.onUpdated.addListener((tabId,changeInfo,tab)=>{
   else if(changeInfo.url||changeInfo.status==="loading"){shownPdfHints.delete(tabId);void closeFloatingPdfHint(tabId);}
 });
 browser.tabs.onActivated.addListener(async({tabId})=>{
-  try{const tab=await browser.tabs.get(tabId);if(tab.url?.split(/[?#]/,1)[0]===PDF_HINT_PAGE)return;void syncPdfTabBadge(tabId,tab.url);if(pdfTabSource(tab.url))void showFloatingPdfHint(tab,tab.url);else{if(Number.isInteger(floatingPdfHintTabId))shownPdfHints.delete(floatingPdfHintTabId);void closeFloatingPdfHint();}}catch{}
+  try{const tab=await browser.tabs.get(tabId);if(!tab.url||tab.url==="about:blank")return;if(tab.url.split(/[?#]/,1)[0]===PDF_HINT_PAGE)return;void syncPdfTabBadge(tabId,tab.url);if(pdfTabSource(tab.url))void showFloatingPdfHint(tab,tab.url);else{if(Number.isInteger(floatingPdfHintTabId))shownPdfHints.delete(floatingPdfHintTabId);void closeFloatingPdfHint();}}catch{}
 });
 browser.tabs.onRemoved.addListener(tabId=>{shownPdfHints.delete(tabId);void closeFloatingPdfHint(tabId);});
 browser.windows.onRemoved.addListener(windowId=>{if(windowId===floatingPdfHintWindowId){floatingPdfHintWindowId=floatingPdfHintTabId=null;}});
