@@ -100,8 +100,20 @@
 <main id="dashboardTrashView" class="dashboard-trash-view" data-i18n-aria-label="ovMenuTrash" aria-label="Thùng rác" hidden>
 <div class="trash-inner">
 <div class="trash-head">
-<div><h2 data-i18n="ovMenuTrash">Thùng rác</h2><p id="trashSummary"></p></div>
+<div class="trash-title"><h2 data-i18n="ovMenuTrash">Thùng rác</h2><p id="trashSummary"></p></div>
+<div class="trash-tools">
+<label class="trash-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input id="trashSearch" type="search" data-i18n-placeholder="trashSearchPlaceholder" data-i18n-aria-label="trashSearchPlaceholder" aria-label="Tìm trong Thùng rác" placeholder="Tìm trong Thùng rác"></label>
+<button type="button" class="trash-action danger" id="trashEmptyAll" data-i18n="trashEmptyAll">Dọn sạch thùng rác</button>
+</div>
+</div>
 <div class="trash-chips" id="trashChips"></div>
+<div class="trash-bulk" id="trashBulk" hidden>
+<label class="trash-selectall"><input type="checkbox" id="trashSelectAll"><span data-i18n="trashSelectAll">Chọn tất cả</span></label>
+<span id="trashBulkCount"></span>
+<span class="trash-bulk-actions">
+<button type="button" class="trash-action primary" data-bulk="restore" data-i18n="trashRestore">Khôi phục</button>
+<button type="button" class="trash-action danger" data-bulk="purge" data-i18n="trashPurge">Xoá vĩnh viễn</button>
+</span>
 </div>
 <div class="trash-list" id="trashList"></div>
 </div>
