@@ -43,9 +43,6 @@ html.dark .ava{background:#1e2a4a;color:#9db6ff}
 .plan{margin-left:auto;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8}
 html.dark .plan{background:#14233f;border-color:#2c4a7a;color:#93b8f5}
 .main{flex:1;min-width:0;padding:0 44px 40px}
-html.dashboard-embedded .app{min-height:100%}
-html.dashboard-embedded .main{width:100%;max-width:1404px;margin:0 auto;padding:0 clamp(16px,3vw,42px) 42px}
-html.dashboard-embedded .topbar{display:none!important}
 .topbar{position:sticky;top:0;z-index:5;margin:0 0 20px;display:flex;align-items:center;gap:10px;height:55px;padding:0 20px;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 22px 22px;box-shadow:var(--shadow)}
 .libraryBrand{display:inline-flex;align-items:center;gap:7px;flex:none;white-space:nowrap;color:var(--ink);font-size:15px;font-weight:700;letter-spacing:-.2px}
 .libraryBrand img{display:block;width:26px;height:26px;flex:none}
