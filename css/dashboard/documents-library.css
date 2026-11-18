@@ -30,7 +30,7 @@ html.dark #dashboardDocumentsView.dashboard-documents-view{
 }
 #dashboardDocumentsView input,#dashboardDocumentsView select{font:inherit;color:inherit}
 
-#dashboardDocumentsView .dlib{display:block;padding:0 clamp(16px,3vw,42px) 34px}
+#dashboardDocumentsView .dlib{display:block;padding:0 clamp(16px,3vw,32px) 34px}
 #dashboardDocumentsView .dlib svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ---------- hero + đọc tiếp ---------- */
@@ -159,7 +159,7 @@ html.dark #dashboardDocumentsView .card .foot .cardDel:hover{color:#f08b8b;borde
   #dashboardDocumentsView .dzNote{display:none}
 }
 @media (max-width:640px){
-  #dashboardDocumentsView .dlib{padding:0 11px 26px}
+  #dashboardDocumentsView .dlib{padding:0 16px 26px}
   #dashboardDocumentsView .hero{min-height:0;padding:20px}
   #dashboardDocumentsView .hero h1{font-size:24px}
   #dashboardDocumentsView .heroIcon{display:none}

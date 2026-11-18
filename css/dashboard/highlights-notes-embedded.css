@@ -2225,7 +2225,7 @@ html.dark #dashboardHighlightsNotesView .sources-panel > .panel-heading .study-m
 #dashboardHighlightsNotesView .ld-metric { min-height:66px }
 #dashboardHighlightsNotesView .ld-activity { overflow:hidden }
 }
-#dashboardHighlightsNotesView { grid-template-rows:auto auto auto auto minmax(0,1fr)!important;row-gap:10px!important;padding:16px clamp(18px,2.2vw,34px)!important }
+#dashboardHighlightsNotesView { grid-template-rows:auto auto auto auto minmax(0,1fr)!important;row-gap:10px!important;padding:16px clamp(16px,3vw,32px)!important }
 #dashboardHighlightsNotesView>#dashboardSharedTopbar { grid-column:1!important;grid-row:1!important }
 #dashboardHighlightsNotesView>.demo-hero { grid-column:1!important;grid-row:2!important }
 #dashboardHighlightsNotesView>.toolbar { grid-column:1!important;grid-row:4!important }
@@ -2658,7 +2658,7 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto auto!important;
   row-gap:10px!important;align-content:start!important;width:auto!important;max-width:none!important;min-width:0!important;
   height:auto!important;min-height:0!important;flex:0 0 auto!important;overflow:visible!important;
-  margin:0!important;padding:16px clamp(18px,2.2vw,34px) 20px!important;background:transparent!important;
+  margin:0!important;padding:16px clamp(16px,3vw,32px) 20px!important;background:transparent!important;
   color:var(--lhn-ui-text,#334155);
 }
 #dashboardHighlightsNotesView[hidden] { display:none!important; }
@@ -2699,7 +2699,7 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   min-height:calc(100vh - 98px)!important;
   max-height:none!important;
   overflow:visible!important;
-  padding:16px clamp(18px,2.2vw,34px) 20px!important;
+  padding:16px clamp(16px,3vw,32px) 20px!important;
 }
 /* An inactive route must not take layout space: the display:grid!important rule above outranks the generic [hidden] rules. */
 #dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important; }

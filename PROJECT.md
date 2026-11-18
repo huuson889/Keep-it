@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.432**, nhánh `Keepit-Optimize-Test`; Thư viện Tài liệu vẽ thẳng trong Dashboard và giữ đúng giao diện/token của trang Tài liệu cũ (khung chỉ còn việc xem tệp); đã kiểm bằng extension thật 1512/390 sáng+tối, chưa thử trên profile Chrome thật của người dùng.
+- Version **3.5.433**, nhánh `Keepit-Optimize-Test`; 5 tab Dashboard dùng chung một đệm 2 bên: 32px ở màn rộng (≥1067px), 16px ở màn hẹp; 4 tab (Tổng quan, Chép chính tả, Ghi chú, Tài liệu) nhớ đúng vị trí cuộn khi chuyển tab và sau khi tải lại trang. Đã kiểm bằng extension thật 1512×950 và 390×844, `errors []`. Thùng rác không nhớ vị trí cuộn (theo yêu cầu). Chưa thử trên profile Chrome thật của người dùng.
 - Version **3.5.424**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
@@ -9,6 +9,14 @@
 - Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Đồng bộ tab Dashboard (v3.5.433)
+- Đệm 2 bên thống nhất: `clamp(16px,3vw,32px)` cho cả 5 route (`#dashboardOverviewView`, `#dashboardDictationView`, `#dashboardHighlightsNotesView`, `#dashboardDocumentsView .dlib`, `#dashboardTrashView`) và cho thanh tiêu đề dùng chung `#dashboardSharedTopbarPortal`; trước đây là 42/42, 42/45, 33,26/33,26, 42/42, 42/42.
+- Trước đây: đệm lệch giữa các tab (Ghi chú 33,26px trong khi các tab khác 42px) và thanh tiêu đề có đệm riêng (44px cho Tài liệu) nên mép nội dung không thẳng cột.
+- Nhớ vị trí cuộn: `dashboardScrollTargetForView()` giờ hỏii DOM — route nào tự cuộn được thì lấy chính nó, còn lại dùng `#dashboardScroller`; vì vậy Tổng quan/Chép chính tả hết bị lưu sai phần tử cuộn.
+- Sửa lỗi tải lại trang làm mất chỗ cuộn của Tài liệu (thư viện dựng muộn): thêm `scheduleDashboardScrollRestore()` thử lại từng khung hình (tối đa ~4s) cho tới khi `scrollTop` đúng.
+- Sửa lỗi mở thẳng tab Thùng rác bị trống danh sách: `dashboard-trash.js` nạp sau `dashboard.js` nên `mount()` chưa tồn tại — thêm `mountDashboardTrash()` thử lại 60 nhịp × 30ms.
+- Kiểm bằng `qa/sync433.js` (1512×950 và 390×844): 5 tab đệm đúng, 4 tab cuộn 400→400 sau khi đổi tab và sau reload, `errors []`.
+
 ### Thùng rác — Chép chính tả (v3.5.428)
 - Đã kiểm bằng automation trên extension unpacked: xoá mềm từ thẻ buổi học, hàng trong Thùng rác, lọc chip, khôi phục, xoá vĩnh viễn + Ctrl+Z, 1512 và 390, `errors []`.
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web), profile Chrome thật, và trường hợp >20 mục (phân trang).

@@ -3015,9 +3015,13 @@ function readDashboardScrollPositions() {
     };
   } catch { return {}; }
 }
+/* v3.5.433: mỗi tab cuộn ở một chỗ khác nhau — phải hỏi DOM chứ không đoán.
+   Thùng rác cuộn trong danh sách (.trash-list); Tổng quan/Chép chính tả/Ghi chú/Tài liệu
+   dùng chung #dashboardScroller; nếu view nào tự cuộn được thì lấy chính nó. */
 function dashboardScrollTargetForView(view) {
-  if (view === "overview") return dashboardOverviewView;
-  return view === "dictation" ? dashboardDictationView : dashboardScroller;
+  const own = view === "overview" ? dashboardOverviewView : view === "dictation" ? dashboardDictationView : null;
+  if (own && own.scrollHeight - own.clientHeight > 1) return own;
+  return dashboardScroller;
 }
 function readDashboardScrollPosition(view) {
   const positions = readDashboardScrollPositions();
@@ -3030,7 +3034,7 @@ function readDashboardScrollPosition(view) {
   return 0;
 }
 function saveDashboardScrollPosition(view = activeDashboardView) {
-  if (dashboardScrollRestoring || !dashboardScroller || !["overview", "dictation", "highlights-notes", "documents"].includes(view)) return;
+  if (dashboardScrollRestoring || dashboardPendingScrollRestore || !dashboardScroller || !["overview", "dictation", "highlights-notes", "documents"].includes(view)) return;
   const positions = readDashboardScrollPositions();
   positions[view] = Math.max(0, dashboardScrollTargetForView(view).scrollTop);
   try {
@@ -3043,6 +3047,29 @@ function saveDashboardScrollState() {
     saveDashboardScrollPosition(activeDashboardView);
     try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, activeDashboardView); } catch { /* session storage may be unavailable */ }
   }
+}
+/* v3.5.433: tab nào cũng nhớ chỗ cuộn, kể cả tab dựng nội dung muộn (Thùng rác, Tài liệu).
+   Nội dung chưa cao thì scrollTop bị kẹp về 0, nên thử lại từng khung hình cho tới khi đúng. */
+let dashboardPendingScrollRestore = null;
+function applyDashboardScrollRestore(view) {
+  const target = dashboardScrollTargetForView(view);
+  if (!target) return true;
+  const wanted = readDashboardScrollPosition(view);
+  target.scrollTop = wanted;
+  return Math.abs(target.scrollTop - wanted) <= 1;
+}
+function scheduleDashboardScrollRestore(view) {
+  if (!view) return;
+  const ticket = { view, tries:0 };
+  dashboardPendingScrollRestore = ticket;
+  const finish = () => { dashboardPendingScrollRestore = null; dashboardScrollRestoring = false; };
+  const step = () => {
+    if (dashboardPendingScrollRestore !== ticket || activeDashboardView !== view) return;
+    if (applyDashboardScrollRestore(view)) { finish(); return; }
+    if (++ticket.tries > 240) { finish(); return; }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 function scheduleDashboardScrollPositionSave() {
   if (dashboardScrollRestoring) return;
@@ -3303,11 +3330,11 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
   dashboardScrollRestoring = true;
   const savedScrollTop = readDashboardScrollPosition(view);
   const scrollTarget = dashboardScrollTargetForView(view);
-  dashboardScroller.scrollTop = ["overview", "dictation"].includes(view) ? 0 : savedScrollTop;
+  dashboardScroller.scrollTop = scrollTarget === dashboardScroller ? savedScrollTop : 0;
   scrollTarget.scrollTop = savedScrollTop;
   requestAnimationFrame(() => {
     if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
-    dashboardScroller.scrollTop = ["overview", "dictation"].includes(view) ? 0 : savedScrollTop;
+    dashboardScroller.scrollTop = scrollTarget === dashboardScroller ? savedScrollTop : 0;
     scrollTarget.scrollTop = savedScrollTop;
     requestAnimationFrame(() => {
       if (switchCycle !== dashboardViewSwitchCycle || restoreCycle !== dashboardRestoreCycle) return;
@@ -3317,6 +3344,13 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
       else if (view !== "documents") resetDashboardPanelEntranceEffects(view);
     });
   });
+}
+/* v3.5.433: dashboard-trash.js nạp sau dashboard.js, nên khi mở thẳng tab Thùng rác
+   (reload / ?view=trash) hàm mount chưa tồn tại → thử lại vài nhịp cho tới khi có. */
+function mountDashboardTrash(attempt = 0) {
+  if (typeof window.KeepitTrash?.mount === "function") { window.KeepitTrash.mount(); return; }
+  if (attempt >= 60) return;
+  window.setTimeout(() => { if (activeDashboardView === "trash") mountDashboardTrash(attempt + 1); }, 30);
 }
 function setDashboardView(view) {
   hideDashboardSidebarTooltip();
@@ -3343,6 +3377,7 @@ function setDashboardView(view) {
     watchDashboardDocumentsFrameAtParse();
     /* v3.5.431: thư viện Tài liệu do Dashboard vẽ (dùng chung thẻ/toast/token với các tab khác). */
     window.setTimeout(() => window.KeepitDocumentsLibrary?.mount?.(), 0);
+    window.setTimeout(() => { if (readDashboardScrollPosition("documents") > 0) scheduleDashboardScrollRestore("documents"); }, 0);
     window.setTimeout(resizeDashboardDocumentsFrame, 60);
   }
   const showOverview = view === "overview", showDictation = view === "dictation", showHighlightsNotes = view === "highlights-notes";
@@ -3351,7 +3386,7 @@ function setDashboardView(view) {
   dashboardHighlightsNotesView.hidden = !showHighlightsNotes;
   const showTrash = view === "trash";
   if (dashboardTrashView) dashboardTrashView.hidden = !showTrash;
-  if (showTrash) window.setTimeout(() => window.KeepitTrash?.mount?.(), 0);
+  if (showTrash) mountDashboardTrash();
   document.body.classList.toggle("dashboard-overview-active", showOverview);
   document.body.classList.toggle("dashboard-trash-active", view === "trash");
   try { sessionStorage.setItem(DASHBOARD_ACTIVE_VIEW_KEY, view); } catch { /* session storage may be unavailable */ }

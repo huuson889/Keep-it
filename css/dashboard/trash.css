@@ -1,6 +1,6 @@
 /* Trash route: one list for every deleted item, kept for 30 days. */
 #dashboardScroller > #dashboardTrashView {
-  padding: 0 clamp(16px,3vw,42px) 42px !important;
+  padding: 0 clamp(16px,3vw,32px) 42px !important;
   background: transparent !important;
 }
 .trash-inner { width: 100%; max-width: 1320px; margin: 0 auto; }
@@ -150,7 +150,7 @@ html.dark .trash-action { background: #172338; border-color: #2b3a52; color: #d7
 html.dark .trash-action.primary { background: #25264a; border-color: #3f3d70; color: #b9b3ff; }
 html.dark .trash-action.danger { background: #3a1719; border-color: #57282b; color: #f2a3a5; }
 @media(max-width:760px) {
-  #dashboardScroller > #dashboardTrashView { padding: 0 14px 30px !important; }
+  #dashboardScroller > #dashboardTrashView { padding: 0 16px 30px !important; }
   .trash-tools { width: 100%; }
   .trash-search { flex: 1; min-width: 0; }
   .trash-when { flex: 1; }
