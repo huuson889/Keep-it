@@ -603,8 +603,8 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#0b1120);color:var(-
 }
 #dashboardSharedTopbarPortal::before,#dashboardSharedTopbarPortal::after { content:none!important;display:none!important;background:none!important;border:0!important;box-shadow:none!important;outline:0!important; }
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar {
-  position:sticky;top:0;z-index:30;box-sizing:border-box;width:100%;max-width:none;height:55px;min-height:55px;
-  display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0;padding:0 20px;
+  position:sticky;top:0;z-index:30;box-sizing:border-box;width:calc(min(100%,1404px) - clamp(16px,3vw,42px) - clamp(16px,3vw,42px));max-width:1320px;height:55px;min-height:55px;
+  display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 auto;padding:0 20px;
   border:1px solid #eeedf5;border-top:0;border-radius:0 0 22px 22px;background:var(--lhn-ui-surface,#fff);box-shadow:0 9px 25px rgba(68,61,133,.065);
   transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease;
 }
