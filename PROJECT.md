@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.439 | Arena.ai Agent sửa:**
+
+- Tiếp tục dọn navy: các mã **dùng chung cho cả 2 nền** (`#111827`, `#172033`, `#1e293b`, `#1f2937`, `#334155`, `#374151`, `#94a3b8`, `#64748b`, `#cbd5e1`, `#e2e8f0`, `#f1f5f9`…) trước đây bị bỏ qua nên trong rule `html.dark` vẫn còn navy — thấy rõ ở thanh lọc Highlights & Notes, khung Settings, hộp Study. Nay chỉ sửa **bên trong rule `html.dark`** (không đụng rule nền sáng): 453 chỗ.
+- Thay 122 chuỗi `rgba()` ánh xanh (`rgba(15,23,42)`, `rgba(17,24,39)`, `rgba(17,26,43)`, `rgba(17,25,40)`, `rgba(31,41,55)`, `rgba(30,41,59)`, `rgba(2,6,23)`) bằng xám/đen trung tính.
+- File: `css/dashboard/*.css` (8 tệp), `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): quét lại toàn bộ `css/dashboard/*.css` — **0** mã navy và **0** `rgba` ánh xanh còn trong rule `html.dark`; ngoặc `{`/`}` cân bằng ở cả 11 tệp. **Chưa chụp ảnh được** vì sandbox mất `xvfb-run` + lib Chromium và không có quyền root; `qa/palette436.js` chạy lại được ngay khi môi trường có xvfb.
+
 **2026-11-18 | v3.5.438 | Arena.ai Agent sửa:**
 
 - Sửa tiếp hệ quả của bước quét màu: icon loại tệp trong Thùng rác (tối) đã bị đổi — Word mất nền xanh `#14233f`/`#9db6ff` thành nền xám + icon tím, lệch với icon Word ở nền sáng (vẫn xanh `#e9f0fd`/`#2f6fe4`). Đã khôi phục nguyên bản: `.kind-docx` `#14233f`/`#9db6ff`, `.kind-web` `#25264a`/`#b9b3ff`.

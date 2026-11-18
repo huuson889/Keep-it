@@ -385,7 +385,7 @@ html.dark #dashboardDictationView .stats-note {
 }
 html.dark #dashboardDictationView .filter { color:#95959c!important; }
 html.dark #dashboardDictationView .filter.active { box-shadow:inset 0 0 0 1px #413e6b!important; }
-html.dark #dashboardDictationView .source-chip { border-color:#334155!important; background:#172338e8!important; color:#e2e8f0!important; }
+html.dark #dashboardDictationView .source-chip { border-color:#2b2b30!important; background:#172338e8!important; color:#dcdce0!important; }
 html.dark #dashboardDictationView .progress-track { background:#1a1a1d!important; }
 html.dark #dashboardDictationView .resume-link { border-color:#413e6b!important; background:#252443!important; }
 html.dark #dashboardDictationView .resume-link:hover { background:#302d58!important; }

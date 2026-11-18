@@ -10,7 +10,7 @@ html.dark{
   --page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4;--ink2:#c8c8cc;--muted:#8a8a91;--line:#2b2b30;--line2:#2b2b30;
   --brand:#8f86f2;--brand2:#a49cf7;--brandSoft:#25264a;--green:#45c79f;--greenSoft:#123329;--orange:#e0a65a;--orangeSoft:#33260f;
   --shadow:0 9px 25px rgba(0,0,0,.2);--shadowH:0 14px 30px rgba(0,0,0,.35);
-  --side:#111827;--sideLine:#1f2937;--sideInk:#95959c;--sideActive:#15151a;--sideActiveInk:#a5a9ff;
+  --side:#0d0d0f;--sideLine:#232327;--sideInk:#95959c;--sideActive:#15151a;--sideActiveInk:#a5a9ff;
   --pdfSoft:#3a1719;--docxSoft:#141418;--pptxSoft:#3a2213;--paper:#141418;--paperInk:#dcdce0;--chip:#111a2bd9;
   color-scheme:dark;
 }
