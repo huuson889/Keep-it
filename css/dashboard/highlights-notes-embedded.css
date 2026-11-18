@@ -8,8 +8,8 @@
   --lhn-edit-field-gap: 6px;
   --lhn-annotation-note-gap: 4px;
   --lhn-annotation-context-gap: 8px; }
-#dashboardHighlightsNotesView { --lhn-ui-page:#f5f7fb; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9; --lhn-ui-text:#334155; --lhn-ui-strong:#0f172a; --lhn-ui-muted:#64748b; --lhn-ui-soft:#94a3b8; --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#7262df; --lhn-ui-brand-hover:#6b5ce0; --lhn-ui-brand-soft:#f5f2ff; --lhn-ui-shadow:0 0px 2px ++rgb++(15 23 42 / 29%) !important; --lhn-ui-radius:14px; }
-html.dark #dashboardHighlightsNotesView { --lhn-ui-page:#000000; --lhn-ui-surface:#0d0d0f; --lhn-ui-raised:#151517; --lhn-ui-subtle:#1a1a1d; --lhn-ui-text:#c8c8cc; --lhn-ui-strong:#f1f5fb; --lhn-ui-muted:#95959c; --lhn-ui-soft:#8a8a91; --lhn-ui-border:#2b2b30; --lhn-ui-border-soft:#1c1c1f; --lhn-ui-brand:#a5a9ff; --lhn-ui-brand-hover:#c0c2ff; --lhn-ui-brand-soft:#241f36; --lhn-ui-shadow:0 0px 2px ++rgb++(15 23 42 / 29%) !important; }
+#dashboardHighlightsNotesView { --lhn-ui-page:#f5f7fb; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9; --lhn-ui-text:#334155; --lhn-ui-strong:#0f172a; --lhn-ui-muted:#64748b; --lhn-ui-soft:#94a3b8; --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#7262df; --lhn-ui-brand-hover:#6b5ce0; --lhn-ui-brand-soft:#f5f3ff; --lhn-ui-shadow:0 0px 2px ++rgb++(15 23 42 / 29%) !important; --lhn-ui-radius:14px; }
+html.dark #dashboardHighlightsNotesView { --lhn-ui-page:#000000; --lhn-ui-surface:#0d0d0f; --lhn-ui-raised:#151517; --lhn-ui-subtle:#1a1a1d; --lhn-ui-text:#c8c8cc; --lhn-ui-strong:#f1f5fb; --lhn-ui-muted:#95959c; --lhn-ui-soft:#8a8a91; --lhn-ui-border:#2b2b30; --lhn-ui-border-soft:#1c1c1f; --lhn-ui-brand:#a5a9ff; --lhn-ui-brand-hover:#c0c2ff; --lhn-ui-brand-soft:#252443; --lhn-ui-shadow:0 0px 2px ++rgb++(15 23 42 / 29%) !important; }
 #dashboardHighlightsNotesView { font-family:var(--lhn-app-font-family);color:#202124;background:#f5f7fb;--line:#e3e7ee;--muted:#687386;--blue:#2463d3;--panel:#fff }
 #dashboardHighlightsNotesView * { box-sizing:border-box }
 #dashboardHighlightsNotesView { margin:0;min-width:320px }
@@ -616,7 +616,7 @@ html.dark #dashboardHighlightsNotesView .favorite-filter:not(.is-active) .lucide
 html.dark #dashboardHighlightsNotesView #noteColorFilters { background:#0f172a!important; border-color:#202024!important; }
 html.dark #dashboardHighlightsNotesView #noteColorFilters .note-color-filter { color:#cbd5e1!important; background:#1e293b!important; border-color:#334155!important; box-shadow:none!important; }
 html.dark #dashboardHighlightsNotesView #noteColorFilters .note-color-filter:hover { background:#1f1f23!important; border-color:#475569!important; }
-html.dark #dashboardHighlightsNotesView #noteColorFilters .note-color-filter.is-active { color:#c4b5fd!important; background:#2a2440!important; border-color:#6257a8!important; }
+html.dark #dashboardHighlightsNotesView #noteColorFilters .note-color-filter.is-active { color:#c4b5fd!important; background:#29264a!important; border-color:#6257a8!important; }
 html.dark #dashboardHighlightsNotesView #noteColorFilters .note-color-filter .filter-count { color:#94a3b8!important; }
 html.dark #dashboardHighlightsNotesView #noteColorFilters .note-color-filter.is-active .filter-count { color:#c4b5fd!important; }
 html.dark #dashboardHighlightsNotesView #notesList .lhn-sidebar-quote { color:#f1f5f9!important; }
@@ -626,7 +626,7 @@ html.dark #dashboardHighlightsNotesView #notesList .lhn-sidebar-context-note str
 html.dark #dashboardHighlightsNotesView #notesList .tag-chip { color:#cbd5e1!important; background:#1e293b!important; border-color:#334155!important; }
 html.dark #dashboardHighlightsNotesView #notesList .card-actions { background:#0d0d0f!important; border-color:#334155!important; box-shadow:0 5px 15px rgba(0,0,0,.35)!important; }
 html.dark #dashboardHighlightsNotesView #notesList .card-actions .lhn-side-btn { color:#cbd5e1!important; background:#1e293b!important; border-color:#334155!important; }
-html.dark #dashboardHighlightsNotesView #notesList .card-actions .lhn-side-btn:hover { color:#c4b5fd!important; background:#2a2440!important; border-color:#6257a8!important; }
+html.dark #dashboardHighlightsNotesView #notesList .card-actions .lhn-side-btn:hover { color:#c4b5fd!important; background:#29264a!important; border-color:#6257a8!important; }
 html.dark #dashboardHighlightsNotesView #notesList .note-favorite-corner { color:#fda4af!important; background:#3b1724!important; border-color:#7f1d35!important; }
 html.dark #dashboardHighlightsNotesView #notesList .note-favorite-btn.is-favorite .lucide { color:#fb7185!important; fill:#fb7185!important; stroke:#be123c!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-session,
@@ -658,15 +658,15 @@ html.dark #dashboardHighlightsNotesView #studyDialog .study-close,
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog button.secondary { color:#cbd5e1!important; background:#1e293b!important; border-color:#334155!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-tool-button:hover,
 html.dark #dashboardHighlightsNotesView #studyDialog .study-play-button:hover,
-html.dark #dashboardHighlightsNotesView #studyDialog .study-close:hover { color:#c4b5fd!important; background:#2a2440!important; border-color:#6257a8!important; }
+html.dark #dashboardHighlightsNotesView #studyDialog .study-close:hover { color:#c4b5fd!important; background:#29264a!important; border-color:#6257a8!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-tool-button.is-active,
 html.dark #dashboardHighlightsNotesView #studyDialog .study-focus-toggle.is-active,
-html.dark #dashboardHighlightsNotesView #studyDialog .study-auto-speak.is-enabled { color:#c4b5fd!important; background:#2a2440!important; border-color:#6257a8!important; }
+html.dark #dashboardHighlightsNotesView #studyDialog .study-auto-speak.is-enabled { color:#c4b5fd!important; background:#29264a!important; border-color:#6257a8!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-grade { background:#1e293b!important; border-color:#334155!important; color:#e2e8f0!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-again { color:#fca5a5!important; background:#3b2029!important; border-color:#71343c!important; }
-html.dark #dashboardHighlightsNotesView #studyDialog .study-hard { color:#fdba74!important; background:#39291d!important; border-color:#5a4426!important; }
-html.dark #dashboardHighlightsNotesView #studyDialog .study-good { color:#86efac!important; background:#173226!important; border-color:#2a4a37!important; }
-html.dark #dashboardHighlightsNotesView #studyDialog .study-easy { color:#b9b3ff!important; background:#26223a!important; border-color:#3a3457!important; }
+html.dark #dashboardHighlightsNotesView #studyDialog .study-hard { color:#fdba74!important; background:#39291d!important; border-color:#704526!important; }
+html.dark #dashboardHighlightsNotesView #studyDialog .study-good { color:#86efac!important; background:#173226!important; border-color:#286342!important; }
+html.dark #dashboardHighlightsNotesView #studyDialog .study-easy { color:#b9b3ff!important; background:#26223a!important; border-color:#315c89!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-complete-icon { color:#86efac!important; background:#173226!important; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-reset-tools,
 html.dark #dashboardHighlightsNotesView #studyDialog .study-shortcut-tools { border-color:#2b2b30!important; }
@@ -721,7 +721,7 @@ html.dark #dashboardHighlightsNotesView #studyDialog #studySettingsToast { color
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-nav { border-color:#334155; background:#151517; }
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-nav-button { color:#cbd5e1; }
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-nav-button:hover { background:#1e293b; color:#f1f5f9; }
-html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-nav-button.is-active { border-color:#6257a8; background:#2a2440; color:#c4b5fd; }
+html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-nav-button.is-active { border-color:#6257a8; background:#29264a; color:#c4b5fd; }
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-panel > h3 { color:#f1f5f9; }
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-custom-preferences .settings-preference-row strong { color:#e2e8f0; }
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-custom-preferences .settings-preference-row small { color:#94a3b8; }
@@ -1548,7 +1548,7 @@ html.dark #dashboardHighlightsNotesView .lhn-sidebar-card:hover { background:rgb
 #dashboardHighlightsNotesView .study-typed-answer-field input { min-height:46px; border:2px solid #aab4c5; }
 #dashboardHighlightsNotesView .study-typed-answer-field input:focus { border-color:#6f63ec; outline:3px solid #5145e822; }
 html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-close { border-color:#334155; background:#1e293b; color:#cbd5e1; }
-html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-close:hover { border-color:#6257a8; background:#2a2440; color:#c4b5fd; }
+html.dark #dashboardHighlightsNotesView #studyShortcutDialog .study-settings-close:hover { border-color:#6257a8; background:#29264a; color:#c4b5fd; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-typed-answer-field input { border-width:2px; border-color:#52627a; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-typed-answer-field input:focus { border-color:#a5a9ff; }
 @media (max-width:620px) {
@@ -1611,7 +1611,7 @@ html.dark #dashboardHighlightsNotesView #dashboardSettingsDialog .study-translat
 #dashboardHighlightsNotesView #studyDialog .study-header-actions .study-jump-highlight svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 #dashboardHighlightsNotesView #studyDialog .study-header-actions .study-jump-highlight:hover { background:#e9edf4; color:#29354a; filter:none; }
 html.dark #dashboardHighlightsNotesView #studyDialog .study-header-actions .study-jump-highlight { color:#cbd5e1; background:#1e293b; }
-html.dark #dashboardHighlightsNotesView #studyDialog .study-header-actions .study-jump-highlight:hover { color:#c4b5fd; background:#2a2440; }
+html.dark #dashboardHighlightsNotesView #studyDialog .study-header-actions .study-jump-highlight:hover { color:#c4b5fd; background:#29264a; }
 html:not(.dark) #dashboardHighlightsNotesView #studyDialog .study-session { border-color:#95959c; }
 html:not(.dark) #dashboardHighlightsNotesView #studyDialog .study-tool-button { border-color:#95959c; }
 html:not(.dark) #dashboardHighlightsNotesView #studyDialog .study-card { border-color:#95959c; }
@@ -1980,7 +1980,7 @@ html.dark #dashboardHighlightsNotesView .icon-button.is-favorite,
 html.dark #dashboardHighlightsNotesView .icon-button.is-active { background:#382f20!important; border-color:#69562b!important; color:#f2cc67!important; }
 html.dark #dashboardHighlightsNotesView .source-item { border-color:transparent; }
 html.dark #dashboardHighlightsNotesView .source-item:hover { background:var(--lhn-ui-raised)!important; }
-html.dark #dashboardHighlightsNotesView .source-item.active { background:var(--lhn-ui-brand-soft)!important; border:1px solid #3a3455!important; }
+html.dark #dashboardHighlightsNotesView .source-item.active { background:var(--lhn-ui-brand-soft)!important; border:1px solid #413e6b!important; }
 html.dark #dashboardHighlightsNotesView .source-thumb { background:var(--lhn-ui-raised)!important; border-color:var(--lhn-ui-border)!important; }
 html.dark #dashboardHighlightsNotesView .source-thumb .thumb-fallback { color:#9c9ca3; }
 html.dark #dashboardHighlightsNotesView .card { border-color:var(--lhn-ui-border)!important; }
@@ -2019,7 +2019,7 @@ html.dark #dashboardHighlightsNotesView .study-dialog .shortcut-field { border-r
 #dashboardHighlightsNotesView #lhn-sidebar-edit-dialog.lhn-ui-light { --lhn-ui-page:#f5f7fb; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9;
   --lhn-ui-text:#334155; --lhn-ui-strong:#0f172a; --lhn-ui-muted:#64748b; --lhn-ui-soft:#94a3b8;
   --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#7262df; --lhn-ui-brand-hover:#6b5ce0;
-  --lhn-ui-brand-soft:#f5f2ff; color-scheme:light!important; }
+  --lhn-ui-brand-soft:#f5f3ff; color-scheme:light!important; }
 #dashboardHighlightsNotesView #lhn-sidebar-edit-dialog.lhn-ui-dark { color:#c8c8cc!important; background:#0d0d0f!important; border-color:#2b2b30!important; }
 #dashboardHighlightsNotesView #lhn-sidebar-edit-dialog.lhn-ui-dark h2 { color:#f1f5fb!important; }
 #dashboardHighlightsNotesView #lhn-sidebar-edit-dialog.lhn-ui-dark .lhn-edit-quote { color:#95959c!important; background:#151517!important; border-color:#2b2b30!important; }
@@ -2075,12 +2075,12 @@ html.dark #dashboardHighlightsNotesView .profile-card { background:var(--lhn-ui-
 html.dark #dashboardHighlightsNotesView .profile-stat-grid > div,
 html.dark #dashboardHighlightsNotesView .profile-chip { background:var(--lhn-ui-raised)!important; border-color:var(--lhn-ui-border)!important; color:var(--lhn-ui-text)!important; }
 html.dark #dashboardHighlightsNotesView .profile-heat-cell { background:#1f1f23; }
-html.dark #dashboardHighlightsNotesView .profile-heat-cell.level-1 { background:#2e2a44; }
+html.dark #dashboardHighlightsNotesView .profile-heat-cell.level-1 { background:#343b69; }
 html.dark #dashboardHighlightsNotesView .profile-heat-cell.level-2 { background:#5a52a8; }
 html.dark #dashboardHighlightsNotesView .profile-heat-cell.level-3 { background:#7a72d8; }
 html.dark #dashboardHighlightsNotesView .profile-heat-cell.level-4 { background:#8f86f2; }
 html.dark #dashboardHighlightsNotesView .profile-heatmap-legend i { background:#1f1f23; }
-html.dark #dashboardHighlightsNotesView .profile-heatmap-legend i:nth-of-type(2) { background:#2e2a44; }
+html.dark #dashboardHighlightsNotesView .profile-heatmap-legend i:nth-of-type(2) { background:#343b69; }
 html.dark #dashboardHighlightsNotesView .profile-heatmap-legend i:nth-of-type(3) { background:#5a52a8; }
 html.dark #dashboardHighlightsNotesView .profile-heatmap-legend i:nth-of-type(4) { background:#7a72d8; }
 html.dark #dashboardHighlightsNotesView .profile-heatmap-legend i:nth-of-type(5) { background:#8f86f2; }
@@ -2418,7 +2418,7 @@ html.dark #dashboardHighlightsNotesView .sources-panel > .panel-heading .study-m
 #dashboardHighlightsNotesView .source-site-icon.natgeo i { width:6px;height:10px;border:1px solid #e3a928 }
 #dashboardHighlightsNotesView #sourceList .source-description { display:-webkit-box;overflow:hidden;margin:0;color:#586477;font-size:13px;line-height:1.45;text-overflow:ellipsis;-webkit-box-orient:vertical;-webkit-line-clamp:2 }
 #dashboardHighlightsNotesView #sourceList .source-tags { display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:8px 0 0 }
-#dashboardHighlightsNotesView #sourceList .source-tags .tag-chip { padding:3px 7px;border:1px solid #e4e0f6;border-radius:999px;background:#f5f2ff;color:#5b4ba1;font-size:10.5px;line-height:1.25 }
+#dashboardHighlightsNotesView #sourceList .source-tags .tag-chip { padding:3px 7px;border:1px solid #e4e0f6;border-radius:999px;background:#f5f3ff;color:#5b4ba1;font-size:10.5px;line-height:1.25 }
 #dashboardHighlightsNotesView #sourceList .source-meta { display:flex;align-items:center;gap:8px;min-width:0;margin-top:auto;padding-top:8px;color:#778195;font-size:12px;line-height:1.35 }
 #dashboardHighlightsNotesView #sourceList .source-date { white-space:nowrap;color:#778195;font-size:12px }
 #dashboardHighlightsNotesView #sourceList .source-meta-count { display:inline-flex;align-items:center;gap:4px;min-width:0;margin-left:auto;white-space:nowrap }
@@ -2541,15 +2541,15 @@ html.dark #dashboardHighlightsNotesView .old-stats-section { background:#0d0d0f!
 html.dark #dashboardHighlightsNotesView .demo-crumb { color:#95959c!important; }
 html.dark #dashboardHighlightsNotesView .demo-crumb strong { color:#a5a9ff!important; }
 html.dark #dashboardHighlightsNotesView .demo-slash { color:#64748b!important; }
-html.dark #dashboardHighlightsNotesView .demo-badge { background:#241f36!important;
-  border-color:#2f2b45!important;
+html.dark #dashboardHighlightsNotesView .demo-badge { background:#252443!important;
+  border-color:#39365e!important;
   color:#c0c2ff!important; }
-html.dark #dashboardHighlightsNotesView .demo-export-all { background:#241f36!important; border-color:#2f2b45!important; color:#c0c2ff!important; }
-html.dark #dashboardHighlightsNotesView .demo-export-all:hover { background:#28243a!important; }
+html.dark #dashboardHighlightsNotesView .demo-export-all { background:#252443!important; border-color:#39365e!important; color:#c0c2ff!important; }
+html.dark #dashboardHighlightsNotesView .demo-export-all:hover { background:#302d54!important; }
 html.dark #dashboardHighlightsNotesView .old-stats-header,
 html.dark #dashboardHighlightsNotesView .old-activity-totals { border-color:#2b2b30!important; }
 html.dark #dashboardHighlightsNotesView .old-stats-close { color:#95959c!important; }
-html.dark #dashboardHighlightsNotesView .old-stats-close:hover { background:#241f36!important; color:#c0c2ff!important; }
+html.dark #dashboardHighlightsNotesView .old-stats-close:hover { background:#252443!important; color:#c0c2ff!important; }
 html.dark #dashboardHighlightsNotesView .old-stats-title h2,
 html.dark #dashboardHighlightsNotesView .old-activity-head h3,
 html.dark #dashboardHighlightsNotesView .old-dist-head h3,
@@ -2568,15 +2568,15 @@ html.dark #dashboardHighlightsNotesView .old-stats-scope button,
 html.dark #dashboardHighlightsNotesView .old-periods button,
 html.dark #dashboardHighlightsNotesView .old-dist-tabs button { color:#95959c!important; }
 html.dark #dashboardHighlightsNotesView .old-stats-scope button.active,
-html.dark #dashboardHighlightsNotesView .old-periods button.active { background:#241f36!important;
+html.dark #dashboardHighlightsNotesView .old-periods button.active { background:#252443!important;
   color:#c0c2ff!important;
   box-shadow:0 1px 5px rgba(0,0,0,.25)!important; }
 html.dark #dashboardHighlightsNotesView .old-metric { background:#151517!important; border-color:#2b2b30!important; }
-html.dark #dashboardHighlightsNotesView .old-dist-tabs button.active { background:#241f36!important; color:#c0c2ff!important; }
+html.dark #dashboardHighlightsNotesView .old-dist-tabs button.active { background:#252443!important; color:#c0c2ff!important; }
 html.dark #dashboardHighlightsNotesView .old-heat-cell,
 html.dark #dashboardHighlightsNotesView .old-heat-legend i { background:#1a1a1d!important; }
 html.dark #dashboardHighlightsNotesView .old-heat-cell[data-level="1"],
-html.dark #dashboardHighlightsNotesView .old-heat-legend i:nth-of-type(2) { background:#2e2a44!important; }
+html.dark #dashboardHighlightsNotesView .old-heat-legend i:nth-of-type(2) { background:#343b69!important; }
 html.dark #dashboardHighlightsNotesView .old-heat-cell[data-level="2"],
 html.dark #dashboardHighlightsNotesView .old-heat-legend i:nth-of-type(3) { background:#5a52a8!important; }
 html.dark #dashboardHighlightsNotesView .old-heat-cell[data-level="3"],
@@ -2600,8 +2600,8 @@ html.dark #dashboardHighlightsNotesView { --lr-scrollbar-thumb:#475569; }
 #dashboardHighlightsNotesView *::-webkit-scrollbar-track { background:transparent!important; }
 #dashboardHighlightsNotesView::-webkit-scrollbar-thumb,
 #dashboardHighlightsNotesView *::-webkit-scrollbar-thumb { border-radius:999px!important; background:var(--lr-scrollbar-thumb)!important; }
-html.dark #dashboardHighlightsNotesView .demo-hero { border-color:#3a3455!important;
-  background:linear-gradient(112deg,#4a3f8a 0%,#403679 47%,#332a66 100%)!important;
+html.dark #dashboardHighlightsNotesView .demo-hero { border-color:#413e6b!important;
+  background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%)!important;
   box-shadow:0 13px 30px rgba(0,0,0,.28)!important; }
 html.dark #dashboardHighlightsNotesView .demo-hero:before,
 html.dark #dashboardHighlightsNotesView .demo-hero:after { border-color:rgba(226,232,240,.12)!important; }
@@ -2624,14 +2624,14 @@ html.dark #dashboardHighlightsNotesView .demo-search-row .search-box input::plac
 html.dark #dashboardHighlightsNotesView .demo-clear-button { border-color:#2b2b30!important;
   background:#151517!important;
   color:#c4b5fd!important; }
-html.dark #dashboardHighlightsNotesView .demo-clear-button:hover { background:#241f36!important; }
+html.dark #dashboardHighlightsNotesView .demo-clear-button:hover { background:#252443!important; }
 html.dark #dashboardHighlightsNotesView .demo-quick-filters { border:1px solid #2b2b30!important;
   background:#151517!important; }
 html.dark #dashboardHighlightsNotesView .demo-quick-filters button { background:transparent!important;
   color:#95959c!important; }
 html.dark #dashboardHighlightsNotesView .demo-quick-filters button:hover { background:#1a1a1d!important;
   color:#f1f5fb!important; }
-html.dark #dashboardHighlightsNotesView .demo-quick-filters button.active { background:#241f36!important;
+html.dark #dashboardHighlightsNotesView .demo-quick-filters button.active { background:#252443!important;
   color:#c4b5fd!important;
   box-shadow:0 1px 4px rgba(0,0,0,.24)!important; }
 #dashboardHighlightsNotesView #dashboardSharedTopbar.ov-topbar { position:sticky;top:0;z-index:30;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:15px;align-self:start;height:56px;min-height:56px;margin-bottom:0;padding:0 19px;border:1px solid #eeedf7;border-radius:30px;background:#fff;box-shadow:0 4px 14px #6156a30a;transition:height 180ms ease,min-height 180ms ease,padding 180ms ease,border-radius 180ms ease,box-shadow 180ms ease }
@@ -2819,8 +2819,8 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
 #dashboardHighlightsNotesView .lhn-latest-art.has-thumbnail:before,
 #dashboardHighlightsNotesView .lhn-latest-art.has-thumbnail .lhn-latest-mountain { display:none; }
 #dashboardHighlightsNotesView .lhn-latest-art.has-thumbnail:after { content:"";position:absolute;z-index:1;inset:0;background:linear-gradient(180deg,transparent 35%,#14233d78 100%);pointer-events:none; }
-html.dark #dashboardHighlightsNotesView .lhn-latest-card { border-color:#3a3455;background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#1a1828 100%);box-shadow:0 9px 25px rgba(0,0,0,.2); }
-html.dark #dashboardHighlightsNotesView .lhn-latest-card:after { background:#241f36; }
+html.dark #dashboardHighlightsNotesView .lhn-latest-card { border-color:#413e6b;background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#191a32 100%);box-shadow:0 9px 25px rgba(0,0,0,.2); }
+html.dark #dashboardHighlightsNotesView .lhn-latest-card:after { background:#252443; }
 html.dark #dashboardHighlightsNotesView .lhn-latest-copy h2 { color:#f1f5fb; }
 html.dark #dashboardHighlightsNotesView .lhn-latest-copy p { color:#95959c; }
 html.dark #dashboardHighlightsNotesView .lhn-latest-meta-pill { background:#1a1a1d;color:#95959c; }

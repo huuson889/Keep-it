@@ -174,13 +174,13 @@ html.dark #dashboardOverviewView .ov-crumb strong,
 html.dark #dashboardOverviewView .ov-link { color:var(--lhn-ui-brand,#a5a9ff); }
 html.dark #dashboardOverviewView .ov-crumb span { color:#64748b; }
 html.dark #dashboardOverviewView .ov-demo {
-  border-color:#3a3455;
-  background:#241f36;
+  border-color:#413e6b;
+  background:#252443;
   color:#c4b5fd;
 }
 html.dark #dashboardOverviewView .ov-welcome {
-  border-color:#3a3455;
-  background:linear-gradient(112deg,#4a3f8a 0%,#403679 47%,#332a66 100%);
+  border-color:#413e6b;
+  background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%);
   box-shadow:0 13px 30px rgba(0,0,0,.28);
 }
 html.dark #dashboardOverviewView .ov-welcome h1 { color:#fff!important; }
@@ -189,7 +189,7 @@ html.dark #dashboardOverviewView .ov-today-card {
   border-color:rgba(226,232,240,.22);
   background:rgba(17,26,43,.48);
 }
-html.dark #dashboardOverviewView .ov-mascot { background:#28262a; }
+html.dark #dashboardOverviewView .ov-mascot { background:#302d2a; }
 html.dark #dashboardOverviewView .ov-section-head h2,
 html.dark #dashboardOverviewView .ov-section-title,
 html.dark #dashboardOverviewView .ov-resume h2,
@@ -227,7 +227,7 @@ html.dark #dashboardOverviewView .ov-mode-value strong { color:var(--lhn-ui-stro
 html.dark #dashboardOverviewView .ov-stat-foot strong { color:#34d399; }
 html.dark #dashboardOverviewView .ov-stat-icon,
 html.dark #dashboardOverviewView .ov-quick-icon,
-html.dark #dashboardOverviewView .ov-mode-icon { background-color:#2a2440!important; }
+html.dark #dashboardOverviewView .ov-mode-icon { background-color:#29264a!important; }
 html.dark #dashboardOverviewView .ov-stat:nth-child(2) .ov-stat-icon,
 html.dark #dashboardOverviewView .ov-quick-item:nth-child(2) .ov-quick-icon,
 html.dark #dashboardOverviewView .ov-mode:nth-child(2) .ov-mode-icon { background-color:#26223a!important; }
@@ -235,24 +235,24 @@ html.dark #dashboardOverviewView .ov-stat:nth-child(4) .ov-stat-icon,
 html.dark #dashboardOverviewView .ov-quick-item:nth-child(3) .ov-quick-icon { background-color:#173226!important; }
 html.dark #dashboardOverviewView .ov-stat:nth-child(3) .ov-stat-icon { background-color:#39291d!important; }
 html.dark #dashboardOverviewView .ov-resume {
-  border-color:#3a3455;
-  background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#1a1828 100%);
+  border-color:#413e6b;
+  background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#191a32 100%);
   box-shadow:0 9px 25px rgba(0,0,0,.2);
 }
-html.dark #dashboardOverviewView .ov-resume:after { background:#241f36; }
+html.dark #dashboardOverviewView .ov-resume:after { background:#252443; }
 html.dark #dashboardOverviewView .ov-resume-badge {
   border-color:#71343c;
   background:#3b2029;
   color:#fda4af;
 }
 html.dark #dashboardOverviewView .ov-meta span { background:#151517; color:#95959c; }
-html.dark #dashboardOverviewView .ov-resume-art { background:linear-gradient(145deg,#2a2440,#1a1a1d); }
+html.dark #dashboardOverviewView .ov-resume-art { background:linear-gradient(145deg,#29264a,#1a1a1d); }
 html.dark #dashboardOverviewView .ov-book-cat { background:#151517; }
-html.dark #dashboardOverviewView .ov-active-days { background:#241f36; color:#c4b5fd; }
+html.dark #dashboardOverviewView .ov-active-days { background:#252443; color:#c4b5fd; }
 html.dark #dashboardOverviewView .ov-periods { background:#151517; }
 html.dark #dashboardOverviewView .ov-period { color:#95959c; }
 html.dark #dashboardOverviewView .ov-period.is-active {
-  background:#2a2440;
+  background:#29264a;
   color:#c4b5fd;
   box-shadow:0 1px 4px rgba(0,0,0,.28);
 }
@@ -262,11 +262,11 @@ html.dark #dashboardOverviewView .ov-legend { color:#8a8a91; }
 html.dark #dashboardOverviewView .ov-heat-cell,
 html.dark #dashboardOverviewView .ov-legend i { background:#1a1a1d; }
 html.dark #dashboardOverviewView .ov-heat-cell[data-level="1"],
-html.dark #dashboardOverviewView .ov-legend i:nth-of-type(2) { background:#2a2540; }
+html.dark #dashboardOverviewView .ov-legend i:nth-of-type(2) { background:#322d58; }
 html.dark #dashboardOverviewView .ov-heat-cell[data-level="2"],
-html.dark #dashboardOverviewView .ov-legend i:nth-of-type(3) { background:#35304a; }
+html.dark #dashboardOverviewView .ov-legend i:nth-of-type(3) { background:#474078; }
 html.dark #dashboardOverviewView .ov-heat-cell[data-level="3"],
-html.dark #dashboardOverviewView .ov-legend i:nth-of-type(4) { background:#4a4270; }
+html.dark #dashboardOverviewView .ov-legend i:nth-of-type(4) { background:#6155a5; }
 html.dark #dashboardOverviewView .ov-heat-cell[data-level="4"],
 html.dark #dashboardOverviewView .ov-legend i:nth-of-type(5) { background:#8f86f2; }
 html.dark #dashboardOverviewView .ov-totals { border-top-color:var(--lhn-ui-border-soft,#1c1c1f); }
@@ -284,8 +284,8 @@ html.dark #dashboardOverviewView .ov-mode-shadow .ov-meter span { background:#d6
 html.dark #dashboardOverviewView .ov-dist-row:nth-child(2) .ov-dist-track span { background:#34d399; }
 html.dark #dashboardOverviewView .ov-dist-row:nth-child(3) .ov-dist-track span { background:#fbbf24; }
 html.dark #dashboardOverviewView .ov-activity { border-bottom-color:var(--lhn-ui-border-soft,#1c1c1f); }
-html.dark #dashboardOverviewView .ov-activity-icon { background:#2a2440; }
-html.dark #dashboardOverviewView .ov-note { background:#241f36; color:#cbd5e1; }
+html.dark #dashboardOverviewView .ov-activity-icon { background:#29264a; }
+html.dark #dashboardOverviewView .ov-note { background:#252443; color:#cbd5e1; }
 html.dark #dashboardOverviewView .ov-note strong { color:#c4b5fd; }
 
 /* Dictation Dictation hub — static UI preview, scoped to its route. */
@@ -406,11 +406,11 @@ html.dark #dashboardOverviewView .ov-note strong { color:#c4b5fd; }
 @media(prefers-reduced-motion:reduce){#dashboardDictationView .dictation-hero-art{animation:none}}
 html.dark #dashboardDictationView{background:var(--lhn-ui-page,#000000);color:var(--lhn-ui-text,#c8c8cc)}
 html.dark #dashboardDictationView .dictation-search-panel,html.dark #dashboardDictationView .dictation-panel,html.dark #dashboardDictationView .dictation-session-card{border-color:var(--lhn-ui-border,#2b2b30);background:var(--lhn-ui-surface,#0d0d0f);box-shadow:var(--lhn-ui-shadow,0 9px 25px rgba(0,0,0,.2))}
-html.dark #dashboardDictationView .dictation-hero{border-color:#3a3455;background:linear-gradient(112deg,#4a3f8a 0%,#403679 47%,#332a66 100%)}
+html.dark #dashboardDictationView .dictation-hero{border-color:#413e6b;background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%)}
 html.dark #dashboardDictationView .dictation-search-row,html.dark #dashboardDictationView .dictation-mini-stats>div,html.dark #dashboardDictationView .dictation-filters,html.dark #dashboardDictationView .dictation-find-panel{border-color:var(--lhn-ui-border,#2b2b30);background:var(--lhn-ui-raised,#151517)}
 html.dark #dashboardDictationView .dictation-search-row input,html.dark #dashboardDictationView .dictation-continue-copy h2,html.dark #dashboardDictationView .dictation-section-head h2,html.dark #dashboardDictationView .dictation-panel-head h2,html.dark #dashboardDictationView .dictation-find-panel h2,html.dark #dashboardDictationView .dictation-mini-stats strong,html.dark #dashboardDictationView .dictation-card-body h3{color:var(--lhn-ui-strong,#f1f5fb)}
-html.dark #dashboardDictationView .dictation-continue-card{border-color:#3a3455;background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#1a1828 100%)}
-html.dark #dashboardDictationView .dictation-continue-card:after{background:#241f36}
+html.dark #dashboardDictationView .dictation-continue-card{border-color:#413e6b;background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#191a32 100%)}
+html.dark #dashboardDictationView .dictation-continue-card:after{background:#252443}
 html.dark #dashboardDictationView .dictation-meta span{background:#151517;color:#95959c}
 html.dark #dashboardDictationView .dictation-section-head p,html.dark #dashboardDictationView .dictation-continue-copy p,html.dark #dashboardDictationView .dictation-panel-head p,html.dark #dashboardDictationView .dictation-find-panel p,html.dark #dashboardDictationView .dictation-search-help,html.dark #dashboardDictationView .dictation-search-actions>span,html.dark #dashboardDictationView .dictation-card-domain,html.dark #dashboardDictationView .dictation-progress-label,html.dark #dashboardDictationView .dictation-card-footer,html.dark #dashboardDictationView .dictation-mini-stats span,html.dark #dashboardDictationView .dictation-mini-stats em,html.dark #dashboardDictationView .dictation-mistake-row small,html.dark #dashboardDictationView .dictation-google-note,html.dark #dashboardDictationView .dictation-footer{color:var(--lhn-ui-muted,#95959c)}
 html.dark #dashboardDictationView .dictation-continue-copy h2,html.dark #dashboardDictationView .dictation-section-head h2,html.dark #dashboardDictationView .dictation-panel-head h2,html.dark #dashboardDictationView .dictation-find-panel h2,html.dark #dashboardDictationView .dictation-mistakes-head h3{color:var(--lhn-ui-strong,#f1f5fb)}
@@ -418,16 +418,16 @@ html.dark #dashboardDictationView .dictation-progress-track{background:#1a1a1d}
 html.dark #dashboardDictationView .dictation-stats-divider,html.dark #dashboardDictationView .dictation-mistake-row{border-color:var(--lhn-ui-border-soft,#1c1c1f)}
 html.dark #dashboardDictationView .dictation-mistake-row del{background:#3b2029;color:#fda4af}
 html.dark #dashboardDictationView .dictation-mistake-row strong,html.dark #dashboardDictationView .dictation-complete{background:#173226;color:#6ee7b7}
-html.dark #dashboardDictationView .dictation-stats-note{background:#241f36;color:#cbd5e1}
+html.dark #dashboardDictationView .dictation-stats-note{background:#252443;color:#cbd5e1}
 html.dark #dashboardDictationView .dictation-all-mistakes,html.dark #dashboardDictationView .dictation-find-action,html.dark #dashboardDictationView .dictation-engine-button{border-color:var(--lhn-ui-border,#2b2b30);background:#151517;color:var(--lhn-ui-text,#c8c8cc)}
 html.dark #dashboardDictationView .dictation-filters button{color:var(--lhn-ui-muted,#95959c)}
-html.dark #dashboardDictationView .dictation-filters button:first-child{background:#2a2440;color:#c4b5fd}
+html.dark #dashboardDictationView .dictation-filters button:first-child{background:#29264a;color:#c4b5fd}
 html.dark #dashboardDictationView .dictation-library-tools select{border-color:var(--lhn-ui-border,#2b2b30);background:#151517;color:var(--lhn-ui-text,#c8c8cc)}
 html.dark #dashboardDictationView .ov-topbar{border-color:var(--lhn-ui-border,#2b2b30);background:var(--lhn-ui-surface,#0d0d0f);box-shadow:0 4px 14px rgba(0,0,0,.18)}
 html.dark #dashboardDictationView .ov-topbar .ov-crumb{color:var(--lhn-ui-muted,#95959c)}
 html.dark #dashboardDictationView .ov-crumb strong{color:var(--lhn-ui-brand,#a5a9ff)}
 html.dark #dashboardDictationView .ov-crumb span{color:#64748b}
-html.dark #dashboardDictationView .ov-demo{border-color:#3a3455;background:#241f36;color:#c4b5fd}
+html.dark #dashboardDictationView .ov-demo{border-color:#413e6b;background:#252443;color:#c4b5fd}
 
 /* Match the final standalone demo’s more readable small type. */
 #dashboardDictationView .ov-demo{font-size:13px}
@@ -636,9 +636,9 @@ html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTo
 html.dark #dashboardSharedTopbar .ov-brand { color:var(--lhn-ui-text,#e0e0e4); }
 html.dark #dashboardSharedTopbar .ov-crumb { color:var(--lhn-ui-muted,#8a8a91); }
 html.dark #dashboardSharedTopbar .ov-demo { border-color:#2b2b30;background:#151517;color:#8f86f2; }
-html.dark #dashboardSharedTopbarActionsSlot .demo-badge { border-color:#2f2b45;background:#241f36;color:#c0c2ff; }
-html.dark #dashboardSharedTopbarActionsSlot .demo-export-all { border-color:#2f2b45;background:#241f36;color:#c0c2ff; }
-html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#28243a; }
+html.dark #dashboardSharedTopbarActionsSlot .demo-badge { border-color:#39365e;background:#252443;color:#c0c2ff; }
+html.dark #dashboardSharedTopbarActionsSlot .demo-export-all { border-color:#39365e;background:#252443;color:#c0c2ff; }
+html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#302d54; }
 
 /* Overview's established reveal cadence now uses the common scroller as its observer root. */
 #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar.ov-reveal {

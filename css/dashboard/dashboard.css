@@ -297,13 +297,13 @@ html.dark #studyDialog #studyContext, html.dark #studyDialog #studyFrontContext 
 html.dark #studyDialog #studyNote { color:#ef4444!important; }
 html.dark #studyDialog .study-answer-field p.study-context-translation,html.dark #studyFrontContextTranslation { border-top-color:rgba(148,163,184,.22); color:#a5a9ff!important; }
 html.dark #studyDialog .study-tool-button, html.dark #studyDialog .study-play-button, html.dark #studyDialog .study-close, html.dark #studyShortcutDialog button.secondary { color:#cbd5e1!important; background:#1e293b!important; border-color:#334155!important; }
-html.dark #studyDialog .study-tool-button:hover, html.dark #studyDialog .study-play-button:hover, html.dark #studyDialog .study-close:hover { color:#c4b5fd!important; background:#2a2440!important; border-color:#6257a8!important; }
-html.dark #studyDialog .study-tool-button.is-active, html.dark #studyDialog .study-focus-toggle.is-active, html.dark #studyDialog .study-auto-speak.is-enabled { color:#c4b5fd!important; background:#2a2440!important; border-color:#6257a8!important; }
+html.dark #studyDialog .study-tool-button:hover, html.dark #studyDialog .study-play-button:hover, html.dark #studyDialog .study-close:hover { color:#c4b5fd!important; background:#29264a!important; border-color:#6257a8!important; }
+html.dark #studyDialog .study-tool-button.is-active, html.dark #studyDialog .study-focus-toggle.is-active, html.dark #studyDialog .study-auto-speak.is-enabled { color:#c4b5fd!important; background:#29264a!important; border-color:#6257a8!important; }
 html.dark #studyDialog .study-grade { background:#1e293b!important; border-color:#334155!important; color:#e2e8f0!important; }
 html.dark #studyDialog .study-again { color:#fca5a5!important; background:#3b2029!important; border-color:#71343c!important; }
-html.dark #studyDialog .study-hard { color:#fdba74!important; background:#39291d!important; border-color:#5a4426!important; }
-html.dark #studyDialog .study-good { color:#86efac!important; background:#173226!important; border-color:#2a4a37!important; }
-html.dark #studyDialog .study-easy { color:#b9b3ff!important; background:#26223a!important; border-color:#3a3457!important; }
+html.dark #studyDialog .study-hard { color:#fdba74!important; background:#39291d!important; border-color:#704526!important; }
+html.dark #studyDialog .study-good { color:#86efac!important; background:#173226!important; border-color:#286342!important; }
+html.dark #studyDialog .study-easy { color:#b9b3ff!important; background:#26223a!important; border-color:#315c89!important; }
 html.dark #studyDialog .study-complete-icon { color:#86efac!important; background:#173226!important; }
 html.dark #studyDialog .study-reset-tools, html.dark #studyDialog .study-shortcut-tools { border-color:#2b2b30!important; }
 html.dark #studyDialog .study-reset-tools h3, html.dark #studyDialog .study-shortcut-tools h3 { color:#e2e8f0!important; }
@@ -354,7 +354,7 @@ html.dark #studyDialog #studySettingsToast { color:#e2e8f0!important; background
 html.dark #studyShortcutDialog .study-settings-nav { border-color:#334155; background:#151517; }
 html.dark #studyShortcutDialog .study-settings-nav-button { color:#cbd5e1; }
 html.dark #studyShortcutDialog .study-settings-nav-button:hover { background:#1e293b; color:#f1f5f9; }
-html.dark #studyShortcutDialog .study-settings-nav-button.is-active { border-color:#6257a8; background:#2a2440; color:#c4b5fd; }
+html.dark #studyShortcutDialog .study-settings-nav-button.is-active { border-color:#6257a8; background:#29264a; color:#c4b5fd; }
 html.dark #studyShortcutDialog .study-settings-panel > h3 { color:#f1f5f9; }
 html.dark #studyShortcutDialog .study-custom-preferences .settings-preference-row strong { color:#e2e8f0; }
 html.dark #studyShortcutDialog .study-custom-preferences .settings-preference-row small { color:#94a3b8; }
@@ -853,7 +853,7 @@ html.dark .settings-theme-options button:hover { background:rgba(255,255,255,.02
 .study-typed-answer-field input { min-height:46px; border:2px solid #aab4c5; }
 .study-typed-answer-field input:focus { border-color:#6f63ec; outline:3px solid #5145e822; }
 html.dark #studyShortcutDialog .study-settings-close { border-color:#334155; background:#1e293b; color:#cbd5e1; }
-html.dark #studyShortcutDialog .study-settings-close:hover { border-color:#6257a8; background:#2a2440; color:#c4b5fd; }
+html.dark #studyShortcutDialog .study-settings-close:hover { border-color:#6257a8; background:#29264a; color:#c4b5fd; }
 html.dark #studyDialog .study-typed-answer-field input { border-width:2px; border-color:#52627a; }
 html.dark #studyDialog .study-typed-answer-field input:focus { border-color:#a5a9ff; }
 @media(max-width:620px) {
@@ -917,7 +917,7 @@ html.dark #dashboardSettingsDialog .study-translate-options select { border-colo
 #studyDialog .study-header-actions .study-jump-highlight svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 #studyDialog .study-header-actions .study-jump-highlight:hover { background:#e9edf4; color:#29354a; filter:none; }
 html.dark #studyDialog .study-header-actions .study-jump-highlight { color:#cbd5e1; background:#1e293b; }
-html.dark #studyDialog .study-header-actions .study-jump-highlight:hover { color:#c4b5fd; background:#2a2440; }
+html.dark #studyDialog .study-header-actions .study-jump-highlight:hover { color:#c4b5fd; background:#29264a; }
 
 /* Darken neutral flashcard borders by 20% in light mode only. */
 html:not(.dark) #studyDialog .study-session { border-color:#95959c; }
@@ -1196,7 +1196,6 @@ dialog#toast.hasAction { display:flex; align-items:center; gap:14px; pointer-eve
    needs a light ink — the opposite of the documents toast. */
 html.dark .toastAction { color:#d7d2fb; }
 html.dark .toastAction:hover { color:#eef2ff; }
-
 /* ==== v3.5.436 — Bảng màu Dashboard: sáng = trắng trên nền #e9edf4, tối = đen tuyệt đối, nhấn tím ==== */
 html:not(.dark) body {
   --lhn-ui-page:#e9edf4; --lhn-ui-surface:#fff; --lhn-ui-raised:#f8fafc; --lhn-ui-subtle:#f1f5f9;

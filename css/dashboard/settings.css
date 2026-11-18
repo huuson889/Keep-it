@@ -497,7 +497,7 @@
   :root #dashboardSettingsDialog :is(.settings-picture-preview, .settings-profile-avatar:not(.profile-avatar-guest)) { background: #7262df; color: #fff; }
 
   /* mục đang mở (2 cột): highlight như app hiện tại (css/dashboard/dashboard.css .settings-nav-item.is-active): nền tím rất nhạt, chữ + icon tím, đậm 650, bo 8px.
-     Nền dạng trong suốt (= #f5f2ff trên nền trắng / #241f36 trên nền tối) để lớp kính không vẽ lại các mục khác khi rê chuột. */
+     Nền dạng trong suốt (= #f5f3ff trên nền trắng / #252443 trên nền tối) để lớp kính không vẽ lại các mục khác khi rê chuột. */
   @media (orientation: landscape), (orientation: portrait) and (min-width: 700px) {
     #dashboardSettingsDialog .settings-nav-item.is-active, :is(html.dark, html.kp-coarse) #dashboardSettingsDialog .settings-nav-item.is-active { background: rgba(79, 70, 229, .06); color: #7262df; font-weight: 650; }
     html.dark #dashboardSettingsDialog .settings-nav-item.is-active { background: rgba(79, 70, 229, .2); color: #a5a9ff; }
@@ -823,14 +823,14 @@
   #dashboardSettingsDialog .settings-window-profile:has(> .profile-avatar-guest) { --kp-plan: #a1a1aa; --kp-plan-tint: rgba(113, 113, 122, .07); --kp-plan-line: rgba(113, 113, 122, .22); }   /* chưa đăng nhập = xám */
   html.dark #dashboardSettingsDialog .settings-window-profile:has(> .profile-avatar-guest) { --kp-plan: #8a8a91; --kp-plan-tint: rgba(255, 255, 255, .04); --kp-plan-line: rgba(255, 255, 255, .14); }
   html.dark #dashboardSettingsDialog .settings-window-profile:is([data-plan="keyA"], [data-plan="trial"]) { --kp-plan: #fbbf24; --kp-plan-tint: rgba(251, 191, 36, .12); --kp-plan-line: rgba(251, 191, 36, .34); }
-  html.dark #dashboardSettingsDialog .settings-window-profile[data-plan="keyB"] { --kp-plan: #a5a9ff; --kp-plan-tint: rgba(139, 92, 246, .18); --kp-plan-line: rgba(167, 139, 250, .4); }
+  html.dark #dashboardSettingsDialog .settings-window-profile[data-plan="keyB"] { --kp-plan: #a78bfa; --kp-plan-tint: rgba(139, 92, 246, .18); --kp-plan-line: rgba(167, 139, 250, .4); }
   #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan], html.dark #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan] { border-color: transparent; color: #fff !important; text-shadow: 0 1px 1px rgba(0, 0, 0, .12); }
   #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan="free"] { border-color: #b9b3ff; background: #f2efff; color: #6b5ce0 !important; text-shadow: none; box-shadow: none; }   /* kiểu nền mờ , màu xanh dương */
   html.dark #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan="free"] { border-color: rgba(165, 169, 255, .6); background: rgba(165, 169, 255, .12); color: #b9b3ff !important; text-shadow: none; box-shadow: none; }
   #dashboardSettingsDialog .settings-window-profile:has(> .profile-avatar-guest) > .kp-plan-badge[data-plan="free"] { border-color: #aab4c3; background: #f1f5f9; color: #475569 !important; }   /* chưa đăng nhập = nền nhãn Bảng quản lý, chữ + viền đậm hơn */
   html.dark #dashboardSettingsDialog .settings-window-profile:has(> .profile-avatar-guest) > .kp-plan-badge[data-plan="free"] { border-color: rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .06); color: #d0d0d4 !important; }
   #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge:is([data-plan="keyA"], [data-plan="trial"]), html.dark #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge:is([data-plan="keyA"], [data-plan="trial"]) { background: linear-gradient(135deg, #f59e0b, #b45309); box-shadow: 0 2px 8px rgba(180, 83, 9, .3); }
-  #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan="keyB"], html.dark #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan="keyB"] { background: linear-gradient(135deg, #8b5cf6, #5b3fc4); box-shadow: 0 2px 8px rgba(109, 40, 217, .35); }
+  #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan="keyB"], html.dark #dashboardSettingsDialog .settings-window-profile > .kp-plan-badge[data-plan="keyB"] { background: linear-gradient(135deg, #8b5cf6, #5b21b6); box-shadow: 0 2px 8px rgba(109, 40, 217, .35); }
   /* thẻ hồ sơ theo gói: mọi thẻ có nền C (chuyển sắc nhạt màu gói + viền mảnh); Pro / Ultra thêm vòng quanh avatar (kiểu D) */
   #dashboardSettingsDialog .settings-window-profile { position: relative; isolation: isolate; }
   #dashboardSettingsDialog .settings-window-profile::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; background: linear-gradient(120deg, var(--kp-plan-tint), transparent 85%); box-shadow: inset 0 0 0 1px var(--kp-plan-line); transition: background .25s ease, box-shadow .25s ease; }
@@ -1086,10 +1086,10 @@ html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-colloc{color:#c0c2
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-examples{display:flex!important;flex-direction:column!important;gap:6px!important;margin-top:6px!important;padding-top:6px!important;border-top:1px solid #e2e8f0!important;}
 html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-examples{border-color:#1e293b!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-examples:before{content:attr(data-label)!important;flex:none!important;color:#6d28d9!important;font-size:12px!important;line-height:16px!important;font-weight:700!important;}
-html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-examples:before{color:#a5a9ff!important;}
+html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-examples:before{color:#a78bfa!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example{display:grid!important;grid-template-columns:auto 1fr!important;column-gap:6px!important;row-gap:2px!important;margin:0!important;padding:0!important;border:0!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example-num{grid-column:1!important;grid-row:1!important;min-width:12px!important;color:#6d28d9!important;font-size:12.16px!important;line-height:16px!important;font-weight:700!important;text-align:right!important;}
-html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example-num{color:#a5a9ff!important;}
+html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example-num{color:#a78bfa!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example-text{grid-column:2!important;grid-row:1!important;color:#6d28d9!important;font-size:12.16px!important;line-height:16px!important;font-weight:500!important;}
 html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example-text{color:#c4b5fd!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-example-word{all:unset!important;padding:0 2px!important;border-radius:3px!important;background:rgba(139,92,246,.18)!important;color:#4c1d95!important;font-weight:700!important;}
@@ -1132,7 +1132,7 @@ html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-heart{background:r
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name b,#dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name span{font-weight:700!important;letter-spacing:-.01em!important;color:#6d28d9!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name b::before{content:"Keepit"!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name span::before{content:"Dictionary"!important;}
-html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name,html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name b,html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name span{color:#a5a9ff!important;}
+html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name,html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name b,html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name span{color:#a78bfa!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-body .lhn-dict-brand{margin-left:auto!important;align-self:center!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-body>.lhn-dict-brand,#dashboardSettingsDialog .kp-dict-preview .lhn-dict-examples>.lhn-dict-brand{align-self:flex-end!important;margin-left:0!important;}
 #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-host{display:flow-root!important;}

@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.437 | Arena.ai Agent sửa:**
+
+- Sửa lỗi ở 3.5.436: bước quét màu đã đổi **cả họ tím** (hero `#5144a7/#43388e/#342a78` → `#4a3f8a/#403679/#332a66`), nên khối tím nhạt đi và lệch màu cũ. Đã khôi phục nguyên vẹn toàn bộ hex họ tím (hero Tổng quan + Chép chính tả, chip, nền tím đậm), chỉ giữ phần đổi navy → đen trung tính và xanh dương nhấn → tím.
+- Quét lại có kiểm soát: 64 mã navy/xám-xanh trong rule `html.dark` (trước là 117 mã, gồm cả tím). Hero tối trở lại `linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%)`, hero sáng giữ `#a999fa/#8d7aee/#7563e4`.
+- File: `css/dashboard/*.css` (10 tệp), `manifest.json`.
+- Kiểm tra: `qa/palette437.js` (1512×950) — sáng nền `rgb(233,237,244)`, sidebar `rgb(255,255,255)`, thanh trên `rgba(255,255,255,.72)`+blur; tối nền `rgb(0,0,0)`, sidebar `rgb(13,13,15)`, thanh trên `rgba(13,13,15,.72)`+blur; điểm ảnh hero tối `(78,65,161)` khớp lại dải `#5144a7`; `errors []`. Ảnh `shots380/pal437-{light,dark}-1512.png`.
+
 **2026-11-18 | v3.5.436 | Arena.ai Agent sửa:**
 
 - Áp bảng màu của demo v13 vào Dashboard: nền sáng `#e9edf4` + mặt trắng `#ffffff`, nền tối **đen tuyệt đối** `#000000` + mặt `#0d0d0f`, viền tối `#232327`/`#2b2b30`, nhấn **tím** (`#7262df` sáng, `rgba(143,134,242,.16)` + `#a5a9ff` tối).

@@ -100,6 +100,6 @@
   html.dark .rn-grab { background: #334155; }
   html.dark .rn-sh-head .rn-x, html.dark .rn-back { background: #1e293b; color: #cbd5e1; }
   html.dark .rn-row:active { background: #1e293b; }
-  html.dark .rn-row svg { color: #a5a9ff; }
+  html.dark .rn-row svg { color: #a78bfa; }
   html.dark #studyDialog .study-ratings:not([hidden]) { background: rgba(17, 26, 43, .96); border-color: #2b2b30; }
 }

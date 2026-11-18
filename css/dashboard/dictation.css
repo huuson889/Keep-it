@@ -309,16 +309,16 @@ html.dark #dashboardDictationView .panel {
 }
 html.dark #dashboardDictationView .topbar { box-shadow:0 4px 14px rgba(0,0,0,.18)!important; }
 html.dark #dashboardDictationView .hero {
-  border-color:#3a3455!important;
-  background:linear-gradient(112deg,#4a3f8a 0%,#403679 47%,#332a66 100%)!important;
+  border-color:#413e6b!important;
+  background:linear-gradient(112deg,#5144a7 0%,#43388e 47%,#342a78 100%)!important;
   box-shadow:0 13px 30px rgba(0,0,0,.28)!important;
 }
 html.dark #dashboardDictationView .continue-card {
-  border-color:#3a3455!important;
-  background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#1a1828 100%)!important;
+  border-color:#413e6b!important;
+  background:linear-gradient(115deg,#0d0d0f 0%,#0d0d0f 65%,#191a32 100%)!important;
   box-shadow:0 9px 25px rgba(0,0,0,.2)!important;
 }
-html.dark #dashboardDictationView .continue-card:after { background:#241f36!important; }
+html.dark #dashboardDictationView .continue-card:after { background:#252443!important; }
 html.dark #dashboardDictationView .search-row,
 html.dark #dashboardDictationView .mini-stat,
 html.dark #dashboardDictationView .filters,
@@ -357,8 +357,8 @@ html.dark #dashboardDictationView .mistake-source,
 html.dark #dashboardDictationView .pair-arrow,
 html.dark #dashboardDictationView .tiny-warning,
 html.dark #dashboardDictationView .footer { color:#95959c!important; }
-html.dark #dashboardDictationView .dictation-badge { border-color:#3a3455!important; background:#241f36!important; color:#c4b5fd!important; }
-html.dark #dashboardDictationView .dictation-dot { background:#a5a9ff!important; box-shadow:0 0 0 3px #2c2742!important; }
+html.dark #dashboardDictationView .dictation-badge { border-color:#413e6b!important; background:#252443!important; color:#c4b5fd!important; }
+html.dark #dashboardDictationView .dictation-dot { background:#a5a9ff!important; box-shadow:0 0 0 3px #34315d!important; }
 html.dark #dashboardDictationView .external-btn,
 html.dark #dashboardDictationView .sort-select {
   border-color:#2b2b30!important;
@@ -366,7 +366,7 @@ html.dark #dashboardDictationView .sort-select {
 }
 html.dark #dashboardDictationView .external-btn { color:#c8c8cc!important; }
 html.dark #dashboardDictationView .external-btn:hover,
-html.dark #dashboardDictationView .engine-link:hover { border-color:#3a3455!important; background:#1a1a1d!important; }
+html.dark #dashboardDictationView .engine-link:hover { border-color:#413e6b!important; background:#1a1a1d!important; }
 html.dark #dashboardDictationView .section-eyebrow { color:#f0a8bd!important; }
 html.dark #dashboardDictationView .continue-copy h2,
 html.dark #dashboardDictationView .section-head h2,
@@ -380,23 +380,23 @@ html.dark #dashboardDictationView .count-badge,
 html.dark #dashboardDictationView .filter.active,
 html.dark #dashboardDictationView .mistake-count,
 html.dark #dashboardDictationView .stats-note {
-  background:#241f36!important;
+  background:#252443!important;
   color:#c4b5fd!important;
 }
 html.dark #dashboardDictationView .filter { color:#95959c!important; }
-html.dark #dashboardDictationView .filter.active { box-shadow:inset 0 0 0 1px #3a3455!important; }
+html.dark #dashboardDictationView .filter.active { box-shadow:inset 0 0 0 1px #413e6b!important; }
 html.dark #dashboardDictationView .source-chip { border-color:#334155!important; background:#172338e8!important; color:#e2e8f0!important; }
 html.dark #dashboardDictationView .progress-track { background:#1a1a1d!important; }
-html.dark #dashboardDictationView .resume-link { border-color:#3a3455!important; background:#241f36!important; }
+html.dark #dashboardDictationView .resume-link { border-color:#413e6b!important; background:#252443!important; }
 html.dark #dashboardDictationView .resume-link:hover { background:#302d58!important; }
 html.dark #dashboardDictationView .complete-badge,
 html.dark #dashboardDictationView .right-word { background:#173226!important; color:#6ee7b7!important; }
 html.dark #dashboardDictationView .no-results { border-color:#2e2e33!important; color:#95959c!important; }
-html.dark #dashboardDictationView .panel-icon { background:#2a2440!important; color:#c4b5fd!important; }
+html.dark #dashboardDictationView .panel-icon { background:#29264a!important; color:#c4b5fd!important; }
 html.dark #dashboardDictationView .stats-divider { background:#1c1c1f!important; }
 html.dark #dashboardDictationView .mistake-row { border-color:#1c1c1f!important; }
 html.dark #dashboardDictationView .mistake-filter button { color:#95959c!important; }
-html.dark #dashboardDictationView .mistake-filter button.active { background:#241f36!important; color:#c4b5fd!important; }
+html.dark #dashboardDictationView .mistake-filter button.active { background:#252443!important; color:#c4b5fd!important; }
 html.dark #dashboardDictationView .wrong-word { background:#3b2029!important; color:#fda4af!important; }
 html.dark #dashboardDictationView .mistake-count { color:#c4b5fd!important; }
 html.dark #dashboardDictationView .all-mistakes,
@@ -407,7 +407,7 @@ html.dark #dashboardDictationView .mistake-all-sessions:hover { background:#1a1a
 html.dark #dashboardDictationView .engine-icon { background:#3b2029!important; color:#fda4af!important; }
 html.dark #dashboardDictationView .engine-icon.web { background:#173226!important; color:#6ee7b7!important; }
 html.dark #dashboardDictationView .engine-arrow { color:#8a8a91!important; }
-html.dark #dashboardDictationView .search-elsewhere { border-color:#3a3455!important; background:linear-gradient(145deg,#0d0d0f,#1a1828)!important; }
+html.dark #dashboardDictationView .search-elsewhere { border-color:#413e6b!important; background:linear-gradient(145deg,#0d0d0f,#191a32)!important; }
 html.dark #dashboardDictationView .search-elsewhere p { color:#95959c!important; }
 html.dark #dashboardDictationView .toast { border-color:#2b2b30!important; background:#151517!important; color:#f1f5fb!important; box-shadow:0 10px 30px rgba(0,0,0,.35)!important; }
 /* Detailed Dictation popup is isolated in its own CSP-safe extension page. */
