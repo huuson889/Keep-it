@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.415**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.416**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -239,6 +239,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.416 | Arena.ai Agent sửa:**
+
+- Sửa đúng ý người dùng sau 2 lần hiểu sai: "Bỏ chọn" phải là **chữ giống "Chọn tất cả" / "Đã chọn N"** trong thanh chọn, không phải link gạch chân (v3.5.414) và cũng không phải nút khung (v3.5.415). Mình đã đọc "2 nút kia" thành 2 nút hành động thay vì nhìn ảnh chụp — lỗi đọc ảnh, không phải lỗi CSS.
+- Hiện tại: `<button class="trash-clearsel" id="trashClearSel">` đứng ngay sau `#trashBulkCount`, `font:inherit`, 12.5px, weight 600, màu `#5a4bd0`, không viền/nền/gạch chân; chỉ khác ở `cursor:pointer` và hover `#4338b8`.
+- File: `pages/dashboard.html`, `css/dashboard/trash.css`, `manifest.json`.
+- Kiểm tra: đo `getComputedStyle` trên extension thật — cả light và dark, `font-family/font-size/font-weight/color/letter-spacing/text-decoration` của "Bỏ chọn" **trùng từng thuộc tính** với nhãn "Chọn tất cả" (`lightSameAsSelectAll: true`, `darkSameAsSelectAll: true`, màu `rgb(90,75,208)` cả hai theme). Bấm: `hidden=true`, đếm rỗng, 0 dòng picked, `selectAll.checked=false`, Khôi phục disabled. 390: 3 mục vẫn 1 hàng, không tràn. 0 lỗi console. Ảnh: `text416-1512-light.png`, `text416-1512-dark.png`, `text416-390-light.png`.
 
 **2026-11-17 | v3.5.415 | Arena.ai Agent sửa:**
 
