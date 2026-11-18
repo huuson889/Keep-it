@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.401**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
+- Version **3.5.402**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
 - Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
 - Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
 - Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
@@ -239,6 +239,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.402 | Arena.ai Agent sửa:**
+
+- Sửa lệch breakpoint của tab Tài liệu so với v3.5.379: v3.5.401 đặt padding 44px ở route (ngoài iframe), nên `innerWidth` bên trong iframe nhỏ hơn 88px so với bản gốc → `@media(max-width:1180px)` của `documents.css` bật sớm, `.lib` sập 1 cột và "Thống kê đọc" rơi xuống dưới ở những cửa sổ mà v3.5.379 vẫn 2 cột.
+- Nay iframe phủ hết bề rộng route (không padding/cap) và padding 44px (22px ≤980, 12px ≤760) nằm lại trong `html.dash-embedded .main` — media query bên trong thấy đúng bề rộng như v3.5.379. Thanh chung vẫn inset 44/22/12px nên vẫn phủ đúng cột nội dung.
+- File: `manifest.json`, `css/dashboard/documents-host.css`, `css/dashboard/documents.css`, `PROJECT.md`.
+- Kiểm tra (Chromium thật, so cùng cửa sổ với bản dựng v3.5.379): `innerWidth` trong iframe trùng khít (1568→1345; 1380→1157; 1268→1045; 1200→977), `.lib` = 896+340 / 1066 / 954 / 930 giống từng con số; ảnh đối chiếu `shots380/side-by-side-documents.png`. Với nội dung cao (giả lập 1600px): grid 2 cột ở 1568, 1 cột + tìm kiếm xuống dòng ở 390. Thanh == cột nội dung ở 1568 (264↔1521) và 390 (12↔375). 0 lỗi console.
 
 **2026-11-17 | v3.5.401 | Arena.ai Agent sửa:**
 
