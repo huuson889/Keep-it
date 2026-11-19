@@ -952,6 +952,23 @@
   .profile-auth-divider::before, .profile-auth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--au-line); }
   .profile-auth-error { margin: 0; color: var(--au-err); font-size: 13px; line-height: 18px; }
   /* ô sai: viền đỏ (+ nhãn đỏ) — màu là tín hiệu chính, câu lỗi ở dưới là giải thích */
+  /* dòng đồng ý điều khoản (chỉ hiện khi tạo tài khoản) — không tích sẵn */
+  .profile-auth-terms { display: flex; align-items: flex-start; gap: 8px; margin: 2px 0 0; color: var(--au-mu); font-size: 13px; line-height: 19px; }
+  .profile-auth-terms[hidden] { display: none; }
+  .profile-auth-terms input[type="checkbox"] { appearance: auto; -webkit-appearance: auto; flex: none; width: 16px; height: 16px; margin: 2px 0 0; padding: 0; border: 0; border-radius: 4px; background: transparent; box-shadow: none; accent-color: var(--au-brand); cursor: pointer; }
+  .profile-auth-terms-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 5px; min-width: 0; }
+  .profile-auth-terms-text label { display: inline; margin: 0; color: inherit; font-size: inherit; font-weight: 400; cursor: pointer; }
+  .profile-auth-dialog .profile-auth-legal { all: unset; color: var(--au-brand-tx); font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .profile-auth-dialog .profile-auth-legal:hover { text-decoration-thickness: 2px; }
+  .profile-auth-terms.is-invalid { color: var(--au-err); }
+  .profile-auth-terms.is-invalid input[type="checkbox"] { outline: 2px solid var(--au-err); outline-offset: 1px; }
+  .profile-auth-terms.is-invalid .profile-auth-legal { color: var(--au-err); }
+  /* nội dung điều khoản / bảo mật mở ngay trong popup */
+  .profile-auth-legal-panel { display: grid; gap: 7px; margin: 0; padding: 11px 12px; border: 1px solid var(--au-line); border-radius: 10px; background: var(--au-tile); }
+  .profile-auth-legal-panel[hidden] { display: none; }
+  .profile-auth-legal-panel strong { color: var(--au-tx); font-size: 13px; font-weight: 650; }
+  .profile-auth-legal-panel p { margin: 0; color: var(--au-mu); font-size: 12.5px; line-height: 18px; }
+  .profile-auth-dialog .profile-auth-legal-panel button { all: unset; justify-self: start; color: var(--au-brand-tx); font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
   .profile-auth-dialog label.is-invalid input { border-color: var(--au-err); }
   .profile-auth-dialog label.is-invalid input:focus { border-color: var(--au-err); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-err) 18%, transparent); }
   .profile-auth-dialog label.is-invalid > span:first-child { color: var(--au-err); }

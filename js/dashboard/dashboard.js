@@ -585,6 +585,7 @@ function renderProfileMenu() {
 // lỗi từng ô: viền đỏ cho ô sai + aria-invalid + aria-describedby (như app hiện đại)
 const PROFILE_AUTH_FIELDS = { profileEmailInvalid:["profileUsername"], profileBadCredentials:["profilePassword"], profilePasswordShort:["profilePassword"], profilePasswordMismatch:["profileRetypePassword"] };
 function clearProfileAuthMarkup() {
+  $("profileTermsRow")?.classList.remove("is-invalid");
   for (const input of document.querySelectorAll("#profileAuthDialog [aria-invalid]")) {
     input.removeAttribute("aria-invalid"); input.removeAttribute("aria-describedby");
     input.closest("label")?.classList.remove("is-invalid");
@@ -628,6 +629,9 @@ function setProfileAuthMode(mode) {
     button.dataset.labelHide = t("profileHidePassword");
     button.setAttribute("aria-label", showing ? t("profileHidePassword") : t("profileShowPassword"));
   }
+  $("profileTermsRow").hidden = !isRegister;
+  $("profileLegalPanel").hidden = true;
+  if (!isRegister) $("profileTerms").checked = false;
   hideProfileAuthError();
   profileAuthMode = mode;
 }
@@ -3052,6 +3056,22 @@ $("profileUsername").addEventListener("input", () => {
 for (const id of ["profilePassword", "profileRetypePassword"]) {
   $(id).addEventListener("input", () => { if ($(id).getAttribute("aria-invalid") === "true") hideProfileAuthError(); });
 }
+// tích điều khoản rồi thì bỏ viền đỏ + câu lỗi ngay
+$("profileTerms").addEventListener("change", () => {
+  $("profileTermsRow").classList.remove("is-invalid");
+  $("profileTerms").removeAttribute("aria-invalid");
+  if ($("profileTerms").checked && $("profileAuthError").textContent === t("profileTermsRequired")) hideProfileAuthError();
+});
+// hai link mở nội dung ngay trong popup (bản demo: không có trang web điều khoản riêng)
+for (const button of document.querySelectorAll("#profileAuthDialog [data-legal]")) {
+  button.addEventListener("click", () => {
+    const terms = button.dataset.legal === "terms";
+    $("profileLegalTitle").textContent = t(terms ? "profileTermsLink" : "profilePrivacyLink");
+    $("profileLegalBody").textContent = t(terms ? "profileTermsBody" : "profilePrivacyBody");
+    $("profileLegalPanel").hidden = false;
+  });
+}
+$("profileLegalClose").addEventListener("click", () => { $("profileLegalPanel").hidden = true; });
 $("profileSwitchRegister").addEventListener("click", () => { profileAuthAutoRegister = false; AUTH_POPUP.morph(() => setProfileAuthMode("register")); });
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
@@ -3071,6 +3091,14 @@ $("profileAuthForm").addEventListener("submit", async event => {
   if (!$("profilePassword").value) {
     showProfileAuthError(t("profilePasswordRequired"), ["profilePassword"]);
     $("profilePassword").focus();
+    return;
+  }
+  if (profileAuthMode === "register" && !$("profileTerms").checked) {
+    showProfileAuthError(t("profileTermsRequired"), []);
+    $("profileTermsRow").classList.add("is-invalid");
+    $("profileTerms").setAttribute("aria-invalid", "true");
+    $("profileTerms").setAttribute("aria-describedby", "profileAuthError");
+    $("profileTerms").focus();
     return;
   }
   // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản

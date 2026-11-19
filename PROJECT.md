@@ -164,6 +164,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.467 | Arena.ai Agent sửa:**
+
+- Thêm **dòng đồng ý điều khoản** cho đúng UX app hiện đại — chỉ hiện ở nhánh **tạo tài khoản**, **không tích sẵn** (GDPR: không được tích trước).
+- Nội dung: checkbox + "Tôi đồng ý với **Điều khoản sử dụng** và **Chính sách bảo mật**". Hai chữ in đậm là **nút mở nội dung ngay trong popup** (bản demo chưa có trang web điều khoản nên không trỏ link giả ra ngoài): panel hiện tiêu đề + đoạn ngắn (điều khoản: tài khoản chỉ tạo trong tiện ích, không máy chủ nào lưu hồ sơ, xoá được trong Cài đặt → Tài khoản; bảo mật: hồ sơ/email/mật khẩu chỉ nằm trong bộ nhớ cục bộ, gỡ tiện ích là mất) + nút Đóng.
+- Bắt buộc: bấm **Tạo tài khoản** mà chưa tích → `profileTermsRequired` ("Bạn cần đồng ý Điều khoản sử dụng và Chính sách bảo mật để tạo tài khoản."), hàng điều khoản đỏ (chữ + viền ô tích), `aria-invalid` + `aria-describedby`, focus vào ô tích. Tích xong là lỗi tự mất.
+- Chi tiết kỹ thuật: link là `<button type="button">` **đặt ngoài** `<label>` để bấm link không vô tình tích ô; `setProfileAuthMode()` ẩn hàng + panel và bỏ tích khi về chế độ đăng nhập; markup đồng bộ ở `pages/dashboard.html` và `markup()` của `auth-popup.js`.
+- i18n mới (en/vi/ko): `profileTermsAgree`, `profileTermsLink`, `profileTermsAnd`, `profilePrivacyLink`, `profileTermsRequired`, `profileTermsBody`, `profilePrivacyBody`, `profileLegalClose`.
+- File: `pages/dashboard.html`, `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `css/dashboard/settings.css`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ (2 file JS); CSS 921/921 ngoặc; jsdom trên markup thật: đủ `#profileTermsRow` (mặc định ẩn), `#profileTerms` (không tích sẵn), `#profileLegalPanel`, 2 nút `data-legal`, thứ tự `.profile-auth-fields` = Mật khẩu → Nhập lại → lỗi → điều khoản → panel → nút gửi. **Chưa chạy UI thật.**
+
 **2026-11-18 | v3.5.466 | Arena.ai Agent sửa:**
 
 - Đổi nhãn thông báo khi email chưa có tài khoản:

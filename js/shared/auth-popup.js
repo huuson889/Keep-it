@@ -20,6 +20,15 @@
         <label><span>${t("profilePassword")}</span><span class="profile-auth-pw"><input id="profilePassword" type="password" placeholder="${t("profilePasswordPlaceholder")}" autocomplete="current-password" required><button class="profile-auth-eye" type="button" data-password-toggle="profilePassword" aria-pressed="false" aria-label="${t("profileShowPassword")}" data-label-show="${t("profileShowPassword")}" data-label-hide="${t("profileHidePassword")}">${EYE}</button></span></label>
         <label id="profileRetypePasswordLabel" hidden><span>${t("profileRetypePassword")}</span><span class="profile-auth-pw"><input id="profileRetypePassword" type="password" placeholder="${t("profileRetypePassword")}" autocomplete="new-password"><button class="profile-auth-eye" type="button" data-password-toggle="profileRetypePassword" aria-pressed="false" aria-label="${t("profileShowPassword")}" data-label-show="${t("profileShowPassword")}" data-label-hide="${t("profileHidePassword")}">${EYE}</button></span></label>
         <p id="profileAuthError" class="profile-auth-error" role="status" hidden></p>
+        <div id="profileTermsRow" class="profile-auth-terms" hidden>
+          <input id="profileTerms" type="checkbox">
+          <div class="profile-auth-terms-text"><label for="profileTerms">${t("profileTermsAgree")}</label> <button class="profile-auth-legal" type="button" data-legal="terms">${t("profileTermsLink")}</button> <span>${t("profileTermsAnd")}</span> <button class="profile-auth-legal" type="button" data-legal="privacy">${t("profilePrivacyLink")}</button></div>
+        </div>
+        <div id="profileLegalPanel" class="profile-auth-legal-panel" hidden>
+          <strong id="profileLegalTitle"></strong>
+          <p id="profileLegalBody"></p>
+          <button id="profileLegalClose" type="button">${t("profileLegalClose")}</button>
+        </div>
         <button id="profileAuthSubmit" class="profile-auth-submit" type="submit">${t("profileLoginNow")}</button>
       </div>
       <p class="profile-auth-switch is-login">${t("profileNoAccount")} <button id="profileSwitchRegister" type="button">${t("profileRegister")}</button></p>
