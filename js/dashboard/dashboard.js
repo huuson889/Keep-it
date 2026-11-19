@@ -460,7 +460,14 @@ async function restoreAddonSettings() {
     toast(t("restoreSettingsFailed"));
   }
 }
+function applyMenuPlanBadge() {
+  try { SETTINGS_KIT.plan.apply(); } catch {}
+  if (applyMenuPlanBadge.fetched) return;
+  applyMenuPlanBadge.fetched = true;
+  try { Promise.resolve(refreshUsageLimitSettings()).catch(() => {}); } catch {}
+}
 function renderProfileMenu() {
+  applyMenuPlanBadge();
   const menuAvatar = $("profileMenuAvatar"), accountHost = $("profileMenuAccountHost"), menuIdentity = $("profileMenuIdentity"), signOutButton = $("profileMenuSignOut");
   const menuToggleName = $("profileMenuToggleName"), menuToggleEmail = $("profileMenuToggleEmail"), popoverName = $("profilePopoverName"), popoverEmail = $("profilePopoverEmail"), popoverStatus = $("profilePopoverStatus"), popoverSyncButton = $("profilePopoverSyncButton"), menuToggleAvatar = $("profileMenuToggleAvatar"), profileMenuPlan = $("profileMenuPlan"), syncMenuItem = $("profileMenuSyncItem"), helpMenuItem = $("profileMenuHelpItem"), logoutMenuItem = $("profileMenuLogoutAction"), guestLoginItem = $("profileMenuGuestLogin");
   const activeEmail = String(demoProfile?.email || "").trim();

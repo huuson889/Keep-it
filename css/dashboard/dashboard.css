@@ -1267,3 +1267,30 @@ html.dark #dashboardSidebar .reference-footer-button > .kp-plan-badge {
 html.dark #dashboardSidebar .reference-footer-button:has(.profile-avatar-guest) > .kp-plan-badge {
   border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.06); color:#d0d0d4;
 }
+
+/* v3.5.445 — nhãn gói ở chân sidebar đổi kiểu theo gói y như thẻ hồ sơ trong Cài đặt (Free / Pro / Ultra) */
+#dashboardSidebar .dashboard-reference-profile-wrap { --kp-plan:#7262df; }
+#dashboardSidebar .dashboard-reference-profile-wrap:is([data-plan="trial"],[data-plan="keyA"]) { --kp-plan:#d97706; }
+#dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] { --kp-plan:#7c3aed; }
+html.dark #dashboardSidebar .dashboard-reference-profile-wrap { --kp-plan:#a5a9ff; }
+html.dark #dashboardSidebar .dashboard-reference-profile-wrap:is([data-plan="trial"],[data-plan="keyA"]) { --kp-plan:#fbbf24; }
+html.dark #dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] { --kp-plan:#a78bfa; }
+/* Pro (trial / keyA) = vàng; Ultra (keyB) = tím, chữ trắng */
+#dashboardSidebar .reference-footer-button > .kp-plan-badge:is([data-plan="trial"],[data-plan="keyA"]) {
+  border-color:transparent; background:linear-gradient(135deg,#f59e0b,#b45309);
+  color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.12); box-shadow:none;
+}
+#dashboardSidebar .reference-footer-button > .kp-plan-badge[data-plan="keyB"] {
+  border-color:transparent; background:linear-gradient(135deg,#8b5cf6,#5b21b6);
+  color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.12); box-shadow:0 2px 8px rgba(109,40,217,.35);
+}
+/* vòng quanh avatar theo gói như Cài đặt (Pro/Ultra) */
+#dashboardSidebar .dashboard-reference-profile-wrap:is([data-plan="trial"],[data-plan="keyA"],[data-plan="keyB"]) .profile-avatar:not(.profile-avatar-guest) {
+  outline:2px solid var(--kp-plan); outline-offset:2px;
+}
+#dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] .profile-avatar:not(.profile-avatar-guest) {
+  box-shadow:0 0 14px 4px rgba(124,58,237,.32);
+}
+html.dark #dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] .profile-avatar:not(.profile-avatar-guest) {
+  box-shadow:0 0 14px 4px rgba(139,92,246,.38);
+}

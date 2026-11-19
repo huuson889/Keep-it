@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.445 | Arena.ai Agent sửa:**
+
+- Lỗi: Cài đặt đổi gói Pro/Ultra thì nhãn ở chân sidebar không đổi kiểu (vì nhãn đó là HTML tĩnh `data-plan="free"`, chỉ `#settingsProfilePlan` được cập nhật).
+- Nay `SETTINGS_KIT.plan.set(id)` vẽ **cả hai nơi** từ cùng một bảng `PLANS`: `#settingsProfilePlan` và `#profileMenuTogglePlan` (cùng `data-plan`, cùng icon shield/bolt/crown, cùng chữ `usagePlanFree/Trial/KeyA/KeyB`), đồng thời gắn `data-plan` lên `.dashboard-reference-profile-wrap` để tô vòng avatar.
+- Thêm `apply()` để `renderProfileMenu()` áp lại gói đã biết sau mỗi lần vẽ lại, và nạp `USAGE_STATUS` **một lần khi mở Dashboard** (trước đây chỉ nạp khi mở Cài đặt) → chân sidebar đúng gói ngay từ đầu.
+- CSS: Pro (trial/keyA) = vàng `linear-gradient(135deg,#f59e0b,#b45309)`; Ultra (keyB) = tím `linear-gradient(135deg,#8b5cf6,#5b21b6)` + bóng `0 2px 8px rgba(109,40,217,.35)`, chữ trắng; avatar Pro/Ultra có `outline:2px solid var(--kp-plan)` + `outline-offset:2px`, Ultra thêm quầng `rgba(124,58,237,.32)` (tối `rgba(139,92,246,.38)`); biến `--kp-plan`: free `#7262df`, Pro `#d97706`, Ultra `#7c3aed` (tối `#a5a9ff` / `#fbbf24` / `#a78bfa`).
+- File: `js/dashboard/settings-ui.js`, `js/dashboard/dashboard.js`, `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): `node --check` cả 2 file JS hợp lệ; ngoặc CSS cân 1145/1145; `git diff` xác nhận `set()` không còn `return` sớm khi thiếu `#settingsProfilePlan`. **Chưa chụp ảnh được** (sandbox thiếu `xvfb` + lib Chromium, không có root).
+
 **2026-11-18 | v3.5.444 | Arena.ai Agent sửa:**
 
 - Sửa lại avatar chân sidebar cho **đúng màu / viền / kiểu của khung Cài đặt**, chỉ giữ kích thước 28px (3.5.443 mới đổi class nên vẫn bị viền tím 1px + nền tím nhạt của `.reference-avatar-letter` đè lên):

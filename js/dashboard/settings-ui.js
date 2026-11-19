@@ -320,10 +320,24 @@
       const bolt = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.2 2.3a.6.6 0 0 1 1.05.5L12.9 10h6.3a.6.6 0 0 1 .46.98l-8.86 10.7a.6.6 0 0 1-1.05-.5L11.1 14H4.8a.6.6 0 0 1-.46-.98z"/></svg>';
       const crown = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2.6 7.4a.8.8 0 0 1 1.26-.83l4.3 3.3 3.15-5.3a.8.8 0 0 1 1.38 0l3.15 5.3 4.3-3.3a.8.8 0 0 1 1.26.83l-2.1 10.1a1.2 1.2 0 0 1-1.18.95H5.88a1.2 1.2 0 0 1-1.18-.95z"/></svg>';
       const PLANS = { free:["usagePlanFree", shield], trial:["usagePlanTrial", bolt], keyA:["usagePlanKeyA", bolt], keyB:["usagePlanKeyB", crown] };
-      function set(id) { const b = $("settingsProfilePlan"); if (!b) return; id = PLANS[id] ? id : "free"; const [key, svg] = PLANS[id]; b.dataset.plan = id; const card = b.closest(".settings-window-profile"); if (card) card.dataset.plan = id;
-        b.innerHTML = svg + `<span id="settingsProfilePlanText" data-i18n="${key}">${escapeHtml(t(key))}</span>`; }
+      const current = { id: "free" };
+      function set(id) {
+        id = PLANS[id] ? id : "free";
+        current.id = id;
+        const [key, svg] = PLANS[id];
+        const label = escapeHtml(t(key));
+        const b = $("settingsProfilePlan");
+        if (b) { b.dataset.plan = id; const card = b.closest(".settings-window-profile"); if (card) card.dataset.plan = id;
+          b.innerHTML = svg + `<span id="settingsProfilePlanText" data-i18n="${key}">${label}</span>`; }
+        // chân sidebar Dashboard: cùng data-plan, cùng icon, cùng chữ như thẻ hồ sơ trong Cài đặt
+        const side = $("profileMenuTogglePlan");
+        if (side) { side.dataset.plan = id; side.dataset.i18nAriaLabel = key;
+          side.innerHTML = svg + `<span data-i18n="${key}">${label}</span>`;
+          side.setAttribute("aria-label", t(key)); }
+        document.querySelectorAll(".dashboard-reference-profile-wrap").forEach(wrap => { wrap.dataset.plan = id; });
+      }
       $("settingsProfilePlan")?.closest(".settings-window-profile")?.setAttribute("data-plan", "free");
-      return { set };
+      return { set, apply: () => set(current.id) };
     })();
 
     // ---------- Reset at the end of each panel: purple while any control differs from the defaults; "Reset done · Undo" ----------
