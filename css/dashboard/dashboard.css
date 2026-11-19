@@ -1319,13 +1319,16 @@ html.dark #dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] 
 html.dark #dashboardSettingsDialog .settings-picture-trigger:focus-visible { outline-color:#a5a9ff; }
 
 #dashboardAvatarDialog { padding:0; border:0; background:transparent; max-width:none; max-height:none; overflow:visible; }
-/* nền sau y hệt hộp thoại Cài đặt (settings.css:225): chỉ tối .4, không blur */
-#dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.4); backdrop-filter:none; }
+/* nền sau: chỉ phủ một lớp tối rất nhẹ, KHÔNG blur — để hộp thoại Cài đặt phía sau vẫn sáng và
+   popup đọc ra là tấm kính mờ giống Cài đặt (che .4 như trước làm cả màn hình xám đục) */
+#dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.14); backdrop-filter:none; }
+html.dark #dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.3); }
 
 /* kính mờ giống hộp thoại Cài đặt (settings.css: --kp-glass .78 + blur 24px saturate 1.6, viền .12)
    — kính đặt ở lớp ::before để nội dung bên trong vẫn đọc rõ */
 .kp-avatar-card {
   position:relative; isolation:isolate;
+  transform:translateX(var(--kp-avatar-dx, 0px));
   width:min(392px, calc(100vw - 32px)); max-height:calc(100dvh - 32px);
   display:flex; flex-direction:column; overflow:hidden;
   border-radius:16px; border:1px solid rgba(0,0,0,.12); background:transparent;

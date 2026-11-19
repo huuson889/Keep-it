@@ -212,10 +212,20 @@ function renderAvatarDialog() {
   }
   if (removeButton) removeButton.hidden = !dataUrl;
 }
+function syncAvatarDialogOffset() {
+  // căn popup theo chiều ngang của hộp thoại Cài đặt (hộp thoại Cài đặt nằm trong vùng nội dung,
+  // lệch phải sidebar, nên popup canh theo khung nhìn sẽ bị lệch trái)
+  const dialog = $("dashboardAvatarDialog"), sheet = $("dashboardSettingsDialog");
+  if (!dialog) return;
+  const rect = sheet?.open ? sheet.getBoundingClientRect() : null;
+  const dx = rect && rect.width ? Math.round(rect.left + rect.width / 2 - window.innerWidth / 2) : 0;
+  dialog.style.setProperty("--kp-avatar-dx", `${dx}px`);
+}
 function openAvatarDialog() {
   const dialog = $("dashboardAvatarDialog");
   if (!dialog) return;
   renderAvatarDialog();
+  syncAvatarDialogOffset();
   if (!dialog.open) dialog.showModal();
   requestAnimationFrame(() => $("dashboardAvatarClose")?.focus());
 }
@@ -3625,6 +3635,7 @@ $("dashboardAvatarDialog")?.addEventListener("click", event => {
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
 });
 $("dashboardAvatarDialog")?.addEventListener("close", () => $("settingsProfilePictureOpen")?.focus());
+window.addEventListener("resize", () => { if ($("dashboardAvatarDialog")?.open) syncAvatarDialogOffset(); });
 $("dashboardAvatarChange")?.addEventListener("click", () => { $("dashboardAvatarDialog").close(); $("settingsProfilePictureFile").click(); });
 $("dashboardAvatarRemove")?.addEventListener("click", async () => {
   if (!demoProfile?.avatarDataUrl) return;

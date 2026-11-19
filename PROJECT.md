@@ -164,6 +164,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.454 | Arena.ai Agent sửa:**
+
+- Lỗi: popup vẫn xám đục và **không canh giữa theo hộp thoại Cài đặt**. Đo trên ảnh người dùng (1920×1080, DPR 1.25): Cài đặt x 356→1631 (tâm 993,5 px ảnh = 794,8 CSS), popup x 684→1171 (tâm 927,5 px ảnh = 742 CSS) → popup lệch **~53 CSS px sang trái**.
+- Nguyên nhân lệch: hộp thoại Cài đặt nằm trong vùng nội dung (lệch phải sidebar 60px, tâm ở `60 + (1536-60)/2 = 798`), còn `dialog` của popup do trình duyệt canh giữa **khung nhìn** (768) → hai tâm khác nhau.
+- Nay: thêm `syncAvatarDialogOffset()` — đọc `getBoundingClientRect()` của Cài đặt lúc mở popup, ghi `--kp-avatar-dx` vào `#dashboardAvatarDialog`, thẻ dịch `transform:translateX(var(--kp-avatar-dx,0px))`; tính lại khi resize nếu popup đang mở; Cài đặt không mở thì `dx = 0`.
+- Nguyên nhân xám: `::backdrop` phủ `rgba(0,0,0,.4)` lên chính tấm kính Cài đặt → mọi thứ thành xám, kính `.78` trên nền xám ra `#e4e4e6`. Nay backdrop chỉ còn `rgba(0,0,0,.14)` (tối `rgba(0,0,0,.3)`), không blur → Cài đặt phía sau vẫn sáng, popup thành tấm kính sáng nổi trên đó (kính `.78` + `blur(24px) saturate(1.6)` giữ nguyên).
+- Không đổi: 392px, bo 16, ảnh 200px, bố cục chân C, chữ phụ `#5f6575`.
+- File: `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 1204/1204 ngoặc; số đo lấy trực tiếp từ ảnh người dùng. **Chưa xác minh bằng mắt** (không có trình duyệt trong sandbox) — vị trí sau khi dịch và độ sáng của kính cần người dùng xem lại.
+
 **2026-11-18 | v3.5.453 | Arena.ai Agent sửa:**
 
 - Lỗi (ảnh người dùng): sau 3.5.452, **cả trang bạc màu** và thẻ popup **xám đục** — sửa càng sai.
