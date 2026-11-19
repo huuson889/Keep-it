@@ -340,6 +340,8 @@
     if (event.origin !== location.origin || event.source !== frame()?.contentWindow) return;
     const data = event.data || {};
     if (data.type === 'KEEPIT_DOCUMENTS_LIBRARY_CHANGED') void refresh();
+    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER_READY') { updateOpenCard('done'); hideOpenCard(200); return; }
+    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER' && !data.open) { hideOpenCard(0); return; }
     if (data.type === 'KEEPIT_DOCUMENTS_IMPORT_STEP') {
       if (data.phase === 'start') showOpenCard({ name:data.name, bytes:data.bytes, kind:data.kind });
       else updateOpenCard(data.phase, data.percent);
@@ -349,10 +351,15 @@
       pendingImport = 0;
       void refresh();
       if (importCancelled) { importCancelled = false; hideOpenCard(); return; }
-      updateOpenCard('done');
-      hideOpenCard(320);
       // v3.5.478: "0 tài liệu" không còn là câu duy nhất — nói rõ vì sao không thêm được.
       const count = Number(data.count) || 0, skipped = Number(data.skipped) || 0, reason = String(data.error || '');
+      updateOpenCard('done');
+      /* v3.5.482: nhập xong là khung MỞ LUÔN tệp vừa nhập. Popup phải ở lại tới khi khung
+         vẽ xong trang đầu (KEEPIT_DOCUMENTS_VIEWER_READY) — dọn đường trước, không để
+         người dùng thấy màn hình nhảy vào layout tài liệu khi tệp còn đang dựng.
+         5 giây không thấy tín hiệu thì tự ẩn để không kẹt popup. */
+      if (count) openHideTimer = window.setTimeout(() => hideOpenCard(), 5000);
+      else hideOpenCard(320);
       const KNOWN = { unsupported:'unsupported', fileLimit:'fileLimit', documentsBusy:'documentsBusy', documentsBadFile:'badFile', storageFailed:'storageFailed', documentsDatabaseBlocked:'dbBlocked' };
       if (reason) globalThis.toast?.(KNOWN[reason] ? t(KNOWN[reason]) : `${t('importFailed')} · ${reason.slice(0, 90)}`);
       else if (count) globalThis.toast?.(t('filesCount', { count }));

@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.482 | Arena.ai Agent sửa:**
+
+- Người dùng: "load xong mới vào layout tài liệu mới hợp lý" — trước đó nhập xong là popup ẩn ngay trong khi khung còn đang dựng trang đầu, nên màn hình nhảy vào layout tài liệu giữa chừng.
+- Nay: nhập xong (`KEEPIT_DOCUMENTS_IMPORTED`, có tài liệu mới) → popup **giữ nguyên**, bước 2 chuyển ✓; khung chỉ báo `KEEPIT_DOCUMENTS_VIEWER_READY` **sau khi** `renderViewer()` + `ensurePage()` xong (`nativeReady=true`) → Dashboard mới ẩn popup (200ms). Tức là: popup che lúc tệp đang dựng, dọn xong mới lộ layout tài liệu.
+- Chống kẹt: quá **5 giây** không thấy tín hiệu thì tự ẩn; khung mở tệp thất bại (`KEEPIT_DOCUMENTS_VIEWER {open:false}`) → ẩn ngay; nhập lỗi/trùng (count 0) → ẩn sau 320ms như cũ.
+- File: `js/dashboard/documents.js`, `js/dashboard/documents-library.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; **jsdom**: (1) nhập xong, chưa vẽ xong → popup còn `true`; (2) nhận READY → ẩn `false`, thanh 100%; (3) lỗi `fileLimit` 200ms → còn; (4) 500ms → ẩn; (5) `open:false` → ẩn ngay. Đúng cả 5. **Chưa chạy UI thật**.
+
 **2026-11-18 | v3.5.481 | Arena.ai Agent sửa:**
 
 - Người dùng: nhập tệp được rồi nhưng **mất popup hiệu ứng "Đang mở tệp"** như bản 3.5.430.
