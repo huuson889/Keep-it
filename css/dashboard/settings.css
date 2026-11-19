@@ -225,6 +225,22 @@
   #dashboardSettingsDialog::backdrop { background: rgba(0, 0, 0, .4); backdrop-filter: none; }
   /* máy tính (ngang): nền sau nhạt như menu ☰ trên màn rộng → thấy rõ kính */
   @media (orientation: landscape) { #dashboardSettingsDialog::backdrop { background: rgba(0, 0, 0, .16); } }
+  /* v3.5.459 — hiện/ẩn giống popup đăng nhập: cửa sổ hiện dần + phóng nhẹ (180ms), nền sau mờ dần (300ms).
+     Điện thoại dọc giữ nguyên kiểu sheet trượt từ đáy ở trên. */
+  @media (orientation: landscape) {
+    #dashboardSettingsDialog.dashboard-settings-dialog { opacity: 1; transform: none;
+      transition: opacity .18s ease-out, transform .18s ease-out, display .3s allow-discrete, overlay .3s allow-discrete; }
+    #dashboardSettingsDialog.dashboard-settings-dialog:not([open]) { opacity: 0; transform: scale(.97); }
+    @starting-style { #dashboardSettingsDialog.dashboard-settings-dialog[open] { opacity: 0; transform: scale(.97); } }
+    /* trong sheet của thanh Keepit (kp-embed) là toàn màn hình → không phóng */
+    html.kp-embed #dashboardSettingsDialog.dashboard-settings-dialog,
+    html.kp-embed #dashboardSettingsDialog.dashboard-settings-dialog:not([open]) { opacity: 1; transform: none; transition: none; }
+    @starting-style { html.kp-embed #dashboardSettingsDialog.dashboard-settings-dialog[open] { opacity: 1; transform: none; } }
+  }
+  #dashboardSettingsDialog::backdrop { opacity: 1;
+    transition: opacity .3s, display .3s allow-discrete, overlay .3s allow-discrete; }
+  #dashboardSettingsDialog:not([open])::backdrop { opacity: 0; }
+  @starting-style { #dashboardSettingsDialog[open]::backdrop { opacity: 0; } }
   /* lớp bên trong trong suốt để thấy kính */
   #dashboardSettingsDialog :is(.settings-window, .settings-window-topbar, .settings-window-sidebar, .settings-window-content) { background: transparent !important; }
   #dashboardSettingsDialog :is(.settings-window-topbar, .settings-window-sidebar, .settings-window-profile, .settings-language-row, .settings-panel-heading, .settings-subsection) { border-color: var(--kp-line); }
@@ -510,7 +526,8 @@
       border: 0; border-radius: 22px 22px 0 0; box-shadow: 0 -12px 40px rgba(0, 0, 0, .28);
       transform: none; transition: transform .3s cubic-bezier(.2, .8, .2, 1), display .3s allow-discrete, overlay .3s allow-discrete;
     }
-    #dashboardSettingsDialog.dashboard-settings-dialog:not([open]) { transform: translateY(100%); }
+    /* opacity: 1 — để lúc đóng sheet còn thấy nó trượt xuống (khối ngang phía trên đặt opacity 0) */
+    #dashboardSettingsDialog.dashboard-settings-dialog:not([open]) { opacity: 1; transform: translateY(100%); }
     @starting-style { #dashboardSettingsDialog.dashboard-settings-dialog[open] { transform: translateY(100%); } }
     #dashboardSettingsDialog::backdrop { background: rgba(0, 0, 0, .4); backdrop-filter: none; opacity: 1; transition: opacity .3s, display .3s allow-discrete, overlay .3s allow-discrete; }
     #dashboardSettingsDialog:not([open])::backdrop { opacity: 0; }

@@ -164,6 +164,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.459 | Arena.ai Agent sửa:**
+
+- Yêu cầu: **cửa sổ Cài đặt cũng có hiệu ứng hiện/ẩn giống popup đăng nhập**.
+- Nay (máy tính / màn ngang — `@media (orientation: landscape)`):
+  - `#dashboardSettingsDialog.dashboard-settings-dialog { opacity:1; transform:none; transition: opacity .18s ease-out, transform .18s ease-out, display .3s allow-discrete, overlay .3s allow-discrete }`.
+  - `:not([open]) { opacity:0; transform:scale(.97) }` + `@starting-style { [open] { opacity:0; transform:scale(.97) } }` → mở: hiện dần + phóng nhẹ 180ms; đóng: thu nhỏ + mờ đi.
+  - `::backdrop { opacity:1; transition: opacity .3s, display .3s allow-discrete, overlay .3s allow-discrete }` + `:not([open])::backdrop { opacity:0 }` + `@starting-style` → nền sau mờ dần 300ms. Nền giữ nguyên (`rgba(0,0,0,.16)` máy tính, `.4` nơi khác).
+  - `html.kp-embed` (Cài đặt nằm trong sheet thanh Keepit, toàn màn hình) **không** phóng: `opacity:1; transform:none; transition:none`.
+- Điện thoại (dọc: `@media (orientation: portrait)`; ngang thấp: `@media (orientation: landscape) and (max-height: 499.98px)`) **giữ nguyên kiểu sheet trượt từ đáy**; thêm `opacity:1` vào rule `:not([open])` của khối ngang thấp để lúc đóng vẫn thấy sheet trượt xuống (khối ngang ở trên đặt `opacity:0`).
+- File: `css/dashboard/settings.css`, `manifest.json` (không đổi JS/HTML).
+- Kiểm tra: CSS 906/906 ngoặc; đọc CSSOM: khối `@media (orientation: landscape)` chứa đúng 3 rule mới (opacity/transform/transition), rule `::backdrop` gốc có `opacity:1` + transition, và rule sheet ngang-thấp có `opacity:1`. **Chưa xác minh bằng mắt** — jsdom không chạy `@media (orientation)`, nên hiệu ứng thật cần người dùng xem.
+
 **2026-11-18 | v3.5.458 | Arena.ai Agent sửa:**
 
 - Người dùng chốt: làm popup Ảnh hồ sơ **giống hệt** popup đăng nhập (`.profile-auth-dialog`, settings.css:866–899). Lần này copy nguyên giá trị mẫu, không tự thêm.
