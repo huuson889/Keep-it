@@ -157,6 +157,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.495 | Arena.ai Agent sửa:**
+
+- Người dùng gửi ảnh: bôi đen trong tài liệu → thanh **Tô sáng / Dịch / Hỏi AI** hiện đúng, vùng chọn 449 ký tự. Không còn hỏi lại.
+- Tắt bảng chẩn đoán (`DIAG = false` trong `js/dashboard/selection-diagnostic.js`); giữ file để bật lại bằng 1 dòng nếu lỗi tái phát.
+- **Lỗi "mở tệp đầu tiên không bôi đen được" — ĐÓNG.** Nguyên nhân: `lockSelectionUntilQuiet()` (3.5.491) bị ngắt giữa lúc khoá thì thoát mà không mở khoá → `user-select:none` kẹt vĩnh viễn; sửa ở 3.5.494. Bằng chứng: `selectLocked=false`, `user-select:auto`, vùng chọn còn nguyên ở +250 ms, `reachedShowIcon`.
+- File: `js/dashboard/selection-diagnostic.js`, `manifest.json`, `PROJECT.md`.
+
 **2026-11-18 | v3.5.494 | Arena.ai Agent sửa:**
 
 - Người dùng: "đâu được đâu, vẫn lỗi vậy mà" + xác nhận bôi đen **chết hẳn** (bấm lại lần 2, lần 3 vẫn không được) → nguyên nhân **không phải thời điểm**; dừng đoán, chuyển sang đo.

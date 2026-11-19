@@ -8,7 +8,7 @@
    Bật/tắt bằng cờ DIAG bên dưới. Không gửi gì ra ngoài, chỉ hiện trên màn hình. */
 (() => {
   'use strict';
-  const DIAG = true;
+  const DIAG = false; /* v3.5.495: đã xác nhận lỗi chọn chữ hết (ảnh người dùng: thanh Tô sáng/Dịch/Hỏi AI hiện với 449 ký tự). Đổi thành true nếu cần chẩn đoán lại. */
   if (!DIAG) return;
 
   const LOG = [];
