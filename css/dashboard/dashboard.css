@@ -1385,3 +1385,23 @@ html.dark .kp-avatar-act:focus-visible, html.dark .kp-avatar-close:focus-visible
   .kp-avatar-act { height:46px; }
   .kp-avatar-close { width:44px; height:44px; }
 }
+
+/* v3.5.449 — hàng Ảnh hồ sơ luôn nằm cùng dòng: ảnh không rơi xuống dưới nhãn ở màn hẹp
+   (luật @media(max-width:520px) .settings-account-row{flex-direction:column} vẫn áp cho các hàng khác) */
+#dashboardSettingsDialog .settings-account-row.settings-picture-row,
+#dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row {
+  flex-direction:row; align-items:center; justify-content:space-between; flex-wrap:nowrap; gap:12px;
+}
+#dashboardSettingsDialog .settings-account-row.settings-picture-row > span:first-child,
+#dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row > span:first-child {
+  flex:1 1 auto; min-width:0;
+}
+#dashboardSettingsDialog .settings-account-row.settings-picture-row .settings-picture-controls,
+#dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row .settings-picture-controls {
+  flex:0 0 auto; align-self:center;
+}
+/* nhãn phụ được phép xuống dòng trong cột chữ, ảnh vẫn đứng yên bên phải */
+#dashboardSettingsDialog .settings-account-row.settings-picture-row small,
+#dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row small {
+  overflow-wrap:anywhere;
+}

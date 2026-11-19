@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.449 | Arena.ai Agent sửa:**
+
+- Đổi nhãn dưới "Ảnh hồ sơ": “Bấm vào ảnh để xem, đổi hoặc xoá.” → **“Bấm vào ảnh để thay đổi.”** (en “Click the picture to change it.”, ko “사진을 클릭해 변경하세요.”); sửa cả chuỗi mặc định trong `pages/dashboard.html`.
+- Responsive: ở màn hẹp, luật cũ `@media(max-width:520px) .settings-account-row{flex-direction:column}` làm **ảnh rơi xuống dưới nhãn**. Nay hàng Ảnh hồ sơ được miễn luật đó: luôn `flex-direction:row`, `align-items:center`, `flex-wrap:nowrap`, `gap:12px`; cột chữ `flex:1 1 auto; min-width:0` (nhãn phụ tự xuống dòng trong cột), ảnh `flex:0 0 auto` — ảnh luôn đứng cùng dòng bên phải. Các hàng Tài khoản khác **vẫn xếp dọc như cũ**.
+- Luật đặt bằng selector có id (`#dashboardSettingsDialog …` và `#dashboardHighlightsNotesView #dashboardSettingsDialog …`) nên thắng luật `@media` cũ về độ ưu tiên, không phụ thuộc thứ tự file.
+- File: `js/core/languages.js`, `pages/dashboard.html`, `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm chứng (computed style, jsdom, cả 2 nền): hàng ảnh `flexDirection=row`, `align=center`, `wrap=nowrap`, `gap=12px`; cột chữ `flex 1/1/auto`, `min-width:0`; ảnh `flex 0/0/auto`. `node --check languages.js` hợp lệ; ngoặc CSS cân 1200/1200.
+- Vẫn **không chụp được ảnh** (sandbox thiếu `xvfb` + lib Chromium).
+
 **2026-11-18 | v3.5.448 | Arena.ai Agent sửa:**
 
 - Hàng **Ảnh hồ sơ** (Cài đặt → Tài khoản) giờ **chỉ còn ảnh**: bỏ nút "Thay đổi" và nút "Xoá ảnh" cũ, ảnh trở thành nút bấm (phóng nhẹ 1.04 + vòng sáng khi rê, có `aria-haspopup="dialog"`).
