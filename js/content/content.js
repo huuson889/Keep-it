@@ -632,6 +632,8 @@
     translateIcon = launcher;
     for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", zIndex:FLOAT_Z, width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionTranslateIcon(range);
+    // v3.5.487: vừa mở tệp, trang còn đổi kích thước → đo lại vị trí vài lần để thanh không nằm lệch về mép trái.
+    for (const delay of [80, 250, 600, 1200]) setTimeout(() => { if (launcher.isConnected) positionTranslateIcon(range); }, delay);
     requestAnimationFrame(() => launcher.isConnected && launcher.classList.add("lhn-visible"));
   }
   function syncTranslateIconAvailability() {

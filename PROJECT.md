@@ -164,12 +164,21 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.487 | Arena.ai Agent sửa:**
+
+- Người dùng: "ảnh là trạng thái lỗi khi mở tệp mới, reload thì lỗi đâu nữa" — ảnh cho thấy thanh nằm **tận mép trái** thay vì dưới vùng chọn.
+- Đo trong Chrome người dùng: khi mở tệp, khung **gỡ `#pageStack`** (8 ms) rồi **dựng lại** (~216 ms) và tạo lại toàn bộ `span` chữ (~223 ms) → vùng chọn tạo trong khoảng đó bị xoá ngay (`mouseup.noTextOrEditable {text:false}` ngay sau 20 ms). Thanh đặt vị trí theo `range.getClientRects()` đo đúng lúc trang còn co giãn nên rơi về mép trái (`position()` kẹp ở 10 px).
+- Sửa: (1) `documents.css` + `documents.js` — khoá chọn chữ trong lúc dựng trang (`#viewer[data-select-locked="true"] #stage{user-select:none}`), mở khoá khi trang dựng xong **hoặc tối đa 2,5 giây** (đo được có ca `data-native-ready` kẹt `false` 14 giây nên không khoá vô hạn); (2) `content.js` — đo lại vị trí thanh ở 80/250/600/1200 ms sau khi tạo để bám đúng vùng chọn khi trang đổi kích thước.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/content/content.js`, `manifest.json`.
+- File: `css/dashboard/documents.css`, `js/content/content.js`, `manifest.json`. Kiểm tra: `node --check` hợp lệ. **Chưa xác nhận trong Chrome** ở bản này.
+
 **2026-11-18 | v3.5.486 | Arena.ai Agent sửa (đo trực tiếp trong Chrome của người dùng qua DevTools):**
 
 - Đo được: lần mở đầu `KeepitDocuments.open()` mất **~7,9 giây** mới xong; `documents-native-inactive` chỉ được gỡ ở bước cuối của `openViewer`. Trong khoảng đó `content.js` vẫn có `websiteDisabled = true` → chọn chữ đúng lúc tệp vừa hiện bị chặn (`mouseup.websiteDisabled`), chờ đủ lâu mới có thanh. Người dùng thấy: "mở lần đầu không bôi đen được, reload thì được".
 - Sửa 3 chỗ: (1) `documents-context.js` **không chờ** `refreshSource()` (nó chờ `loadSettings` + `restoreAnnotations`) — chờ làm `openViewer` treo thêm; (2) `documents.js` gọi `refreshNativeSource()` **ngay khi engine sẵn sàng** để gỡ class ức chế sớm; (3) `content.js` tính `pageToolsDisabled()` **tại thời điểm chọn chữ** thay vì dùng cờ `websiteDisabled` cũ (3 cổng: mouseup, loadSettings, showTranslateIcon).
 - File: `js/dashboard/documents-context.js`, `js/dashboard/documents.js`, `js/content/content.js`, `manifest.json`.
-- Kiểm tra: `node --check` cả 3 hợp lệ; trong Chrome thật (3.5.485) đã chứng minh: khi class còn + cờ cũ → không có thanh; gọi `refresh()` xong → bôi đen có thanh (`reachedShowIcon`, `#lhn-translate-icon` 28×28). **Chưa chạy bản 3.5.486** (cần người dùng thay thư mục).
+- Kiểm tra: `node --check` cả 3 hợp lệ; trong Chrome thật (3.5.485) đã chứng minh: khi class còn + cờ cũ → không có thanh; gọi `refresh()` xong → bôi đen có thanh (`reachedShowIcon`, `#lhn-translate-icon` 28×28).
+- **Xác nhận trên Chrome của người dùng với bản 3.5.486**: bộ ghi trong khung cho thấy thao tác kéo chọn thật → `mouseups 1` → `reachedShowIcon` → `#lhn-translate-icon` hiện; người dùng xác nhận "bôi đen được bình thường". Kéo chọn bằng DevTools thì không dùng để kết luận được (mỗi lệnh chuột qua tunnel mất vài giây nên cú kéo bị trải dài ~30 giây).
 
 **2026-11-18 | v3.5.485 | Arena.ai Agent sửa:**
 

@@ -725,6 +725,9 @@ body{overflow:auto}
 .stage:focus{outline:none}
 @media (orientation:portrait){.topbar #libraryTheme{margin-left:auto}}
 /* Shared app tools are not a second Document implementation. */
+/* v3.5.487: khi vừa mở tệp, #pageStack còn bị dựng lại → vùng chọn tạo trong lúc đó bị xoá ngay.
+   Khoá chọn chữ trong lúc dựng trang (data-select-locked), có hạn 2,5 giây. */
+#viewer[data-select-locked="true"] #stage{user-select:none!important;-webkit-user-select:none!important}
 .documents-native-inactive #lhn-sidebar-edge-toggle,.documents-native-inactive #lhn-sidebar,.documents-native-inactive #lhn-panel,.documents-native-inactive #lhn-direct-translation,.documents-native-inactive #lhn-translate-icon,.documents-native-inactive #lhn-full-english-dictionary{display:none!important}
 .nativeTranslationSlot .lhn-bilingual-card,.readFrame .reflow .lhn-bilingual-card{font-size:inherit!important}
 .nativeTranslationSlot .lhn-bilingual-card{margin:6px 0 0;padding-top:0!important;padding-bottom:0!important;width:auto;max-width:100%;box-sizing:border-box}
