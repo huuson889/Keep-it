@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.452 | Arena.ai Agent sửa:**
+
+- Lỗi 1 (người dùng hỏi "tại sao có cái khung mờ phía sau?"): sau lưng popup **Ảnh hồ sơ** hiện một tấm chữ nhật mờ. Đó chính là **hộp thoại Cài đặt vẫn đang mở** phía dưới, bị `::backdrop` của popup làm mờ (`backdrop-filter: blur(6px)`) nên viền bo của nó hiện thành "khung".
+- Nay: `#dashboardAvatarDialog::backdrop` chỉ **tối** như của Cài đặt (`rgba(0,0,0,.58)` sáng / `.66` tối), **bỏ `backdrop-filter`**; và khi mở popup, Cài đặt nhận class `kp-avatar-behind` (`opacity:.4`, chuyển 180ms) để lùi hẳn về sau — đóng popup thì gỡ class.
+- Lỗi 2: thẻ popup nền đặc (`#fff` / `#1c1c26`). Nay là **kính mờ y hộp thoại Cài đặt**: lớp `::before` (`inset:0; z-index:-1; border-radius:inherit`) với `background: rgba(255,255,255,.78)` / `rgba(24,24,28,.78)` và `backdrop-filter: blur(24px) saturate(1.6)`; thẻ đặt `position:relative; isolation:isolate`, `background:transparent`, viền `rgba(0,0,0,.12)` / `rgba(255,255,255,.12)`; đường kẻ đầu/thân/chân đổi sang cùng màu viền `.12`.
+- Giữ nguyên: kích thước 392px, bo 16px, ảnh xem trước 200px, bố cục chân C (Đổi ảnh / Xoá ảnh xếp dọc).
+- File: `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 1205 `{` / 1205 `}`; jsdom (sáng & tối) cho `.kp-avatar-card` `background:rgba(0,0,0,0)`, `position:relative`, `isolation:isolate`, viền `.12` đúng hệ màu. **Chưa xác minh bằng mắt**: jsdom không tính được style của `::before`/`::backdrop`, nên hiệu ứng kính và mức tối của nền cần người dùng xem lại.
+
 **2026-11-18 | v3.5.451 | Arena.ai Agent sửa:**
 
 - Lỗi: **đăng xuất ở sidebar** (menu hồ sơ) không đổi nhãn gói, trong khi đăng xuất trong Cài đặt thì đổi.
