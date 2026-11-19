@@ -164,6 +164,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.477 | Arena.ai Agent sửa:**
+
+- Nút cập nhật đổi nhãn cho gọn: `settingsCheckUpdate` = **"Cập nhật"** / `Update` / `업데이트` (trước là "Kiểm tra cập nhật"). Chỉ đổi chữ, hành vi và kích thước nút giữ nguyên.
+- File: `js/core/languages.js`, `pages/dashboard.html`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; `grep` xác nhận 3 nhãn mới. **Chưa chạy UI thật**.
+
 **2026-11-18 | v3.5.476 | Arena.ai Agent sửa:**
 
 - Giới thiệu → dòng **Version**:
