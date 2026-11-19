@@ -82,7 +82,9 @@ async function openPdfFromUrl(url,fileAccessDenied=false){
  }catch(error){console.warn('Could not import PDF from the active tab',error);showPdfFallback(local);}
 }
 async function importFiles(files){
- if(loading)return;loading=true;ttsStop();const cycle=++importCycle;let first=null,firstEngine=null;
+ const outcome={added:0,skipped:0,error:''};
+ if(loading){outcome.error='documentsBusy';return outcome;}
+ loading=true;ttsStop();const cycle=++importCycle;let first=null,firstEngine=null;
  try{
   for(const file of [...files]){
    if(cycle!==importCycle)break;
@@ -90,15 +92,16 @@ async function importFiles(files){
    if(!file.size||file.size>(type==='image'?30:50)*MB){showError(new Error('fileLimit'),file.name);$('#errMsg').textContent=t('fileLimit');continue;}
    let engine=null;try{
     $('#oName').textContent=file.name;$('#oIco').textContent=TYPE[type].label;$('#oIco').style.background=TYPE[type].color;$('#oMeta').textContent=fmtSize(file.size);$('#oSteps').innerHTML=`<li class="run"><i></i>${t('opening')}</li>`;$('#oFill').style.width='0%';showModal('#openWrap',true);
-    const id=await Store.fingerprint(file);check();const old=await Store.get('meta',id);if(old){first||=id;continue;}
+    const id=await Store.fingerprint(file);check();const old=await Store.get('meta',id);if(old){first||=id;outcome.skipped++;continue;}
     engine=await KeepitDocumentRenderers.prepare(file,type,{password:reason=>askPassword(reason,file.name),check,progress:n=>{$('#oFill').style.width=Math.round(n*95)+'%';}});check();
     let thumbnail='';try{if(!engine.passwordProtected)thumbnail=await engine.thumbnail();}catch{}
     const pages=engine.pages,meta={id,name:file.name,title:file.name.replace(/\.[^.]+$/,''),type,image:type==='image',format:extOf(file.name).toUpperCase(),bytes:file.size,pages:pages.length,at:1,opened:Date.now(),imported:Date.now(),width:pages[0].width,height:pages[0].height,scan:type!=='image'&&!pages.some(p=>p.texts.length),hl:0,notes:0,thumbnail};
-    $('#oSteps').innerHTML=`<li class="done"><i>✓</i>${t('saving')}</li>`;check();await Store.importFile(meta,file);check();if(!first){first=id;firstEngine=engine;engine=null;}$('#oFill').style.width='100%';
-   }catch(error){if(cycle===importCycle)showError(error,file.name);}finally{engine?.dispose();showModal('#openWrap',false);}
+    $('#oSteps').innerHTML=`<li class="done"><i>✓</i>${t('saving')}</li>`;check();await Store.importFile(meta,file);outcome.added++;check();if(!first){first=id;firstEngine=engine;engine=null;}$('#oFill').style.width='100%';
+   }catch(error){if(cycle===importCycle){const raw=String(error?.message||error||'');if(!/cancel/i.test(raw))outcome.error=outcome.error||raw||'documentsBadFile';showError(error,file.name);}}finally{engine?.dispose();showModal('#openWrap',false);}
   }
   if(first&&cycle===importCycle){await refreshLibrary();filter='all';renderLibrary();const prepared=firstEngine;firstEngine=null;await openViewer(first,'orig',prepared);}
  }finally{firstEngine?.dispose();loading=false;showModal('#openWrap',false);try{await refreshLibrary();}catch{}}
+ return outcome;
  function check(){if(cycle!==importCycle)throw new Error('cancelled');}
 }
 $('#oCancel').onclick=()=>{++importCycle;finishPassword(null);showModal('#openWrap',false);};$('#file').onchange=e=>{const files=[...e.target.files];e.target.value='';void importFiles(files);};
@@ -593,11 +596,12 @@ if(EMBEDDED)addEventListener('message',event=>{
  }
  if(data.type==='KEEPIT_DOCUMENTS_IMPORT_FILES'&&Array.isArray(data.files)&&data.files.length){
   void (async()=>{
-   let before=new Set(),count=0;
-   try{before=new Set((await Store.all('meta')).map(d=>d.id));}catch{}
-   try{await importFiles(data.files);}catch{ }
-   try{count=(await Store.all('meta')).filter(d=>!before.has(d.id)).length;}catch{}
-   try{parent.postMessage({type:'KEEPIT_DOCUMENTS_IMPORTED',count},location.origin);}catch{}
+   // v3.5.478: importFiles tự đếm số tài liệu mới / bị trùng / lỗi — không nuốt lỗi nữa,
+   // để Dashboard báo đúng "vì sao 0 tài liệu" thay vì chỉ hiện con số 0.
+   let result={added:0,skipped:0,error:''};
+   try{result=(await importFiles(data.files))||result;}
+   catch(error){result={added:0,skipped:0,error:String(error?.message||'')};}
+   try{parent.postMessage({type:'KEEPIT_DOCUMENTS_IMPORTED',count:result.added||0,skipped:result.skipped||0,error:result.error||''},location.origin);}catch{}
   })();
  }
 });

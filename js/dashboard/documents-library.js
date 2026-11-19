@@ -268,7 +268,13 @@
     if (data.type === 'KEEPIT_DOCUMENTS_IMPORTED') {
       pendingImport = 0;
       void refresh();
-      globalThis.toast?.(data.error ? t(data.error) : t('filesCount', { count: Number(data.count) || 0 }));
+      // v3.5.478: "0 tài liệu" không còn là câu duy nhất — nói rõ vì sao không thêm được.
+      const count = Number(data.count) || 0, skipped = Number(data.skipped) || 0, reason = String(data.error || '');
+      const KNOWN = { unsupported:'unsupported', fileLimit:'fileLimit', documentsBusy:'documentsBusy', documentsBadFile:'badFile', storageFailed:'storageFailed', documentsDatabaseBlocked:'dbBlocked' };
+      if (reason) globalThis.toast?.(t(KNOWN[reason] || 'importFailed'));
+      else if (count) globalThis.toast?.(t('filesCount', { count }));
+      else if (skipped) globalThis.toast?.(t('importDuplicate'));
+      else globalThis.toast?.(t('importFailed'));
     }
   });
   if (globalThis.browser?.storage?.onChanged) {

@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.478 | Arena.ai Agent sửa:**
+
+- Lỗi người dùng: chọn tệp ở tab Tài liệu → báo **"0 tài liệu"**, tệp **không vào** thư viện.
+- Nguyên nhân hiển thị sai: khung `documents.html` đếm lại số bản ghi trước/sau và **nuốt mọi lỗi** (`try{await importFiles(...)}catch{ }`), nên mọi kiểu thất bại đều thành con số 0, không nói vì sao.
+- Nay: `importFiles()` trả `{added, skipped, error}` (đếm ngay lúc nhập; lỗi đầu tiên được giữ lại, lỗi "cancel" vẫn im lặng); khung gửi `KEEPIT_DOCUMENTS_IMPORTED {count, skipped, error}`; Dashboard đổi câu báo: có lỗi → đúng lý do (`unsupported` / `fileLimit` / `documentsBusy` / `badFile` / `dbBlocked` / `storageFailed`), 0 mà trùng → "Tệp này đã có trong thư viện.", 0 mà không rõ → "Không thêm được tệp vào thư viện.". Thêm chặn "đang nhập tệp khác" thay vì `return` im lặng.
+- i18n mới: `docs_importFailed`, `docs_importDuplicate`, `docs_documentsBusy` (en/vi/ko).
+- File: `js/dashboard/documents.js`, `js/dashboard/documents-library.js`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ. **Chưa chạy UI thật** — bản này **chưa sửa nguyên nhân gốc**, nó làm lỗi hiện ra thành câu rõ ràng để chốt nguyên nhân.
+
 **2026-11-18 | v3.5.477 | Arena.ai Agent sửa:**
 
 - Nút cập nhật đổi nhãn cho gọn: `settingsCheckUpdate` = **"Cập nhật"** / `Update` / `업데이트` (trước là "Kiểm tra cập nhật"). Chỉ đổi chữ, hành vi và kích thước nút giữ nguyên.
