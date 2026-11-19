@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.451 | Arena.ai Agent sửa:**
+
+- Lỗi: **đăng xuất ở sidebar** (menu hồ sơ) không đổi nhãn gói, trong khi đăng xuất trong Cài đặt thì đổi.
+- Nguyên nhân: `applyMenuPlanBadge()` (gọi trong `renderProfileMenu`) luôn `SETTINGS_KIT.plan.apply()` — phát lại gói **đã biết cuối cùng** (ví dụ Ultra) kể cả khi đã đăng xuất. Đường đăng xuất trong Cài đặt thì tình cờ đúng vì `refreshDashboardSettings()` có sẵn `if (!demoProfile) SETTINGS_KIT.plan.set("free")`.
+- Nay: `applyMenuPlanBadge()` rẽ nhánh — **chưa đăng nhập → `plan.set("free")`**, đã đăng nhập mới `apply()`; và `signOutDemoProfile()` đặt `plan.set("free")` ngay trước khi vẽ lại, nên nhãn về "Miễn phí" + kiểu xám khách lập tức, không phải chờ mở Cài đặt.
+- Sửa luôn chiều ngược lại: `finishProfileAuth()` (đăng nhập) trước đây chỉ nạp `USAGE_STATUS` khi Cài đặt đang mở → đăng nhập từ sidebar sẽ hiện sai "Miễn phí". Nay luôn nạp, nên nhãn đúng gói ở mọi đường đăng nhập.
+- File: `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra (tĩnh): `node --check` hợp lệ; `grep` xác nhận 3 điểm — `signOutDemoProfile` có `plan.set("free")`, `applyMenuPlanBadge` rẽ nhánh theo `demoProfile`, `finishProfileAuth` gọi `refreshUsageLimitSettings()` không điều kiện. Chưa chạy được UI (sandbox không có trình duyệt).
+
 **2026-11-18 | v3.5.450 | Arena.ai Agent sửa:**
 
 - **Sửa lỗi do 3.5.449 gây ra**: ở khung Cài đặt hẹp, nhãn "Ảnh hồ sơ" bị bóp còn ~40px nên chữ rơi mỗi dòng một từ, ảnh chồng lên chữ.

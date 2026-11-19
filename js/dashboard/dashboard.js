@@ -502,7 +502,8 @@ async function restoreAddonSettings() {
   }
 }
 function applyMenuPlanBadge() {
-  try { SETTINGS_KIT.plan.apply(); } catch {}
+  // Chưa đăng nhập thì luôn là gói Miễn phí; đã đăng nhập mới áp lại gói đã biết
+  try { if (demoProfile) SETTINGS_KIT.plan.apply(); else SETTINGS_KIT.plan.set("free"); } catch {}
   if (applyMenuPlanBadge.fetched) return;
   applyMenuPlanBadge.fetched = true;
   try { Promise.resolve(refreshUsageLimitSettings()).catch(() => {}); } catch {}
@@ -586,12 +587,15 @@ async function finishProfileAuth(profile) {
   demoProfile = profile;
   await LHN_ACCOUNT.saveProfile(browser, demoProfile);
   AUTH_POPUP.close(); renderProfileMenu();
-  if ($("dashboardSettingsDialog").open) { refreshDashboardSettings(); refreshUsageLimitSettings(); }
+  if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
+  // đăng nhập từ sidebar cũng phải lấy đúng gói, không chỉ khi Cài đặt đang mở
+  try { Promise.resolve(refreshUsageLimitSettings()).catch(() => {}); } catch {}
   SETTINGS_KIT.undo.note(t(registered ? "kpRegistered" : "kpSignedIn", { name:profileDisplayName(profile) }));
 }
 async function signOutDemoProfile(reason = "") {
   await LHN_ACCOUNT.removeProfile(browser);
   demoProfile = null;
+  SETTINGS_KIT.plan.set("free"); // nhãn gói ở sidebar về Miễn phí ngay, không phải chờ mở Cài đặt
   closeMenus();
   renderProfileMenu();
   if ($("dashboardSettingsDialog").open) refreshDashboardSettings();
