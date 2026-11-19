@@ -32,6 +32,9 @@
   let aiPanelVisible = false, aiPanelPageToggle = false, aiPanelShortcut = "Alt+X", aiPanelToggleBusy = false;
   const SIDEBAR = globalThis.LHN_SIDEBAR.create({ document, search:LHN_SEARCH });
   let websiteDisabled = false, websiteSettingsReady = false;
+  // v3.5.484: chỉ để đọc — ghi lại cổng nào chặn thanh chọn chữ (xem LHN_SELECTION_DEBUG trong Console).
+  const selDebug = { mouseups:0, last:null };
+  const selNote = (stage, detail = null) => { try { selDebug.last = { stage, at:Math.round(performance.now()), detail }; } catch { /* ignore */ } };
   const pageUrl = () => pageContext?.url?.() || location.href;
   const displayWebsiteName = host => { if(pageContext?.active())return "Keepit";const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
   const pageTitle = () => pageContext?.title?.() || document.title || displayWebsiteName(location.hostname);
@@ -581,7 +584,15 @@
   const enabledToolbarActions = (cfg = settings) => [cfg.notesEnabled !== false && "highlight", cfg.translateEnabled !== false && "translate", cfg.askAIEnabled !== false && "ai"].filter(Boolean);
   function showTranslateIcon(range) {
     if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
-    if (!range || range.collapsed || !range.startContainer.isConnected || panel || websiteDisabled || settings.translateIconEnabled === false || settings.translationPopupEnabled !== false || settings.showOnSelect !== false || !enabledToolbarActions().length) return;
+    const blockReason = !range ? "noRange" : range.collapsed ? "collapsed" : !range.startContainer.isConnected ? "disconnected"
+      : panel ? "panelOpen" : websiteDisabled ? "websiteDisabled" : settings.translateIconEnabled === false ? "iconOff"
+      : settings.translationPopupEnabled !== false ? "popupModeOn" : settings.showOnSelect !== false ? "showOnSelectOn"
+      : !enabledToolbarActions().length ? "noActions" : "";
+    if (blockReason) {
+      selNote("showTranslateIconBlocked", { reason:blockReason, ready:websiteSettingsReady,
+        settings:{ icon:settings.translateIconEnabled, popup:settings.translationPopupEnabled, onSelect:settings.showOnSelect, notes:settings.notesEnabled, translate:settings.translateEnabled, ai:settings.askAIEnabled } });
+      return;
+    }
     const selectedText = String(window.getSelection()?.toString() || range.toString()).trim();
     translateIcon?.remove();
     const toolbar = globalThis.LHN_SELECTION_TOOLBAR;
@@ -1721,8 +1732,9 @@
   function handleSelectionMouseUp(e) {
     if (handledSelectionMouseUps.has(e)) return;
     handledSelectionMouseUps.add(e);
-    if (websiteSettingsReady && websiteDisabled) return;
-    if (suppressMouseUp) { suppressMouseUp = false; return; }
+    selDebug.mouseups++;
+    if (websiteSettingsReady && websiteDisabled) { selNote("mouseup.websiteDisabled"); return; }
+    if (suppressMouseUp) { suppressMouseUp = false; selNote("mouseup.suppressed"); return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
     const eventPath = e.composedPath?.() || [];
     const isVideoInterfaceEvent = eventPath.some(isVideoInterfaceNode);
@@ -1731,9 +1743,14 @@
     if (selectionAnchor?.closest?.("#lhn-full-english-dictionary")) { if (dictionaryPopup) setTimeout(() => handleDictionaryExampleSelection(dictionaryPopup), 20); return; }
     setTimeout(() => {
       const sel = currentSelection(), rawText = cleanText(sel?.toString());
-      if (!rawText || !sel.rangeCount || isEditable(sel.anchorNode)) return;
-      const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) return;
-      if (pageContext && !pageContext.containsRange(range)) return;
+      if (!rawText || !sel.rangeCount || isEditable(sel.anchorNode)) { selNote("mouseup.noTextOrEditable", { text:!!rawText, ranges:sel.rangeCount, editable:isEditable(sel.anchorNode) }); return; }
+      const range = sel.getRangeAt(0); if (!range.commonAncestorContainer.isConnected) { selNote("mouseup.disconnected"); return; }
+      if (pageContext && pageContext.containsRange(range) === false) {
+        const anchor = sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement;
+        selNote("mouseup.outsideContext", { hasContext:!!pageContext, active:pageContext?.active?.(), inStage:!!document.getElementById("stage")?.contains(range.commonAncestorContainer),
+          inPara:!!anchor?.closest?.(".para"), blockClass:String(anchor?.closest?.("[class]")?.className || "").slice(0, 80), anchorTag:anchor?.tagName || "" });
+        return;
+      }
       const isVideoUiSelection = isVideoInterfaceEvent || isVideoInterfaceRange(range);
       const isDualSubtitleSelection = isVideoUiSelection && isPrimaryVideoTranscriptRange(range);
       const isDictationSelection = isDictationTextRange(range);
@@ -1743,7 +1760,7 @@
       selectedRange = range.cloneRange();
       removeTranslationUI();
       loadSettings().then(async cfg => {
-        if (websiteDisabled) return;
+        if (websiteDisabled) { selNote("loadSettings.websiteDisabled"); return; }
         if (isDualSubtitleSelection || isDictationSelection) {
           const videoSettings = await loadVideoSelectionSettings();
           if (!videoSettings.translationPopupEnabled || overlaySameLanguage()) return;
@@ -1765,6 +1782,7 @@
         }
         else {
           removeTooltip();
+          selNote("reachedShowIcon", { showOnSelect:cfg.showOnSelect, icon:cfg.translateIconEnabled });
           if (cfg.translateIconEnabled !== false) showTranslateIcon(selectedRange);
           if (cfg.translationPopupEnabled !== false && cfg.translateEnabled !== false) translateSelectedRange(selectedRange, { keepIcon:cfg.translateIconEnabled !== false });
         }
@@ -2131,7 +2149,9 @@
     else translateSelectedRange(range, { forcePopup:true, textOverride:word });
     return true;
   }
+  globalThis.LHN_SELECTION_DEBUG = selDebug;
   globalThis.LHN_CONTENT_TOOLS = Object.freeze({
+    selectionDebug:() => ({ mouseups:selDebug.mouseups, last:selDebug.last }),
     toggleNotes:() => { if (settings.notesEnabled !== false && !websiteDisabled) toggleSidebarToTab("highlights"); },
     compose:(range, existing = null) => { if (settings.notesEnabled !== false && !websiteDisabled && range) showComposer(range, existing); },
     askAI:text => settings.askAIEnabled === false || websiteDisabled ? Promise.resolve({ opened:false }) : launchChatGPTSidePanel(text ? { selectedText:text } : {}),

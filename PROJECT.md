@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.484 | Arena.ai Agent sửa:**
+
+- Người dùng báo bản 3.5.483 **vẫn lỗi** lần mở đầu (`hasContentTools:true`, `iconExists:false`, `nativeInactive:false`): vậy không phải thời điểm mở tệp, mà là một cổng khác trong `content.js` chặn `showTranslateIcon()`.
+- Bản này **ghi lại lý do** (chỉ đọc, không đổi hành vi): `globalThis.LHN_SELECTION_DEBUG.last` = `{stage, at, detail}` với các mốc `mouseup.*`, `loadSettings.*`, `reachedShowIcon`, `showTranslateIconBlocked` (kèm lý do + cờ cài đặt đang dùng). Đọc trong Console của Dashboard qua `frame.contentWindow.LHN_SELECTION_DEBUG`.
+- Sửa kèm 1 chỗ: `pageContext.containsRange(range)` → chỉ chặn khi trả về **đúng `false`** (trước đây `undefined` — khi chưa gắn nguồn tài liệu — cũng bị coi là ngoài ngữ cảnh).
+- File: `js/content/content.js`, `manifest.json`.
+- Kiểm tra: `node --check js/content/content.js` hợp lệ. **Chưa xác nhận được trong Chrome** — cần dữ liệu `LHN_SELECTION_DEBUG` khi thanh không hiện.
+
 **2026-11-18 | v3.5.483 | Arena.ai Agent sửa:**
 
 - Người dùng: bôi đen văn bản ở **lần mở tệp đầu tiên** không hiện thanh Tô sáng / Dịch / AI, reload khung thì lại được (như bản 3.5.430).
