@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.486 | Arena.ai Agent sửa (đo trực tiếp trong Chrome của người dùng qua DevTools):**
+
+- Đo được: lần mở đầu `KeepitDocuments.open()` mất **~7,9 giây** mới xong; `documents-native-inactive` chỉ được gỡ ở bước cuối của `openViewer`. Trong khoảng đó `content.js` vẫn có `websiteDisabled = true` → chọn chữ đúng lúc tệp vừa hiện bị chặn (`mouseup.websiteDisabled`), chờ đủ lâu mới có thanh. Người dùng thấy: "mở lần đầu không bôi đen được, reload thì được".
+- Sửa 3 chỗ: (1) `documents-context.js` **không chờ** `refreshSource()` (nó chờ `loadSettings` + `restoreAnnotations`) — chờ làm `openViewer` treo thêm; (2) `documents.js` gọi `refreshNativeSource()` **ngay khi engine sẵn sàng** để gỡ class ức chế sớm; (3) `content.js` tính `pageToolsDisabled()` **tại thời điểm chọn chữ** thay vì dùng cờ `websiteDisabled` cũ (3 cổng: mouseup, loadSettings, showTranslateIcon).
+- File: `js/dashboard/documents-context.js`, `js/dashboard/documents.js`, `js/content/content.js`, `manifest.json`.
+- Kiểm tra: `node --check` cả 3 hợp lệ; trong Chrome thật (3.5.485) đã chứng minh: khi class còn + cờ cũ → không có thanh; gọi `refresh()` xong → bôi đen có thanh (`reachedShowIcon`, `#lhn-translate-icon` 28×28). **Chưa chạy bản 3.5.486** (cần người dùng thay thư mục).
+
 **2026-11-18 | v3.5.485 | Arena.ai Agent sửa:**
 
 - Dữ liệu từ Chrome (`LHN_SELECTION_DEBUG`): `stage:"mouseup.outsideContext"`, `inStage:true`, **`inPara:false`**, `blockClass:"textLayer pdfTextLayer"`, `ctx.contains:"false"` → chọn chữ trong **PDF** bị loại vì `containsRange` đòi điểm chọn nằm trong `.en`.

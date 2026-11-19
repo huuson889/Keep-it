@@ -40,6 +40,8 @@
   const pageTitle = () => pageContext?.title?.() || document.title || displayWebsiteName(location.hostname);
   const websiteKey = () => location.hostname.toLowerCase().replace(/^www\./, "").replace(/\.$/, "");
   const isWebsiteDisabledIn = value => (pageContext && !pageContext.active()) || (Array.isArray(value?.disabledWebsites) && value.disabledWebsites.includes(websiteKey()));
+  // v3.5.486: trạng thái có thể lệch nếu refreshSource chưa xong → tính lại ngay khi cần.
+  const pageToolsDisabled = () => { try { return isWebsiteDisabledIn(settings); } catch { return websiteDisabled; } };
   const pageThumbnailUrl = () => pageContext?.thumbnail?.() || globalThis.LHN_THUMBNAILS?.fromPageMetadata(document, location.href) || "";
   const cleanText = s => (s || "").replace(/\s+/g, " ").trim();
   const MAP = {
@@ -585,7 +587,7 @@
   function showTranslateIcon(range) {
     if (isVideoInterfaceRange(range) && !isPrimaryVideoTranscriptRange(range)) return;
     const blockReason = !range ? "noRange" : range.collapsed ? "collapsed" : !range.startContainer.isConnected ? "disconnected"
-      : panel ? "panelOpen" : websiteDisabled ? "websiteDisabled" : settings.translateIconEnabled === false ? "iconOff"
+      : panel ? "panelOpen" : pageToolsDisabled() ? "websiteDisabled" : settings.translateIconEnabled === false ? "iconOff"
       : settings.translationPopupEnabled !== false ? "popupModeOn" : settings.showOnSelect !== false ? "showOnSelectOn"
       : !enabledToolbarActions().length ? "noActions" : "";
     if (blockReason) {
@@ -1733,7 +1735,7 @@
     if (handledSelectionMouseUps.has(e)) return;
     handledSelectionMouseUps.add(e);
     selDebug.mouseups++;
-    if (websiteSettingsReady && websiteDisabled) { selNote("mouseup.websiteDisabled"); return; }
+    if (websiteSettingsReady && pageToolsDisabled()) { selNote("mouseup.websiteDisabled", { live:true, active:pageContext?.active?.() }); return; }
     if (suppressMouseUp) { suppressMouseUp = false; selNote("mouseup.suppressed"); return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
     const eventPath = e.composedPath?.() || [];
@@ -1760,7 +1762,7 @@
       selectedRange = range.cloneRange();
       removeTranslationUI();
       loadSettings().then(async cfg => {
-        if (websiteDisabled) { selNote("loadSettings.websiteDisabled"); return; }
+        if (pageToolsDisabled()) { selNote("loadSettings.websiteDisabled", { live:true }); return; }
         if (isDualSubtitleSelection || isDictationSelection) {
           const videoSettings = await loadVideoSelectionSettings();
           if (!videoSettings.translationPopupEnabled || overlaySameLanguage()) return;

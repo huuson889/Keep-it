@@ -21,7 +21,9 @@
     async refresh() {
       document.documentElement.classList.toggle('documents-native-inactive', !context.active());
       if(!context.active())aiSheet.close(true);
-      await globalThis.LHN_CONTENT_TOOLS?.refreshSource?.();
+      /* v3.5.486: KHÔNG chờ refreshSource (nó chờ loadSettings + restoreAnnotations) —
+         chờ sẽ làm openViewer treo và cờ websiteDisabled bên content.js không được cập nhật. */
+      try { void globalThis.LHN_CONTENT_TOOLS?.refreshSource?.(); } catch { /* ignore */ }
       globalThis.LHN_READER_API?.refreshSource?.();
     }
   });
