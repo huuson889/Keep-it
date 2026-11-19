@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.441 | Arena.ai Agent sửa:**
+
+- Đổi nhãn tab sidebar "Ôn tập Flashcards" → **"Flashcards"** (`pages/dashboard.html` + `js/core/languages.js`: en/vi "Flashcards", ko "플래시카드").
+- Đổi icon tab **Ghi chú** từ hình *bình thí nghiệm* (flask, không liên quan) sang **sổ + bút** (notebook-pen). Rà lại 6 icon còn lại: Tổng quan = lưới 4 ô, Chép chính tả = tai nghe, Flashcards = chồng thẻ, Tài liệu = tệp có dòng chữ, Thùng rác = thùng rác, Giao diện = mặt trời/mặt trăng — giữ nguyên vì đã đúng nghĩa.
+- File: `pages/dashboard.html`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): `node --check js/core/languages.js` hợp lệ; `grep "Ôn tập Flashcards"` trong `pages/` và `js/core/` không còn ở nhãn tab (chỉ còn chuỗi `ovActivityFlashcards` của dòng hoạt động ở Tổng quan). **Chưa chụp ảnh được** (sandbox thiếu `xvfb` + lib Chromium, không có root).
+
 **2026-11-18 | v3.5.440 | Arena.ai Agent sửa:**
 
 - Sửa nháy sáng viền khung khi đổi Sáng/Tối ở tab Chép chính tả và Ghi chú: các thẻ ở 2 tab này khai báo `transition:border-color .2s` (`.dictation-root .session-card`, `.search-row`, `.hl-card`…), nên lúc đổi nền, viền chạy mờ dần từ màu sáng sang màu tối và bị thấy như "nháy sáng"; tab Tổng quan và Tài liệu không khai báo transition viền nên đổi tức thì, không nháy.
