@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.490 | Arena.ai Agent sửa:**
+
+- Người dùng: "vẫn vậy" — lỗi ở lần mở tệp đầu tiên sau khi cài lại extension.
+- Đổi chính sách khoá chọn chữ: trước đây mở khoá theo `data-native-ready` hoặc hết 2,5 giây, nhưng lần mở đầu (máy nguội) trang còn dựng lại **lâu hơn** thế nên người dùng vẫn bôi đen trúng lúc DOM đang đổi → vùng chọn bị xoá ngay (`mouseup.noTextOrEditable {text:false}`).
+- Nay: `watchStageIdle(cycle)` theo dõi `#stage` bằng MutationObserver, **chỉ mở khoá khi không còn thay đổi DOM trong 500 ms** (tối đa 10 giây, đổi con trỏ thành `progress` trong lúc chờ). Mở khoá ngay khi `openViewer` xong vẫn giữ.
+- File: `js/dashboard/documents.js`, `css/dashboard/documents.css`, `manifest.json`. Kiểm tra: `node --check` hợp lệ. **Chưa xác nhận trong Chrome.**
+
 **2026-11-18 | v3.5.489 | Arena.ai Agent sửa (theo dấu hiệu của người dùng: chỉ lỗi ở lần mở ĐẦU TIÊN sau khi cài lại extension):**
 
 - Người dùng: "relic 1 lần là mở tệp mới vẫn bôi đen đúng, còn remove app cũ cài app mới thì mở file pdf đầu tiên vẫn lỗi, reload lại và mở tệp khác mới hết" → lỗi thuộc **lần chạy đầu** (máy nguội), không phải lần mở đầu trong một phiên.

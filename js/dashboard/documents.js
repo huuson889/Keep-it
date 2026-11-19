@@ -126,10 +126,26 @@ async function openViewer(id,mode='orig',prepared=null){
   $('#viewer').dataset.nativeReady='false';$('#viewer').setAttribute('aria-busy','true');$('#viewer').classList.add('show');
   /* v3.5.487: khoá chọn chữ trong lúc #pageStack còn dựng lại (vùng chọn tạo lúc đó bị xoá ngay),
      chỉ khoá tối đa 2,5 giây để không bao giờ chặn người dùng nếu bước sau bị treo. */
-  $('#viewer').dataset.selectLocked='true';const lockCycle=cycle;setTimeout(()=>{if(lockCycle===viewCycle)$('#viewer').dataset.selectLocked='false';},2500);$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
+  $('#viewer').dataset.selectLocked='true';watchStageIdle(cycle);   // v3.5.490: chỉ mở khoá khi trang đã 'im' hẳn$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
   const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;void refreshNativeSource(false);   // v3.5.489: chỉ gỡ class, KHÔNG vẽ lại ghi chú lúc trang còn đang dựngV.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);if(cycle!==viewCycle)return;
   for(const el of[$('#rail'),$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');$('#viewer').dataset.selectLocked='false';if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}if(V.mode==='read')await startNativeReader();$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
  }catch(error){prepared?.dispose();if(cycle===viewCycle){$('#viewer').classList.remove('show');notifyParent(false);showError(error);}}
+}
+/* v3.5.490: khoá chọn chữ cho tới khi #stage KHÔNG còn thay đổi DOM trong 500 ms (tối đa 10 giây).
+   Đây là điều kiện thật của lỗi "mở tệp đầu tiên không bôi đen được": khung còn dựng lại trang
+   (#pageStack, lớp chữ PDF) nên vùng chọn vừa tạo bị xoá ngay, thanh không bao giờ hiện. */
+function watchStageIdle(cycle){
+ const stage=$('#stage'),start=Date.now();let last=Date.now(),done=false;
+ const mo=new MutationObserver(()=>{last=Date.now();});
+ try{mo.observe(stage,{childList:true,subtree:true,characterData:true});}catch{}
+ const release=()=>{if(done)return;done=true;mo.disconnect();$('#viewer').dataset.selectLocked='false';};
+ const tick=()=>{
+  if(done)return;
+  if(cycle!==viewCycle){mo.disconnect();return;}
+  if($('#viewer').dataset.selectLocked!=='true'){mo.disconnect();return;}
+  if(Date.now()-last>500||Date.now()-start>10000)release();else setTimeout(tick,120);
+ };
+ setTimeout(tick,120);
 }
 function applyTools(){
  if(!V.doc)return;$('#viewer').classList.toggle('wcOn',V.tools.has('wc'));const text=isText(),anyText=!V.doc.image&&activeEngine?.pages.some((_,i)=>sourceEntries(i+1).length);$('#vMode').style.display=anyText?'':'none';if(!anyText)V.mode='orig';
