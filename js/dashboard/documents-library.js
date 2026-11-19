@@ -254,6 +254,12 @@
   let pendingOpen = null;
   function openDoc(id, mode) {
     if (!id) return;
+    /* v3.5.493: mở tệp cũng có popup như khi nhập — popup ở lại tới khi khung báo đã dựng xong
+       (KEEPIT_DOCUMENTS_VIEWER_READY), lúc đó Dashboard mới cho khung hiện ra. */
+    const item = docs.find(entry => entry.id === id) || null;
+    showOpenCard({ name: item?.name || t('loading'), bytes: item?.size || 0, kind: item?.type || '' });
+    window.clearTimeout(openHideTimer);
+    openHideTimer = window.setTimeout(() => hideOpenCard(), 10000);
     pendingOpen = { type: 'KEEPIT_DOCUMENTS_OPEN', id, mode: mode || 'orig' };
     flushOpen();
   }

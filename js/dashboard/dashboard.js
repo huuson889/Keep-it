@@ -3570,6 +3570,8 @@ function setDashboardView(view) {
   }
   if (previousView === "documents" && view !== "documents") {
     document.body.classList.remove("documents-viewer-open");
+    document.body.classList.remove("documents-viewer-ready");
+    window.clearTimeout(dashboardViewerReadyTimer);
     const address=new URL(location.href);address.searchParams.delete("document");address.searchParams.delete("highlight");history.replaceState(history.state,"",address.href);
     dashboardDocumentsFrame.contentWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_SUSPEND" }, location.origin);
   }
@@ -3631,15 +3633,19 @@ window.addEventListener("message", event => {
     toast(message, action?.label ? { label:action.label, run:() => { try { frameWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_TOAST_RUN", id:action.id }, location.origin); } catch { /* frame gone */ } } } : null);
     return;
   }
+  /* v3.5.493: khung chỉ được hiện khi tài liệu đã dựng xong (popup "Đang mở tệp" phủ trong lúc chờ). */
+  if(event.data?.type==="KEEPIT_DOCUMENTS_VIEWER_READY"){ window.clearTimeout(dashboardViewerReadyTimer); document.body.classList.add("documents-viewer-ready"); return; }
   if(event.data?.type!=="KEEPIT_DOCUMENTS_VIEWER")return;
   document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
+  window.clearTimeout(dashboardViewerReadyTimer); document.body.classList.remove("documents-viewer-ready");
+  if(event.data.open === true) dashboardViewerReadyTimer = window.setTimeout(() => { if (dashboardDocumentsViewerOpen()) document.body.classList.add("documents-viewer-ready"); }, 10000);
   dashboardDocumentsFrameHeight = 0;
   window.setTimeout(resizeDashboardDocumentsFrame, 60);
   const address=new URL(location.href);if(event.data.open===true&&activeDashboardView==="documents"&&/^[a-zA-Z0-9-]{16,80}$/.test(event.data.sourceKey||""))address.searchParams.set("document",event.data.sourceKey);else if(event.data.open!==true){address.searchParams.delete("document");address.searchParams.delete("highlight");}history.replaceState(history.state,"",address.href);
 });
 /* Documents renders as flat content inside this scroller, so the frame reports its own height
    instead of owning a second scrollbar; it also follows the dashboard theme. */
-let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null;
+let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardViewerReadyTimer = 0;
 function dashboardDocumentsContentDoc() {
   const frame = $("dashboardDocumentsFrame");
   try { return frame?.contentDocument || null; } catch { return null; }

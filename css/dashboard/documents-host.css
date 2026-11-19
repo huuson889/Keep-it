@@ -8,6 +8,8 @@ body.dashboard-documents-active #dashboardScroller{overflow-y:auto!important}
 /* v3.5.431: thư viện đã vẽ trong Dashboard nên khung chỉ hiện khi mở tệp. */
 #dashboardDocumentsFrame{display:none;width:100%;max-width:none;margin:0;height:0;min-height:0;border:0;background:transparent;overflow:hidden;opacity:0;transition:opacity .14s ease}
 body.documents-frame-ready #dashboardDocumentsFrame{opacity:1}
+/* v3.5.493: bộ xem chỉ hiện khi tài liệu đã dựng xong — popup "Đang mở tệp" phủ trong lúc chờ. */
+body.documents-viewer-open:not(.documents-viewer-ready) #dashboardDocumentsFrame{opacity:0!important;pointer-events:none!important}
 @media(prefers-reduced-motion:reduce){#dashboardDocumentsFrame{transition:none}}
 body.documents-viewer-open #dashboardDocumentsFrame{display:block;position:fixed;inset:0;z-index:1800;width:100vw;max-width:none;height:100dvh;min-height:0;opacity:1}
 body.documents-viewer-open .rn-tabbar,body.documents-viewer-open .rn-sheet,body.documents-viewer-open .rn-backdrop{display:none!important}

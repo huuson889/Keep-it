@@ -3,13 +3,13 @@
 '## 1. Trạng thái hiện tại
 - Version **3.5.492**, nhánh `Keepit-Optimize-Test`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: thư viện do Dashboard vẽ (từ 3.5.431); khung `pages/documents.html` nạp **một lần**, không nạp lại; mở/nhập tệp qua `postMessage`. Từ **3.5.492** khung được **nạp sẵn (ẩn)** ngay sau khi Dashboard dựng xong.
-- Lỗi đang mở: bôi đen ở lần mở tệp **đầu tiên** sau khi cài lại extension (vùng chọn bị xoá khi khung còn dựng lại trang). Đã sửa theo 2 hướng: khoá chọn chữ tới khi `#stage` im 500 ms (3.5.491) + nạp sẵn khung (3.5.492) — **chưa xác nhận trên Chrome**.
+- Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
 - Giới hạn: preview Office hạn chế phông/đối tượng, chưa có OCR; kiểm thử mới nhất là tĩnh (`node --check`), **chưa có ảnh/số đo** theo mục 3.4 AGENTS.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
-- **Tài liệu — bôi đen lần mở đầu tiên:** chờ người dùng thử 3.5.492 trên profile Chrome thật (remove + load lại extension → mở tệp PDF đầu tiên → bôi đen ngay). Nếu vẫn lỗi: phương án cuối là bỏ thư viện do Dashboard vẽ, trả `documents.html` tự lo như 3.5.430.
+- **Tài liệu — bôi đen lần mở đầu tiên:** chờ người dùng thử 3.5.493 trên profile Chrome thật (remove + load lại extension → mở tệp đầu tiên → bôi đen ngay). Cách làm hiện tại: khung ẩn tới khi dựng xong (3.5.493) + khoá chọn chữ tới khi `#stage` im 500 ms (3.5.491). Nếu vẫn lỗi: phương án cuối là bỏ thư viện do Dashboard vẽ, trả `documents.html` tự lo như 3.5.430.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
 ### Tiếp theo (thứ tự đã chốt)
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
@@ -156,6 +156,16 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-18 | v3.5.493 | Arena.ai Agent sửa:**
+
+- Người dùng: "làm xong mới cho vào trang đang mở… hiện popup load đến khi xong hết là mới hiện trang tài liệu, vô cái là chọn được bình thường".
+- `dashboard.js`: thêm trạng thái `documents-viewer-ready` — bật khi khung báo `KEEPIT_DOCUMENTS_VIEWER_READY`, tắt mỗi lần mở tệp; chống kẹt 10 giây.
+- `documents-host.css`: `body.documents-viewer-open:not(.documents-viewer-ready) #dashboardDocumentsFrame{opacity:0;pointer-events:none}` → khung vẫn `display:block` (đo layout đúng) nhưng **vô hình và không nhận chuột** cho tới khi xong.
+- `documents-library.js`: mở tệp thường cũng hiện popup "Đang mở tệp" (trước đây chỉ khi nhập tệp), ẩn khi khung báo xong, chống kẹt 10 giây.
+- Kết quả: mở tệp → popup → trang chỉ hiện khi đã dựng xong → bôi đen là có thanh; không đổi UI, không đổi luồng mở/nhập tệp, kéo-thả giữ nguyên.
+- File: `js/dashboard/dashboard.js`, `js/dashboard/documents-library.js`, `css/dashboard/documents-host.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 2 file JS hợp lệ; `git diff` chỉ 4 chỗ. **Chưa kiểm bằng ảnh/số đo** (không có Chrome trong phiên này).
 
 **2026-11-18 | v3.5.492 | Arena.ai Agent sửa:**
 
