@@ -639,7 +639,7 @@ if(EMBEDDED)addEventListener('message',event=>{
    let result={added:0,skipped:0,error:''};
    try{result=(await importFiles(data.files))||result;}
    catch(error){result={added:0,skipped:0,error:String(error?.message||'')};}
-   try{parent.postMessage({type:'KEEPIT_DOCUMENTS_IMPORTED',count:result.added||0,skipped:result.skipped||0,error:result.error||''},location.origin);}catch{}
+   /* v3.5.498: gửi kèm id tệp vừa mở để Dashboard mở lại bằng ?document= (đường lớp chữ dựng đúng). */try{parent.postMessage({type:'KEEPIT_DOCUMENTS_IMPORTED',count:result.added||0,skipped:result.skipped||0,error:result.error||'',documentId:(V.doc&&V.doc.id)||''},location.origin);}catch{}
   })();
  }
 });

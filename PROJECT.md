@@ -157,6 +157,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.498 | Arena.ai Agent sửa:**
+
+- Báo cáo 3.5.496 người dùng gửi (08:30) cho thấy họ thử bằng **kéo-thả tệp để nhập** → vẫn `mở bằng tin nhắn`: `92 span, 0 span có kích thước`, có lần `mouseup` cho `ranges:1, text:false` (vùng chọn rỗng). Đường 3.5.497 chỉ sửa cho **bấm mở**, chưa phủ đường **nhập tệp**.
+- `js/dashboard/documents.js`: tin `KEEPIT_DOCUMENTS_IMPORTED` gửi kèm `documentId` của tệp vừa mở.
+- `js/dashboard/documents-library.js`: nhận `IMPORTED` → `openByReload(documentId)` — khung **tải lại với `?document=…`**, popup giữ tới `VIEWER_READY` (failsafe 8 giây). Nhập trùng (count 0) vẫn đi đường cũ.
+- Kết quả mong đợi: cả **bấm mở** và **kéo-thả nhập** đều dùng chung một đường mở đã đo là đúng.
+- File: `js/dashboard/documents.js`, `js/dashboard/documents-library.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hợp lệ. **Chưa kiểm bằng ảnh/số đo** — chờ báo cáo người dùng.
+
 **2026-11-18 | v3.5.497 | Arena.ai Agent sửa:**
 
 - Người dùng gửi 4 tệp báo cáo (trước/sau khi load, cả Dashboard + khung). Số đo **quyết định**:

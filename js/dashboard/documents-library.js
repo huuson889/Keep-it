@@ -398,6 +398,14 @@
       if (importCancelled) { importCancelled = false; hideOpenCard(); return; }
       // v3.5.478: "0 tài liệu" không còn là câu duy nhất — nói rõ vì sao không thêm được.
       const count = Number(data.count) || 0, skipped = Number(data.skipped) || 0, reason = String(data.error || '');
+      /* v3.5.498: nhập xong cũng mở bằng cách TẢI LẠI khung với ?document=<id> — đúng đường đã đo là
+         lớp chữ dựng đúng. (Số đo 3.5.496: mở bằng tin nhắn → span 0×0, bôi đen chập chờn.) */
+      if (count && data.documentId && openByReload(data.documentId)) {
+        updateOpenCard('done');
+        window.clearTimeout(openHideTimer);
+        openHideTimer = window.setTimeout(() => hideOpenCard(), 8000);
+        return;
+      }
       updateOpenCard('done');
       /* v3.5.482: nhập xong là khung MỞ LUÔN tệp vừa nhập. Popup phải ở lại tới khi khung
          vẽ xong trang đầu (KEEPIT_DOCUMENTS_VIEWER_READY) — dọn đường trước, không để
