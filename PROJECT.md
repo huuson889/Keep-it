@@ -164,6 +164,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.466 | Arena.ai Agent sửa:**
+
+- Đổi nhãn thông báo khi email chưa có tài khoản:
+  - vi: "Email này chưa có tài khoản trên máy này. Nhập lại mật khẩu để tạo tài khoản." → **"Email này chưa có tài khoản. Hãy tạo tài khoản."**
+  - en: "This email has no account on this device yet. Retype the password to create the account." → **"This email has no account yet. Create one."**
+  - ko: "이 이메일에는 아직 계정이 없습니다. 비밀번호를 다시 입력해 계정을 만드세요." → **"이 이메일에는 계정이 없습니다. 계정을 만드세요."**
+- Chỉ đổi chữ, không đổi hành vi (vẫn báo rồi mở ô Nhập lại mật khẩu + nút Tạo tài khoản).
+- File: `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; `grep` xác nhận đúng 3 chuỗi mới trong 3 ngôn ngữ. Chưa chạy UI thật.
+
 **2026-11-18 | v3.5.465 | Arena.ai Agent sửa:**
 
 - Câu hỏi: nhập sai email/mật khẩu, bấm Đăng nhập, rồi **sửa lại cho đúng** thì sao? Kiểm lại thì thấy 2 lỗ hổng.
