@@ -179,6 +179,46 @@ async function saveBarSettings(patch) {
   try { await browser.storage.local.set({ [BAR_SETTINGS_KEY]:barSettings }); } catch (error) { console.warn("Could not save Keepit bar settings", error); }
 }
 function syncSettingsLanguagePicker() { SETTINGS_UI.syncLanguagePicker(); }
+function avatarInitialLetter() {
+  const name = demoProfile ? profileDisplayName(demoProfile) : t("profileGuest");
+  return escapeHtml(String(name).trim().slice(0, 1).toLocaleUpperCase() || "H");
+}
+function avatarSizeLabel(dataUrl) {
+  const base64 = String(dataUrl || "").split(",")[1] || "";
+  const pad = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+  const bytes = Math.max(0, Math.round(base64.length * 3 / 4) - pad);
+  return bytes >= 1024 ? `${Math.round(bytes / 1024)} KB` : `${bytes} B`;
+}
+// popup xem / đổi / xoá ảnh hồ sơ (v3.5.448)
+function renderAvatarDialog() {
+  const preview = $("dashboardAvatarPreview"), meta = $("dashboardAvatarMeta"), removeButton = $("dashboardAvatarRemove");
+  if (!preview) return;
+  const dataUrl = demoProfile?.avatarDataUrl;
+  preview.innerHTML = profilePictureMarkup(demoProfile, avatarInitialLetter());
+  preview.classList.toggle("is-empty", !dataUrl);
+  if (meta) {
+    meta.textContent = "";
+    if (dataUrl) {
+      const parts = ["JPG", avatarSizeLabel(dataUrl)];
+      const updatedAt = Number(demoProfile?.avatarUpdatedAt || 0);
+      if (updatedAt) parts.push(t("accountProfilePictureUpdated", { date:new Date(updatedAt).toLocaleDateString(currentLang) }));
+      parts.forEach((part, index) => {
+        if (index) meta.append(Object.assign(document.createElement("i"), { className:"kp-avatar-dot" }));
+        meta.append(Object.assign(document.createElement("span"), { textContent:part }));
+      });
+    } else {
+      meta.append(Object.assign(document.createElement("span"), { textContent:t("accountProfilePictureEmpty") }));
+    }
+  }
+  if (removeButton) removeButton.hidden = !dataUrl;
+}
+function openAvatarDialog() {
+  const dialog = $("dashboardAvatarDialog");
+  if (!dialog) return;
+  renderAvatarDialog();
+  if (!dialog.open) dialog.showModal();
+  requestAnimationFrame(() => $("dashboardAvatarClose")?.focus());
+}
 function refreshDashboardSettings() {
   const select = $("settingsLanguageSelect");
   if (!select.options.length) for (const language of LANGUAGES.LANGS) { const option = document.createElement("option"); option.value = language.code; option.textContent = `${language.flag} ${language.name} — ${language.native}`; select.appendChild(option); }
@@ -256,8 +296,7 @@ function refreshDashboardSettings() {
     accountState.querySelector("#settingsAccountUsername").value = profileUsername();
     const picturePreview = accountState.querySelector("#settingsAccountPicturePreview");
     if (picturePreview) picturePreview.innerHTML = profilePictureMarkup(demoProfile, escapeHtml(String(displayName).slice(0, 1).toLocaleUpperCase()));
-    const removePicture = accountState.querySelector("#settingsRemoveProfilePicture");
-    if (removePicture) removePicture.hidden = !demoProfile?.avatarDataUrl;
+    renderAvatarDialog();
     const emailField = accountState.querySelector("#settingsAccountEmail");
     emailField.value = String(demoProfile.email || "").trim();
     emailField.disabled = emailField.dataset.editing !== "true";
@@ -3528,14 +3567,7 @@ $("profileOpenSettings").addEventListener("click", openDashboardSettings);
 $("settingsAccountState").addEventListener("click", async event => {
   if (event.target.closest("#settingsAccountSignIn")) { openProfileAuth("login"); return; }
   if (event.target.closest("#settingsAccountSignOut")) { await signOutDemoProfile(); return; }
-  if (event.target.closest("#settingsChangeProfilePicture")) { $("settingsProfilePictureFile").click(); return; }
-  if (event.target.closest("#settingsRemoveProfilePicture")) {
-    if (!demoProfile?.avatarDataUrl) return;
-    const next = { ...demoProfile }; delete next.avatarDataUrl; demoProfile = next;
-    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
-    renderProfileMenu(); refreshDashboardSettings(); toast(t("accountProfilePictureRemoved"));
-    return;
-  }
+  if (event.target.closest("#settingsProfilePictureOpen")) { openAvatarDialog(); return; }
   if (event.target.closest("#settingsAccountChangeEmail")) {
     const field = $("settingsAccountState").querySelector("#settingsAccountEmail"), button = event.target.closest("#settingsAccountChangeEmail");
     if (field.disabled) { field.disabled = false; setDisabledTooltip(field, field.closest(".settings-account-controls"), ""); field.dataset.editing = "true"; button.textContent = t("save"); field.focus(); field.select(); return; }
@@ -3574,11 +3606,35 @@ $("settingsAccountState").addEventListener("change", async event => {
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
     canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
-    demoProfile = { ...demoProfile, avatarDataUrl: canvas.toDataURL("image/jpeg", .84) };
+    demoProfile = { ...demoProfile, avatarDataUrl: canvas.toDataURL("image/jpeg", .84), avatarUpdatedAt: Date.now() };
     await LHN_ACCOUNT.saveProfile(browser, demoProfile);
     renderProfileMenu(); refreshDashboardSettings(); toast(t("settingsSaved"));
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
+});
+// popup ảnh hồ sơ: đóng, bấm nền, đổi ảnh, xoá ảnh (có Hoàn tác 5 giây)
+$("dashboardAvatarClose")?.addEventListener("click", () => $("dashboardAvatarDialog").close());
+$("dashboardAvatarDialog")?.addEventListener("click", event => {
+  const dialog = event.currentTarget, card = dialog.querySelector(".kp-avatar-card");
+  if (!card || event.target !== dialog) return;
+  const rect = card.getBoundingClientRect();
+  if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+});
+$("dashboardAvatarDialog")?.addEventListener("close", () => $("settingsProfilePictureOpen")?.focus());
+$("dashboardAvatarChange")?.addEventListener("click", () => { $("dashboardAvatarDialog").close(); $("settingsProfilePictureFile").click(); });
+$("dashboardAvatarRemove")?.addEventListener("click", async () => {
+  if (!demoProfile?.avatarDataUrl) return;
+  const before = { avatarDataUrl:demoProfile.avatarDataUrl, avatarUpdatedAt:demoProfile.avatarUpdatedAt };
+  const next = { ...demoProfile }; delete next.avatarDataUrl; delete next.avatarUpdatedAt;
+  demoProfile = next;
+  await LHN_ACCOUNT.saveProfile(browser, demoProfile);
+  $("dashboardAvatarDialog").close();
+  renderProfileMenu(); refreshDashboardSettings();
+  SETTINGS_KIT.undo.show(async () => {
+    demoProfile = { ...demoProfile, ...before };
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
+    renderProfileMenu(); refreshDashboardSettings();
+  }, "accountProfilePictureRemoved");
 });
 $("accountDeleteConfirmDialog").addEventListener("close", event => { if (event.target.returnValue === "confirm") signOutDemoProfile("delete"); });
 $("accountDeleteConfirmDialog").addEventListener("click", event => { const dialog = event.currentTarget, rect = dialog.getBoundingClientRect(); if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close("cancel"); });

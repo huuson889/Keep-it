@@ -1308,14 +1308,80 @@ html.dark #dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] 
   box-shadow:0 0 14px 4px rgba(139,92,246,.38);
 }
 
-/* v3.5.447 — nút "Xoá ảnh" cạnh "Thay đổi" trong Cài đặt → Tài khoản (chỉ hiện khi có ảnh tự chọn) */
-#dashboardSettingsDialog .settings-picture-controls .settings-picture-remove {
-  flex:none; padding:8px 12px; border:1px solid #f0b4b4; border-radius:8px; background:#fff;
-  color:#c53030; font:600 11px var(--lhn-app-font-family); cursor:pointer;
+
+/* v3.5.448 — hàng Ảnh hồ sơ chỉ còn ảnh; bấm ảnh mở popup xem / đổi / xoá */
+#dashboardSettingsDialog .settings-picture-trigger {
+  display:inline-flex; align-items:center; justify-content:center; padding:0; border:0; background:none;
+  border-radius:50%; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease;
 }
-#dashboardSettingsDialog .settings-picture-controls .settings-picture-remove:hover { background:#fef2f2; border-color:#dc2626; }
-#dashboardSettingsDialog .settings-picture-controls .settings-picture-remove[hidden] { display:none; }
-html.dark #dashboardSettingsDialog .settings-picture-controls .settings-picture-remove {
-  background:#1a1a1d; border-color:#7f1d1d; color:#f2a3a5;
+#dashboardSettingsDialog .settings-picture-trigger:hover { transform:scale(1.04); box-shadow:0 0 0 2px rgba(143,134,242,.35); }
+#dashboardSettingsDialog .settings-picture-trigger:focus-visible { outline:2px solid #7262df; outline-offset:3px; }
+html.dark #dashboardSettingsDialog .settings-picture-trigger:focus-visible { outline-color:#a5a9ff; }
+
+#dashboardAvatarDialog { padding:0; border:0; background:transparent; max-width:none; max-height:none; overflow:visible; }
+#dashboardAvatarDialog::backdrop { background:rgba(20,22,34,.42); backdrop-filter:blur(6px); }
+html.dark #dashboardAvatarDialog::backdrop { background:rgba(6,6,10,.68); }
+
+.kp-avatar-card {
+  width:min(392px, calc(100vw - 32px)); max-height:calc(100dvh - 32px);
+  display:flex; flex-direction:column; overflow:hidden;
+  border-radius:16px; border:1px solid #e3e7ef; background:#fff;
+  box-shadow:0 28px 64px rgba(16,18,32,.22), 0 2px 8px rgba(16,18,32,.1);
+  color:#171a23; font-family:var(--lhn-app-font-family, inherit);
 }
-html.dark #dashboardSettingsDialog .settings-picture-controls .settings-picture-remove:hover { background:#241417; border-color:#dc2626; }
+html.dark .kp-avatar-card { border-color:#2b2b30; background:#1c1c26; color:#f1f1f5;
+  box-shadow:0 28px 64px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4); }
+
+.kp-avatar-head { flex:none; display:flex; align-items:center; gap:10px; padding:12px 12px 12px 18px; border-bottom:1px solid #e3e7ef; }
+html.dark .kp-avatar-head { border-color:rgba(255,255,255,.07); }
+.kp-avatar-head h2 { flex:1 1 auto; margin:0; font-size:14.5px; font-weight:650; letter-spacing:-.01em; }
+.kp-avatar-close { flex:none; width:38px; height:38px; display:grid; place-items:center; padding:0;
+  border:0; border-radius:9px; background:transparent; color:#8b91a0; cursor:pointer; transition:.14s; }
+.kp-avatar-close:hover { background:rgba(16,18,32,.06); color:#171a23; }
+html.dark .kp-avatar-close { color:#7c7c88; }
+html.dark .kp-avatar-close:hover { background:rgba(255,255,255,.09); color:#f1f1f5; }
+.kp-avatar-close svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+
+.kp-avatar-body { flex:1 1 auto; min-height:0; overflow:auto; display:grid; justify-items:center; gap:13px; padding:24px 20px 20px; }
+.kp-avatar-preview { width:200px; height:200px; display:grid; place-items:center; overflow:hidden; border-radius:50%;
+  background:#7262df; color:#fff; font-size:68px; font-weight:650;
+  box-shadow:0 0 0 1px rgba(16,18,32,.14), 0 16px 34px rgba(16,18,32,.18); }
+html.dark .kp-avatar-preview { box-shadow:0 0 0 1px rgba(255,255,255,.13), 0 16px 34px rgba(0,0,0,.3); }
+.kp-avatar-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+.kp-avatar-meta { display:flex; align-items:center; gap:7px; font-size:12px; color:#8b91a0; font-variant-numeric:tabular-nums; text-align:center; }
+html.dark .kp-avatar-meta { color:#7c7c88; }
+.kp-avatar-dot { width:3.5px; height:3.5px; border-radius:50%; background:currentColor; opacity:.55; flex:none; }
+.kp-avatar-limit { font-size:11.5px; color:#8b91a0; opacity:.85; text-align:center; }
+html.dark .kp-avatar-limit { color:#7c7c88; }
+
+.kp-avatar-foot { flex:none; display:grid; gap:8px; padding:14px 16px calc(16px + env(safe-area-inset-bottom));
+  border-top:1px solid #e3e7ef; }
+html.dark .kp-avatar-foot { border-color:rgba(255,255,255,.07); }
+.kp-avatar-act { width:100%; height:42px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border-radius:10px; font-family:inherit; font-size:13.5px; font-weight:650; line-height:1; cursor:pointer; transition:.14s ease; }
+.kp-avatar-act svg { width:16px; height:16px; flex:none; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.kp-avatar-change { border:1px solid #7262df; background:#7262df; color:#fff; }
+.kp-avatar-change:hover { border-color:#6353d4; background:#6353d4; }
+.kp-avatar-remove { border:1px solid #e8b9b9; background:#fdf0f0; color:#c0393b; }
+.kp-avatar-remove:hover { background:#fbe4e4; }
+.kp-avatar-remove[hidden] { display:none; }
+html.dark .kp-avatar-change { border-color:#6f63e0; background:#6f63e0; }
+html.dark .kp-avatar-change:hover { border-color:#7d72e8; background:#7d72e8; }
+html.dark .kp-avatar-remove { border-color:rgba(248,113,113,.3); background:rgba(248,113,113,.12); color:#f3a5a7; }
+html.dark .kp-avatar-remove:hover { background:rgba(248,113,113,.2); }
+.kp-avatar-act:focus-visible, .kp-avatar-close:focus-visible { outline:2px solid #7262df; outline-offset:2px; }
+html.dark .kp-avatar-act:focus-visible, html.dark .kp-avatar-close:focus-visible { outline-color:#a5a9ff; }
+
+@media (max-width:460px) {
+  .kp-avatar-body { padding:18px 16px 16px; gap:11px; }
+  .kp-avatar-preview { width:160px; height:160px; font-size:54px; }
+  .kp-avatar-foot { padding:12px 13px calc(13px + env(safe-area-inset-bottom)); }
+}
+@media (max-height:560px) {
+  .kp-avatar-body { gap:10px; padding:16px; }
+  .kp-avatar-preview { width:140px; height:140px; font-size:48px; }
+}
+@media (pointer:coarse) {
+  .kp-avatar-act { height:46px; }
+  .kp-avatar-close { width:44px; height:44px; }
+}

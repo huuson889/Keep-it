@@ -164,6 +164,23 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.448 | Arena.ai Agent sửa:**
+
+- Hàng **Ảnh hồ sơ** (Cài đặt → Tài khoản) giờ **chỉ còn ảnh**: bỏ nút "Thay đổi" và nút "Xoá ảnh" cũ, ảnh trở thành nút bấm (phóng nhẹ 1.04 + vòng sáng khi rê, có `aria-haspopup="dialog"`).
+- Bấm ảnh mở **popup** (`<dialog id="dashboardAvatarDialog">`, class `kp-avatar-dialog`):
+  - Trên: tiêu đề "Ảnh hồ sơ" + nút ✕ 38px (44px trên cảm ứng).
+  - Giữa: ảnh lớn 200px tròn (160px khi màn ≤460px, 140px khi màn thấp ≤560px), dòng meta dữ liệu thật `JPG · <dung lượng> · Sửa <ngày>`, dòng "PNG hoặc JPG, tối đa 2 MB.".
+  - Đáy: **kiểu C** — hai nút xếp dọc, mỗi nút rộng hết hàng, cùng cao 42px (46px cảm ứng), bo 10px, chữ 13.5px/650, icon 16px: **Đổi ảnh** (tím đặc `#7262df` / tối `#6f63e0`) ở trên, **Xoá ảnh** (nền đỏ nhạt, chữ `#c0393b` / tối `#f3a5a7`) ở dưới. Đáy cộng `env(safe-area-inset-bottom)`.
+- Hành vi: **Đổi ảnh** = đóng popup rồi mở hộp chọn ảnh; chọn ảnh mới lưu kèm `avatarUpdatedAt`; **Xoá ảnh** = xoá `avatarDataUrl`, đóng popup, hiện toast **"Đã xoá ảnh hồ sơ." + Hoàn tác** (5 giây, dùng `SETTINGS_KIT.undo.show` nên bấm Hoàn tác là ảnh về nguyên). Đóng popup: ✕, `Esc`, bấm ra ngoài; đóng xong trả focus về ảnh.
+- Dung lượng ảnh hiển thị được tính thật từ data URL (`avatarSizeLabel`), không phải số bịa.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js` (thêm `accountProfilePictureChange/Limit/Empty/Updated`, sửa `accountProfilePictureHelp` cho 3 ngôn ngữ), `css/dashboard/dashboard.css` (bỏ CSS nút cũ 3.5.447, thêm CSS popup), `manifest.json`.
+- Kiểm chứng (computed style, jsdom 29, nạp CSS thật + markup thật của trang):
+  - Popup: bo 16px, nền `#fff` / `#1c1c26`, đệm đáy `calc(16px + env(safe-area-inset-bottom))`; ảnh 200×200 bo 50%.
+  - Đáy: `display:grid`, `gap:8px`; hai nút đều cao 42px, chữ 13.5px/650; Đổi ảnh nền `#7262df` (tối `#6f63e0`) chữ trắng; Xoá ảnh nền `#fdf0f0`/`rgba(248,113,113,.12)`.
+  - Hàng: ảnh trong trigger 40×40 (đúng khung Cài đặt).
+  - `node --check` cả 2 file JS hợp lệ; ngoặc CSS cân 1195/1195; `grep` xác nhận không còn `settingsChangeProfilePicture` / `settingsRemoveProfilePicture` ở bất kỳ file nào.
+- Vẫn **không chụp được ảnh** (sandbox thiếu `xvfb` + lib Chromium).
+
 **2026-11-18 | v3.5.447 | Arena.ai Agent sửa:**
 
 - Thêm cách **xoá ảnh hồ sơ** ngay trong UI: hàng "Ảnh hồ sơ" (Cài đặt → Tài khoản) có thêm nút **"Xoá ảnh"** cạnh nút "Thay đổi".
