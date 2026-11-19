@@ -157,6 +157,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.497 | Arena.ai Agent sửa:**
+
+- Người dùng gửi 4 tệp báo cáo (trước/sau khi load, cả Dashboard + khung). Số đo **quyết định**:
+  - mở bằng **tin nhắn** (lỗi): `lopChu = "3 lớp, 92 span, 0 span có kích thước, span đầu 0×0"`, `probeText = KHÔNG có span chữ nào có kích thước`, `mousedown top = div.textLayer.pdfTextLayer` → chuột **không trúng chữ**; có lần `mouseup` cho `ranges:1, text:false` = vùng chọn bị rỗng giữa lúc kéo.
+  - mở bằng **`?document=`** (được): `92 span, 92 span có kích thước, span đầu 556×62`, `mousedown top = span.en`, `probeText = OK`.
+  → Lỗi nằm ở **hình học lớp chữ khi mở bằng tin nhắn**, không phải thời điểm, không phải khoá chọn chữ.
+- Sửa: `openDoc()` trong `js/dashboard/documents-library.js` **cho khung tải lại với `?document=<id>`** (`openByReload`) thay vì `postMessage` — đúng đường mà "load lại" vẫn chạy. Popup "Đang mở tệp" giữ tới `KEEPIT_DOCUMENTS_VIEWER_READY` (đã có từ 3.5.493) nên khung tải lại không lộ ra.
+- Đóng tệp → `restoreFrameSrc()` trả khung về trang thư viện để **kéo-thả/nhập tệp vẫn đi đường cũ** (không tái phạm lỗi 3.5.488). Có cờ `viewerWasOpen` chống vòng lặp tải lại.
+- Giữ nguyên bảng chẩn đoán ở 2 nơi để kiểm chứng bản này.
+- File: `js/dashboard/documents-library.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hợp lệ; `git diff` chỉ 1 file JS. **Chưa kiểm bằng ảnh/số đo** — cần báo cáo của người dùng.
+
 **2026-11-18 | v3.5.496 | Arena.ai Agent sửa:**
 
 - Người dùng: "lỗi vẫn vậy" (sau 3.5.495). Ngừng đoán; dựng bộ ghi **toàn bộ đường mở tệp** để lấy số đo đúng khoảnh khắc lỗi.

@@ -252,6 +252,38 @@
     } catch { return false; }
   }
   let pendingOpen = null;
+  let frameLibrarySrc = '', viewerWasOpen = false;
+  /* v3.5.497: mở tệp = cho khung TẢI LẠI với ?document=…, đúng đường mà "load lại" vẫn chạy được.
+     Số đo 3.5.496: mở bằng tin nhắn → 92 span lớp chữ đều 0×0, chuột rơi vào div.textLayer (không trúng chữ);
+     mở bằng ?document= → 92/92 span có kích thước (556×62), chuột rơi vào span.en. */
+  function frameLibraryUrl() {
+    const f = frame();
+    if (!f) return '';
+    if (!frameLibrarySrc) frameLibrarySrc = f.dataset.src || 'documents.html';
+    return frameLibrarySrc;
+  }
+  function openByReload(id) {
+    const f = frame(), base = frameLibraryUrl();
+    if (!f || !base) return false;
+    try {
+      const uri = new URL(base, location.href);
+      uri.searchParams.delete('highlight');
+      uri.searchParams.set('document', id);
+      uri.searchParams.set('r', String(Date.now()));
+      document.body.classList.remove('documents-viewer-ready'); /* buộc popup giữ tới khi khung dựng xong */
+      f.dataset.src = base;
+      f.src = uri.href;
+      return true;
+    } catch { return false; }
+  }
+  function restoreFrameSrc() {
+    const f = frame(), base = frameLibraryUrl();
+    if (!f || !base) return;
+    const current = f.getAttribute('src') || '';
+    if (!/[?&]document=/.test(current)) return;
+    viewerWasOpen = false;
+    try { f.dataset.src = base; f.src = base; } catch { /* ignore */ }
+  }
   function openDoc(id, mode) {
     if (!id) return;
     /* v3.5.493: mở tệp cũng có popup như khi nhập — popup ở lại tới khi khung báo đã dựng xong
@@ -260,6 +292,7 @@
     showOpenCard({ name: item?.name || t('loading'), bytes: item?.size || 0, kind: item?.type || '' });
     window.clearTimeout(openHideTimer);
     openHideTimer = window.setTimeout(() => hideOpenCard(), 10000);
+    if (openByReload(id)) return; /* đường chính: tải lại khung với ?document= */
     pendingOpen = { type: 'KEEPIT_DOCUMENTS_OPEN', id, mode: mode || 'orig' };
     flushOpen();
   }
@@ -346,8 +379,14 @@
     if (event.origin !== location.origin || event.source !== frame()?.contentWindow) return;
     const data = event.data || {};
     if (data.type === 'KEEPIT_DOCUMENTS_LIBRARY_CHANGED') void refresh();
-    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER_READY') { updateOpenCard('done'); hideOpenCard(200); return; }
-    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER' && !data.open) { hideOpenCard(0); return; }
+    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER_READY') { viewerWasOpen = true; updateOpenCard('done'); hideOpenCard(200); return; }
+    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER' && data.open === true) { viewerWasOpen = true; return; }
+    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER' && !data.open) {
+      hideOpenCard(0);
+      /* v3.5.497: đóng tệp → trả khung về trang thư viện, để kéo-thả/nhập tệp vẫn đi đường cũ. */
+      if (viewerWasOpen) window.setTimeout(restoreFrameSrc, 250);
+      return;
+    }
     if (data.type === 'KEEPIT_DOCUMENTS_IMPORT_STEP') {
       if (data.phase === 'start') showOpenCard({ name:data.name, bytes:data.bytes, kind:data.kind });
       else updateOpenCard(data.phase, data.percent);
