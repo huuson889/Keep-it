@@ -4359,6 +4359,16 @@ load().then(() => {
   const loadCycle = dashboardViewSwitchCycle;
   restoreDashboardViewAndReveal(loadedView, loadCycle);
   initDictationView();
+  /* v3.5.492: nạp sẵn khung tài liệu (ẩn) ngay sau khi Dashboard dựng xong, để lần mở tệp ĐẦU TIÊN
+     không phải chờ khung khởi tạo — đó là nguồn của lỗi "bôi đen lần đầu không có thanh".
+     Bỏ qua khi đang ở tab Tài liệu hoặc URL đã có ?document= (những đường đó tự nạp). */
+  window.setTimeout(() => {
+    try {
+      if (activeDashboardView === "documents") return;
+      if (dashboardDocumentsFrame.hasAttribute("src")) return;
+      dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
+    } catch { /* khung chưa sẵn sàng */ }
+  }, 500);
   if (new URLSearchParams(location.search).get("openFavorites") === "1") openFavoriteVideos(0, false);
   if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });

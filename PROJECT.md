@@ -1,32 +1,25 @@
 # Keepit - Hồ sơ dự án
 
-## 1. Trạng thái hiện tại
-- Version **3.5.433**, nhánh `Keepit-Optimize-Test`; 5 tab Dashboard dùng chung một đệm 2 bên: 32px ở màn rộng (≥1067px), 16px ở màn hẹp; 4 tab (Tổng quan, Chép chính tả, Ghi chú, Tài liệu) nhớ đúng vị trí cuộn khi chuyển tab và sau khi tải lại trang. Đã kiểm bằng extension thật 1512×950 và 390×844, `errors []`. Thùng rác không nhớ vị trí cuộn (theo yêu cầu). Chưa thử trên profile Chrome thật của người dùng.
-- Version **3.5.424**, nhánh `Keepit-Optimize-Test`; Documents is now a normal dashboard route (`#dashboardScroller` is the only scroll root, shared topbar is the only header), so all four tabs share one header and one scroll behaviour; bar geometry matches the v3.5.379 Documents topbar. Browser-verified at 1512/1920/390 light+dark; PDF viewer flow not re-tested with a real file. Previous note: PDF permission guide uses shared green theme tokens for warning icon and step markers in light/dark themes. Static checks passed; Chrome visual/browser validation remains open. Documents Reader QA remains open. Watcher launch in `OPT-ARENA.md` uses `Unblock-File` + process-scoped Bypass. Arena cleanup/ZIP rules in `AGENTS.md`.
-- Sửa tích hợp: demo chỉ chốt bố cục; Reader, chọn chữ/Full Dictionary, popup/sidebar Ghi chú và AI dùng đúng module UI/controller của app, không giữ bộ riêng trong Tài liệu.
-- Ghi chú v314 chuyển vào annotations chung, giữ quote/anchor/ngày, không nhân bản; hiện ở H&N/Flashcards/JSON backup. Byte tệp vẫn ngoài backup. Tham chiếu tệp là UUID cục bộ, không phải hash gửi tới AI.
-- Chromium extension thật PASS native UI/CRUD/restore/migration/deep link/backup, Reader qua trang/card, touch selection/Notes/AI sheet; web + homepage regression PASS. AI login/send/voice thật và Firefox/Edge Android thật vẫn chưa xác nhận.
-- Office preview có giới hạn phông/đối tượng; OCR chưa có. Các QA cũ và giới hạn khác giữ ở mục 2, kiến trúc ở mục 4 và `docs/documents.md`.
+'## 1. Trạng thái hiện tại
+- Version **3.5.492**, nhánh `Keepit-Optimize-Test`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Tài liệu: thư viện do Dashboard vẽ (từ 3.5.431); khung `pages/documents.html` nạp **một lần**, không nạp lại; mở/nhập tệp qua `postMessage`. Từ **3.5.492** khung được **nạp sẵn (ẩn)** ngay sau khi Dashboard dựng xong.
+- Lỗi đang mở: bôi đen ở lần mở tệp **đầu tiên** sau khi cài lại extension (vùng chọn bị xoá khi khung còn dựng lại trang). Đã sửa theo 2 hướng: khoá chọn chữ tới khi `#stage` im 500 ms (3.5.491) + nạp sẵn khung (3.5.492) — **chưa xác nhận trên Chrome**.
+- Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
+- Giới hạn: preview Office hạn chế phông/đối tượng, chưa có OCR; kiểm thử mới nhất là tĩnh (`node --check`), **chưa có ảnh/số đo** theo mục 3.4 AGENTS.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Đang mở
+- **Tài liệu — bôi đen lần mở đầu tiên:** chờ người dùng thử 3.5.492 trên profile Chrome thật (remove + load lại extension → mở tệp PDF đầu tiên → bôi đen ngay). Nếu vẫn lỗi: phương án cuối là bỏ thư viện do Dashboard vẽ, trả `documents.html` tự lo như 3.5.430.
+- **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
 ### Tiếp theo (thứ tự đã chốt)
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
-- **Tài liệu — Batch 2:** nhập/xoá tệp ngay trong Dashboard (picker + kéothả, tiến trình, SHA-256 chống trùng, giới hạn 50 MB/30 MB, modal mật khẩu PDF).
-- **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html?view=documents`).
-- Nạp chậm `#dictationStatsPopupFrame` (`pages/dashboard.html:342`).
-
-### Chưa kiểm (đã ghi nhận, chưa chạy)
-- Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web), profile Chrome thật, và trường hợp >20 mục (phân trang).
-- Chưa kiểm: profile Chrome thật của người dùng, trang có hơn 20 ghi chú (phân trang + hàng trang), ghi chú không có URL, và trang trùng URL nhưng khác tiêu đề.
-
-### Chưa triển khai / trước phát hành
-- Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: phạm vi đã chốt, chưa triển khai; giữ khóa bật/tắt trong code.
-- Hoàn thiện `LICENSE`/`PRIVACY-POLICY.md` (điền chủ sở hữu, email, URL công khai, ngày hiệu lực, độ tuổi) trước khi phát hành.
-- Trước khi nộp AMO: quyết định cách xử lý quy tắc 9002 (gỡ `X-Frame-Options`/CSP của trang AI, xung đột AMO §4.4); người dùng đã chọn giữ ở v3.5.136.
-- Lúc nộp (người dùng): bản sao ZIP bỏ `DATA-INVENTORY.md`, `STORE-LISTING.md`; ảnh chụp 1280×800; tài khoản CWS/AMO; rà lại form cửa hàng theo `STORE-LISTING.md`.
-
-### Ghi chú chi tiết
-- Việc đã xong → mục 5 «Nhật ký». Ghi chú QA/ý tưởng còn mở → `docs/pending-notes.md`.
+- **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
+### Chưa kiểm
+- Chưa kiểm: ảnh/số đo 1512 và 390, sáng/tối (mục 3.4 AGENTS); profile Chrome thật; tệp PDF/Office thật.
+- Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
+### Chưa triển khai
+- Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: đã chốt phạm vi, chưa làm.
+- Hoàn thiện `LICENSE`/`PRIVACY-POLICY.md` trước khi phát hành.
 
 ## 3. Ràng buộc & quyết định
 - **Áp dụng demo:** chỉ giữ bố cục/luồng đã duyệt. Reader, chọn chữ, Ghi chú, từ điển và Hỏi AI phải dùng module UI/controller/dữ liệu hiện có của app, theo cài đặt chung; không bê các công cụ mô phỏng thành bộ riêng.
@@ -163,6 +156,14 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-18 | v3.5.492 | Arena.ai Agent sửa:**
+
+- Người dùng: "sao bản giờ không chạy ngầm cái frame giống như 3.5.430? như vậy là được mà" → đồng ý cho làm.
+- `dashboard.js`: sau khi Dashboard khởi tạo xong, **nạp sẵn `#dashboardDocumentsFrame`** (khung vốn `display:none` nên vẫn tải và boot bình thường). Bỏ qua khi đang ở tab Tài liệu hoặc URL đã có `?document=` để không phá deep link.
+- Mục đích: lần mở tệp **đầu tiên** sau khi cài lại extension không còn "khung nguội" — đúng cơ chế mà 3.5.430 vô tình có được vì mọi thứ nằm trong một trang.
+- File: `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md` (mục 1, 2, 5).
+- Kiểm tra: `node --check js/dashboard/dashboard.js` hợp lệ; `git diff` chỉ 1 chỗ chèn. **Chưa kiểm bằng ảnh/số đo** (không có Chrome trong phiên này) — cần người dùng thử: remove + load lại extension, mở tệp PDF đầu tiên, bôi đen ngay; kiểm thêm kéo-thả tệp.
 
 **2026-11-18 | v3.5.491 | Arena.ai Agent sửa (người dùng: "kéo tệp vào không mở được nữa", "sao không làm giống v30"):**
 
