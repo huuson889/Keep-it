@@ -3981,8 +3981,11 @@ $("importFile").addEventListener("change", async e => {
 });
 async function toggleDashboardTheme() {
   const previous = dashboardSettings, wasDark = document.documentElement.classList.contains("dark");
+  const themeRoot = document.documentElement;
+  themeRoot.classList.add("dashboard-theme-switching");
   dashboardSettings = { ...dashboardSettings, sidebarTheme:wasDark ? "light" : "dark" };
   syncDashboardTheme();
+  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => themeRoot.classList.remove("dashboard-theme-switching"), 60)));
   try { await LHN_SETTINGS.save(dashboardSettings); }
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 }

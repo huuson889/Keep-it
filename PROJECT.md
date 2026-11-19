@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.440 | Arena.ai Agent sửa:**
+
+- Sửa nháy sáng viền khung khi đổi Sáng/Tối ở tab Chép chính tả và Ghi chú: các thẻ ở 2 tab này khai báo `transition:border-color .2s` (`.dictation-root .session-card`, `.search-row`, `.hl-card`…), nên lúc đổi nền, viền chạy mờ dần từ màu sáng sang màu tối và bị thấy như "nháy sáng"; tab Tổng quan và Tài liệu không khai báo transition viền nên đổi tức thì, không nháy.
+- Cách sửa: thêm class `dashboard-theme-switching` trên `<html>` trong `toggleDashboardTheme()` (bỏ sau 2 khung hình + 60ms) và CSS tắt transition cho **mọi** phần tử khi class này có mặt; đồng thời mở rộng luật `dashboard-theme-pending` từ "chỉ sidebar + Tổng quan" thành toàn bộ cây DOM.
+- File: `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): `node --check js/dashboard/dashboard.js` hợp lệ; `grep dashboard-theme-switching` thấy đúng 2 chỗ thêm/xoá class và 3 selector CSS. **Chưa quay lại được bằng ảnh** (sandbox mất `xvfb-run` + lib Chromium, không có root).
+
 **2026-11-18 | v3.5.439 | Arena.ai Agent sửa:**
 
 - Tiếp tục dọn navy: các mã **dùng chung cho cả 2 nền** (`#111827`, `#172033`, `#1e293b`, `#1f2937`, `#334155`, `#374151`, `#94a3b8`, `#64748b`, `#cbd5e1`, `#e2e8f0`, `#f1f5f9`…) trước đây bị bỏ qua nên trong rule `html.dark` vẫn còn navy — thấy rõ ở thanh lọc Highlights & Notes, khung Settings, hộp Study. Nay chỉ sửa **bên trong rule `html.dark`** (không đụng rule nền sáng): 453 chỗ.
