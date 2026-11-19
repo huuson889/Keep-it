@@ -967,8 +967,12 @@
   .profile-auth-terms.is-invalid input[type="checkbox"] { outline: 2px solid var(--au-err); outline-offset: 1px; }
   .profile-auth-terms.is-invalid .profile-auth-legal { color: var(--au-err); }
   /* nội dung điều khoản / bảo mật mở ngay trong popup */
-  .profile-auth-legal-panel { display: grid; gap: 7px; margin: 0; padding: 11px 12px; border: 1px solid var(--au-line); border-radius: 10px; background: var(--au-tile); }
-  .profile-auth-legal-panel[hidden] { display: none; }
+  /* mở/thu mượt: grid 0fr → 1fr (không dùng display:none nên mới chuyển động được) */
+  .profile-auth-legal-panel { display: grid; grid-template-rows: 0fr; margin: 0; padding: 0; border: 0 solid var(--au-line); border-radius: 10px; background: var(--au-tile); opacity: 0; visibility: hidden; overflow: hidden;
+    transition: grid-template-rows .28s cubic-bezier(.32, .72, 0, 1), padding .28s cubic-bezier(.32, .72, 0, 1), border-width .28s ease, opacity .16s ease, visibility 0s .28s; }
+  .profile-auth-legal-panel.is-open { grid-template-rows: 1fr; padding: 11px 12px; border-width: 1px; opacity: 1; visibility: visible;
+    transition: grid-template-rows .28s cubic-bezier(.32, .72, 0, 1), padding .28s cubic-bezier(.32, .72, 0, 1), border-width .28s ease, opacity .22s ease .06s, visibility 0s; }
+  .profile-auth-legal-inner { display: grid; gap: 7px; min-height: 0; overflow: hidden; }
   .profile-auth-legal-actions { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 6px 18px; margin-top: 3px; }
   .profile-auth-legal-panel strong { color: var(--au-tx); font-size: 13px; font-weight: 650; }
   .profile-auth-legal-panel p { margin: 0; color: var(--au-mu); font-size: 12.5px; line-height: 18px; }

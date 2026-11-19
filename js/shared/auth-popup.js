@@ -25,12 +25,14 @@
           <input id="profileTerms" type="checkbox">
           <div class="profile-auth-terms-text"><label for="profileTerms">${t("profileTermsAgree")}</label> <button class="profile-auth-legal" type="button" data-legal="terms">${t("profileTermsLink")}</button> <span>${t("profileTermsAnd")}</span> <button class="profile-auth-legal" type="button" data-legal="privacy">${t("profilePrivacyLink")}</button></div>
         </div>
-        <div id="profileLegalPanel" class="profile-auth-legal-panel" hidden>
-          <strong id="profileLegalTitle"></strong>
-          <p id="profileLegalBody"></p>
-          <div class="profile-auth-legal-actions">
-            <button id="profileLegalFull" type="button">${t("profileLegalFull")}</button>
-            <button id="profileLegalClose" type="button">${t("profileLegalClose")}</button>
+        <div id="profileLegalPanel" class="profile-auth-legal-panel" aria-hidden="true">
+          <div class="profile-auth-legal-inner">
+            <strong id="profileLegalTitle"></strong>
+            <p id="profileLegalBody"></p>
+            <div class="profile-auth-legal-actions">
+              <button id="profileLegalFull" type="button">${t("profileLegalFull")}</button>
+              <button id="profileLegalClose" type="button">${t("profileLegalClose")}</button>
+            </div>
           </div>
         </div>
         <button id="profileAuthSubmit" class="profile-auth-submit" type="submit">${t("profileLoginNow")}</button>

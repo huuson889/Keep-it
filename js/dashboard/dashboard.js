@@ -591,6 +591,12 @@ function clearProfileAuthMarkup() {
     input.closest("label")?.classList.remove("is-invalid");
   }
 }
+function setProfileLegalPanel(open) {
+  const panel = $("profileLegalPanel");
+  if (!panel) return;
+  panel.classList.toggle("is-open", !!open);
+  panel.setAttribute("aria-hidden", open ? "false" : "true");
+}
 function hideProfileAuthError() {
   const error = $("profileAuthError");
   if (error) { error.hidden = true; error.textContent = ""; }
@@ -631,7 +637,7 @@ function setProfileAuthMode(mode) {
     button.setAttribute("aria-label", showing ? t("profileHidePassword") : t("profileShowPassword"));
   }
   $("profileTermsRow").hidden = !isRegister;
-  $("profileLegalPanel").hidden = true;
+  setProfileLegalPanel(false);
   if (!isRegister) $("profileTerms").checked = false;
   hideProfileAuthError();
   profileAuthMode = mode;
@@ -3073,10 +3079,10 @@ for (const button of document.querySelectorAll("#profileAuthDialog [data-legal]"
     profileLegalDoc = terms ? "terms" : "privacy";
     $("profileLegalTitle").textContent = t(terms ? "profileTermsLink" : "profilePrivacyLink");
     $("profileLegalBody").textContent = t(terms ? "profileTermsBody" : "profilePrivacyBody");
-    $("profileLegalPanel").hidden = false;
+    setProfileLegalPanel(true);
   });
 }
-$("profileLegalClose").addEventListener("click", () => { $("profileLegalPanel").hidden = true; });
+$("profileLegalClose").addEventListener("click", () => setProfileLegalPanel(false));
 // bản đầy đủ (chỉ tiếng Anh) mở ở TAB MỚI để không mất chữ đã gõ trong form đăng ký
 $("profileLegalFull").addEventListener("click", () => {
   const base = (globalThis.chrome?.runtime?.getURL ? chrome.runtime.getURL("pages/legal.html") : "legal.html");

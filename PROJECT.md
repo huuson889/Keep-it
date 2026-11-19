@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.474 | Arena.ai Agent sửa:**
+
+- **(1) `pages/legal.html` theo sáng/tối của app** (trước chỉ theo hệ điều hành): thêm `js/pages/legal.js` — đọc `LHN_SETTINGS.get()` → `settings.sidebarTheme` (`light` / `dark` / `system`), gắn `data-theme` lên `<html>`, đặt luôn `color-scheme` cho thanh cuộn. "system" thì theo máy; **đổi giao diện trong app lúc tab đang mở thì trang đổi theo** qua `LHN_SETTINGS.subscribe()`. Vẽ ngay lần đầu theo hệ điều hành để không chớp trắng.
+- CSS `legal.css`: `:root` = sáng, `html[data-theme="dark"]` = tối (đen `#000` / thẻ `#0d0d0f` / chữ `#eaeaea` / brand `#a5a9ff`), còn `@media (prefers-color-scheme: dark) html:not([data-theme])` làm dự phòng khi không chạy được script.
+- `pages/legal.html` nạp thêm `browser-polyfill.js`, `defaults.js`, `config.js`, `settings.js`, `pages/legal.js` (đủ chuỗi để `LHN_SETTINGS` có `STORAGE_KEYS` + `DEFAULT_SETTINGS`).
+- **(2) Hộp điều khoản mở/thu mượt**: bỏ `hidden` (display:none thì không chuyển động được) → `grid-template-rows: 0fr → 1fr` + `padding`/`border-width`/`opacity` .28s `cubic-bezier(.32,.72,0,1)`; `.is-open` mở, `visibility` + `aria-hidden` chặn tab/đọc màn hình khi đang đóng; nội dung bọc trong `.profile-auth-legal-inner` (`overflow:hidden`, `min-height:0`) để cắt đúng. JS: `setProfileLegalPanel(true|false)` thay 3 chỗ `hidden =`.
+- File: `js/pages/legal.js` (mới), `css/pages/legal.css`, `pages/legal.html`, `css/dashboard/settings.css`, `pages/dashboard.html`, `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 926/926 và 48/48 ngoặc; jsdom chạy thật `legal.js` với 4 tổ hợp (app dark/máy sáng → `dark`; app light/máy tối → `light`; system → theo máy) ra đúng; jsdom xác nhận panel không còn `hidden`, có `.is-open`/`.profile-auth-legal-inner`, 2 nút. **Chưa chạy UI thật** → độ mượt phải xem bằng mắt.
+
 **2026-11-18 | v3.5.473 | Arena.ai Agent sửa:**
 
 - Yêu cầu: điều khoản dài → popup chỉ giữ 2 câu tóm tắt, **bản đầy đủ ở trang riêng**, nội dung **chỉ tiếng Anh** cho mọi ngôn ngữ.
