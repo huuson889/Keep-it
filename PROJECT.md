@@ -157,6 +157,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.502 | Arena.ai Agent sửa:**
+
+- Người dùng: "501 vẫn ngu… tự dưng có đen phía sau, tôi không thích".
+- **Gỡ toàn bộ thay đổi hình ảnh của 3.5.500 + 3.5.501** (`git checkout 2e0a0a5 -- js/dashboard/documents-library.js css/dashboard/documents-library.css`): bỏ trạng thái `body.documents-opening`, bỏ nền đặc, bỏ việc ẩn `.dlib`, bỏ popup tự hiện khi vào bằng `?document=`.
+- Giữ nguyên phần **cơ chế** đã chạy đúng: mở tệp bằng tải lại khung với `?document=` (3.5.497), nhập tệp cũng vậy (3.5.498), và các trạng thái `documents-viewer-open/ready` (3.5.493).
+- Nghĩa là: quay lại đúng giao diện 3.5.499 — popup mờ nhẹ trên nền thư viện, không có mảng đen.
+- File: `js/dashboard/documents-library.js`, `css/dashboard/documents-library.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: đã soát `grep documents-opening` = 0 chỗ còn lại. **Chưa kiểm bằng ảnh/số đo.**
+
 **2026-11-18 | v3.5.501 | Arena.ai Agent sửa:**
 
 - Người dùng: "lần này thì bị đen tab tệp ở phía sau là sao, v30 là vào thẳng luôn mà".

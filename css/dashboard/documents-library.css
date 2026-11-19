@@ -223,11 +223,6 @@ html.dark #dashboardDocumentsView .count{background:var(--brandSoft)!important;c
   opacity:0;pointer-events:none;transition:opacity .18s ease;
 }
 .dlib-open.show{opacity:1;pointer-events:auto}
-/* v3.5.500 — đang mở tệp: không lộ danh sách thư viện, chỉ popup rồi thẳng vào tệp (như 3.5.430). */
-body.documents-opening #dashboardDocumentsView .dlib{opacity:0!important;pointer-events:none!important}
-/* v3.5.501 — nền popup đặc (không mờ) để phía sau không còn mảng đen/trống của tab tài liệu;
-   chỉ thấy popup trên nền phẳng rồi vào thẳng tệp. */
-body.documents-opening .dlib-open{background:var(--dl-soft)}
 .dlib-open-card{
   width:min(400px,100%);padding:18px;border:1px solid var(--dl-line);border-radius:22px;background:var(--dl-surface);
   box-shadow:0 24px 60px #1b16502e;transform:scale(.96);opacity:0;
