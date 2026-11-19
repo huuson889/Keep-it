@@ -1,7 +1,7 @@
 // Local document bytes and state. Separate stores keep progress writes from overwriting notes or files.
 (() => {
   'use strict';
-  const NAME = 'keepit-documents', VERSION = 1, CHANNEL = 'keepit-documents-updated';
+  const NAME = 'keepit-documents', VERSION = 2, CHANNEL = 'keepit-documents-updated';
   let opening;
   const changes = typeof BroadcastChannel === 'function' ? new BroadcastChannel(CHANNEL) : null;
   function open() {
@@ -9,7 +9,10 @@
       const request = indexedDB.open(NAME, VERSION);
       request.onupgradeneeded = () => {
         const db = request.result;
+        /* v3.5.480: bản cũ có thể đã tạo kho rỗng (không store nào) → luôn tạo phần còn thiếu.
+           Nâng lên 2 để kho rỗng v1 tự chữa lành lần mở kế tiếp. */
         for (const name of ['meta', 'files', 'notes', 'translations']) {
+          if (db.objectStoreNames.contains(name)) continue;
           const store = db.createObjectStore(name, { keyPath:'id' });
           if (name === 'notes' || name === 'translations') store.createIndex('document', 'documentId');
         }

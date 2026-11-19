@@ -164,6 +164,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.480 | Arena.ai Agent sửa — NGUYÊN NHÂN GỐC lỗi "0 tài liệu" / không nhập được tệp:**
+
+- Toast thật: `Failed to execute 'transaction' on 'IDBDatabase': One of the specified object stores was not found` → kho IndexedDB `keepit-documents` **tồn tại nhưng không có store nào**.
+- Vì sao: `js/dashboard/documents-library.js` mở kho bằng **version cứng 1** với `onupgradeneeded` **rỗng** ("kho do trang Tài liệu khởi tạo"). Nếu Dashboard mở trước (tab Tài liệu vẽ thư viện trước khi khung `documents.html` kịp chạy), kho được tạo với **0 store**; trang Tài liệu cũng mở version 1 nên **không bao giờ nâng cấp** → mọi `transaction(['meta','files'])` đều báo thiếu store. Hỏng vĩnh viễn cho tới khi sửa.
+- Sửa:
+  1. `documents-store.js`: `VERSION 1 → 2`, và trong `onupgradeneeded` chỉ tạo store **còn thiếu** (`objectStoreNames.contains`) → **kho rỗng v1 tự chữa lành** lần mở kế tiếp, kho lành (có tài liệu) lên v2 không mất gì.
+  2. `documents-library.js`: mở **không kèm version** (không tự nâng cấp), và nếu buộc phải tạo thì tạo đủ 4 store + index — không bao giờ để lại kho rỗng.
+  3. `dashboard-trash.js`: bỏ `DB_VERSION = 1` cứng, mở không version (chỉ đọc/ghi, không nâng cấp) — nếu giữ version 1 thì sau khi kho lên 2 sẽ `VersionError`.
+- Kiểm tra: `node --check` 3 file hợp lệ; **test thật bằng fake-indexeddb + vm chạy chính file `documents-store.js`**: tái hiện kho v1 rỗng → module mở → `files, meta, notes, translations`, version 2, `importFile` + `all('meta')` + `get('files')` + `patch` đều chạy; và test khối `onupgradeneeded` thật của thư viện trên kho mới → tạo đủ 4 store. **Chưa chạy UI thật.**
+- File: `js/dashboard/documents-store.js`, `js/dashboard/documents-library.js`, `js/dashboard/dashboard-trash.js`, `manifest.json`.
+
 **2026-11-18 | v3.5.479 | Arena.ai Agent sửa:**
 
 - Sau 3.5.478 người dùng thấy đúng câu "Không thêm được tệp vào thư viện." → tức là `count=0, skipped=0, error` **rỗng hoặc lạ**.

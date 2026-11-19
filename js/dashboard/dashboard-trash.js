@@ -4,7 +4,7 @@
    the "coming soon" chip. */
 (() => {
   'use strict';
-  const DB_NAME = 'keepit-documents', DB_VERSION = 1;
+  const DB_NAME = 'keepit-documents';  // v3.5.480: không giữ version ở đây — chỉ mở đúng version đang có
   const RETAIN_DAYS = 30, DAY = 86400000;
   const $ = id => document.getElementById(id);
   const t = (key, vars) => globalThis.LHN_LANGUAGES?.t?.(key, vars) ?? key;
@@ -55,7 +55,7 @@
         if (!list.some(entry => entry.name === DB_NAME)) return null;
       }
     } catch { /* fall through to the version check */ }
-    const db = await openDb(DB_VERSION);
+    const db = await openDb();
     if (!db.objectStoreNames.contains('meta')) { db.close(); return null; }
     return db;
   }
@@ -65,7 +65,7 @@
     request.onerror = () => reject(request.error);
   });
   function removeForever(id) {
-    return openDb(DB_VERSION).then(db => new Promise((resolve, reject) => {
+    return openDb().then(db => new Promise((resolve, reject) => {
       if (!db.objectStoreNames.contains('meta')) { db.close(); resolve(); return; }
       const tx = db.transaction(['meta', 'files', 'translations'], 'readwrite');
       tx.objectStore('meta').delete(id);
@@ -113,7 +113,7 @@
     } finally { db.close(); }
   }
   function restoreRecord(id) {
-    return openDb(DB_VERSION).then(db => new Promise((resolve, reject) => {
+    return openDb().then(db => new Promise((resolve, reject) => {
       if (!db.objectStoreNames.contains('meta')) { db.close(); resolve(); return; }
       const tx = db.transaction(['meta'], 'readwrite');
       const store = tx.objectStore('meta');

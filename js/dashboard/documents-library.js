@@ -32,8 +32,19 @@
 
   function openDb() {
     if (!dbPromise) dbPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('keepit-documents', 1);
-      request.onupgradeneeded = () => { /* Dashboard không tạo store: kho do trang Tài liệu khởi tạo */ };
+      /* v3.5.480 LỖI ĐÃ SỬA: trước đây mở bằng version 1 với onupgradeneeded RỖNG → nếu Dashboard
+         mở kho trước, kho được tạo ra với 0 store, rồi trang Tài liệu mở cùng version 1 nên
+         không bao giờ nâng cấp → mọi giao dịch báo "object store was not found".
+         Nay: mở đúng version hiện có (không tự nâng), và nếu buộc phải tạo thì tạo đủ store. */
+      const request = indexedDB.open('keepit-documents');
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        for (const name of ['meta', 'files', 'notes', 'translations']) {
+          if (db.objectStoreNames.contains(name)) continue;
+          const store = db.createObjectStore(name, { keyPath:'id' });
+          if (name === 'notes' || name === 'translations') store.createIndex('document', 'documentId');
+        }
+      };
       request.onsuccess = () => { const db = request.result; db.onversionchange = () => { db.close(); dbPromise = null; }; resolve(db); };
       request.onerror = () => { dbPromise = null; reject(request.error); };
       request.onblocked = () => { dbPromise = null; reject(new Error('documentsDatabaseBlocked')); };
