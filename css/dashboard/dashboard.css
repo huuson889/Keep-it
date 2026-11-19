@@ -1318,31 +1318,41 @@ html.dark #dashboardSidebar .dashboard-reference-profile-wrap[data-plan="keyB"] 
 #dashboardSettingsDialog .settings-picture-trigger:focus-visible { outline:2px solid #7262df; outline-offset:3px; }
 html.dark #dashboardSettingsDialog .settings-picture-trigger:focus-visible { outline-color:#a5a9ff; }
 
-#dashboardAvatarDialog { padding:0; border:0; background:transparent; max-width:none; max-height:none; overflow:visible; }
-/* nền sau: chỉ phủ một lớp tối rất nhẹ, KHÔNG blur — để hộp thoại Cài đặt phía sau vẫn sáng và
-   popup đọc ra là tấm kính mờ giống Cài đặt (che .4 như trước làm cả màn hình xám đục) */
-#dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.14); backdrop-filter:none; }
-html.dark #dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.3); }
-
-/* kính mờ giống hộp thoại Cài đặt (settings.css: --kp-glass .78 + blur 24px saturate 1.6, viền .12)
-   — kính đặt ở lớp ::before để nội dung bên trong vẫn đọc rõ */
-.kp-avatar-card {
-  position:relative; isolation:isolate;
-  transform:translateX(var(--kp-avatar-dx, 0px));
-  width:min(392px, calc(100vw - 32px)); max-height:calc(100dvh - 32px);
-  display:flex; flex-direction:column; overflow:hidden;
-  border-radius:16px; border:1px solid rgba(0,0,0,.12); background:transparent;
-  box-shadow:0 28px 64px rgba(16,18,32,.22), 0 2px 8px rgba(16,18,32,.1);
+/* Viết theo đúng khuôn popup đăng nhập (.profile-auth-dialog, settings.css:866): hộp thoại phủ kín
+   khung nhìn và tự canh thẻ bằng grid; thẻ mang kính mờ; điện thoại/ngang thấp → sheet từ đáy. */
+#dashboardAvatarDialog {
+  box-sizing:border-box; position:fixed; inset:0; margin:0; padding:16px;
+  width:100%; height:100%; max-width:none; max-height:none;
+  border:0; background:transparent; box-shadow:none; overflow:hidden;
+  display:grid; place-items:center;
   color:#171a23; font-family:var(--lhn-app-font-family, inherit);
 }
-.kp-avatar-card::before {
-  content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; pointer-events:none;
+#dashboardAvatarDialog:not([open]) { display:none; }
+#dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.4); -webkit-backdrop-filter:none; backdrop-filter:none; }
+html.dark #dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.5); }
+
+/* thẻ = kính mờ, đúng công thức popup đăng nhập: kính .78 + blur(24px) saturate(1.6) + viền .12 */
+.kp-avatar-card {
+  position:relative; box-sizing:border-box;
+  width:392px; max-width:100%; max-height:100%;
+  display:flex; flex-direction:column; overflow:hidden;
+  border:1px solid rgba(0,0,0,.12); border-radius:16px;
   background:rgba(255,255,255,.78);
   -webkit-backdrop-filter:blur(24px) saturate(1.6); backdrop-filter:blur(24px) saturate(1.6);
+  box-shadow:0 24px 64px rgba(0,0,0,.24);
+  color:#171a23; font-family:var(--lhn-app-font-family, inherit);
+  transform:translate(var(--kp-avatar-dx, 0px), var(--kp-avatar-dy, 0px));
 }
-html.dark .kp-avatar-card { border-color:rgba(255,255,255,.12); color:#f1f1f5;
-  box-shadow:0 28px 64px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4); }
-html.dark .kp-avatar-card::before { background:rgba(24,24,28,.78); }
+html.dark .kp-avatar-card { border-color:rgba(255,255,255,.12); background:rgba(24,24,28,.78);
+  color:#f1f1f5; box-shadow:0 24px 64px rgba(0,0,0,.5); }
+
+/* điện thoại dọc + điện thoại ngang (cao < 500px): sheet từ đáy, rộng hết bề ngang — như popup đăng nhập */
+@media (orientation: portrait) and (max-width:699px), (orientation: landscape) and (max-height:499.98px) {
+  #dashboardAvatarDialog { inset:auto 0 0 0; width:100%; height:auto; max-height:96dvh; padding:0; place-items:stretch; }
+  .kp-avatar-card { width:100%; max-width:100%; max-height:96dvh; border-width:1px 0 0; border-radius:22px 22px 0 0;
+    padding-bottom:env(safe-area-inset-bottom, 0px); box-shadow:0 -12px 40px rgba(0,0,0,.18); }
+  .kp-avatar-card::before { content:""; width:38px; height:5px; margin:8px auto 0; border-radius:3px; background:rgba(120,120,128,.4); flex:none; }
+}
 
 .kp-avatar-head { flex:none; display:flex; align-items:center; gap:10px; padding:12px 12px 12px 18px; border-bottom:1px solid rgba(0,0,0,.12); }
 html.dark .kp-avatar-head { border-color:rgba(255,255,255,.12); }

@@ -164,6 +164,20 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.455 | Arena.ai Agent sửa:**
+
+- Lỗi: popup vẫn lệch và không "giống popup đăng nhập". Đo trên ảnh người dùng: thẻ 684→1172 px ảnh (tâm 928) trùng khít ảnh trước → phép dịch của 3.5.454 **không có tác dụng** vì nó giả định thẻ đang canh theo khung nhìn.
+- Nay viết lại **theo đúng khuôn `.profile-auth-dialog`** (popup đăng nhập, settings.css:866):
+  - Hộp thoại: `position:fixed; inset:0; padding:16px; width:100%; height:100%; display:grid; place-items:center` — tự canh thẻ, không dựa vào `margin:auto` của trình duyệt.
+  - Thẻ: kính đặt **trực tiếp trên thẻ** (bỏ lớp `::before`): `background:rgba(255,255,255,.78)` / tối `rgba(24,24,28,.78)`, `backdrop-filter:blur(24px) saturate(1.6)`, viền `rgba(0,0,0,.12)` / `rgba(255,255,255,.12)`, bo 16, `box-shadow:0 24px 64px rgba(0,0,0,.24)`.
+  - `::backdrop`: `rgba(0,0,0,.4)` (tối `.5`), không blur.
+  - **Responsive như popup đăng nhập**: `@media (orientation:portrait) and (max-width:699px), (orientation:landscape) and (max-height:499.98px)` → hộp thoại thành sheet đáy `inset:auto 0 0 0`, thẻ rộng 100%, bo `22px 22px 0 0`, có tay nắm (`::before` 38×5), chừa `env(safe-area-inset-bottom)`.
+- Căn giữa theo Cài đặt: `syncAvatarDialogOffset()` nay **đo thật** — đặt dx/dy về 0, đọc `getBoundingClientRect()` của thẻ và của Cài đặt, dịch đúng bằng hiệu hai tâm (vừa ngang vừa dọc), không giả định khung nhìn; bỏ qua khi ở chế độ sheet điện thoại.
+- `width:392px; max-width:100%` (thay `min()`) cho chắc chắn.
+- Giữ nguyên: ảnh 200px, chân C (Đổi ảnh / Xoá ảnh), chữ phụ `#5f6575`.
+- File: `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 1207/1207 ngoặc; jsdom → hộp thoại `position:fixed; display:grid; place-items:center; padding:16px`, thẻ `width:392px; max-width:100%; background:rgba(255,255,255,.78)` (tối `rgba(24,24,28,.78)`), `backdrop-filter:blur(24px) saturate(1.6)`, viền `.12`. **Chưa xác minh bằng mắt** (không có trình duyệt trong sandbox).
+
 **2026-11-18 | v3.5.454 | Arena.ai Agent sửa:**
 
 - Lỗi: popup vẫn xám đục và **không canh giữa theo hộp thoại Cài đặt**. Đo trên ảnh người dùng (1920×1080, DPR 1.25): Cài đặt x 356→1631 (tâm 993,5 px ảnh = 794,8 CSS), popup x 684→1171 (tâm 927,5 px ảnh = 742 CSS) → popup lệch **~53 CSS px sang trái**.

@@ -213,13 +213,20 @@ function renderAvatarDialog() {
   if (removeButton) removeButton.hidden = !dataUrl;
 }
 function syncAvatarDialogOffset() {
-  // căn popup theo chiều ngang của hộp thoại Cài đặt (hộp thoại Cài đặt nằm trong vùng nội dung,
-  // lệch phải sidebar, nên popup canh theo khung nhìn sẽ bị lệch trái)
+  // Đo thật: dịch thẻ đúng bằng khoảng lệch giữa tâm thẻ và tâm hộp thoại Cài đặt (không giả định
+  // khung nhìn, vì hộp thoại Cài đặt nằm trong vùng nội dung lệch phải sidebar).
   const dialog = $("dashboardAvatarDialog"), sheet = $("dashboardSettingsDialog");
-  if (!dialog) return;
-  const rect = sheet?.open ? sheet.getBoundingClientRect() : null;
-  const dx = rect && rect.width ? Math.round(rect.left + rect.width / 2 - window.innerWidth / 2) : 0;
-  dialog.style.setProperty("--kp-avatar-dx", `${dx}px`);
+  const card = dialog?.querySelector(".kp-avatar-card");
+  if (!dialog || !card) return;
+  dialog.style.setProperty("--kp-avatar-dx", "0px");
+  dialog.style.setProperty("--kp-avatar-dy", "0px");
+  // trên điện thoại cả hai đều là sheet đáy → không dịch
+  if (window.matchMedia?.("(orientation: portrait) and (max-width:699px), (orientation: landscape) and (max-height:499.98px)").matches) return;
+  const target = sheet?.open ? sheet.getBoundingClientRect() : null;
+  if (!target || !target.width) return;
+  const box = card.getBoundingClientRect();
+  dialog.style.setProperty("--kp-avatar-dx", Math.round(target.left + target.width / 2 - (box.left + box.width / 2)) + "px");
+  dialog.style.setProperty("--kp-avatar-dy", Math.round(target.top + target.height / 2 - (box.top + box.height / 2)) + "px");
 }
 function openAvatarDialog() {
   const dialog = $("dashboardAvatarDialog");
