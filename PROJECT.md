@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.456 | Arena.ai Agent sửa:**
+
+- Lỗi (ảnh người dùng): popup nhảy xuống **góc dưới bên phải**, phần lớn ra ngoài màn hình.
+- Nguyên nhân: `openAvatarDialog()` gọi `syncAvatarDialogOffset()` **trước** `showModal()`. Lúc đó hộp thoại còn `display:none` nên `getBoundingClientRect()` của thẻ = **0**; phép dịch thành `tâm Cài đặt − 0` → dịch vài trăm px xuống phải.
+- Nay: gọi **sau** `showModal()` (đã có layout), và thêm chốt an toàn: nếu rect rỗng (width/height = 0) hoặc |dx|,|dy| > 240 thì **không dịch** — thẻ quay về đúng thế canh giữa của CSS (y popup đăng nhập).
+- Phần CSS giữ nguyên như 3.5.455 (viết theo `.profile-auth-dialog`): hộp thoại `fixed inset:0; padding:16px; display:grid; place-items:center`; thẻ kính `.78` + `blur(24px) saturate(1.6)`, viền `.12`, bo 16, rộng 392px; điện thoại → sheet đáy.
+- File: `js/dashboard/dashboard.js`, `manifest.json` (CSS không đổi).
+- Kiểm tra: `node --check` hợp lệ; đọc lại thứ tự trong `openAvatarDialog()`: `showModal()` → `syncAvatarDialogOffset()` → focus. **Chưa xác minh bằng mắt** (không có trình duyệt trong sandbox).
+
 **2026-11-18 | v3.5.455 | Arena.ai Agent sửa:**
 
 - Lỗi: popup vẫn lệch và không "giống popup đăng nhập". Đo trên ảnh người dùng: thẻ 684→1172 px ảnh (tâm 928) trùng khít ảnh trước → phép dịch của 3.5.454 **không có tác dụng** vì nó giả định thẻ đang canh theo khung nhìn.

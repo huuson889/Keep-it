@@ -213,27 +213,30 @@ function renderAvatarDialog() {
   if (removeButton) removeButton.hidden = !dataUrl;
 }
 function syncAvatarDialogOffset() {
-  // Đo thật: dịch thẻ đúng bằng khoảng lệch giữa tâm thẻ và tâm hộp thoại Cài đặt (không giả định
-  // khung nhìn, vì hộp thoại Cài đặt nằm trong vùng nội dung lệch phải sidebar).
+  // Đo SAU khi hộp thoại đã mở (lúc đóng thẻ có display:none nên rect = 0 → dịch sai rất xa).
+  // Dịch đúng bằng hiệu tâm thẻ và tâm hộp thoại Cài đặt; có chặn sai số bất thường.
   const dialog = $("dashboardAvatarDialog"), sheet = $("dashboardSettingsDialog");
   const card = dialog?.querySelector(".kp-avatar-card");
   if (!dialog || !card) return;
   dialog.style.setProperty("--kp-avatar-dx", "0px");
   dialog.style.setProperty("--kp-avatar-dy", "0px");
-  // trên điện thoại cả hai đều là sheet đáy → không dịch
+  if (!dialog.open) return;
   if (window.matchMedia?.("(orientation: portrait) and (max-width:699px), (orientation: landscape) and (max-height:499.98px)").matches) return;
   const target = sheet?.open ? sheet.getBoundingClientRect() : null;
-  if (!target || !target.width) return;
   const box = card.getBoundingClientRect();
-  dialog.style.setProperty("--kp-avatar-dx", Math.round(target.left + target.width / 2 - (box.left + box.width / 2)) + "px");
-  dialog.style.setProperty("--kp-avatar-dy", Math.round(target.top + target.height / 2 - (box.top + box.height / 2)) + "px");
+  if (!target || !target.width || !box.width || !box.height) return;
+  const dx = Math.round(target.left + target.width / 2 - (box.left + box.width / 2));
+  const dy = Math.round(target.top + target.height / 2 - (box.top + box.height / 2));
+  if (Math.abs(dx) > 240 || Math.abs(dy) > 240) return;
+  dialog.style.setProperty("--kp-avatar-dx", `${dx}px`);
+  dialog.style.setProperty("--kp-avatar-dy", `${dy}px`);
 }
 function openAvatarDialog() {
   const dialog = $("dashboardAvatarDialog");
   if (!dialog) return;
   renderAvatarDialog();
-  syncAvatarDialogOffset();
   if (!dialog.open) dialog.showModal();
+  syncAvatarDialogOffset();
   requestAnimationFrame(() => $("dashboardAvatarClose")?.focus());
 }
 function refreshDashboardSettings() {
