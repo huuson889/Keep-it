@@ -164,6 +164,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.460 | Arena.ai Agent sửa:**
+
+- Yêu cầu: popup đăng nhập chỉ còn **một form** (bỏ 2 tab Đăng nhập / Đăng ký) — kiểu "identifier-first" như Google, Microsoft, Slack, Notion.
+- Nay: nhập Email → rời ô (blur), Enter, hoặc bấm nút gửi thì hệ thống tự dò:
+  - **Email đã có** (`huson` / `huson@example.com`) → chỉ hiện **Mật khẩu** + nút **Đăng nhập ngay**.
+  - **Email chưa có** → hiện thêm **Nhập lại mật khẩu** + nút **Tạo tài khoản** (ô nhập lại mở/thu mượt bằng `AUTH_POPUP.morph` sẵn có).
+- Dò lại khi sửa email (sự kiện `input` đặt lại cờ); nếu người dùng **tự bấm** dòng chân "Chưa có tài khoản? Đăng ký" / "Đã có tài khoản? Đăng nhập" thì cờ `profileAuthManual = true` và hệ thống **không tự đổi ý** nữa cho tới khi email được sửa.
+- Kỹ thuật: `auth-popup.js` thêm `accountExists(username)` (so khớp chữ thường với dữ liệu demo cục bộ, không gửi đi đâu) và export trong `LHN_AUTH_POPUP`; `dashboard.js` thêm `detectProfileAuthMode()`, `setProfileAuthMode()` bỏ 4 dòng tab và chuyển sang class `is-register` trên `#profileAuthForm`; submit gọi dò trước khi `check()` nếu chưa chỉnh tay.
+- Dọn theo: bỏ khối tab trong `pages/dashboard.html` và trong `markup()` của `auth-popup.js` (2 bản markup luôn khớp nhau); bỏ CSS `.profile-auth-seg` (5 rule + 2 rule ở sheet dọc/ngang + tham chiếu trong `prefers-reduced-motion`); đổi 2 rule dòng chân từ `form:has(#profileRegisterTab.is-active)` sang `form.is-register`.
+- Nhãn: `profileCreateAccount` → **en "Create account" / vi "Tạo tài khoản" / ko "계정 만들기"** (trước là "Sign up/Đăng ký/가입", trùng nhãn link chân trang).
+- File: `pages/dashboard.html`, `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `css/dashboard/settings.css`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ cho 3 file JS; `grep` toàn repo không còn `profile-auth-seg` / `profileRegisterTab` / `profileLoginTab`; jsdom trên markup thật: không còn tablist, còn đủ Google, Email, Mật khẩu, Nhập lại, nút gửi, 2 dòng chân, `#profileRetypePasswordLabel` mặc định `hidden`. **Chưa chạy UI thật** (sandbox không có trình duyệt).
+
 **2026-11-18 | v3.5.459 | Arena.ai Agent sửa:**
 
 - Yêu cầu: **cửa sổ Cài đặt cũng có hiệu ứng hiện/ẩn giống popup đăng nhập**.

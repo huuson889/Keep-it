@@ -916,17 +916,7 @@
   .profile-auth-dialog form::-webkit-scrollbar { display: none; }
   .profile-auth-grip { display: none; }
 
-  /* Đăng nhập | Đăng ký: tab gạch chân như app — sát mép trên và hai bên thẻ; gạch tím trượt sang tab đang chọn */
-  .profile-auth-seg { position: relative; display: flex; margin: -20px -20px 0; border-bottom: 1px solid var(--au-line); }
-  .profile-auth-seg button { all: unset; display: flex; flex: 1 1 0; align-items: center; justify-content: center; min-width: 0; height: 52px; padding: 0 8px;
-    color: var(--au-mu); font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1; white-space: nowrap; cursor: pointer; transition: color .15s; }
-  .profile-auth-seg button:hover { color: var(--au-tx); }
-  .profile-auth-seg button.is-active { color: var(--au-brand-tx); }
-  .profile-auth-seg::after { content: ""; position: absolute; left: 0; bottom: -1px; width: 50%; height: 2px; border-radius: 2px 2px 0 0; background: var(--au-brand-tx);
-    transition: transform .22s cubic-bezier(.2, .8, .2, 1); pointer-events: none; }
-  .profile-auth-seg:has(#profileRegisterTab.is-active)::after { transform: translateX(100%); }
   .profile-auth-dialog button:focus-visible { outline: 2px solid var(--au-brand); outline-offset: 2px; }
-  .profile-auth-seg button:focus-visible { outline-offset: -2px; }
   .profile-auth-dialog input:focus-visible { outline: none; }
 
   /* thân */
@@ -956,8 +946,8 @@
   .profile-auth-switch { margin: 0; color: var(--au-mu); font-size: 14px; line-height: 20px; text-align: center; }
   .profile-auth-switch button { all: unset; margin-left: 2px; padding: 2px; border-radius: 6px; color: var(--au-brand-tx); font-family: inherit; font-weight: 600; cursor: pointer; }
   .profile-auth-switch button:hover { text-decoration: underline; text-underline-offset: 3px; }
-  .profile-auth-switch.is-register, .profile-auth-dialog form:has(#profileRegisterTab.is-active) .profile-auth-switch.is-login { display: none; }
-  .profile-auth-dialog form:has(#profileRegisterTab.is-active) .profile-auth-switch.is-register { display: block; }
+  .profile-auth-switch.is-register, .profile-auth-dialog form.is-register .profile-auth-switch.is-login { display: none; }
+  .profile-auth-dialog form.is-register .profile-auth-switch.is-register { display: block; }
 
   /* sheet điện thoại (dọc + ngang): y như sheet Cài đặt (#dashboardSettingsDialog) — chính hộp thoại là sheet nằm ở đáy, trượt lên bằng
      transform + @starting-style, kéo lên / xuống bằng js/shared/sheet-kit.js gắn vào hộp thoại; nền tối = ::backdrop mờ dần.
@@ -973,27 +963,24 @@
     @starting-style { .profile-auth-dialog[open] form { opacity: 1; transform: none; } }
     .profile-auth-grip { display: block; width: 36px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: rgba(120, 120, 128, .4); }
     .profile-auth-body { padding-top: 4px; }
-    .profile-auth-seg { margin-top: -4px; }
   }
   /* điện thoại dọc: cả bề ngang */
   @media (orientation: portrait) and (max-width: 699px) {
     .profile-auth-dialog form { border-width: 1px 0 0; }
   }
-  /* điện thoại ngang (cao < 500px): rộng tối đa 640px, giữa; 2 cột: trái tab + Google + câu chuyển, phải email — vừa khít, không cuộn */
+  /* điện thoại ngang (cao < 500px): rộng tối đa 640px, giữa; 2 cột: trái Google + câu chuyển, phải email — vừa khít, không cuộn */
   @media (orientation: landscape) and (max-height: 499.98px) {
     .profile-auth-dialog { width: min(640px, 100%); margin: 0 auto; }
     .profile-auth-dialog form { border-width: 1px 1px 0; }
     .profile-auth-body { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-areas: "side or fields" "note or fields" ". or fields"; grid-template-rows: auto auto 1fr;
       column-gap: 18px; row-gap: 14px; padding: 6px 20px 18px; }
-    .profile-auth-seg { margin: 0; }
-    .profile-auth-seg button { height: var(--au-h); }
     .profile-auth-side { grid-area: side; gap: 14px; }
     .profile-auth-fields { grid-area: fields; gap: 12px; }
     .profile-auth-switch { grid-area: note; text-align: left; }   /* cột trái luôn ở trên (đổi Đăng nhập ↔ Đăng ký không xê dịch) */
     .profile-auth-divider { grid-area: or; flex-direction: column; gap: 8px; }
     .profile-auth-divider::before, .profile-auth-divider::after { border-top: 0; border-left: 1px solid var(--au-line); }
   }
-  @media (prefers-reduced-motion: reduce) { .profile-auth-dialog, .profile-auth-dialog form, .profile-auth-seg::after { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .profile-auth-dialog, .profile-auth-dialog form { transition: none; } }
 
   /* Trong sheet của thanh Keepit (html.kp-embed, xem responsive-nav.js): lấp đầy khung, sheet ngoài có tay nắm / bo góc */
   html.kp-embed, html.kp-embed body { overflow: hidden; overscroll-behavior: none; background: transparent !important; color-scheme: light; }

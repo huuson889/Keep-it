@@ -11,7 +11,6 @@
     return `<form id="profileAuthForm" method="dialog"><span class="profile-auth-grip" aria-hidden="true"></span>
     <div class="profile-auth-body">
       <div class="profile-auth-side">
-        <div class="profile-auth-seg" role="tablist"><button id="profileLoginTab" type="button" role="tab" class="is-active">${t("profileLogin")}</button><button id="profileRegisterTab" type="button" role="tab">${t("profileRegister")}</button></div>
         <button id="profileGoogleLogin" class="profile-google-button" type="button">${GOOGLE}<span>${t("profileGoogleContinue")}</span></button>
       </div>
       <div class="profile-auth-divider"><span>${t("profileOrEmail")}</span></div>
@@ -79,5 +78,10 @@
     }
     return { sync, close, morph };
   }
-  globalThis.LHN_AUTH_POPUP = Object.freeze({ attach, check, markup, PHONE });
+  // v3.5.460: tài khoản có sẵn trên máy chưa? (dữ liệu demo cục bộ, không gửi đi đâu)
+  function accountExists(username) {
+    const value = String(username || "").trim().toLocaleLowerCase();
+    return value === "huson" || value === "huson@example.com";
+  }
+  globalThis.LHN_AUTH_POPUP = Object.freeze({ attach, check, markup, accountExists, PHONE });
 })();
