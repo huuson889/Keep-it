@@ -3047,11 +3047,21 @@ $("profileSwitchRegister").addEventListener("click", () => AUTH_POPUP.morph(() =
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
   event.preventDefault();
-  const typedEmail = $("profileUsername").value;
-  // sai định dạng email → báo ngay, không đi tiếp
+  const typedEmail = $("profileUsername").value.trim();
+  // Enter/gửi khi ô còn trống hoặc sai định dạng → chỉ báo lỗi tại ô Email, không đi tiếp
+  if (!typedEmail) {
+    showProfileAuthError(t("profileEmailRequired"), ["profileUsername"]);
+    $("profileUsername").focus();
+    return;
+  }
   if (!profileEmailLooksValid(typedEmail)) {
     showProfileAuthError(t("profileEmailInvalid"), ["profileUsername"]);
     $("profileUsername").focus();
+    return;
+  }
+  if (!$("profilePassword").value) {
+    showProfileAuthError(t("profilePasswordRequired"), ["profilePassword"]);
+    $("profilePassword").focus();
     return;
   }
   // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản

@@ -9,7 +9,7 @@
   const GOOGLE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.7-5H1.3v3.2A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.2a7.2 7.2 0 0 1 0-4.4V6.6H1.2a12 12 0 0 0 0 10.8l4.1-3.2Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8L20 3.2A11.7 11.7 0 0 0 12 0 12 12 0 0 0 1.2 6.6l4.1 3.2c1-2.9 3.6-5 6.7-5Z"/></svg>';
   // cùng markup với pages/dashboard.html (#profileAuthDialog) — trang web dựng bằng hàm này trong shadow DOM
   function markup(t) {
-    return `<form id="profileAuthForm" method="dialog"><span class="profile-auth-grip" aria-hidden="true"></span>
+    return `<form id="profileAuthForm" method="dialog" novalidate><span class="profile-auth-grip" aria-hidden="true"></span>
     <div class="profile-auth-body">
       <div class="profile-auth-side">
         <button id="profileGoogleLogin" class="profile-google-button" type="button">${GOOGLE}<span>${t("profileGoogleContinue")}</span></button>

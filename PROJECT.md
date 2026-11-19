@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.464 | Arena.ai Agent sửa:**
+
+- Lỗi: gõ email sai rồi **Enter** vẫn nhảy xuống ô Mật khẩu.
+- Nguyên nhân: `<form>` chưa có `novalidate`, các ô lại có `required` → khi Enter, trình duyệt chạy kiểm tra mặc định, thấy ô Mật khẩu trống nên **tự chuyển focus + bong bóng lỗi của Chrome**, chặn luôn sự kiện `submit` nên phần kiểm email của mình không chạy.
+- Nay: thêm `novalidate` cho `#profileAuthForm` (cả `pages/dashboard.html` và `markup()` của `auth-popup.js`) và tự kiểm theo thứ tự trong submit: **email trống → báo "Nhập email của bạn."**; **email sai định dạng → báo "Email không đúng định dạng."**; **mật khẩu trống → báo "Nhập mật khẩu."** Mỗi bước đều `focus()` về đúng ô và `return`, **không** đi tiếp. Enter giờ chỉ đi tiếp khi dữ liệu thật sự hợp lệ.
+- i18n mới: `profileEmailRequired`, `profilePasswordRequired` (en/vi/ko).
+- File: `pages/dashboard.html`, `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; `grep` xác nhận `novalidate` có ở cả 2 bản markup; đọc lại toàn bộ nhánh submit (6 bước, mỗi bước có `return`). **Chưa chạy UI thật.**
+
 **2026-11-18 | v3.5.463 | Arena.ai Agent sửa:**
 
 - Bổ sung 3 chuẩn UX còn thiếu cho ô Email / mật khẩu của popup đăng nhập:
