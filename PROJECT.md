@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.471 | Arena.ai Agent sửa:**
+
+- Người dùng: "khúc đó cái nào chưa căn giữa thì căn giữa hết".
+- Căn giữa nốt trong popup đăng nhập: nhãn **Email / Mật khẩu / Nhập lại mật khẩu** (`text-align:center`), chữ đã nhập + placeholder trong ô (`input { text-align:center }`), ô mật khẩu chừa đều `padding-left/right: 42px` để chữ nằm giữa thật (bên phải đã có con mắt), và bảng điều khoản — tiêu đề, nội dung, nút **Đóng** (`justify-self:center`).
+- Vốn đã giữa từ trước: tiêu đề, nút Google, dòng "hoặc email", câu lỗi, dòng điều khoản, nút Đăng nhập, dòng "Chưa có tài khoản? Đăng ký". **Không đổi**: con mắt vẫn ở mép phải trong ô (là nút điều khiển, không phải chữ).
+- File: `css/dashboard/settings.css`, `manifest.json`.
+- Kiểm tra: CSS 925/925 ngoặc (thêm 1 rule cho `input`). **Chưa chạy UI thật**.
+
 **2026-11-18 | v3.5.470 | Arena.ai Agent sửa:**
 
 - Người dùng: câu lỗi và dòng đồng ý điều khoản phải **căn giữa** (đang bám lề trái).

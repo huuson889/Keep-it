@@ -928,13 +928,13 @@
   .profile-auth-fields { display: flex; flex-direction: column; }
   .profile-auth-body { padding: 16px 20px 20px; background: transparent; }
   .profile-auth-side { gap: 18px; }
-  .profile-auth-body label { display: grid; gap: 6px; margin: 0; color: var(--au-mu); font-size: 13px; font-weight: 600; line-height: 18px; }
+  .profile-auth-body label { display: grid; gap: 6px; margin: 0; color: var(--au-mu); font-size: 13px; font-weight: 600; line-height: 18px; text-align: center; }
   .profile-auth-body label[hidden] { display: none !important; }
   .profile-auth-body input { width: 100%; height: var(--au-h); margin: 0; padding: 0 12px; border: 1px solid var(--au-field-line); border-radius: 10px; outline: 0;
     background: var(--au-field); color: var(--au-tx); font-family: inherit; font-size: 15px; font-weight: 400; line-height: normal; box-shadow: none; }
   /* ô mật khẩu + con mắt hiện/ẩn */
   .profile-auth-pw { position: relative; display: block; min-width: 0; }
-  .profile-auth-pw input { padding-right: 42px; }
+  .profile-auth-pw input { padding-right: 42px; padding-left: 42px; }
   .profile-auth-eye { position: absolute; top: 50%; right: 5px; translate: 0 -50%; width: 32px; height: 32px; display: grid; place-items: center;
     padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--au-mu); cursor: pointer; transition: color .15s, background .15s; }
   .profile-auth-eye:hover { color: var(--au-tx); background: var(--au-tile); }
@@ -942,7 +942,8 @@
   .profile-auth-eye svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .profile-auth-eye[aria-pressed="true"] .kp-eye-slash { display: none; }
   .profile-auth-eye[hidden] { display: none; }
-  .profile-auth-body input::placeholder { color: var(--au-mu); opacity: .8; }
+  .profile-auth-body input { text-align: center; }
+  .profile-auth-body input::placeholder { color: var(--au-mu); opacity: .8; text-align: center; }
   .profile-auth-body input:focus { border-color: var(--au-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-brand) 18%, transparent); }
   .profile-auth-dialog .profile-google-button, .profile-auth-dialog .profile-auth-submit { all: unset; display: flex; align-items: center; justify-content: center; gap: 10px; box-sizing: border-box;
     width: 100%; height: var(--au-h); padding: 0 14px; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 600; line-height: 1; text-align: center; cursor: pointer; }
@@ -969,9 +970,9 @@
   /* nội dung điều khoản / bảo mật mở ngay trong popup */
   .profile-auth-legal-panel { display: grid; gap: 7px; margin: 0; padding: 11px 12px; border: 1px solid var(--au-line); border-radius: 10px; background: var(--au-tile); }
   .profile-auth-legal-panel[hidden] { display: none; }
-  .profile-auth-legal-panel strong { color: var(--au-tx); font-size: 13px; font-weight: 650; }
-  .profile-auth-legal-panel p { margin: 0; color: var(--au-mu); font-size: 12.5px; line-height: 18px; }
-  .profile-auth-dialog .profile-auth-legal-panel button { all: unset; justify-self: start; color: var(--au-brand-tx); font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .profile-auth-legal-panel strong { color: var(--au-tx); font-size: 13px; font-weight: 650; text-align: center; }
+  .profile-auth-legal-panel p { margin: 0; color: var(--au-mu); font-size: 12.5px; line-height: 18px; text-align: center; }
+  .profile-auth-dialog .profile-auth-legal-panel button { all: unset; justify-self: center; color: var(--au-brand-tx); font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
   .profile-auth-dialog label.is-invalid input { border-color: var(--au-err); }
   .profile-auth-dialog label.is-invalid input:focus { border-color: var(--au-err); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-err) 18%, transparent); }
   .profile-auth-dialog label.is-invalid > span:first-child { color: var(--au-err); }
