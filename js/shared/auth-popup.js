@@ -28,7 +28,10 @@
         <div id="profileLegalPanel" class="profile-auth-legal-panel" hidden>
           <strong id="profileLegalTitle"></strong>
           <p id="profileLegalBody"></p>
-          <button id="profileLegalClose" type="button">${t("profileLegalClose")}</button>
+          <div class="profile-auth-legal-actions">
+            <button id="profileLegalFull" type="button">${t("profileLegalFull")}</button>
+            <button id="profileLegalClose" type="button">${t("profileLegalClose")}</button>
+          </div>
         </div>
         <button id="profileAuthSubmit" class="profile-auth-submit" type="submit">${t("profileLoginNow")}</button>
       </div>

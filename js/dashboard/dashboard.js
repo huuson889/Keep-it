@@ -3066,15 +3066,22 @@ $("profileTerms").addEventListener("change", () => {
   if ($("profileTerms").checked && $("profileAuthError").textContent === t("profileTermsRequired")) hideProfileAuthError();
 });
 // hai link mở nội dung ngay trong popup (bản demo: không có trang web điều khoản riêng)
+let profileLegalDoc = "terms";
 for (const button of document.querySelectorAll("#profileAuthDialog [data-legal]")) {
   button.addEventListener("click", () => {
     const terms = button.dataset.legal === "terms";
+    profileLegalDoc = terms ? "terms" : "privacy";
     $("profileLegalTitle").textContent = t(terms ? "profileTermsLink" : "profilePrivacyLink");
     $("profileLegalBody").textContent = t(terms ? "profileTermsBody" : "profilePrivacyBody");
     $("profileLegalPanel").hidden = false;
   });
 }
 $("profileLegalClose").addEventListener("click", () => { $("profileLegalPanel").hidden = true; });
+// bản đầy đủ (chỉ tiếng Anh) mở ở TAB MỚI để không mất chữ đã gõ trong form đăng ký
+$("profileLegalFull").addEventListener("click", () => {
+  const base = (globalThis.chrome?.runtime?.getURL ? chrome.runtime.getURL("pages/legal.html") : "legal.html");
+  window.open(`${base}#${profileLegalDoc}`, "_blank", "noopener");
+});
 $("profileSwitchRegister").addEventListener("click", () => { profileAuthAutoRegister = false; AUTH_POPUP.morph(() => setProfileAuthMode("register")); });
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {

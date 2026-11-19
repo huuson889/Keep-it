@@ -164,6 +164,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.473 | Arena.ai Agent sửa:**
+
+- Yêu cầu: điều khoản dài → popup chỉ giữ 2 câu tóm tắt, **bản đầy đủ ở trang riêng**, nội dung **chỉ tiếng Anh** cho mọi ngôn ngữ.
+- Thêm `pages/legal.html` + `css/pages/legal.css`: một trang gồm **2 tài liệu** (Terms of Use 9 mục / Privacy Policy 9 mục), có mục lục, neo `#terms` `#privacy`, tô nhẹ mục đang xem bằng `:target`, header dính (frosted), tự tối theo `prefers-color-scheme`, có kiểu in (`@media print`). **Không dùng JS** → đúng CSP của MV3 (`script-src 'self'`), mở bằng `pages/legal.html#terms` là nhảy đúng chỗ.
+- Popup: bảng điều khoản thêm hàng 2 nút **"Đọc bản đầy đủ"** (`profileLegalFull`) + **"Đóng"**, căn giữa (`.profile-auth-legal-actions`). Bấm "Đọc bản đầy đủ" → `window.open(chrome.runtime.getURL("pages/legal.html") + "#" + tài liệu đang xem, "_blank", "noopener")` → **tab mới**, nên form đăng ký không mất chữ đã gõ.
+- i18n: thêm `profileLegalFull` (en "Read the full version" / vi "Đọc bản đầy đủ" / ko "전문 보기"). Nội dung trang legal **cố ý chỉ tiếng Anh**, không đi qua `languages.js`.
+- Không cần khai báo `web_accessible_resources` (trang mở bằng `window.open` từ chính tiện ích).
+- File: `pages/legal.html` (mới), `css/pages/legal.css` (mới), `pages/dashboard.html`, `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `css/dashboard/settings.css`, `manifest.json`.
+- Kiểm tra: `node --check` 3 file JS hợp lệ; CSS settings 925/925, legal 47/47 ngoặc; jsdom: panel có 2 nút + đúng key i18n, trang legal có `#terms`/`#privacy`, 18 mục, `lang="en"`. **Chưa chạy UI thật**; chỗ `[contact email]` đang để trống chờ điền.
+
 **2026-11-18 | v3.5.472 | Arena.ai Agent sửa:**
 
 - Lỗi thứ tự: bấm tạo tài khoản khi chưa tích điều khoản thì hiện ngay "Bạn cần đồng ý Điều khoản sử dụng…" — **che mất lỗi ô nhập** (mật khẩu ngắn, nhập lại không khớp). Lỗi nhập phải hiện trước.

@@ -1,0 +1,195 @@
+/* Trang pháp lý (Terms of Use & Privacy Policy) — mở ở tab riêng từ popup đăng nhập.
+   Nội dung chỉ tiếng Anh; màu theo đúng bảng màu của app (sáng/tối). */
+
+:root {
+  color-scheme: light dark;
+  --lp-bg: #e9edf4;
+  --lp-card: #fff;
+  --lp-tx: #14151a;
+  --lp-mu: #61656f;
+  --lp-line: rgba(16, 18, 26, .12);
+  --lp-brand: #7262df;
+  --lp-mark: rgba(114, 98, 223, .12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --lp-bg: #000;
+    --lp-card: #0d0d0f;
+    --lp-tx: #eaeaea;
+    --lp-mu: #9a9aa0;
+    --lp-line: rgba(255, 255, 255, .12);
+    --lp-brand: #a5a9ff;
+    --lp-mark: rgba(165, 169, 255, .14);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--lp-bg);
+  color: var(--lp-tx);
+  font: 400 16px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.legal-shell {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+/* ------------------------------- đầu trang ------------------------------- */
+.legal-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 -20px 20px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--lp-line);
+  background: color-mix(in srgb, var(--lp-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.legal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--lp-tx);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -.01em;
+  text-decoration: none;
+}
+
+.legal-brand img { display: block; width: 26px; height: 26px; }
+
+.legal-jump { display: flex; gap: 6px; }
+
+.legal-jump a {
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--lp-mu);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.legal-jump a:hover { background: var(--lp-mark); color: var(--lp-brand); }
+
+/* -------------------------------- nội dung ------------------------------- */
+.legal-doc {
+  padding: 28px 32px 32px;
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+  background: var(--lp-card);
+}
+
+.legal-kicker {
+  margin: 0 0 6px;
+  color: var(--lp-brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.legal-doc h1 {
+  margin: 0 0 8px;
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+}
+
+.legal-meta { margin: 0 0 18px; color: var(--lp-mu); font-size: 13.5px; }
+
+.legal-lead {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--lp-mark);
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+.legal-toc { margin: 0 0 26px; padding: 14px 16px; border: 1px solid var(--lp-line); border-radius: 12px; }
+
+.legal-toc ol { margin: 0; padding-left: 20px; }
+
+.legal-toc a { color: var(--lp-brand); font-weight: 600; text-decoration: none; }
+
+.legal-toc a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.legal-section { padding-top: 8px; scroll-margin-top: 74px; }
+
+.legal-section + .legal-section {
+  margin-top: 34px;
+  padding-top: 30px;
+  border-top: 1px solid var(--lp-line);
+}
+
+.legal-section h2 {
+  margin: 0 0 14px;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.legal-section h3 {
+  margin: 22px 0 7px;
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -.005em;
+}
+
+.legal-section p { margin: 0 0 10px; }
+
+.legal-section ul { margin: 0 0 12px; padding-left: 22px; }
+
+.legal-section li { margin: 0 0 6px; }
+
+.legal-section strong { font-weight: 650; }
+
+.legal-section a { color: var(--lp-brand); }
+
+.legal-fill { color: var(--lp-mu); font-style: italic; }
+
+/* nhảy tới #terms / #privacy: tô nhẹ để biết mình đang ở đâu */
+.legal-section:target { background: var(--lp-mark); border-radius: 12px; box-shadow: 0 0 0 12px var(--lp-mark); }
+
+.legal-foot {
+  margin-top: 34px;
+  padding-top: 16px;
+  border-top: 1px solid var(--lp-line);
+  color: var(--lp-mu);
+  font-size: 13px;
+}
+
+.legal-foot p { margin: 0; }
+
+/* --------------------------------- hẹp ----------------------------------- */
+@media (max-width: 620px) {
+  .legal-shell { padding: 16px 12px 48px; }
+  .legal-top { margin: 0 -12px 14px; padding: 10px 12px; }
+  .legal-doc { padding: 20px 18px 24px; border-radius: 14px; }
+  .legal-doc h1 { font-size: 22px; }
+  .legal-section h2 { font-size: 19px; }
+}
+
+/* --------------------------------- in ------------------------------------ */
+@media print {
+  body { background: #fff; color: #000; }
+  .legal-top, .legal-toc { display: none; }
+  .legal-shell { max-width: none; padding: 0; }
+  .legal-doc { padding: 0; border: 0; }
+  .legal-section:target { background: none; box-shadow: none; }
+  .legal-section { break-inside: avoid; }
+}

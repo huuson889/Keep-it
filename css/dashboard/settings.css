@@ -969,6 +969,7 @@
   /* nội dung điều khoản / bảo mật mở ngay trong popup */
   .profile-auth-legal-panel { display: grid; gap: 7px; margin: 0; padding: 11px 12px; border: 1px solid var(--au-line); border-radius: 10px; background: var(--au-tile); }
   .profile-auth-legal-panel[hidden] { display: none; }
+  .profile-auth-legal-actions { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 6px 18px; margin-top: 3px; }
   .profile-auth-legal-panel strong { color: var(--au-tx); font-size: 13px; font-weight: 650; }
   .profile-auth-legal-panel p { margin: 0; color: var(--au-mu); font-size: 12.5px; line-height: 18px; }
   .profile-auth-dialog .profile-auth-legal-panel button { all: unset; justify-self: start; color: var(--au-brand-tx); font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
