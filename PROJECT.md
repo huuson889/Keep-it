@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.462 | Arena.ai Agent sửa:**
+
+- (1) **Email phải đúng định dạng**: thêm `validEmail()` trong `auth-popup.js` — regex `^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$` (bắt buộc có tên miền + đuôi ≥ 2 chữ) và chặn thêm `..`, chấm ở đầu/cuối phần tên. `check()` trả `profileEmailInvalid` cho mọi trường hợp sai; `dashboard.js` kiểm định dạng **trước** khi xét tài khoản có sẵn, báo lỗi và đưa con trỏ về ô Email.
+- (2) **Con mắt hiện/ẩn mật khẩu** cho cả ô Mật khẩu và Nhập lại mật khẩu: bọc mỗi ô trong `.profile-auth-pw` + nút `.profile-auth-eye` (`data-password-toggle="<id ô>"`, icon mắt có gạch chéo), bấm để đổi `type` password ↔ text, đổi `aria-pressed` + `aria-label`, gạch chéo ẩn khi đang hiện (`[aria-pressed="true"] .kp-eye-slash{display:none}`), nhãn dịch theo ngôn ngữ trong `setProfileAuthMode()`.
+- (3) **Mật khẩu tối thiểu 8 ký tự** khi tạo tài khoản: `check("register")` trả `profilePasswordShort` nếu `< 8`; đăng nhập (tài khoản demo `123`) **không** áp luật này.
+- i18n mới: `profileEmailInvalid`, `profilePasswordShort`, `profileShowPassword`, `profileHidePassword` (en/vi/ko).
+- File: `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `pages/dashboard.html`, `css/dashboard/settings.css`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra (chạy thật bằng node, không cần trình duyệt): `validEmail` đúng 8/8 ca thử (`abc` ✗, `a@b` ✗, `a@b.c` ✗, `a@b.co` ✓, `huuson889@gmail.com` ✓, `a..b@x.com` ✗, `.a@x.com` ✗, `a@x-y.com` ✓); `check()`: login `huson@example.com/123` ✓, `huson/sai` → `profileBadCredentials`, email rác → `profileEmailInvalid`, register `12345678` ✓, `1234567` → `profilePasswordShort`, email rác → `profileEmailInvalid`, nhập lại lệch → `profilePasswordMismatch`. `node --check` hợp lệ 3 file JS. **Chưa chạy UI thật** (icon, vị trí con mắt) — cần người dùng xem.
+
 **2026-11-18 | v3.5.461 | Arena.ai Agent sửa:**
 
 - Lỗi: 3.5.460 dò email **ngay khi rời ô**, nên vừa gõ email đã nhảy ra "Nhập lại mật khẩu" + "Tạo tài khoản" — sai hành vi yêu cầu.

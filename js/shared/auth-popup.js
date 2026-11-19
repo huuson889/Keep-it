@@ -5,6 +5,7 @@
 (() => {
   if (globalThis.LHN_AUTH_POPUP) return;
   const PHONE = matchMedia("(orientation: portrait) and (max-width: 699px), (orientation: landscape) and (max-height: 499.98px)");   // sheet từ đáy: điện thoại dọc + ngang
+  const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.9"/><path class="kp-eye-slash" d="M4 4l16 16"/></svg>';
   const GOOGLE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5a5.6 5.6 0 0 1-2.4 3.7v3h3.9c2.3-2.1 3.5-5.2 3.5-8.9Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.7-5H1.3v3.2A12 12 0 0 0 12 24Z"/><path fill="#FBBC05" d="M5.3 14.2a7.2 7.2 0 0 1 0-4.4V6.6H1.2a12 12 0 0 0 0 10.8l4.1-3.2Z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.4.6 4.6 1.8L20 3.2A11.7 11.7 0 0 0 12 0 12 12 0 0 0 1.2 6.6l4.1 3.2c1-2.9 3.6-5 6.7-5Z"/></svg>';
   // cùng markup với pages/dashboard.html (#profileAuthDialog) — trang web dựng bằng hàm này trong shadow DOM
   function markup(t) {
@@ -16,8 +17,8 @@
       <div class="profile-auth-divider"><span>${t("profileOrEmail")}</span></div>
       <div class="profile-auth-fields">
         <label><span>${t("profileUsername")}</span><input id="profileUsername" type="text" placeholder="${t("profileUsernamePlaceholder")}" autocomplete="email" required></label>
-        <label><span>${t("profilePassword")}</span><input id="profilePassword" type="password" placeholder="${t("profilePasswordPlaceholder")}" autocomplete="current-password" required></label>
-        <label id="profileRetypePasswordLabel" hidden><span>${t("profileRetypePassword")}</span><input id="profileRetypePassword" type="password" placeholder="${t("profileRetypePassword")}" autocomplete="new-password"></label>
+        <label><span>${t("profilePassword")}</span><span class="profile-auth-pw"><input id="profilePassword" type="password" placeholder="${t("profilePasswordPlaceholder")}" autocomplete="current-password" required><button class="profile-auth-eye" type="button" data-password-toggle="profilePassword" aria-pressed="false" aria-label="${t("profileShowPassword")}" data-label-show="${t("profileShowPassword")}" data-label-hide="${t("profileHidePassword")}">${EYE}</button></span></label>
+        <label id="profileRetypePasswordLabel" hidden><span>${t("profileRetypePassword")}</span><span class="profile-auth-pw"><input id="profileRetypePassword" type="password" placeholder="${t("profileRetypePassword")}" autocomplete="new-password"><button class="profile-auth-eye" type="button" data-password-toggle="profileRetypePassword" aria-pressed="false" aria-label="${t("profileShowPassword")}" data-label-show="${t("profileShowPassword")}" data-label-hide="${t("profileHidePassword")}">${EYE}</button></span></label>
         <p id="profileAuthError" class="profile-auth-error" role="status" hidden></p>
         <button id="profileAuthSubmit" class="profile-auth-submit" type="submit">${t("profileLoginNow")}</button>
       </div>
@@ -26,19 +27,45 @@
     </div></form>`;
   }
   // kiểm tra mô phỏng (chuyển nguyên từ dashboard.js) → { profile } hoặc { error: khoá nhãn }
+  const KNOWN = ["huson", "huson@example.com"];
+  // định dạng email: có tên, có @, tên miền có dấu chấm, đuôi ≥ 2 chữ; không "..", không chấm ở đầu/cuối
+  function validEmail(value) {
+    const email = String(value || "").trim();
+    if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test(email)) return false;
+    const local = email.split("@")[0];
+    return !local.startsWith(".") && !local.endsWith(".") && !email.includes("..");
+  }
+  function accountExists(username) {
+    return KNOWN.includes(String(username || "").trim().toLocaleLowerCase());
+  }
   function check(mode, username, password, retype) {
     username = String(username || "").trim();
     if (mode === "google") return { profile:{ username:"huson", email:"huuson889@gmail.com", displayName:"Huson", createdAt:Date.now() } };
+    if (!validEmail(username) && !accountExists(username)) return { error:"profileEmailInvalid" };
     if (mode === "login") {
-      if (!["huson", "huson@example.com"].includes(username.toLocaleLowerCase()) || password !== "123") return { error:"profileBadCredentials" };
+      if (!accountExists(username) || password !== "123") return { error:"profileBadCredentials" };
       return { profile:{ username:username.includes("@") ? username.split("@")[0] : "huson", email:username.includes("@") ? username : "huuson889@gmail.com", displayName:"Huson", createdAt:Date.now() } };
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username) || String(password || "").length < 1) return { error:"profileNeedFields" };
+    if (String(password || "").length < 8) return { error:"profilePasswordShort" };
     if (password !== retype) return { error:"profilePasswordMismatch" };
     const displayName = username.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
     return { profile:{ username:username.split("@")[0], email:username, displayName, createdAt:Date.now() } };
   }
   function attach(dialog, opts = {}) {
+    // con mắt hiện / ẩn mật khẩu
+    dialog.querySelectorAll("[data-password-toggle]").forEach(button => {
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        const input = dialog.querySelector("#" + button.dataset.passwordToggle);
+        if (!input) return;
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        button.setAttribute("aria-pressed", String(show));
+        const label = button.dataset[show ? "labelHide" : "labelShow"];
+        if (label) button.setAttribute("aria-label", label);
+        input.focus({ preventScroll:true });
+      });
+    });
     // vuốt / chặn cuộn: dùng chung sheet-kit với sheet Cài đặt (js/shared/sheet-kit.js), gắn vào CHÍNH hộp thoại như #dashboardSettingsDialog —
     // điện thoại (dọc + ngang): hộp thoại là sheet, kéo lên / xuống y như Cài đặt, kéo xuống đủ xa = đóng; thẻ giữa màn hình: không kéo; luôn: trang phía sau không cuộn
     let kitted = false;
@@ -78,10 +105,5 @@
     }
     return { sync, close, morph };
   }
-  // v3.5.460: tài khoản có sẵn trên máy chưa? (dữ liệu demo cục bộ, không gửi đi đâu)
-  function accountExists(username) {
-    const value = String(username || "").trim().toLocaleLowerCase();
-    return value === "huson" || value === "huson@example.com";
-  }
-  globalThis.LHN_AUTH_POPUP = Object.freeze({ attach, check, markup, accountExists, PHONE });
+  globalThis.LHN_AUTH_POPUP = Object.freeze({ attach, check, markup, accountExists, validEmail, PHONE });
 })();

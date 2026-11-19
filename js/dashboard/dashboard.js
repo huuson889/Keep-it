@@ -592,6 +592,13 @@ function setProfileAuthMode(mode) {
   if (!isRegister) $("profileRetypePassword").value = "";
   $("profilePassword").autocomplete = isRegister ? "new-password" : "current-password";
   $("profileAuthSubmit").textContent = isRegister ? t("profileCreateAccount") : t("profileLoginNow");
+  // nhãn đọc màn hình cho nút con mắt, theo ngôn ngữ đang chọn
+  for (const button of document.querySelectorAll("#profileAuthDialog .profile-auth-eye")) {
+    const showing = button.getAttribute("aria-pressed") === "true";
+    button.dataset.labelShow = t("profileShowPassword");
+    button.dataset.labelHide = t("profileHidePassword");
+    button.setAttribute("aria-label", showing ? t("profileHidePassword") : t("profileShowPassword"));
+  }
   $("profileAuthError").hidden = true;
   profileAuthMode = mode;
 }
@@ -2997,9 +3004,16 @@ $("profileSwitchRegister").addEventListener("click", () => AUTH_POPUP.morph(() =
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
   event.preventDefault();
-  // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản
   const typedEmail = $("profileUsername").value;
-  if (profileAuthMode === "login" && typedEmail.trim() && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
+  // sai định dạng email → báo ngay, không đi tiếp
+  if (!LHN_AUTH_POPUP.validEmail(typedEmail) && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
+    $("profileAuthError").textContent = t("profileEmailInvalid");
+    $("profileAuthError").hidden = false;
+    $("profileUsername").focus();
+    return;
+  }
+  // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản
+  if (profileAuthMode === "login" && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
     AUTH_POPUP.morph(() => setProfileAuthMode("register"));
     $("profileAuthError").textContent = t("profileAccountNotFound");
     $("profileAuthError").hidden = false;
