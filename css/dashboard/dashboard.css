@@ -1326,10 +1326,19 @@ html.dark #dashboardSettingsDialog .settings-picture-trigger:focus-visible { out
   border:0; background:transparent; box-shadow:none; overflow:hidden;
   display:grid; place-items:center;
   color:#171a23; font-family:var(--lhn-app-font-family, inherit);
+  color-scheme:light; overscroll-behavior:contain; -webkit-tap-highlight-color:transparent;
+  transition:display .3s allow-discrete, overlay .3s allow-discrete;
 }
 #dashboardAvatarDialog:not([open]) { display:none; }
-#dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.4); -webkit-backdrop-filter:none; backdrop-filter:none; }
-html.dark #dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.5); }
+html.dark #dashboardAvatarDialog { color-scheme:dark; }
+/* nền sau: y hệt popup đăng nhập — .4, không blur, mờ dần; ngang (điện thoại + máy tính ngang) dùng .24 */
+#dashboardAvatarDialog::backdrop {
+  background:rgba(0,0,0,.4); -webkit-backdrop-filter:none; backdrop-filter:none; opacity:1;
+  transition:opacity .3s, display .3s allow-discrete, overlay .3s allow-discrete;
+}
+#dashboardAvatarDialog:not([open])::backdrop { opacity:0; }
+@starting-style { #dashboardAvatarDialog[open]::backdrop { opacity:0; } }
+@media (orientation: landscape) { #dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.24); } }
 
 /* thẻ = kính mờ, đúng công thức popup đăng nhập: kính .78 + blur(24px) saturate(1.6) + viền .12 */
 .kp-avatar-card {
@@ -1341,10 +1350,14 @@ html.dark #dashboardAvatarDialog::backdrop { background:rgba(0,0,0,.5); }
   -webkit-backdrop-filter:blur(24px) saturate(1.6); backdrop-filter:blur(24px) saturate(1.6);
   box-shadow:0 24px 64px rgba(0,0,0,.24);
   color:#171a23; font-family:var(--lhn-app-font-family, inherit);
-  transform:translate(var(--kp-avatar-dx, 0px), var(--kp-avatar-dy, 0px));
+  translate:var(--kp-avatar-dx, 0px) var(--kp-avatar-dy, 0px);
+  opacity:1; transform:none; transition:opacity .18s ease-out, transform .18s ease-out;
 }
 html.dark .kp-avatar-card { border-color:rgba(255,255,255,.12); background:rgba(24,24,28,.78);
   color:#f1f1f5; box-shadow:0 24px 64px rgba(0,0,0,.5); }
+/* hiện dần + phóng nhẹ như popup đăng nhập (dùng transform, tách khỏi translate căn giữa) */
+#dashboardAvatarDialog:not([open]) .kp-avatar-card { opacity:0; transform:scale(.97); }
+@starting-style { #dashboardAvatarDialog[open] .kp-avatar-card { opacity:0; transform:scale(.97); } }
 
 /* điện thoại dọc + điện thoại ngang (cao < 500px): sheet từ đáy, rộng hết bề ngang — như popup đăng nhập */
 @media (orientation: portrait) and (max-width:699px), (orientation: landscape) and (max-height:499.98px) {
@@ -1354,7 +1367,10 @@ html.dark .kp-avatar-card { border-color:rgba(255,255,255,.12); background:rgba(
   @starting-style { #dashboardAvatarDialog[open] { transform:translateY(100%); } }
   .kp-avatar-card { width:100%; max-width:100%; max-height:96dvh; border-width:1px 0 0; border-radius:22px 22px 0 0;
     padding-bottom:env(safe-area-inset-bottom, 0px); box-shadow:0 -12px 40px rgba(0,0,0,.18); }
-  .kp-avatar-card::before { content:""; width:38px; height:5px; margin:8px auto 0; border-radius:3px; background:rgba(120,120,128,.4); flex:none; }
+  .kp-avatar-card::before { content:""; width:36px; height:5px; margin:8px auto 0; border-radius:3px; background:rgba(120,120,128,.4); flex:none; }
+  /* sheet thì trượt cả hộp thoại — thẻ không phóng/nhấp nháy nữa (như mẫu) */
+  .kp-avatar-card, #dashboardAvatarDialog:not([open]) .kp-avatar-card { opacity:1; transform:none; transition:none; }
+  @starting-style { #dashboardAvatarDialog[open] .kp-avatar-card { opacity:1; transform:none; } }
 }
 
 .kp-avatar-head { flex:none; display:flex; align-items:center; gap:10px; padding:12px 12px 12px 18px; border-bottom:1px solid rgba(0,0,0,.12); }
@@ -1367,7 +1383,7 @@ html.dark .kp-avatar-close { color:#7c7c88; }
 html.dark .kp-avatar-close:hover { background:rgba(255,255,255,.09); color:#f1f1f5; }
 .kp-avatar-close svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
 
-.kp-avatar-body { flex:1 1 auto; min-height:0; overflow:auto; display:grid; justify-items:center; gap:13px; padding:24px 20px 20px; }
+.kp-avatar-body { flex:1 1 auto; min-height:0; overflow:auto; overscroll-behavior:contain; display:grid; justify-items:center; gap:13px; padding:24px 20px 20px; }
 .kp-avatar-preview { width:200px; height:200px; display:grid; place-items:center; overflow:hidden; border-radius:50%;
   background:#7262df; color:#fff; font-size:68px; font-weight:650;
   box-shadow:0 0 0 1px rgba(16,18,32,.14), 0 16px 34px rgba(16,18,32,.18); }

@@ -164,6 +164,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.458 | Arena.ai Agent sửa:**
+
+- Người dùng chốt: làm popup Ảnh hồ sơ **giống hệt** popup đăng nhập (`.profile-auth-dialog`, settings.css:866–899). Lần này copy nguyên giá trị mẫu, không tự thêm.
+- (1) **Hiện/ẩn**: hộp thoại `transition: display .3s allow-discrete, overlay .3s allow-discrete`; thẻ `opacity:1; transform:none; transition: opacity .18s ease-out, transform .18s ease-out` + `[not([open])]{opacity:0; transform:scale(.97)}` + `@starting-style`; `::backdrop` `opacity:1` → `[not([open])]{opacity:0}` + `@starting-style`, `transition: opacity .3s, display .3s allow-discrete, overlay .3s allow-discrete`. Sheet điện thoại: thẻ `opacity:1; transform:none; transition:none` (trượt bằng cả hộp thoại như mẫu).
+- (2) `color-scheme: light` trên hộp thoại, `html.dark` → `dark`. (3) `overscroll-behavior: contain` trên hộp thoại **và** trên vùng cuộn thật `.kp-avatar-body`. (4) `-webkit-tap-highlight-color: transparent`.
+- (5) `::backdrop` về **`rgba(0,0,0,.4)`** cho cả hai chế độ (bỏ `.5` tôi tự thêm) + `@media (orientation: landscape){ background: rgba(0,0,0,.24) }` như mẫu. (6) Tay nắm sheet **36×5** (trước 38×5).
+- Kỹ thuật: căn giữa bằng `translate: var(--kp-avatar-dx) var(--kp-avatar-dy)` (thuộc tính rời) để hiệu ứng phóng `transform: scale(.97)` không đè lên phép dịch.
+- Không copy (không cần): `z-index` (dialog top layer), `box-sizing` cho mọi con (`*{box-sizing:border-box}` đã có ở đầu `dashboard.css`), `font-size/line-height` gốc. Giữ khác có lý do: chỉ thân thẻ cuộn (để nút Đổi ảnh / Xoá ảnh luôn thấy) và 392px / bo 16 theo thiết kế đã chốt.
+- File: `css/dashboard/dashboard.css`, `manifest.json` (JS không đổi).
+- Kiểm tra: CSS 1221/1221 ngoặc; jsdom → hộp thoại `fixed/grid/center`, `color-scheme:light`, `overscroll-behavior:contain`, `transition: display .3s allow-discrete, overlay .3s allow-discrete`; thẻ `392px / max-width:100% / rgba(255,255,255,.78) / blur(24px) saturate(1.6) / opacity:1 / transition: opacity .18s, transform .18s`, `translate` dùng biến căn giữa. **Chưa xác minh bằng mắt** (không có trình duyệt trong sandbox).
+
 **2026-11-18 | v3.5.457 | Arena.ai Agent sửa:**
 
 - Người dùng báo: ở chế độ điện thoại (DevTools 455×696), sheet **Ảnh hồ sơ không kéo xuống để đóng** được — trong khi sheet Cài đặt và popup đăng nhập kéo được.
