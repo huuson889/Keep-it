@@ -472,7 +472,12 @@ function renderProfileMenu() {
     emailNode.textContent = activeEmail;
     emailNode.hidden = !demoProfile || !activeEmail;
   }
-  if (menuToggleAvatar) menuToggleAvatar.textContent = Array.from(activeName)[0] || "B";
+  if (menuToggleAvatar) {
+    menuToggleAvatar.classList.toggle("profile-avatar-guest", !demoProfile);
+    menuToggleAvatar.innerHTML = demoProfile
+      ? profilePictureMarkup(demoProfile, escapeHtml(String(activeName).slice(0, 1).toLocaleUpperCase()))
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
+  }
   if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
   if (popoverStatus) { popoverStatus.textContent = t("profileSignInToSync"); popoverStatus.hidden = Boolean(demoProfile); }
   for (const item of [syncMenuItem, helpMenuItem]) if (item) item.hidden = !demoProfile;

@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.443 | Arena.ai Agent sửa:**
+
+- Avatar và badge ở chân sidebar Dashboard nay dùng đúng thành phần của khung **Cài đặt**: avatar là `.profile-avatar .profile-avatar-guest` (khách: viền nét đứt + icon người; đã đăng nhập: ảnh đại diện qua `profilePictureMarkup`) thay cho chữ cái "B"; badge dùng `.kp-plan-badge[data-plan]` với đúng bảng màu của Cài đặt (sáng `#b9b3ff`/`#f2efff`/`#6b5ce0`, tối `rgba(255,255,255,.14)`/`rgba(255,255,255,.06)`/`#a5a9ff`).
+- `renderProfileMenu()` cập nhật avatar giống `refreshSettings()` (cùng hàm `profilePictureMarkup`, cùng SVG khách) nên hai nơi không lệch nhau nữa.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): `node --check js/dashboard/dashboard.js` hợp lệ; `grep reference-avatar-letter` còn đúng 1 chỗ dùng kèm `profile-avatar profile-avatar-guest`; badge có `kp-plan-badge` + `data-plan="free"`. **Chưa chụp ảnh được** (sandbox thiếu `xvfb` + lib Chromium, không có root).
+
 **2026-11-18 | v3.5.442 | Arena.ai Agent sửa:**
 
 - Icon tab Ghi chú trong sidebar Dashboard: dùng **đúng icon "npen" của thanh Keepit trên trang web** (`js/content/keepit-bar.js`, `ICONS.npen` — sổ có gáy xoắn + bút), thay cho hình em tự vẽ ở 3.5.441. Thanh tab dưới ở mobile (`responsive-nav.js`) lấy icon từ sidebar nên cũng thành npen theo.

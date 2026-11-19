@@ -1235,3 +1235,16 @@ html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTo
   background:rgba(13,13,15,.72)!important;
   -webkit-backdrop-filter:blur(12px) saturate(1.4); backdrop-filter:blur(12px) saturate(1.4);
 }
+/* v3.5.443 — avatar + badge "Miễn phí" ở chân sidebar dùng đúng kiểu trong Cài đặt */
+#dashboardSidebar .reference-avatar-letter.profile-avatar {
+  width:28px; height:28px; flex:0 0 28px; padding:0; font-size:11px; font-weight:700;
+  box-shadow:none; border-radius:50%;
+}
+#dashboardSidebar .reference-avatar-letter.profile-avatar svg { width:15px; height:15px; }
+#dashboardSidebar .reference-avatar-letter.profile-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+#dashboardSidebar .reference-footer-button > .kp-plan-badge {
+  border:1px solid #b9b3ff; background:#f2efff; color:#6b5ce0; text-shadow:none;
+}
+html.dark #dashboardSidebar .reference-footer-button > .kp-plan-badge {
+  border-color:rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#a5a9ff;
+}
