@@ -83,6 +83,9 @@ async function openPdfFromUrl(url,fileAccessDenied=false){
   await importFiles([new File([blob],pdfFileName(source),{type:'application/pdf',lastModified:Date.now()})]);
  }catch(error){console.warn('Could not import PDF from the active tab',error);showPdfFallback(local);}
 }
+/* v3.5.481: khi nhúng, khung là iframe ẩn → popup "Đang mở tệp" do Dashboard vẽ,
+   khung chỉ báo từng bước. */
+function importNote(payload){if(!EMBEDDED||parent===window)return;try{parent.postMessage({type:'KEEPIT_DOCUMENTS_IMPORT_STEP',...payload},location.origin);}catch{}}
 async function importFiles(files){
  const outcome={added:0,skipped:0,error:''};
  if(loading){outcome.error='documentsBusy';return outcome;}
@@ -93,12 +96,13 @@ async function importFiles(files){
    const type=kindOf(file.name)||kindByMime(file.type);if(!type){outcome.error=outcome.error||'unsupported';showError(new Error('unsupported'),file.name);$('#errMsg').textContent=t('unsupported');continue;}
    if(!file.size||file.size>(type==='image'?30:50)*MB){outcome.error=outcome.error||'fileLimit';showError(new Error('fileLimit'),file.name);$('#errMsg').textContent=t('fileLimit');continue;}
    let engine=null;try{
+    importNote({phase:'start',name:file.name,bytes:file.size,kind:type});
     $('#oName').textContent=file.name;$('#oIco').textContent=TYPE[type].label;$('#oIco').style.background=TYPE[type].color;$('#oMeta').textContent=fmtSize(file.size);$('#oSteps').innerHTML=`<li class="run"><i></i>${t('opening')}</li>`;$('#oFill').style.width='0%';showModal('#openWrap',true);
     const id=await Store.fingerprint(file);check();const old=await Store.get('meta',id);if(old){first||=id;outcome.skipped++;continue;}
-    engine=await KeepitDocumentRenderers.prepare(file,type,{password:reason=>askPassword(reason,file.name),check,progress:n=>{$('#oFill').style.width=Math.round(n*95)+'%';}});check();
+    engine=await KeepitDocumentRenderers.prepare(file,type,{password:reason=>{importNote({phase:'password'});return askPassword(reason,file.name);},check,progress:n=>{$('#oFill').style.width=Math.round(n*95)+'%';importNote({phase:'progress',percent:Math.round(n*95)});}});check();
     let thumbnail='';try{if(!engine.passwordProtected)thumbnail=await engine.thumbnail();}catch{}
     const pages=engine.pages,meta={id,name:file.name,title:file.name.replace(/\.[^.]+$/,''),type,image:type==='image',format:extOf(file.name).toUpperCase(),bytes:file.size,pages:pages.length,at:1,opened:Date.now(),imported:Date.now(),width:pages[0].width,height:pages[0].height,scan:type!=='image'&&!pages.some(p=>p.texts.length),hl:0,notes:0,thumbnail};
-    $('#oSteps').innerHTML=`<li class="done"><i>✓</i>${t('saving')}</li>`;check();await Store.importFile(meta,file);outcome.added++;check();if(!first){first=id;firstEngine=engine;engine=null;}$('#oFill').style.width='100%';
+    importNote({phase:'save'});$('#oSteps').innerHTML=`<li class="done"><i>✓</i>${t('saving')}</li>`;check();await Store.importFile(meta,file);outcome.added++;check();if(!first){first=id;firstEngine=engine;engine=null;}$('#oFill').style.width='100%';
    }catch(error){if(cycle===importCycle){const raw=String(error?.message||error||'');if(!/cancel/i.test(raw))outcome.error=outcome.error||raw||'documentsBadFile';showError(error,file.name);}}finally{engine?.dispose();showModal('#openWrap',false);}
   }
   if(first&&cycle===importCycle){await refreshLibrary();filter='all';renderLibrary();const prepared=firstEngine;firstEngine=null;await openViewer(first,'orig',prepared);}
@@ -596,6 +600,7 @@ if(EMBEDDED)addEventListener('message',event=>{
   void openViewer(data.id,data.mode==='read'?'read':'orig').catch(()=>toast(t('storageFailed')));
   return;
  }
+ if(data.type==='KEEPIT_DOCUMENTS_IMPORT_CANCEL'){++importCycle;showModal('#openWrap',false);return;}
  if(data.type==='KEEPIT_DOCUMENTS_IMPORT_FILES'&&Array.isArray(data.files)&&data.files.length){
   void (async()=>{
    // v3.5.478: importFiles tự đếm số tài liệu mới / bị trùng / lỗi — không nuốt lỗi nữa,

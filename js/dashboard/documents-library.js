@@ -71,6 +71,68 @@
     });
   }
 
+  /* ---------- popup "Đang mở tệp" (v3.5.481) ----------
+     Khung documents.html là iframe ẩn khi Dashboard vẽ thư viện, nên popup vẽ ở đây;
+     khung báo tiến trình qua KEEPIT_DOCUMENTS_IMPORT_STEP. */
+  const KIND_LABEL = { pdf:'PDF', docx:'Word', pptx:'PowerPoint', image:'IMG' };
+  const KIND_COLOR = { pdf:'#e5484d', docx:'#2f6fe4', pptx:'#e2702b', image:'#269b7b' };
+  let openHideTimer = 0, importCancelled = false;
+  function openCardNode() {
+    let node = document.getElementById('docLibOpenCard');
+    if (node) return node;
+    node = document.createElement('div');
+    node.id = 'docLibOpenCard';
+    node.className = 'dlib-open';
+    node.innerHTML = `
+      <div class="dlib-open-card" role="dialog" aria-modal="true" aria-labelledby="dlibOpenName">
+        <div class="dlib-open-head"><span class="dlib-open-ico" id="dlibOpenIco">PDF</span><div><b id="dlibOpenName"></b><small id="dlibOpenMeta"></small></div></div>
+        <ol class="dlib-open-steps" id="dlibOpenSteps"></ol>
+        <div class="dlib-open-track"><div class="dlib-open-fill" id="dlibOpenFill"></div></div>
+        <div class="dlib-open-foot"><span class="dlib-open-priv">${ic('shield')}<span>${esc(t('private'))}</span></span><button class="dlib-open-cancel" id="dlibOpenCancel" type="button">${esc(t('cancel'))}</button></div>
+      </div>`;
+    document.body.append(node);
+    node.querySelector('#dlibOpenCancel').addEventListener('click', () => {
+      try { frame()?.contentWindow?.postMessage({ type:'KEEPIT_DOCUMENTS_IMPORT_CANCEL' }, location.origin); } catch { /* frame gone */ }
+      importCancelled = true;   // người dùng chủ động hủy → không báo lỗi khi khung trả lời
+      hideOpenCard();
+    });
+    return node;
+  }
+  function openStepsHTML(phase) {
+    const opened = phase === 'save' || phase === 'done';
+    const saved = phase === 'done';
+    const first = phase === 'password' ? 'warn' : opened ? 'done' : 'run';
+    return `<li class="${first}"><i>${opened ? '✓' : ''}</i>${esc(phase === 'password' ? t('passwordTitle') : t('opening'))}</li>` +
+           `<li class="${saved ? 'done' : phase === 'save' ? 'run' : ''}"><i>${saved ? '✓' : ''}</i>${esc(t('saving'))}</li>`;
+  }
+  function showOpenCard(info = {}) {
+    const node = openCardNode();
+    window.clearTimeout(openHideTimer);
+    const kind = KIND_COLOR[info.kind] ? info.kind : 'pdf';
+    node.querySelector('#dlibOpenName').textContent = String(info.name || '');
+    node.querySelector('#dlibOpenMeta').textContent = info.bytes ? fmtSize(Number(info.bytes)) : '';
+    const ico = node.querySelector('#dlibOpenIco');
+    ico.textContent = KIND_LABEL[kind];
+    ico.style.background = KIND_COLOR[kind];
+    node.querySelector('#dlibOpenSteps').innerHTML = openStepsHTML('start');
+    node.querySelector('#dlibOpenFill').style.width = '0%';
+    node.classList.add('show');
+  }
+  function updateOpenCard(phase, percent) {
+    const node = document.getElementById('docLibOpenCard');
+    if (!node || !node.classList.contains('show')) return;
+    if (phase === 'progress') { node.querySelector('#dlibOpenFill').style.width = `${Math.max(0, Math.min(95, Number(percent) || 0))}%`; return; }
+    node.querySelector('#dlibOpenSteps').innerHTML = openStepsHTML(phase);
+    if (phase === 'save') node.querySelector('#dlibOpenFill').style.width = '95%';
+    if (phase === 'done') node.querySelector('#dlibOpenFill').style.width = '100%';
+  }
+  function hideOpenCard(delay = 0) {
+    const node = document.getElementById('docLibOpenCard');
+    if (!node) return;
+    window.clearTimeout(openHideTimer);
+    openHideTimer = window.setTimeout(() => node.classList.remove('show'), delay);
+  }
+
   /* ---------- vẽ ---------- */
   function ensureShell() {
     root = document.getElementById(ROOT_ID);
@@ -222,7 +284,9 @@
     const files = [...(fileList || [])].filter(Boolean);
     if (!files.length) return;
     pendingImport += files.length;
-    globalThis.toast?.(t('opening'));
+    // popup mở tệp thay cho toast "đang mở": hiện ngay, khung sẽ đẩy tiến trình vào
+    const first = files[0];
+    showOpenCard({ name:first.name, bytes:first.size, kind:(/\.[^.]+$/.exec(first.name || '') || [''])[0].slice(1).toLowerCase() });
     const f = frame();
     if (!f) return;
     const send = () => { try { f.contentWindow?.postMessage({ type: 'KEEPIT_DOCUMENTS_IMPORT_FILES', files }, location.origin); } catch { /* frame gone */ } };
@@ -276,9 +340,17 @@
     if (event.origin !== location.origin || event.source !== frame()?.contentWindow) return;
     const data = event.data || {};
     if (data.type === 'KEEPIT_DOCUMENTS_LIBRARY_CHANGED') void refresh();
+    if (data.type === 'KEEPIT_DOCUMENTS_IMPORT_STEP') {
+      if (data.phase === 'start') showOpenCard({ name:data.name, bytes:data.bytes, kind:data.kind });
+      else updateOpenCard(data.phase, data.percent);
+      return;
+    }
     if (data.type === 'KEEPIT_DOCUMENTS_IMPORTED') {
       pendingImport = 0;
       void refresh();
+      if (importCancelled) { importCancelled = false; hideOpenCard(); return; }
+      updateOpenCard('done');
+      hideOpenCard(320);
       // v3.5.478: "0 tài liệu" không còn là câu duy nhất — nói rõ vì sao không thêm được.
       const count = Number(data.count) || 0, skipped = Number(data.skipped) || 0, reason = String(data.error || '');
       const KNOWN = { unsupported:'unsupported', fileLimit:'fileLimit', documentsBusy:'documentsBusy', documentsBadFile:'badFile', storageFailed:'storageFailed', documentsDatabaseBlocked:'dbBlocked' };

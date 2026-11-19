@@ -164,6 +164,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.481 | Arena.ai Agent sửa:**
+
+- Người dùng: nhập tệp được rồi nhưng **mất popup hiệu ứng "Đang mở tệp"** như bản 3.5.430.
+- Nguyên nhân: popup đó nằm trong `pages/documents.html` (`#openWrap`), mà từ 3.5.431 khung này là **iframe ẩn** khi Dashboard tự vẽ thư viện (`html.dash-embedded-library .app{display:none}` + `#dashboardDocumentsFrame{display:none;height:0}`) → modal không bao giờ hiện.
+- Nay popup do **Dashboard** vẽ (`.dlib-open`), khung chỉ báo tiến trình:
+  - Khung: `importNote()` gửi `KEEPIT_DOCUMENTS_IMPORT_STEP` với `phase: start|progress|save|password` (tên, dung lượng, loại tệp, %); nghe `KEEPIT_DOCUMENTS_IMPORT_CANCEL` → `++importCycle` dừng nhập.
+  - Dashboard: thẻ 400px giống hệt bản cũ — icon tệp (PDF đỏ / Word xanh / PowerPoint cam / ảnh xanh lá), tên, dung lượng, 2 bước có vòng xoay → dấu ✓, thanh tiến trình gradient, chân "Đọc trên máy, không tải lên" + nút **Hủy**. Hiện ngay khi chọn/kéo tệp (thay toast "đang mở"), hiệu ứng: nền mờ .18s + thẻ phóng .96→1 .22s; xong thì giữ 320ms rồi ẩn.
+  - Hủy: cờ `importCancelled` → không hiện toast lỗi khi khung trả lời.
+- CSS mới trong `css/dashboard/documents-library.css` (biến `--dl-*` sáng/tối riêng vì popup gắn vào `body`, ngoài `#dashboardDocumentsView`).
+- File: `js/dashboard/documents.js`, `js/dashboard/documents-library.js`, `css/dashboard/documents-library.css`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 181/181 ngoặc; **jsdom chạy thật `documents-library.js`**: mount thư viện → gửi `start` (pptx 17.091.788 B) → thẻ hiện đúng tên "English Vocabulary Workshop XL by Slidesgo.pptx", "16.3 MB", nhãn `PowerPoint` màu `rgb(226,112,43)`, bước `run` → gửi `progress 42` → fill 42% → `save` → `done,run` + 95% → `IMPORTED` → `done,done` + 100% → sau 380ms thẻ ẩn. **Chưa chạy UI thật.**
+
 **2026-11-18 | v3.5.480 | Arena.ai Agent sửa — NGUYÊN NHÂN GỐC lỗi "0 tài liệu" / không nhập được tệp:**
 
 - Toast thật: `Failed to execute 'transaction' on 'IDBDatabase': One of the specified object stores was not found` → kho IndexedDB `keepit-documents` **tồn tại nhưng không có store nào**.
