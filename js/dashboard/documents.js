@@ -124,26 +124,26 @@ async function openViewer(id,mode='orig',prepared=null){
   const meta=await Store.get('meta',id),file=await Store.get('files',id);if(!meta||!file?.blob)throw new Error('documentsBadFile');if(cycle!==viewCycle)return;await ensureDocumentKey(meta);
   activeEngine?.dispose();activeEngine=null;V={doc:meta,page:Math.max(1,Math.min(meta.pages,meta.at||1)),mode:meta.image?'orig':mode,flow:lastFlow,zoom:'fit',tools:new Set(),panel:null};
   $('#viewer').dataset.nativeReady='false';$('#viewer').setAttribute('aria-busy','true');$('#viewer').classList.add('show');
-  /* v3.5.487: khoá chọn chữ trong lúc #pageStack còn dựng lại (vùng chọn tạo lúc đó bị xoá ngay),
-     chỉ khoá tối đa 2,5 giây để không bao giờ chặn người dùng nếu bước sau bị treo. */
-  $('#viewer').dataset.selectLocked='true';watchStageIdle(cycle);   // v3.5.490: chỉ mở khoá khi trang đã 'im' hẳn$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
-  const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;void refreshNativeSource(false);   // v3.5.489: chỉ gỡ class, KHÔNG vẽ lại ghi chú lúc trang còn đang dựngV.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);if(cycle!==viewCycle)return;
-  for(const el of[$('#rail'),$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');$('#viewer').dataset.selectLocked='false';if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}if(V.mode==='read')await startNativeReader();$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
+  try{lockSelectionUntilQuiet(cycle);}catch{ /* không được làm hỏng việc mở tệp */ }$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
+  const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;V.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);if(cycle!==viewCycle)return;
+  for(const el of[$('#rail'),$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}if(V.mode==='read')await startNativeReader();$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
  }catch(error){prepared?.dispose();if(cycle===viewCycle){$('#viewer').classList.remove('show');notifyParent(false);showError(error);}}
 }
-/* v3.5.490: khoá chọn chữ cho tới khi #stage KHÔNG còn thay đổi DOM trong 500 ms (tối đa 10 giây).
-   Đây là điều kiện thật của lỗi "mở tệp đầu tiên không bôi đen được": khung còn dựng lại trang
-   (#pageStack, lớp chữ PDF) nên vùng chọn vừa tạo bị xoá ngay, thanh không bao giờ hiện. */
-function watchStageIdle(cycle){
- const stage=$('#stage'),start=Date.now();let last=Date.now(),done=false;
+/* v3.5.491: khoá chọn chữ cho tới khi #stage không còn đổi DOM trong 500 ms (tối đa 8 giây).
+   Lý do: khi mở tệp, khung còn gỡ/dựng lại #pageStack và lớp chữ PDF → vùng chọn tạo trong lúc đó
+   bị xoá ngay nên thanh Tô sáng/Dịch/AI không bao giờ hiện (lỗi "mở tệp đầu tiên"). */
+function lockSelectionUntilQuiet(cycle){
+ const viewer=$('#viewer'),stage=$('#stage');
+ if(!viewer||!stage)return;
+ viewer.dataset.selectLocked='true';
+ const start=Date.now();let last=Date.now(),done=false;
  const mo=new MutationObserver(()=>{last=Date.now();});
- try{mo.observe(stage,{childList:true,subtree:true,characterData:true});}catch{}
- const release=()=>{if(done)return;done=true;mo.disconnect();$('#viewer').dataset.selectLocked='false';};
+ mo.observe(stage,{childList:true,subtree:true});
+ const release=()=>{if(done)return;done=true;mo.disconnect();viewer.dataset.selectLocked='false';};
  const tick=()=>{
   if(done)return;
   if(cycle!==viewCycle){mo.disconnect();return;}
-  if($('#viewer').dataset.selectLocked!=='true'){mo.disconnect();return;}
-  if(Date.now()-last>500||Date.now()-start>10000)release();else setTimeout(tick,120);
+  if(Date.now()-last>500||Date.now()-start>8000)release();else setTimeout(tick,120);
  };
  setTimeout(tick,120);
 }
@@ -583,15 +583,7 @@ function nativeReaderState(state){
  if(visibilityChanged){fitToolbar();if(!visible)wakePager();}
  if(!state.reading)clearReaderParagraphHighlight();
 }
-/* v3.5.489: nếu người dùng đang bôi đen thì HOÃN việc vẽ lại ghi chú (nó sẽ xoá vùng chọn). */
-const hasUserSelection=()=>{const s=getSelection();return !!s&&s.rangeCount>0&&!s.isCollapsed&&String(s).trim().length>0;};
-let refreshRetries=0;
-async function refreshNativeSource(tools=true){
- if(!V.doc)return;
- if(tools&&hasUserSelection()&&refreshRetries<5){refreshRetries++;setTimeout(()=>{if(V.doc&&!hasUserSelection())void refreshNativeSource(true);else refreshRetries=0;},1200);return;}
- refreshRetries=0;
- await LHN_DOCUMENT_CONTEXT.refresh(tools?undefined:{tools:false});
-}
+async function refreshNativeSource(){if(!V.doc)return;await LHN_DOCUMENT_CONTEXT.refresh();}
 LHN_DOCUMENT_CONTEXT.attach({
  active:()=>!!activeEngine&&$('#viewer').classList.contains('show'),url:documentUrl,title:()=>V.doc?.name||document.title,hostname:()=> 'Keepit',thumbnail:()=>V.doc?.thumbnail||'',root:()=>$('#stage'),
  containsRange:range=>{if(!activeEngine||!$('#viewer').classList.contains('show')||!$('#stage').contains(range.commonAncestorContainer))return false;
@@ -624,7 +616,7 @@ async function boot(){
  /* Bộ công cụ chọn chữ (content.js) có thể gắn sau boot: đợi nó có mặt rồi mới cho mở tệp. */
  if(globalThis.LHN_CONTENT_TOOLS)requestAnimationFrame(()=>requestAnimationFrame(bootResolve));
  else{const t0=Date.now();const waitTools=()=>{if(globalThis.LHN_CONTENT_TOOLS||Date.now()-t0>1500)requestAnimationFrame(()=>requestAnimationFrame(bootResolve));else setTimeout(waitTools,20);};waitTools();}
- const params=new URL(location.href).searchParams,key=params.get('document'),pdfUrl=params.get('openPdf'),pdfHelp=params.get('pdfHelp');if(pdfUrl||pdfHelp){const clean=new URL(location.href);clean.searchParams.delete('openPdf');clean.searchParams.delete('pdfHelp');history.replaceState(history.state,'',clean.href);if(pdfHelp==='file-access')showPdfFallback(true);else await openPdfFromUrl(pdfUrl||'',false);}else if(validDocumentKey(key)){const file=docs.find(d=>d.sourceKey===key||d.id===key);if(file){await openViewer(file.id,params.get('mode')==='read'?'read':'orig');const note=params.get('highlight');if(note){const item=await LHN_MESSAGING.sendMessage({type:'GET_ONE',id:note});await LHN_PAGE_CONTEXT.revealAnnotation(item);await LHN_CONTENT_TOOLS.restore();}}}}catch(error){showError(error);}finally{document.documentElement.classList.remove('documents-loading');bootResolve();}
+ const params=new URL(location.href).searchParams,key=params.get('document'),pdfUrl=params.get('openPdf'),pdfHelp=params.get('pdfHelp');if(pdfUrl||pdfHelp){const clean=new URL(location.href);clean.searchParams.delete('openPdf');clean.searchParams.delete('pdfHelp');history.replaceState(history.state,'',clean.href);if(pdfHelp==='file-access')showPdfFallback(true);else await openPdfFromUrl(pdfUrl||'',false);}else if(validDocumentKey(key)){const file=docs.find(d=>d.sourceKey===key||d.id===key);if(file){await openViewer(file.id);const note=params.get('highlight');if(note){const item=await LHN_MESSAGING.sendMessage({type:'GET_ONE',id:note});await LHN_PAGE_CONTEXT.revealAnnotation(item);await LHN_CONTENT_TOOLS.restore();}}}}catch(error){showError(error);}finally{document.documentElement.classList.remove('documents-loading');bootResolve();}
 }
 LHN_MESSAGING.onMessage.addListener(message=>{if(message?.type==='ANNOTATIONS_CHANGED'&&!$('#viewer').classList.contains('show'))void refreshLibrary();});
 api.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.lhnSettings)void syncSettings();});matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>void syncSettings());Store.changes?.addEventListener('message',()=>{if(!$('#viewer').classList.contains('show'))void refreshLibrary();});

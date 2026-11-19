@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.491 | Arena.ai Agent sửa (người dùng: "kéo tệp vào không mở được nữa", "sao không làm giống v30"):**
+
+- Người dùng đúng: bản 3.5.488 của tôi cho khung **tự nạp lại bằng URL** khi mở tệp → đụng đúng lúc khung đang nhập tệp (kéo-thả) nên tệp không mở được.
+- Đã **revert 3 file** (`documents.js`, `documents-context.js`, `documents-library.js`) về đúng trạng thái **3.5.485** — tức cơ chế mở tệp như 3.5.430: mở trong khung, không nạp lại khung, không đổi URL.
+- Chỉ giữ lại 2 thay đổi tối thiểu: (1) `documents-context.js` không chờ `refreshSource()` (tránh treo `openViewer`); (2) `documents.js` khoá chọn chữ **cho tới khi `#stage` không đổi DOM trong 500 ms** (tối đa 8 giây), bọc `try/catch` để không bao giờ chặn việc mở tệp — đây là cách chặn đúng lỗi "bôi đen xong vùng chọn bị xoá".
+- Đã bỏ: mở bằng URL (3.5.488), chia `refresh({tools})` + hoãn vẽ lại (3.5.489) — vì 3.5.485 vốn đã vẽ ghi chú ở **cuối** như 3.5.430.
+- File: `js/dashboard/documents.js`, `js/dashboard/documents-context.js`, `manifest.json`. Kiểm tra: `node --check` hợp lệ; `git diff 3.5.485` chỉ còn 2 chỗ nêu trên. **Chưa chạy trong Chrome** (tunnel đã đóng).
+
 **2026-11-18 | v3.5.490 | Arena.ai Agent sửa:**
 
 - Người dùng: "vẫn vậy" — lỗi ở lần mở tệp đầu tiên sau khi cài lại extension.
