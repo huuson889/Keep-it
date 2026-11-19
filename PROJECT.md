@@ -157,6 +157,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.501 | Arena.ai Agent sửa:**
+
+- Người dùng: "lần này thì bị đen tab tệp ở phía sau là sao, v30 là vào thẳng luôn mà".
+- Nguyên nhân: 3.5.500 ẩn `.dlib` nhưng nền popup chỉ mờ 25% → phần tab Tài liệu trống lộ ra (nền tối ở chế độ tối = mảng đen).
+- Sửa: `body.documents-opening .dlib-open{background:var(--dl-soft)}` — nền popup **đặc**, theo theme (sáng `#fbfaff`, tối `#151517`); phía sau không còn mảng đen cũng không còn danh sách, chỉ popup rồi vào thẳng tệp.
+- File: `css/dashboard/documents-library.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: chưa chạy được Chrome trong phiên này. **Chưa kiểm bằng ảnh/số đo.**
+
 **2026-11-18 | v3.5.500 | Arena.ai Agent sửa:**
 
 - Người dùng: "bản 30 mở ra hiện load xong là vào file luôn, reload lại cũng vào file luôn, còn 98 thì mở ra load là hiện vào list danh sách ở tab tài liệu rồi mới vào file".
