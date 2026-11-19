@@ -164,6 +164,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.463 | Arena.ai Agent sửa:**
+
+- Bổ sung 3 chuẩn UX còn thiếu cho ô Email / mật khẩu của popup đăng nhập:
+  1. **Ô sai có viền đỏ**: `showProfileAuthError(message, fieldIds)` gắn `aria-invalid="true"` + `aria-describedby="profileAuthError"` cho ô sai và class `is-invalid` lên `label`; CSS `label.is-invalid input { border-color: var(--au-err) }`, giữ đỏ cả khi focus (viền sáng đỏ `color-mix(...,18%,transparent)`), nhãn ô cũng đỏ.
+  2. **Kiểm khi rời ô**: `blur` ô Email → nếu đã có nội dung mà sai định dạng thì báo ngay dưới ô; ô trống thì **không** báo.
+  3. **Sửa sớm**: khi ô đang bị đánh dấu lỗi, mỗi lần gõ (Email / Mật khẩu / Nhập lại) mà giá trị đã hợp lệ thì lỗi **tự biến mất** (`hideProfileAuthError`).
+- Lỗi được gắn đúng ô: `PROFILE_AUTH_FIELDS = { profileEmailInvalid:email, profileBadCredentials:password, profilePasswordShort:password, profilePasswordMismatch:retype }`; "email chưa có tài khoản" là thông báo, **không** tô đỏ ô nào.
+- `setProfileAuthMode()` gọi `hideProfileAuthError()` (dọn cả viền đỏ/aria), nên mở lại popup luôn sạch.
+- File: `js/dashboard/dashboard.js`, `css/dashboard/settings.css`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 907/907 ngoặc; đọc lại toàn bộ 5 chỗ gọi `showProfileAuthError` (kiểm email khi gửi, kiểm khi rời ô, nhánh "chưa có tài khoản", nhánh `check()` trả lỗi, và `hideProfileAuthError` trong `setProfileAuthMode`). **Chưa chạy UI thật.**
+
 **2026-11-18 | v3.5.462 | Arena.ai Agent sửa:**
 
 - (1) **Email phải đúng định dạng**: thêm `validEmail()` trong `auth-popup.js` — regex `^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$` (bắt buộc có tên miền + đuôi ≥ 2 chữ) và chặn thêm `..`, chấm ở đầu/cuối phần tên. `check()` trả `profileEmailInvalid` cho mọi trường hợp sai; `dashboard.js` kiểm định dạng **trước** khi xét tài khoản có sẵn, báo lỗi và đưa con trỏ về ô Email.

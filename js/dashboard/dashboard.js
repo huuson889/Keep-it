@@ -582,6 +582,35 @@ function renderProfileMenu() {
   if (signOutButton) signOutButton.hidden = !demoProfile;
 
 }
+// lỗi từng ô: viền đỏ cho ô sai + aria-invalid + aria-describedby (như app hiện đại)
+const PROFILE_AUTH_FIELDS = { profileEmailInvalid:["profileUsername"], profileBadCredentials:["profilePassword"], profilePasswordShort:["profilePassword"], profilePasswordMismatch:["profileRetypePassword"] };
+function clearProfileAuthMarkup() {
+  for (const input of document.querySelectorAll("#profileAuthDialog [aria-invalid]")) {
+    input.removeAttribute("aria-invalid"); input.removeAttribute("aria-describedby");
+    input.closest("label")?.classList.remove("is-invalid");
+  }
+}
+function hideProfileAuthError() {
+  const error = $("profileAuthError");
+  if (error) { error.hidden = true; error.textContent = ""; }
+  clearProfileAuthMarkup();
+}
+function showProfileAuthError(message, fieldIds = []) {
+  const error = $("profileAuthError");
+  if (!error) return;
+  clearProfileAuthMarkup();
+  error.textContent = message;
+  error.hidden = false;
+  for (const id of fieldIds) {
+    const input = $(id); if (!input) continue;
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", "profileAuthError");
+    input.closest("label")?.classList.add("is-invalid");
+  }
+}
+function profileEmailLooksValid(value) {
+  return LHN_AUTH_POPUP.validEmail(value) || LHN_AUTH_POPUP.accountExists(value);
+}
 // Một form duy nhất, 2 tab đã bỏ. Chỉ khi bấm "Đăng nhập ngay" mà email CHƯA có tài khoản
 // thì mới báo và mở thêm "Nhập lại mật khẩu" + "Tạo tài khoản" (không đoán lúc đang gõ).
 function setProfileAuthMode(mode) {
@@ -599,7 +628,7 @@ function setProfileAuthMode(mode) {
     button.dataset.labelHide = t("profileHidePassword");
     button.setAttribute("aria-label", showing ? t("profileHidePassword") : t("profileShowPassword"));
   }
-  $("profileAuthError").hidden = true;
+  hideProfileAuthError();
   profileAuthMode = mode;
 }
 // Login popup opens above Settings (Settings stays open); touch: no auto focus (the keyboard would cover the sheet)
@@ -3000,27 +3029,39 @@ $("studyDialog").addEventListener("close", () => { stopStudySpeech(); if (annota
 $("profileAuthDialog").addEventListener("click", event => { if (event.target === $("profileAuthDialog")) AUTH_POPUP.close(); });
 $("profileGoogleLogin").addEventListener("click", () => finishProfileAuth(LHN_AUTH_POPUP.check("google").profile));
 // Login ↔ Register: the "Retype password" field opens / closes smoothly
+// rời ô Email (đã có nội dung) mà sai định dạng → báo ngay dưới ô
+$("profileUsername").addEventListener("blur", () => {
+  const value = $("profileUsername").value.trim();
+  if (!value) return;                                   // để trống thì chưa mắng
+  if (!profileEmailLooksValid(value)) showProfileAuthError(t("profileEmailInvalid"), ["profileUsername"]);
+});
+// đang có lỗi thì gõ đúng là mất lỗi ngay (kiểm muộn, sửa sớm)
+$("profileUsername").addEventListener("input", () => {
+  if ($("profileUsername").getAttribute("aria-invalid") !== "true") return;
+  if (profileEmailLooksValid($("profileUsername").value)) hideProfileAuthError();
+});
+for (const id of ["profilePassword", "profileRetypePassword"]) {
+  $(id).addEventListener("input", () => { if ($(id).getAttribute("aria-invalid") === "true") hideProfileAuthError(); });
+}
 $("profileSwitchRegister").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("register")));
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
   event.preventDefault();
   const typedEmail = $("profileUsername").value;
   // sai định dạng email → báo ngay, không đi tiếp
-  if (!LHN_AUTH_POPUP.validEmail(typedEmail) && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
-    $("profileAuthError").textContent = t("profileEmailInvalid");
-    $("profileAuthError").hidden = false;
+  if (!profileEmailLooksValid(typedEmail)) {
+    showProfileAuthError(t("profileEmailInvalid"), ["profileUsername"]);
     $("profileUsername").focus();
     return;
   }
   // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản
   if (profileAuthMode === "login" && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
     AUTH_POPUP.morph(() => setProfileAuthMode("register"));
-    $("profileAuthError").textContent = t("profileAccountNotFound");
-    $("profileAuthError").hidden = false;
+    showProfileAuthError(t("profileAccountNotFound"), []);
     return;
   }
   const result = LHN_AUTH_POPUP.check(profileAuthMode, $("profileUsername").value, $("profilePassword").value, $("profileRetypePassword").value);
-  if (result.error) { $("profileAuthError").textContent = t(result.error); $("profileAuthError").hidden = false; return; }
+  if (result.error) { showProfileAuthError(t(result.error), PROFILE_AUTH_FIELDS[result.error] || []); return; }
   await finishProfileAuth(result.profile);
 });
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });

@@ -951,6 +951,10 @@
   .profile-auth-divider { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--au-mu); font-size: 13px; font-weight: 500; line-height: 18px; text-transform: none; letter-spacing: 0; }
   .profile-auth-divider::before, .profile-auth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--au-line); }
   .profile-auth-error { margin: 0; color: var(--au-err); font-size: 13px; line-height: 18px; }
+  /* ô sai: viền đỏ (+ nhãn đỏ) — màu là tín hiệu chính, câu lỗi ở dưới là giải thích */
+  .profile-auth-dialog label.is-invalid input { border-color: var(--au-err); }
+  .profile-auth-dialog label.is-invalid input:focus { border-color: var(--au-err); box-shadow: 0 0 0 3px color-mix(in srgb, var(--au-err) 18%, transparent); }
+  .profile-auth-dialog label.is-invalid > span:first-child { color: var(--au-err); }
   .profile-auth-error[hidden] { display: none; }
   /* cuối: "Chưa có tài khoản? Đăng ký" ↔ "Đã có tài khoản? Đăng nhập" (theo chế độ đang mở) */
   .profile-auth-switch { margin: 0; color: var(--au-mu); font-size: 14px; line-height: 20px; text-align: center; }
