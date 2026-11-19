@@ -164,6 +164,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.442 | Arena.ai Agent sửa:**
+
+- Icon tab Ghi chú trong sidebar Dashboard: dùng **đúng icon "npen" của thanh Keepit trên trang web** (`js/content/keepit-bar.js`, `ICONS.npen` — sổ có gáy xoắn + bút), thay cho hình em tự vẽ ở 3.5.441. Thanh tab dưới ở mobile (`responsive-nav.js`) lấy icon từ sidebar nên cũng thành npen theo.
+- File: `pages/dashboard.html`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): `grep "M21.378 5.626"` (đoạn path đặc trưng của npen) có trong `pages/dashboard.html` và `js/content/keepit-bar.js`; không còn path của icon tự vẽ. **Chưa chụp ảnh được** (sandbox thiếu `xvfb` + lib Chromium, không có root).
+
 **2026-11-18 | v3.5.441 | Arena.ai Agent sửa:**
 
 - Đổi nhãn tab sidebar "Ôn tập Flashcards" → **"Flashcards"** (`pages/dashboard.html` + `js/core/languages.js`: en/vi "Flashcards", ko "플래시카드").
