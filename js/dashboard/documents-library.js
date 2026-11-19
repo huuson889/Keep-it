@@ -252,10 +252,37 @@
     } catch { return false; }
   }
   let pendingOpen = null;
+  /* v3.5.488: mở tệp bằng URL của chính khung (`documents.html?document=…`) — đúng đường mà bản
+     3.5.430 dùng và là đường "sau khi reload" vẫn chạy tốt. Ra lệnh bằng postMessage vào khung
+     còn đang khởi tạo chính là nguồn của lỗi chọn chữ ở lần mở đầu. */
+  function frameState() { try { return frame()?.contentWindow?.KeepitDocuments?.state || null; } catch { return null; } }
   function openDoc(id, mode) {
     if (!id) return;
-    pendingOpen = { type: 'KEEPIT_DOCUMENTS_OPEN', id, mode: mode || 'orig' };
-    flushOpen();
+    const f = frame();
+    if (!f) return;
+    const chosen = mode || 'orig';
+    if (String(frameState()?.documentId || '') === id) {           // tệp này đang mở sẵn: chỉ cần ra lệnh
+      pendingOpen = { type: 'KEEPIT_DOCUMENTS_OPEN', id, mode: chosen };
+      flushOpen();
+      return;
+    }
+    const card = document.querySelector(`[data-open="${id}"]`)?.closest('.card, .cont, .continue, .cBody') || null;
+    const name = card?.querySelector('h3, h4, .name, .title, b')?.textContent?.trim() || '';
+    const item = docs.find(entry => entry.id === id) || null;
+    showOpenCard({ name: item?.name || name || t('loading'), bytes: item?.size || 0, kind: item?.type || '' });
+    openHideTimer = window.setTimeout(() => hideOpenCard(), 8000);   // chống kẹt nếu khung không báo READY
+    const url = new URL(f.dataset.src || 'documents.html', location.href);
+    for (const key of ['document', 'mode', 'highlight', 'openPdf', 'pdfHelp']) url.searchParams.delete(key);
+    url.searchParams.set('document', id);
+    if (chosen === 'read') url.searchParams.set('mode', 'read'); else url.searchParams.delete('mode');
+    pendingOpen = null;
+    try { f.src = url.href; } catch { /* frame not ready */ }
+    try {
+      const address = new URL(location.href);
+      address.searchParams.set('view', 'documents');
+      address.searchParams.set('document', id);
+      history.replaceState(history.state, '', address.href);
+    } catch { /* history may be unavailable */ }
   }
   function flushOpen() {
     const f = frame();

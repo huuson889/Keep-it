@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.488 | Arena.ai Agent sửa (so mã 3.5.430 thay vì đoán):**
+
+- Người dùng: "chỉ cần so sánh trước lúc reload và sau khi reload là biết khác chỗ nào… tại sao bản 3.5.430 không lỗi?"
+- So mã `3e29d46` (3.5.430) với hiện tại: `openViewer`, `containsRange`, `isWebsiteDisabledIn`, `handleSelectionMouseUp` **giống hệt**. Khác biệt duy nhất: 3.5.430 **không có** `js/dashboard/documents-library.js` và khung **không nhận** `KEEPIT_DOCUMENTS_OPEN` — mọi lần mở đều đi qua URL `?document=…` rồi `boot()` tự mở (đúng đường "sau khi reload" mà người dùng thấy chạy tốt). Từ 3.5.431 Dashboard ra lệnh bằng `postMessage` vào khung có thể còn đang khởi tạo → tranh chấp thời điểm.
+- Sửa: `documents-library.js` mở tệp **bằng URL của khung** (`documents.html?document=<id>[&mode=read]`, xoá tham số cũ trước khi đặt), chỉ dùng `postMessage` khi tệp đó **đang mở sẵn**; giữ thẻ "Đang mở tệp" (ẩn khi khung báo `KEEPIT_DOCUMENTS_VIEWER_READY`, chống kẹt 8 giây). `documents.js` `boot()` nhận thêm `mode=read`.
+- File: `js/dashboard/documents-library.js`, `js/dashboard/documents.js`, `manifest.json`.
+- Kiểm tra: `node --check` cả 2 hợp lệ. **Chưa chạy bản 3.5.488** — thử bằng tunnel bị rớt kết nối giữa lúc khung tự nạp lại.
+
 **2026-11-18 | v3.5.487 | Arena.ai Agent sửa:**
 
 - Người dùng: "ảnh là trạng thái lỗi khi mở tệp mới, reload thì lỗi đâu nữa" — ảnh cho thấy thanh nằm **tận mép trái** thay vì dưới vùng chọn.
