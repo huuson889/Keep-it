@@ -142,7 +142,7 @@ function lockSelectionUntilQuiet(cycle){
  const release=()=>{if(done)return;done=true;mo.disconnect();viewer.dataset.selectLocked='false';};
  const tick=()=>{
   if(done)return;
-  if(cycle!==viewCycle){mo.disconnect();return;}
+  if(cycle!==viewCycle){done=true;mo.disconnect();viewer.dataset.selectLocked='false';return;} /* v3.5.494: trước đây thoát mà không mở khoá → user-select:none kẹt vĩnh viễn */
   if(Date.now()-last>500||Date.now()-start>8000)release();else setTimeout(tick,120);
  };
  setTimeout(tick,120);

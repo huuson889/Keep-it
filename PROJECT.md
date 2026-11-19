@@ -157,6 +157,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.494 | Arena.ai Agent sửa:**
+
+- Người dùng: "đâu được đâu, vẫn lỗi vậy mà" + xác nhận bôi đen **chết hẳn** (bấm lại lần 2, lần 3 vẫn không được) → nguyên nhân **không phải thời điểm**; dừng đoán, chuyển sang đo.
+- Sửa lỗi thật tìm thấy khi đọc code: `lockSelectionUntilQuiet()` (3.5.491) khi `cycle!==viewCycle` **thoát mà không mở khoá** → `#viewer[data-select-locked="true"]{user-select:none!important}` kẹt **vĩnh viễn** = bôi đen chết hẳn. Nay mở khoá trước khi thoát.
+- Thêm `js/dashboard/selection-diagnostic.js` (nạp cuối `pages/documents.html`): bảng nhỏ góc dưới trái hiện `last.stage` của content.js (`mouseup.noTextOrEditable / disconnected / outsideContext / websiteDisabled`), vùng chọn ngay/+50 ms/+250 ms, `nativeReady`, `selectLocked`, `user-select` của `#stage`, số đoạn chữ, và `elementFromPoint` trên một đoạn chữ thật (phát hiện vật lạ chặn chuột). Có nút **Chép** / **Tải .txt** / **Ẩn**.
+- Bản này KHÔNG sửa gì khác về UI/luồng; tắt bảng bằng `const DIAG = false` ở đầu file (sẽ tắt sau khi có kết quả).
+- File: `js/dashboard/documents.js`, `js/dashboard/selection-diagnostic.js` (mới), `pages/documents.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hợp lệ. **Chưa kiểm bằng ảnh/số đo** (không có Chrome trong phiên này).
+
 **2026-11-18 | v3.5.493 | Arena.ai Agent sửa:**
 
 - Người dùng: "làm xong mới cho vào trang đang mở… hiện popup load đến khi xong hết là mới hiện trang tài liệu, vô cái là chọn được bình thường".
