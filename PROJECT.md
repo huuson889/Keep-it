@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.444 | Arena.ai Agent sửa:**
+
+- Sửa lại avatar chân sidebar cho **đúng màu / viền / kiểu của khung Cài đặt**, chỉ giữ kích thước 28px (3.5.443 mới đổi class nên vẫn bị viền tím 1px + nền tím nhạt của `.reference-avatar-letter` đè lên):
+  - Đã đăng nhập: nền **#7262df**, chữ trắng, bóng trong `inset 0 2px 5px #0002` (đúng `.profile-avatar`).
+  - Khách: viền **2px solid #cbd5e1**, nền trong suốt, icon xám **#71717a**; tối: viền **#55555c**, icon **#a1a1aa**.
+- Nhãn "Miễn phí" dùng đúng bảng màu `.kp-plan-badge[data-plan="free"]`: đã đăng nhập sáng `#b9b3ff`/`#f2efff`/`#6b5ce0`, tối `rgba(165,169,255,.6)`/`rgba(165,169,255,.12)`/`#b9b3ff`; khách xám `#aab4c3`/`#f1f5f9`/`#475569` (tối `rgba(255,255,255,.28)`/`rgba(255,255,255,.06)`/`#d0d0d4`), cao 21px, bo tròn 999px.
+- File: `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): ngoặc `{}` cân 1134/1134; 3 khối luật mới nằm cuối file nên thắng `.reference-avatar-letter` (1 id + 3 class so với 1 id + 1 class). **Chưa chụp ảnh được** (sandbox thiếu `xvfb` + lib Chromium, không có root).
+
 **2026-11-18 | v3.5.443 | Arena.ai Agent sửa:**
 
 - Avatar và badge ở chân sidebar Dashboard nay dùng đúng thành phần của khung **Cài đặt**: avatar là `.profile-avatar .profile-avatar-guest` (khách: viền nét đứt + icon người; đã đăng nhập: ảnh đại diện qua `profilePictureMarkup`) thay cho chữ cái "B"; badge dùng `.kp-plan-badge[data-plan]` với đúng bảng màu của Cài đặt (sáng `#b9b3ff`/`#f2efff`/`#6b5ce0`, tối `rgba(255,255,255,.14)`/`rgba(255,255,255,.06)`/`#a5a9ff`).

@@ -1235,16 +1235,35 @@ html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTo
   background:rgba(13,13,15,.72)!important;
   -webkit-backdrop-filter:blur(12px) saturate(1.4); backdrop-filter:blur(12px) saturate(1.4);
 }
-/* v3.5.443 — avatar + badge "Miễn phí" ở chân sidebar dùng đúng kiểu trong Cài đặt */
+/* v3.5.444 — avatar + nhãn gói ở chân sidebar: màu / viền / kiểu = đúng khung Cài đặt, chỉ giữ kích thước 28px */
+/* đã đăng nhập: nền tím #7262df, chữ trắng, bóng trong như .profile-avatar */
 #dashboardSidebar .reference-avatar-letter.profile-avatar {
-  width:28px; height:28px; flex:0 0 28px; padding:0; font-size:11px; font-weight:700;
-  box-shadow:none; border-radius:50%;
+  width:28px; height:28px; flex:0 0 28px; font-size:12px; font-weight:650;
+  border:0; border-radius:50%; overflow:hidden;
+  background:#7262df; color:#fff; box-shadow:inset 0 2px 5px #0002;
 }
-#dashboardSidebar .reference-avatar-letter.profile-avatar svg { width:15px; height:15px; }
+/* khách: viền liền 2px, nền trong suốt, icon xám trung tính như trong Cài đặt */
+#dashboardSidebar .reference-avatar-letter.profile-avatar.profile-avatar-guest {
+  border:2px solid #cbd5e1; background:transparent; color:#71717a; box-shadow:none;
+}
+html.dark #dashboardSidebar .reference-avatar-letter.profile-avatar.profile-avatar-guest {
+  border-color:#55555c; background:transparent; color:#a1a1aa;
+}
+#dashboardSidebar .reference-avatar-letter.profile-avatar svg { width:13px; height:13px; }
 #dashboardSidebar .reference-avatar-letter.profile-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+/* nhãn gói "Miễn phí": đúng bảng màu .kp-plan-badge[data-plan="free"] của Cài đặt */
 #dashboardSidebar .reference-footer-button > .kp-plan-badge {
-  border:1px solid #b9b3ff; background:#f2efff; color:#6b5ce0; text-shadow:none;
+  display:inline-flex; align-items:center; gap:4px; height:21px;
+  padding:0 8px; border:1px solid #b9b3ff; border-radius:999px;
+  background:#f2efff; color:#6b5ce0; font:600 10px/1 var(--lhn-app-font-family); text-shadow:none; box-shadow:none;
 }
 html.dark #dashboardSidebar .reference-footer-button > .kp-plan-badge {
-  border-color:rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#a5a9ff;
+  border-color:rgba(165,169,255,.6); background:rgba(165,169,255,.12); color:#b9b3ff;
+}
+/* chưa đăng nhập = xám (giống Cài đặt khi thẻ hồ sơ là khách) */
+#dashboardSidebar .reference-footer-button:has(.profile-avatar-guest) > .kp-plan-badge {
+  border-color:#aab4c3; background:#f1f5f9; color:#475569;
+}
+html.dark #dashboardSidebar .reference-footer-button:has(.profile-avatar-guest) > .kp-plan-badge {
+  border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.06); color:#d0d0d4;
 }
