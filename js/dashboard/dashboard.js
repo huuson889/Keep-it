@@ -256,6 +256,8 @@ function refreshDashboardSettings() {
     accountState.querySelector("#settingsAccountUsername").value = profileUsername();
     const picturePreview = accountState.querySelector("#settingsAccountPicturePreview");
     if (picturePreview) picturePreview.innerHTML = profilePictureMarkup(demoProfile, escapeHtml(String(displayName).slice(0, 1).toLocaleUpperCase()));
+    const removePicture = accountState.querySelector("#settingsRemoveProfilePicture");
+    if (removePicture) removePicture.hidden = !demoProfile?.avatarDataUrl;
     const emailField = accountState.querySelector("#settingsAccountEmail");
     emailField.value = String(demoProfile.email || "").trim();
     emailField.disabled = emailField.dataset.editing !== "true";
@@ -3527,6 +3529,13 @@ $("settingsAccountState").addEventListener("click", async event => {
   if (event.target.closest("#settingsAccountSignIn")) { openProfileAuth("login"); return; }
   if (event.target.closest("#settingsAccountSignOut")) { await signOutDemoProfile(); return; }
   if (event.target.closest("#settingsChangeProfilePicture")) { $("settingsProfilePictureFile").click(); return; }
+  if (event.target.closest("#settingsRemoveProfilePicture")) {
+    if (!demoProfile?.avatarDataUrl) return;
+    const next = { ...demoProfile }; delete next.avatarDataUrl; demoProfile = next;
+    await LHN_ACCOUNT.saveProfile(browser, demoProfile);
+    renderProfileMenu(); refreshDashboardSettings(); toast(t("accountProfilePictureRemoved"));
+    return;
+  }
   if (event.target.closest("#settingsAccountChangeEmail")) {
     const field = $("settingsAccountState").querySelector("#settingsAccountEmail"), button = event.target.closest("#settingsAccountChangeEmail");
     if (field.disabled) { field.disabled = false; setDisabledTooltip(field, field.closest(".settings-account-controls"), ""); field.dataset.editing = "true"; button.textContent = t("save"); field.focus(); field.select(); return; }

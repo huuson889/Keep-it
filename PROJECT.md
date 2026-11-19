@@ -164,6 +164,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.447 | Arena.ai Agent sửa:**
+
+- Thêm cách **xoá ảnh hồ sơ** ngay trong UI: hàng "Ảnh hồ sơ" (Cài đặt → Tài khoản) có thêm nút **"Xoá ảnh"** cạnh nút "Thay đổi".
+  - Chỉ hiện khi hồ sơ đang có ảnh tự chọn (`demoProfile.avatarDataUrl`); chưa có ảnh thì ẩn hẳn.
+  - Kiểu nút "nhẹ": viền đỏ nhạt `#f0b4b4`, nền trắng, chữ `#c53030`; rê chuột `#fef2f2`/`#dc2626`; nền tối `#1a1a1d` / `#7f1d1d` / `#f2a3a5`. Không dùng nút đỏ đặc để tránh cảm giác nguy hiểm như "Xoá tài khoản".
+  - Bấm = xoá đúng một trường `avatarDataUrl`, lưu lại hồ sơ, vẽ lại **cả** avatar trong Cài đặt và ở chân sidebar (về chữ cái đầu tên), hiện toast "Đã xoá ảnh hồ sơ." — không mất tên/email/ghi chú.
+- Thêm 2 khoá dịch cho cả 3 ngôn ngữ: `accountProfilePictureRemove` (Remove picture / Xoá ảnh / 사진 삭제), `accountProfilePictureRemoved` (Profile picture removed. / Đã xoá ảnh hồ sơ. / 프로필 사진을 삭제했습니다.).
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm tra (tĩnh, chưa có ảnh): `node --check` 2 file JS hợp lệ; ngoặc CSS cân 1149/1149; nút nằm trong template `settingsAccountSignedInTemplate` (khách không thấy) và ẩn mặc định bằng `hidden`; trình xử lý click dùng uỷ quyền trên `#settingsAccountState` nên vẫn chạy sau khi vẽ lại.
+
 **2026-11-18 | v3.5.446 | Arena.ai Agent sửa:**
 
 - Lỗi "badge tối sai": luật nền tối cho nhãn Free (`html.dark #dashboardSidebar .reference-footer-button > .kp-plan-badge`, độ ưu tiên 1-3-1) **đè** luật Pro/Ultra (1-3-0), nên ở nền tối Pro/Ultra vẫn ra tím nhạt của Free. Đã buộc luật Free vào `[data-plan="free"]` → Pro/Ultra giữ đúng kiểu ở cả hai nền.
