@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.470 | Arena.ai Agent sửa:**
+
+- Người dùng: câu lỗi và dòng đồng ý điều khoản phải **căn giữa** (đang bám lề trái).
+- `.profile-auth-error { text-align: center }`.
+- Bỏ flex ở `.profile-auth-terms` → `display: block; text-align: center`; checkbox thành `inline-block` (giữ `appearance:auto`, `vertical-align:-2px`, `margin-right:7px`) và `.profile-auth-terms-text { display:inline }` → cả cụm chữ + 2 link chảy như **một đoạn văn căn giữa**, xuống dòng vẫn căn giữa; viền đỏ `.is-invalid` của checkbox không đổi.
+- File: `css/dashboard/settings.css`, `manifest.json`.
+- Kiểm tra: CSS 924/924 ngoặc. **Chưa chạy UI thật** — cần người dùng xem lại điểm xuống dòng của dòng điều khoản.
+
 **2026-11-18 | v3.5.469 | Arena.ai Agent sửa:**
 
 - Người dùng: tiêu đề popup đăng nhập làm "cho có" — phải **căn giữa**, **cùng màu/nền với popup**, và **có gạch phân cách**.
