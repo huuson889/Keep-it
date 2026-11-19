@@ -3072,6 +3072,10 @@ $("profileTerms").addEventListener("change", () => {
   if ($("profileTerms").checked && $("profileAuthError").textContent === t("profileTermsRequired")) hideProfileAuthError();
 });
 // hai link mở nội dung ngay trong popup (bản demo: không có trang web điều khoản riêng)
+function openLegalPage(doc = "terms") {
+  const base = globalThis.chrome?.runtime?.getURL ? chrome.runtime.getURL("pages/legal.html") : "legal.html";
+  window.open(`${base}#${doc === "privacy" ? "privacy" : "terms"}`, "_blank", "noopener");
+}
 let profileLegalDoc = "terms";
 for (const button of document.querySelectorAll("#profileAuthDialog [data-legal]")) {
   button.addEventListener("click", () => {
@@ -3084,10 +3088,8 @@ for (const button of document.querySelectorAll("#profileAuthDialog [data-legal]"
 }
 $("profileLegalClose").addEventListener("click", () => setProfileLegalPanel(false));
 // bản đầy đủ (chỉ tiếng Anh) mở ở TAB MỚI để không mất chữ đã gõ trong form đăng ký
-$("profileLegalFull").addEventListener("click", () => {
-  const base = (globalThis.chrome?.runtime?.getURL ? chrome.runtime.getURL("pages/legal.html") : "legal.html");
-  window.open(`${base}#${profileLegalDoc}`, "_blank", "noopener");
-});
+$("profileLegalFull").addEventListener("click", () => openLegalPage(profileLegalDoc));
+$("openLegalDocs").addEventListener("click", () => openLegalPage("terms"));
 $("profileSwitchRegister").addEventListener("click", () => { profileAuthAutoRegister = false; AUTH_POPUP.morph(() => setProfileAuthMode("register")); });
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {

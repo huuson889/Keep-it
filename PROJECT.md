@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.475 | Arena.ai Agent sửa:**
+
+- Người dùng hỏi "muốn coi lại legal thì ở đâu?" → trước chỉ vào được từ popup đăng ký. Nay thêm đường **thường trực**: **Cài đặt → Giới thiệu** có dòng **"Điều khoản & Bảo mật"** + nút **"Xem"**.
+- Dùng lại đúng khối `settings-backup-row` + `settings-action-button` sẵn có (không tạo kiểu mới), nằm giữa "Version" và "Error log".
+- JS: tách `openLegalPage(doc)` dùng chung cho nút trong popup và nút ở Cài đặt → `window.open(chrome.runtime.getURL("pages/legal.html") + "#terms|#privacy", "_blank", "noopener")`, tab mới.
+- i18n: `legalDocsTitle` / `legalDocsHelp` / `legalDocsOpen` (en `Terms & privacy` · vi `Điều khoản & Bảo mật` · ko `약관 및 개인정보`). Nội dung trang vẫn **chỉ tiếng Anh**.
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ (đã sửa 1 dấu phẩy thừa khi chèn i18n); jsdom: nút `#openLegalDocs` class `settings-action-button`, nằm trong panel `about`, thứ tự Version → Terms & privacy → Error log. **Chưa chạy UI thật**.
+
 **2026-11-18 | v3.5.474 | Arena.ai Agent sửa:**
 
 - **(1) `pages/legal.html` theo sáng/tối của app** (trước chỉ theo hệ điều hành): thêm `js/pages/legal.js` — đọc `LHN_SETTINGS.get()` → `settings.sidebarTheme` (`light` / `dark` / `system`), gắn `data-theme` lên `<html>`, đặt luôn `color-scheme` cho thanh cuộn. "system" thì theo máy; **đổi giao diện trong app lúc tab đang mở thì trang đổi theo** qua `LHN_SETTINGS.subscribe()`. Vẽ ngay lần đầu theo hệ điều hành để không chớp trắng.
