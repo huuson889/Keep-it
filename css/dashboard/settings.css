@@ -916,6 +916,9 @@
   .profile-auth-dialog form::-webkit-scrollbar { display: none; }
   .profile-auth-grip { display: none; }
 
+  /* tiêu đề trên cùng: Đăng nhập / Đăng ký theo chế độ đang mở */
+  .profile-auth-head { padding: 18px 20px 0; }
+  .profile-auth-title { margin: 0; color: var(--au-tx); font-size: 16px; font-weight: 650; line-height: 22px; letter-spacing: -.01em; }
   .profile-auth-dialog button:focus-visible { outline: 2px solid var(--au-brand); outline-offset: 2px; }
   .profile-auth-dialog input:focus-visible { outline: none; }
 
@@ -923,7 +926,7 @@
   .profile-auth-body, .profile-auth-side, .profile-auth-fields { display: grid; gap: 14px; min-width: 0; }
   /* cột ô nhập = flex (không phải grid): ô "Nhập lại mật khẩu" thu về 0 + lề âm bằng khoảng cách → không còn khe 14px nhảy ở cuối hiệu ứng */
   .profile-auth-fields { display: flex; flex-direction: column; }
-  .profile-auth-body { padding: 20px; }
+  .profile-auth-body { padding: 14px 20px 20px; }
   .profile-auth-side { gap: 18px; }
   .profile-auth-body label { display: grid; gap: 6px; margin: 0; color: var(--au-mu); font-size: 13px; font-weight: 600; line-height: 18px; }
   .profile-auth-body label[hidden] { display: none !important; }
@@ -993,7 +996,8 @@
       padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -12px 40px rgba(0, 0, 0, .18); opacity: 1; transform: none; transition: none; }
     @starting-style { .profile-auth-dialog[open] form { opacity: 1; transform: none; } }
     .profile-auth-grip { display: block; width: 36px; height: 5px; margin: 8px auto 0; border-radius: 3px; background: rgba(120, 120, 128, .4); }
-    .profile-auth-body { padding-top: 4px; }
+    .profile-auth-head { padding-top: 12px; }
+    .profile-auth-body { padding-top: 10px; }
   }
   /* điện thoại dọc: cả bề ngang */
   @media (orientation: portrait) and (max-width: 699px) {

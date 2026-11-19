@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.468 | Arena.ai Agent sửa:**
+
+- Lỗi: bỏ 2 tab thì popup **mất luôn tiêu đề**, phía trên chỉ còn nút Google.
+- Nay: thêm tiêu đề trên cùng (`<header class="profile-auth-head"><h2 id="profileAuthTitle">`) và **đổi theo chế độ**: chế độ đăng nhập → **"Đăng nhập"** (`profileLogin`), chế độ tạo tài khoản → **"Đăng ký"** (`profileRegister`); đổi ngay trong `setProfileAuthMode()`.
+- Kỹ thuật: header đặt **ngoài** `.profile-auth-body` (body là grid 2 cột ở màn ngang, nhét vào sẽ phải sửa `grid-template-areas`); CSS `.profile-auth-head { padding:18px 20px 0 }`, `.profile-auth-title { font-size:16px; font-weight:650; color: var(--au-tx) }`; body bớt lề trên còn `14px` (sheet điện thoại: header `12px`, body `10px`). Khi đổi ngôn ngữ, `applyTranslations()` gán lại tiêu đề đúng chế độ (không để `data-i18n` kéo về "Đăng nhập").
+- Markup đồng bộ ở `pages/dashboard.html` và `markup()` của `auth-popup.js`.
+- File: `pages/dashboard.html`, `js/shared/auth-popup.js`, `js/dashboard/dashboard.js`, `css/dashboard/settings.css`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 924/924 ngoặc; jsdom: `#profileAuthTitle` là `H2` trong `.profile-auth-head`, thứ tự form = grip → header → body. **Chưa chạy UI thật** (khoảng cách, cỡ chữ).
+
 **2026-11-18 | v3.5.467 | Arena.ai Agent sửa:**
 
 - Thêm **dòng đồng ý điều khoản** cho đúng UX app hiện đại — chỉ hiện ở nhánh **tạo tài khoản**, **không tích sẵn** (GDPR: không được tích trước).

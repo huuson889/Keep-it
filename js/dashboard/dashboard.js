@@ -621,6 +621,7 @@ function setProfileAuthMode(mode) {
   $("profileRetypePassword").required = isRegister;
   if (!isRegister) $("profileRetypePassword").value = "";
   $("profilePassword").autocomplete = isRegister ? "new-password" : "current-password";
+  $("profileAuthTitle").textContent = isRegister ? t("profileRegister") : t("profileLogin");
   $("profileAuthSubmit").textContent = isRegister ? t("profileCreateAccount") : t("profileLoginNow");
   // nhãn đọc màn hình cho nút con mắt, theo ngôn ngữ đang chọn
   for (const button of document.querySelectorAll("#profileAuthDialog .profile-auth-eye")) {
@@ -1283,6 +1284,8 @@ function applyTranslations() {
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll("[data-i18n-aria-label]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel)); });
+  // tiêu đề popup đăng nhập đổi theo chế độ đang mở (data-i18n chỉ biết "Đăng nhập")
+  if ($("profileAuthTitle")) $("profileAuthTitle").textContent = t(profileAuthMode === "register" ? "profileRegister" : "profileLogin");
   populateStudyLanguageSelects();
   updateStudyAutoSpeakButton();
   updateGradeShortcutHints();
