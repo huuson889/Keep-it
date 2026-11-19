@@ -164,6 +164,20 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.465 | Arena.ai Agent sửa:**
+
+- Câu hỏi: nhập sai email/mật khẩu, bấm Đăng nhập, rồi **sửa lại cho đúng** thì sao? Kiểm lại thì thấy 2 lỗ hổng.
+- Lỗ hổng 1: khi email đúng định dạng nhưng **chưa có tài khoản**, máy tự chuyển sang nhánh "Tạo tài khoản"; người dùng sửa lại email cho đúng tài khoản thì popup **vẫn nằm ở nhánh tạo tài khoản** (ô Nhập lại vẫn hiện, nút vẫn "Tạo tài khoản", câu "email này chưa có tài khoản" vẫn treo).
+- Lỗ hổng 2: lỗi thuộc ô Mật khẩu / Nhập lại thì sửa **ô Email** không dọn lỗi cũ.
+- Nay: thêm cờ `profileAuthAutoRegister` (chỉ bật khi **máy** tự chuyển chế độ). Sửa nội dung ô Email:
+  - Nếu đang bị tự chuyển → quay về chế độ **đăng nhập** (ẩn Nhập lại, nút về "Đăng nhập ngay", xoá câu thông báo) rồi để người dùng bấm lại.
+  - Nếu lỗi đang nằm ở ô Email → chỉ xoá khi email đã hợp lệ (giữ kiểu "sửa sớm").
+  - Nếu lỗi nằm ở ô khác → đổi email là **xoá lỗi cũ** (đổi danh tính thì lỗi cũ hết nghĩa).
+- Bấm dòng chân "Chưa có tài khoản? Đăng ký" là **người dùng tự chọn** → tắt cờ, sửa email không tự quay lại; mở lại popup cũng reset cờ.
+- Lỗi mật khẩu: gõ lại vào ô Mật khẩu / Nhập lại là lỗi + viền đỏ tự mất (đã có từ 3.5.463), sửa xong chỉ cần bấm lại nút.
+- File: `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; đọc lại 3 nhánh mới (mở popup reset cờ, submit đặt cờ, input xử lý 3 trường hợp). **Chưa chạy UI thật.**
+
 **2026-11-18 | v3.5.464 | Arena.ai Agent sửa:**
 
 - Lỗi: gõ email sai rồi **Enter** vẫn nhảy xuống ô Mật khẩu.

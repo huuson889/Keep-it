@@ -16,7 +16,7 @@ const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
-let demoProfile = null, profileAuthMode = "login";
+let demoProfile = null, profileAuthMode = "login", profileAuthAutoRegister = false;
 let overviewSessionsReady = false, overviewSessionsLoading = false;
 let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
@@ -633,6 +633,7 @@ function setProfileAuthMode(mode) {
 }
 // Login popup opens above Settings (Settings stays open); touch: no auto focus (the keyboard would cover the sheet)
 function openProfileAuth(mode = "login") {
+  profileAuthAutoRegister = false;
   setProfileAuthMode(mode); AUTH_POPUP.sync();
   if (!$("profileAuthDialog").open) $("profileAuthDialog").showModal();
   if (!document.documentElement.classList.contains("kp-coarse")) $("profileUsername").focus(); else document.activeElement?.blur?.();
@@ -3035,15 +3036,23 @@ $("profileUsername").addEventListener("blur", () => {
   if (!value) return;                                   // để trống thì chưa mắng
   if (!profileEmailLooksValid(value)) showProfileAuthError(t("profileEmailInvalid"), ["profileUsername"]);
 });
-// đang có lỗi thì gõ đúng là mất lỗi ngay (kiểm muộn, sửa sớm)
+// sửa lại sau khi bị báo: email đổi thì bỏ lỗi cũ / bỏ luôn nhánh "tạo tài khoản" do máy tự chuyển
 $("profileUsername").addEventListener("input", () => {
-  if ($("profileUsername").getAttribute("aria-invalid") !== "true") return;
-  if (profileEmailLooksValid($("profileUsername").value)) hideProfileAuthError();
+  if (profileAuthAutoRegister) {
+    profileAuthAutoRegister = false;
+    AUTH_POPUP.morph(() => setProfileAuthMode("login"));
+    return;
+  }
+  if ($("profileUsername").getAttribute("aria-invalid") === "true") {
+    if (profileEmailLooksValid($("profileUsername").value)) hideProfileAuthError();
+    return;
+  }
+  if (!$("profileAuthError").hidden) hideProfileAuthError();   // lỗi thuộc ô khác → đổi email là bỏ lỗi cũ
 });
 for (const id of ["profilePassword", "profileRetypePassword"]) {
   $(id).addEventListener("input", () => { if ($(id).getAttribute("aria-invalid") === "true") hideProfileAuthError(); });
 }
-$("profileSwitchRegister").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("register")));
+$("profileSwitchRegister").addEventListener("click", () => { profileAuthAutoRegister = false; AUTH_POPUP.morph(() => setProfileAuthMode("register")); });
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
   event.preventDefault();
@@ -3066,6 +3075,7 @@ $("profileAuthForm").addEventListener("submit", async event => {
   }
   // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản
   if (profileAuthMode === "login" && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
+    profileAuthAutoRegister = true;   // sửa email là tự quay lại "đăng nhập"
     AUTH_POPUP.morph(() => setProfileAuthMode("register"));
     showProfileAuthError(t("profileAccountNotFound"), []);
     return;
