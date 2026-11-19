@@ -157,6 +157,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.496 | Arena.ai Agent sửa:**
+
+- Người dùng: "lỗi vẫn vậy" (sau 3.5.495). Ngừng đoán; dựng bộ ghi **toàn bộ đường mở tệp** để lấy số đo đúng khoảnh khắc lỗi.
+- `js/dashboard/open-trace.js` (nạp cuối `pages/dashboard.html`): chặn `Window.prototype.postMessage` ghi mọi tin `KEEPIT_*` hai chiều, theo dõi `#dashboardDocumentsFrame` (src/class/style), `body.class`, thẻ `#docLibOpenCard`; nút **Tải báo cáo** xin báo cáo trong khung rồi **gộp 1 tệp .txt**.
+- `js/dashboard/selection-diagnostic.js`: bật lại bảng chẩn đoán, thêm đo lớp chữ (**bao nhiêu span có kích thước thật** — span 0×0 là nghi phạm chính), trạng thái font, có/không thanh `#lhn-*` kèm kích thước & opacity, vùng chọn ngay/+50/+250 ms, và tự trả lời `KEEPIT_DIAG_REQUEST` của trang cha.
+- Không đổi hành vi mở tệp, UI, cài đặt. Tắt bằng `const DIAG = false` ở đầu 2 file.
+- File: `js/dashboard/open-trace.js` (mới), `js/dashboard/selection-diagnostic.js`, `pages/dashboard.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hợp lệ. **Chưa kiểm bằng ảnh/số đo** — bộ ghi này chính là để lấy số đo.
+
 **2026-11-18 | v3.5.495 | Arena.ai Agent sửa:**
 
 - Người dùng gửi ảnh: bôi đen trong tài liệu → thanh **Tô sáng / Dịch / Hỏi AI** hiện đúng, vùng chọn 449 ký tự. Không còn hỏi lại.
