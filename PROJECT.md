@@ -157,6 +157,25 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.500 | Arena.ai Agent sửa:**
+
+- Người dùng: "bản 30 mở ra hiện load xong là vào file luôn, reload lại cũng vào file luôn, còn 98 thì mở ra load là hiện vào list danh sách ở tab tài liệu rồi mới vào file".
+- Nguyên nhân: trong lúc khung tải lại với `?document=`, Dashboard vẫn vẽ **thư viện** phía sau popup (popup chỉ có nền mờ 25%).
+- Sửa: thêm trạng thái `body.documents-opening` — bật ngay khi bấm mở / khi bắt đầu nhập tệp / khi vào Dashboard bằng `?document=…`; tắt khi khung báo `VIEWER_READY` hoặc đóng tệp/huỷ; có failsafe 20 giây.
+  - `css/dashboard/documents-library.css`: `body.documents-opening #dashboardDocumentsView .dlib{opacity:0;pointer-events:none}` → **không còn thấy danh sách** trước khi vào tệp.
+  - `js/dashboard/documents-library.js`: `beginOpening()` / `endOpening()`; vào bằng `?document=` còn hiện luôn popup đúng tên tệp.
+- Kết quả mong đợi: bấm mở → popup → thẳng vào tệp; reload → popup → thẳng vào tệp. Không lộ tab tài liệu.
+- File: `js/dashboard/documents-library.js`, `css/dashboard/documents-library.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hợp lệ. **Chưa kiểm bằng ảnh/số đo.**
+
+**2026-11-18 | v3.5.499 | Arena.ai Agent sửa:**
+
+- Người dùng: "ủa sao được rồi nè" + 2 báo cáo xác nhận: `mở bằng ?document=8d178627…`, `lopChu = 3 lớp, 532 span, 532 span có kích thước, span đầu 33×22`, `probeText = OK → span.en`, vùng chọn 26 ký tự → thanh hiện. Nhập tệp cũng chạy: `IMPORTED → đổi src → VIEWER → VIEWER_READY` (≈2,1 giây cho tệp 46,9 MB).
+- **Lỗi "mở tệp xong bôi đen không ăn / thanh không hiện" — ĐÓNG.** Gốc: mở bằng `postMessage` khiến lớp chữ dựng sai hình học (span 0×0); mở bằng `?document=` dựng đúng. Nay cả **bấm mở** (3.5.497) và **kéo-thả nhập** (3.5.498) đều dùng đường `?document=`.
+- Tắt 2 bảng chẩn đoán (`DIAG = false` trong `selection-diagnostic.js` và `open-trace.js`); giữ file để bật lại 1 dòng nếu lỗi tái phát.
+- File: `js/dashboard/selection-diagnostic.js`, `js/dashboard/open-trace.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` hợp lệ. Đã kiểm chứng bằng báo cáo của người dùng (số đo ở trên).
+
 **2026-11-18 | v3.5.498 | Arena.ai Agent sửa:**
 
 - Báo cáo 3.5.496 người dùng gửi (08:30) cho thấy họ thử bằng **kéo-thả tệp để nhập** → vẫn `mở bằng tin nhắn`: `92 span, 0 span có kích thước`, có lần `mouseup` cho `ranges:1, text:false` (vùng chọn rỗng). Đường 3.5.497 chỉ sửa cho **bấm mở**, chưa phủ đường **nhập tệp**.

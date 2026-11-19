@@ -5,7 +5,7 @@
    Bấm "Tải báo cáo" → ra 1 tệp .txt gửi đi là đủ. Không gửi gì ra ngoài. */
 (() => {
   'use strict';
-  const DIAG = true; /* bản chẩn đoán — đặt false để tắt hẳn */
+  const DIAG = false; /* v3.5.499: đã xác nhận lỗi hết (báo cáo: mở bằng ?document=, 532/532 span có kích thước). Đổi thành true nếu cần chẩn đoán lại. */
   if (!DIAG) return;
 
   const LOG = [];

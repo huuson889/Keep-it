@@ -76,7 +76,19 @@
      khung báo tiến trình qua KEEPIT_DOCUMENTS_IMPORT_STEP. */
   const KIND_LABEL = { pdf:'PDF', docx:'Word', pptx:'PowerPoint', image:'IMG' };
   const KIND_COLOR = { pdf:'#e5484d', docx:'#2f6fe4', pptx:'#e2702b', image:'#269b7b' };
-  let openHideTimer = 0, importCancelled = false;
+  let openHideTimer = 0, importCancelled = false, openingTimer = 0;
+  /* v3.5.500: trong lúc mở tệp thì che danh sách thư viện — người dùng chỉ thấy popup rồi vào
+     thẳng tệp, đúng như 3.5.430 (trước đây lộ "tab tài liệu" trước khi vào file). */
+  function beginOpening() {
+    document.body.classList.add('documents-opening');
+    window.clearTimeout(openingTimer);
+    openingTimer = window.setTimeout(endOpening, 20000);
+  }
+  function endOpening() {
+    window.clearTimeout(openingTimer);
+    openingTimer = 0;
+    document.body.classList.remove('documents-opening');
+  }
   function openCardNode() {
     let node = document.getElementById('docLibOpenCard');
     if (node) return node;
@@ -95,6 +107,7 @@
       try { frame()?.contentWindow?.postMessage({ type:'KEEPIT_DOCUMENTS_IMPORT_CANCEL' }, location.origin); } catch { /* frame gone */ }
       importCancelled = true;   // người dùng chủ động hủy → không báo lỗi khi khung trả lời
       hideOpenCard();
+      endOpening();
     });
     return node;
   }
@@ -288,6 +301,7 @@
     if (!id) return;
     /* v3.5.493: mở tệp cũng có popup như khi nhập — popup ở lại tới khi khung báo đã dựng xong
        (KEEPIT_DOCUMENTS_VIEWER_READY), lúc đó Dashboard mới cho khung hiện ra. */
+    beginOpening();
     const item = docs.find(entry => entry.id === id) || null;
     showOpenCard({ name: item?.name || t('loading'), bytes: item?.size || 0, kind: item?.type || '' });
     window.clearTimeout(openHideTimer);
@@ -323,6 +337,7 @@
     const files = [...(fileList || [])].filter(Boolean);
     if (!files.length) return;
     pendingImport += files.length;
+    beginOpening();
     // popup mở tệp thay cho toast "đang mở": hiện ngay, khung sẽ đẩy tiến trình vào
     const first = files[0];
     showOpenCard({ name:first.name, bytes:first.size, kind:(/\.[^.]+$/.exec(first.name || '') || [''])[0].slice(1).toLowerCase() });
@@ -368,10 +383,19 @@
     render();
   }
   async function mount() {
+    /* v3.5.500: vào Dashboard bằng ?document=… (reload/liên kết) → che danh sách, chỉ hiện popup
+       rồi vào thẳng tệp; khung báo VIEWER_READY sẽ tự tắt che. */
+    if (/[?&]document=/.test(location.search)) beginOpening();
     if (!ensureShell()) return;
     mounted = true;
     render();
     await refresh();
+    /* v3.5.500: vào bằng ?document=… → hiện popup "Đang mở tệp" của đúng tệp đó (không lộ danh sách). */
+    if (document.body.classList.contains('documents-opening') && !document.getElementById('docLibOpenCard')) {
+      const key = new URL(location.href).searchParams.get('document');
+      const item = docs.find(entry => entry.sourceKey === key || entry.id === key) || null;
+      showOpenCard({ name: item?.name || t('opening'), bytes: item?.size || 0, kind: item?.type || '' });
+    }
   }
 
   frame()?.addEventListener('load', flushOpen);
@@ -379,10 +403,11 @@
     if (event.origin !== location.origin || event.source !== frame()?.contentWindow) return;
     const data = event.data || {};
     if (data.type === 'KEEPIT_DOCUMENTS_LIBRARY_CHANGED') void refresh();
-    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER_READY') { viewerWasOpen = true; updateOpenCard('done'); hideOpenCard(200); return; }
+    if (data.type === 'KEEPIT_DOCUMENTS_VIEWER_READY') { viewerWasOpen = true; updateOpenCard('done'); hideOpenCard(200); endOpening(); return; }
     if (data.type === 'KEEPIT_DOCUMENTS_VIEWER' && data.open === true) { viewerWasOpen = true; return; }
     if (data.type === 'KEEPIT_DOCUMENTS_VIEWER' && !data.open) {
       hideOpenCard(0);
+      endOpening();
       /* v3.5.497: đóng tệp → trả khung về trang thư viện, để kéo-thả/nhập tệp vẫn đi đường cũ. */
       if (viewerWasOpen) window.setTimeout(restoreFrameSrc, 250);
       return;
