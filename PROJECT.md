@@ -164,6 +164,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.476 | Arena.ai Agent sửa:**
+
+- Giới thiệu → dòng **Version**:
+  1. **Bỏ** câu phụ "Tô sáng và ghi chú được lưu cục bộ trong hồ sơ Firefox này." (không dùng `settingsLocalOnly` ở đây nữa).
+  2. **Số phiên bản xuống dòng dưới** "Version": `#settingsVersion` đổi từ `<strong>` bên phải sang `<small>` nằm trong `<span>` (span là `display:grid; gap:4px` nên tự xuống dòng, dùng đúng kiểu chữ phụ 11px mờ sẵn có) — JS gán `v…` giữ nguyên.
+  3. **Thêm nút "Kiểm tra cập nhật"** bên phải (`settings-action-button`, rộng 120px theo quy định sẵn có của `settings-backup-row`), bấm → toast chung của dashboard: "Bạn đang dùng bản mới nhất · v3.5.476". **Bản demo không có máy chủ cập nhật** nên nút chỉ xác nhận phiên bản hiện tại.
+- Listener gắn **một lần** ở cấp cao nhất, không đặt trong `refreshDashboardSettings()` (hàm này chạy lại nhiều lần → chồng listener, toast hiện lặp).
+- i18n: `settingsCheckUpdate` (en `Check for updates` / vi `Kiểm tra cập nhật` / ko `업데이트 확인`), `settingsUpToDate` (en `You are on the latest version` / vi `Bạn đang dùng bản mới nhất` / ko `최신 버전을 사용 중입니다`).
+- File: `pages/dashboard.html`, `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; jsdom: dòng Version còn đúng 3 thành phần, `#settingsVersion` là `SMALL` trong `span`, câu "stored locally in this Firefox profile" đã mất khỏi trang, thứ tự Version → Terms & privacy → Error log. **Chưa chạy UI thật**.
+
 **2026-11-18 | v3.5.475 | Arena.ai Agent sửa:**
 
 - Người dùng hỏi "muốn coi lại legal thì ở đâu?" → trước chỉ vào được từ popup đăng ký. Nay thêm đường **thường trực**: **Cài đặt → Giới thiệu** có dòng **"Điều khoản & Bảo mật"** + nút **"Xem"**.

@@ -3090,6 +3090,10 @@ $("profileLegalClose").addEventListener("click", () => setProfileLegalPanel(fals
 // bản đầy đủ (chỉ tiếng Anh) mở ở TAB MỚI để không mất chữ đã gõ trong form đăng ký
 $("profileLegalFull").addEventListener("click", () => openLegalPage(profileLegalDoc));
 $("openLegalDocs").addEventListener("click", () => openLegalPage("terms"));
+// gắn MỘT lần (refreshDashboardSettings chạy lại nhiều lần, gắn trong đó sẽ chồng listener)
+$("settingsCheckUpdate").addEventListener("click", () => {
+  toast(`${t("settingsUpToDate")} · v${browser.runtime.getManifest().version}`);
+});
 $("profileSwitchRegister").addEventListener("click", () => { profileAuthAutoRegister = false; AUTH_POPUP.morph(() => setProfileAuthMode("register")); });
 $("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
