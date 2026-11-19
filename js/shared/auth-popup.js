@@ -10,7 +10,7 @@
   // cùng markup với pages/dashboard.html (#profileAuthDialog) — trang web dựng bằng hàm này trong shadow DOM
   function markup(t) {
     return `<form id="profileAuthForm" method="dialog" novalidate><span class="profile-auth-grip" aria-hidden="true"></span>
-    <header class="profile-auth-head"><h2 id="profileAuthTitle" class="profile-auth-title">${t("profileLogin")}</h2></header>
+    <div class="profile-auth-head"><h2 id="profileAuthTitle" class="profile-auth-title">${t("profileLogin")}</h2></div>
     <div class="profile-auth-body">
       <div class="profile-auth-side">
         <button id="profileGoogleLogin" class="profile-google-button" type="button">${GOOGLE}<span>${t("profileGoogleContinue")}</span></button>

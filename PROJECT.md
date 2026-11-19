@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.469 | Arena.ai Agent sửa:**
+
+- Người dùng: tiêu đề popup đăng nhập làm "cho có" — phải **căn giữa**, **cùng màu/nền với popup**, và **có gạch phân cách**.
+- Tìm ra nguyên nhân dải trắng ở đầu thẻ: `css/dashboard/dashboard.css` dòng 5 có rule toàn cục `header { min-height:56px; background:#fff; ... }` — thẻ tiêu đề của mình là `<header>` nên bị **tô nền trắng 56px**, tách hẳn khỏi nền kính của popup. Đổi sang `<div class="profile-auth-head">` (cả `pages/dashboard.html` và `markup()`), nên không còn dính rule chung nào.
+- CSS mới: `.profile-auth-head { padding:15px 20px 13px; border-bottom:1px solid var(--au-line); background:transparent; text-align:center; }` và `.profile-auth-title { font-size:15.5px; font-weight:650; line-height:21px; color:var(--au-tx); text-align:center; letter-spacing:-.01em; }` → chữ **căn giữa**, cùng nền kính với thẻ, có **gạch phân cách** màu viền chuẩn (`.12` sáng / `.12` trắng tối). `.profile-auth-body` thêm `background:transparent`, padding `16px 20px 20px` để sát gạch.
+- Sheet điện thoại: `.profile-auth-head { padding-top:10px; padding-bottom:11px }` (sát tay nắm), body `14px`.
+- File: `pages/dashboard.html`, `js/shared/auth-popup.js`, `css/dashboard/settings.css`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 924/924 ngoặc; `grep` xác nhận cả 2 markup đã dùng `div.profile-auth-head` (không còn `<header>` trong popup đăng nhập). **Chưa chạy UI thật** — vị trí/căn giữa cần người dùng xem.
+
 **2026-11-18 | v3.5.468 | Arena.ai Agent sửa:**
 
 - Lỗi: bỏ 2 tab thì popup **mất luôn tiêu đề**, phía trên chỉ còn nút Google.
