@@ -3636,6 +3636,23 @@ $("settingsAccountState").addEventListener("change", async event => {
   } catch (error) { console.warn("Could not save profile picture", error); }
   input.value = "";
 });
+// điện thoại: sheet Ảnh hồ sơ kéo xuống để đóng — dùng chung sheet-kit với sheet Cài đặt và popup đăng nhập
+(() => {
+  const dialog = $("dashboardAvatarDialog");
+  const SHEET = window.matchMedia("(orientation: portrait) and (max-width:699px), (orientation: landscape) and (max-height:499.98px)");
+  let kitted = false;
+  const kit = () => {
+    if (kitted || !dialog) return;
+    const SK = globalThis.LHN_SHEET;
+    if (!SK) return;
+    kitted = true;
+    SK.attach(dialog, { isOpen:() => dialog.open, close:() => dialog.close(), watch:dialog,
+      get drag() { return SHEET.matches ? undefined : false; } });
+  };
+  kit();
+  dialog?.addEventListener("toggle", kit);
+  window.addEventListener("load", kit, { once:true });
+})();
 // popup ảnh hồ sơ: đóng, bấm nền, đổi ảnh, xoá ảnh (có Hoàn tác 5 giây)
 $("dashboardAvatarClose")?.addEventListener("click", () => $("dashboardAvatarDialog").close());
 $("dashboardAvatarDialog")?.addEventListener("click", event => {

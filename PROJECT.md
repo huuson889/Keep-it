@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.457 | Arena.ai Agent sửa:**
+
+- Người dùng báo: ở chế độ điện thoại (DevTools 455×696), sheet **Ảnh hồ sơ không kéo xuống để đóng** được — trong khi sheet Cài đặt và popup đăng nhập kéo được.
+- Nguyên nhân: popup Ảnh hồ sơ là sheet mới, **chưa gắn `sheet-kit`** (`js/shared/sheet-kit.js`) như hai sheet kia.
+- Nay: gắn y như popup đăng nhập — `LHN_SHEET.attach(dialog, { isOpen, close, watch, drag: SHEET.matches ? undefined : false })`, `SHEET` = đúng media query của CSS sheet (`portrait ≤699px` hoặc `landscape ≤499.98px`) nên **máy tính không kéo, điện thoại kéo được**; kéo xuống quá ngưỡng = đóng; danh sách trong thân cuộn lên trước rồi mới kéo (đúng luật sheet-kit).
+- Thêm chuyển động đóng/mở của sheet (chỉ trong media query điện thoại): `transition:transform .3s cubic-bezier(.2,.8,.2,1), display .3s allow-discrete, overlay .3s allow-discrete` + `[not([open])]{transform:translateY(100%)}` + `@starting-style` — y như sheet Cài đặt, nên đóng là trượt xuống chứ không biến mất.
+- File: `js/dashboard/dashboard.js`, `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 1211/1211 ngoặc; `grep` xác nhận `sheet-kit.js` được nạp **trước** `dashboard.js` trong `pages/dashboard.html` nên `LHN_SHEET` có sẵn lúc gắn. **Chưa xác minh bằng mắt** (không có trình duyệt trong sandbox).
+
 **2026-11-18 | v3.5.456 | Arena.ai Agent sửa:**
 
 - Lỗi (ảnh người dùng): popup nhảy xuống **góc dưới bên phải**, phần lớn ra ngoài màn hình.

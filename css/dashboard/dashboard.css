@@ -1348,7 +1348,10 @@ html.dark .kp-avatar-card { border-color:rgba(255,255,255,.12); background:rgba(
 
 /* điện thoại dọc + điện thoại ngang (cao < 500px): sheet từ đáy, rộng hết bề ngang — như popup đăng nhập */
 @media (orientation: portrait) and (max-width:699px), (orientation: landscape) and (max-height:499.98px) {
-  #dashboardAvatarDialog { inset:auto 0 0 0; width:100%; height:auto; max-height:96dvh; padding:0; place-items:stretch; }
+  #dashboardAvatarDialog { inset:auto 0 0 0; width:100%; height:auto; max-height:96dvh; padding:0; place-items:stretch;
+    transform:none; transition:transform .3s cubic-bezier(.2, .8, .2, 1), display .3s allow-discrete, overlay .3s allow-discrete; }
+  #dashboardAvatarDialog:not([open]) { transform:translateY(100%); }
+  @starting-style { #dashboardAvatarDialog[open] { transform:translateY(100%); } }
   .kp-avatar-card { width:100%; max-width:100%; max-height:96dvh; border-width:1px 0 0; border-radius:22px 22px 0 0;
     padding-bottom:env(safe-area-inset-bottom, 0px); box-shadow:0 -12px 40px rgba(0,0,0,.18); }
   .kp-avatar-card::before { content:""; width:38px; height:5px; margin:8px auto 0; border-radius:3px; background:rgba(120,120,128,.4); flex:none; }
