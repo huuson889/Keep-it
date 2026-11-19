@@ -164,13 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-18 | v3.5.471 | Arena.ai Agent sửa:**
+**2026-11-18 | v3.5.472 | Arena.ai Agent sửa:**
 
-- Người dùng: "khúc đó cái nào chưa căn giữa thì căn giữa hết".
-- Căn giữa nốt trong popup đăng nhập: nhãn **Email / Mật khẩu / Nhập lại mật khẩu** (`text-align:center`), chữ đã nhập + placeholder trong ô (`input { text-align:center }`), ô mật khẩu chừa đều `padding-left/right: 42px` để chữ nằm giữa thật (bên phải đã có con mắt), và bảng điều khoản — tiêu đề, nội dung, nút **Đóng** (`justify-self:center`).
-- Vốn đã giữa từ trước: tiêu đề, nút Google, dòng "hoặc email", câu lỗi, dòng điều khoản, nút Đăng nhập, dòng "Chưa có tài khoản? Đăng ký". **Không đổi**: con mắt vẫn ở mép phải trong ô (là nút điều khiển, không phải chữ).
-- File: `css/dashboard/settings.css`, `manifest.json`.
-- Kiểm tra: CSS 925/925 ngoặc (thêm 1 rule cho `input`). **Chưa chạy UI thật**.
+- Lỗi thứ tự: bấm tạo tài khoản khi chưa tích điều khoản thì hiện ngay "Bạn cần đồng ý Điều khoản sử dụng…" — **che mất lỗi ô nhập** (mật khẩu ngắn, nhập lại không khớp). Lỗi nhập phải hiện trước.
+- Nay: chuyển khối kiểm tra điều khoản xuống **sau** `LHN_AUTH_POPUP.check()` và **trước** `finishProfileAuth()`. Thứ tự đầy đủ: Email trống → Email sai định dạng → Mật khẩu trống → (đăng nhập: email chưa có tài khoản → tự mở nhánh tạo) → mật khẩu < 8 ký tự / nhập lại không khớp / sai thông tin → **rồi mới** nhắc tích điều khoản.
+- File: `js/dashboard/dashboard.js`, `manifest.json`.
+- Ghi chú: 3.5.471 (căn giữa nhãn ô nhập) đã bị **revert** theo yêu cầu, nội dung = 3.5.470; số 3.5.471 không dùng lại.
+- Kiểm tra: `node --check` hợp lệ; in lại toàn bộ handler xác nhận đúng thứ tự. **Chưa chạy UI thật**.
 
 **2026-11-18 | v3.5.470 | Arena.ai Agent sửa:**
 

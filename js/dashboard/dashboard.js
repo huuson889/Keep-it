@@ -3096,14 +3096,6 @@ $("profileAuthForm").addEventListener("submit", async event => {
     $("profilePassword").focus();
     return;
   }
-  if (profileAuthMode === "register" && !$("profileTerms").checked) {
-    showProfileAuthError(t("profileTermsRequired"), []);
-    $("profileTermsRow").classList.add("is-invalid");
-    $("profileTerms").setAttribute("aria-invalid", "true");
-    $("profileTerms").setAttribute("aria-describedby", "profileAuthError");
-    $("profileTerms").focus();
-    return;
-  }
   // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản
   if (profileAuthMode === "login" && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
     profileAuthAutoRegister = true;   // sửa email là tự quay lại "đăng nhập"
@@ -3113,6 +3105,15 @@ $("profileAuthForm").addEventListener("submit", async event => {
   }
   const result = LHN_AUTH_POPUP.check(profileAuthMode, $("profileUsername").value, $("profilePassword").value, $("profileRetypePassword").value);
   if (result.error) { showProfileAuthError(t(result.error), PROFILE_AUTH_FIELDS[result.error] || []); return; }
+  // lỗi ô nhập phải hiện TRƯỚC; đồng ý điều khoản là bước cuối mới nhắc
+  if (profileAuthMode === "register" && !$("profileTerms").checked) {
+    showProfileAuthError(t("profileTermsRequired"), []);
+    $("profileTermsRow").classList.add("is-invalid");
+    $("profileTerms").setAttribute("aria-invalid", "true");
+    $("profileTerms").setAttribute("aria-describedby", "profileAuthError");
+    $("profileTerms").focus();
+    return;
+  }
   await finishProfileAuth(result.profile);
 });
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });
