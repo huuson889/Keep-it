@@ -164,6 +164,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.450 | Arena.ai Agent sửa:**
+
+- **Sửa lỗi do 3.5.449 gây ra**: ở khung Cài đặt hẹp, nhãn "Ảnh hồ sơ" bị bóp còn ~40px nên chữ rơi mỗi dòng một từ, ảnh chồng lên chữ.
+- Nguyên nhân: `css/dashboard/settings.css` có container query `@container kpset (max-width:520px)` đặt `.settings-account-controls { flex:1 1 100%; width:100% }`. Bản 3.5.449 chỉ đè `flex` mà **quên `width`**, nên khối ảnh rộng 100% → cột chữ co về 0.
+- Nay đè đủ cả 5 thuộc tính bằng `!important` (an toàn bất kể độ ưu tiên/thứ tự file):
+  - hàng: `flex-direction:row`, `align-items:center`, `justify-content:space-between`, `flex-wrap:nowrap`, `gap:12px`, `row-gap:0`
+  - cột chữ: `flex:1 1 auto`, `width:auto`, `max-width:none`, `min-width:0`
+  - khối ảnh: `flex:0 0 auto`, `width:auto`, `max-width:none`, `align-self:center`
+- File: `css/dashboard/dashboard.css`, `manifest.json`.
+- Kiểm chứng (computed style, jsdom + CSS thật): hàng ảnh `direction=row / wrap=nowrap / align=center / gap=12px`; cột chữ `flex 1/1/auto`, `width:auto`, `max-width:none`, `min-width:0`; khối ảnh `flex 0/0/auto`, `width:auto`, `max-width:none`. Ngoặc CSS cân 1202/1202, `git diff` chỉ +13/−9 dòng (không đụng phần khác).
+- Vẫn **không chụp được ảnh** (sandbox thiếu `xvfb` + lib Chromium) — cần anh kiểm tra lại trên máy.
+
 **2026-11-18 | v3.5.449 | Arena.ai Agent sửa:**
 
 - Đổi nhãn dưới "Ảnh hồ sơ": “Bấm vào ảnh để xem, đổi hoặc xoá.” → **“Bấm vào ảnh để thay đổi.”** (en “Click the picture to change it.”, ko “사진을 클릭해 변경하세요.”); sửa cả chuỗi mặc định trong `pages/dashboard.html`.

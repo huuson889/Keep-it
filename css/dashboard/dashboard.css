@@ -1386,22 +1386,26 @@ html.dark .kp-avatar-act:focus-visible, html.dark .kp-avatar-close:focus-visible
   .kp-avatar-close { width:44px; height:44px; }
 }
 
-/* v3.5.449 — hàng Ảnh hồ sơ luôn nằm cùng dòng: ảnh không rơi xuống dưới nhãn ở màn hẹp
-   (luật @media(max-width:520px) .settings-account-row{flex-direction:column} vẫn áp cho các hàng khác) */
+/* v3.5.450 — hàng Ảnh hồ sơ luôn nằm CÙNG DÒNG: chữ bên trái, ảnh bên phải.
+   Buộc !important vì trong khung hẹp (container query kpset ≤520px) settings.css đặt
+   .settings-account-row{flex-wrap:wrap} · >span:first-child{flex:1 1 100%} · .settings-account-controls{flex:1 1 100%;width:100%}
+   — bản 3.5.449 thiếu width:auto nên cột chữ bị bóp còn 0 (chữ rơi mỗi dòng một từ). */
 #dashboardSettingsDialog .settings-account-row.settings-picture-row,
 #dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row {
-  flex-direction:row; align-items:center; justify-content:space-between; flex-wrap:nowrap; gap:12px;
+  flex-direction:row!important; align-items:center!important; justify-content:space-between!important;
+  flex-wrap:nowrap!important; gap:12px!important; row-gap:0!important;
 }
 #dashboardSettingsDialog .settings-account-row.settings-picture-row > span:first-child,
 #dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row > span:first-child {
-  flex:1 1 auto; min-width:0;
+  flex:1 1 auto!important; width:auto!important; max-width:none!important; min-width:0!important;
 }
-#dashboardSettingsDialog .settings-account-row.settings-picture-row .settings-picture-controls,
-#dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row .settings-picture-controls {
-  flex:0 0 auto; align-self:center;
-}
-/* nhãn phụ được phép xuống dòng trong cột chữ, ảnh vẫn đứng yên bên phải */
+/* nhãn phụ xuống dòng trong cột chữ; ảnh đứng yên bên phải */
 #dashboardSettingsDialog .settings-account-row.settings-picture-row small,
 #dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row small {
   overflow-wrap:anywhere;
+}
+#dashboardSettingsDialog .settings-account-row.settings-picture-row > .settings-picture-controls,
+#dashboardHighlightsNotesView #dashboardSettingsDialog .settings-account-row.settings-picture-row > .settings-picture-controls {
+  flex:0 0 auto!important; width:auto!important; max-width:none!important; min-width:0!important;
+  align-self:center!important; justify-content:flex-end;
 }
