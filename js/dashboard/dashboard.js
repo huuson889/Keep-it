@@ -216,7 +216,6 @@ function openAvatarDialog() {
   const dialog = $("dashboardAvatarDialog");
   if (!dialog) return;
   renderAvatarDialog();
-  $("dashboardSettingsDialog")?.classList.add("kp-avatar-behind");
   if (!dialog.open) dialog.showModal();
   requestAnimationFrame(() => $("dashboardAvatarClose")?.focus());
 }
@@ -3625,10 +3624,7 @@ $("dashboardAvatarDialog")?.addEventListener("click", event => {
   const rect = card.getBoundingClientRect();
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
 });
-$("dashboardAvatarDialog")?.addEventListener("close", () => {
-  $("dashboardSettingsDialog")?.classList.remove("kp-avatar-behind");
-  $("settingsProfilePictureOpen")?.focus();
-});
+$("dashboardAvatarDialog")?.addEventListener("close", () => $("settingsProfilePictureOpen")?.focus());
 $("dashboardAvatarChange")?.addEventListener("click", () => { $("dashboardAvatarDialog").close(); $("settingsProfilePictureFile").click(); });
 $("dashboardAvatarRemove")?.addEventListener("click", async () => {
   if (!demoProfile?.avatarDataUrl) return;

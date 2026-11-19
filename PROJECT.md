@@ -164,6 +164,16 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.453 | Arena.ai Agent sửa:**
+
+- Lỗi (ảnh người dùng): sau 3.5.452, **cả trang bạc màu** và thẻ popup **xám đục** — sửa càng sai.
+- Nguyên nhân thật: 3.5.452 đặt `#dashboardSettingsDialog.kp-avatar-behind { opacity:.4 }`; vì hộp thoại Cài đặt là tấm kính phủ gần hết màn hình nên **giảm opacity của nó làm nhạt luôn cả trang phía sau**; cộng thêm nền `.58` → kính trắng `.78` nằm trên nền tối nên ra màu xám `#dbdbdb` (đo trên ảnh: thân thẻ 219,219,219; nền sau 76,73,93).
+- Nay: **gỡ hẳn** class `kp-avatar-behind` (JS + CSS) → trang không còn bị bạc; `#dashboardAvatarDialog::backdrop` = **`rgba(0,0,0,.4)`, không blur — y hệt `#dashboardSettingsDialog::backdrop` (settings.css:225)** ở cả sáng và tối; giữ kính `::before` `.78` + `blur(24px) saturate(1.6)`.
+- Chữ phụ trên nền kính được làm đậm lại cho dễ đọc: `.kp-avatar-meta` / `.kp-avatar-limit` / `.kp-avatar-close` từ `#8b91a0` → `#5f6575` (nền kính nhạt hơn nền trắng đặc nên chữ cũ chỉ còn ~2,3:1 tương phản).
+- Giữ nguyên hình học thẻ (392px, bo 16, ảnh 200px, chân C).
+- File: `css/dashboard/dashboard.css`, `js/dashboard/dashboard.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ; CSS 1203/1203 ngoặc; `grep` xác nhận không còn `kp-avatar-behind` trong cả `css` và `js`. **Chưa xác minh bằng mắt** — jsdom không tính được `::before`/`::backdrop`.
+
 **2026-11-18 | v3.5.452 | Arena.ai Agent sửa:**
 
 - Lỗi 1 (người dùng hỏi "tại sao có cái khung mờ phía sau?"): sau lưng popup **Ảnh hồ sơ** hiện một tấm chữ nhật mờ. Đó chính là **hộp thoại Cài đặt vẫn đang mở** phía dưới, bị `::backdrop` của popup làm mờ (`backdrop-filter: blur(6px)`) nên viền bo của nó hiện thành "khung".
