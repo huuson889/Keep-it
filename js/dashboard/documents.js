@@ -567,7 +567,10 @@ function nativeReaderState(state){
 async function refreshNativeSource(){if(!V.doc)return;await LHN_DOCUMENT_CONTEXT.refresh();}
 LHN_DOCUMENT_CONTEXT.attach({
  active:()=>!!activeEngine&&$('#viewer').classList.contains('show'),url:documentUrl,title:()=>V.doc?.name||document.title,hostname:()=> 'Keepit',thumbnail:()=>V.doc?.thumbnail||'',root:()=>$('#stage'),
- containsRange:range=>!!activeEngine&&$('#viewer').classList.contains('show')&&$('#stage').contains(range.commonAncestorContainer)&&!!(range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement)?.closest('.en'),
+ containsRange:range=>{if(!activeEngine||!$('#viewer').classList.contains('show')||!$('#stage').contains(range.commonAncestorContainer))return false;
+  /* v3.5.485: PDF có span chữ nằm thẳng dưới .pdfTextLayer (không có .en/.para) → vẫn phải cho chọn chữ. */
+  const node=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
+  return !!node?.closest('.en')||!!node?.closest('[data-page]');},
  sentenceContext:range=>{const el=range?.startContainer?.nodeType===1?range.startContainer:range?.startContainer?.parentElement;return readerTextForBlock(el?.closest('.para'));},
  anchorFor:sourceAnchor,findRanges:annotationRanges,onAnnotations:items=>void syncAnnotationCounts(items),
  async revealAnnotation(item){const page=item?.documentAnchor?.page;if(page&&V.doc?.id===item.documentAnchor.documentId){await setPage(page);await ensurePage(page);}},

@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.485 | Arena.ai Agent sửa:**
+
+- Dữ liệu từ Chrome (`LHN_SELECTION_DEBUG`): `stage:"mouseup.outsideContext"`, `inStage:true`, **`inPara:false`**, `blockClass:"textLayer pdfTextLayer"`, `ctx.contains:"false"` → chọn chữ trong **PDF** bị loại vì `containsRange` đòi điểm chọn nằm trong `.en`.
+- PDF render những đoạn chưa gom thành khối: `span` nằm thẳng dưới `.pdfTextLayer`, không có `.para`/`.en`. Vì vậy thanh Tô sáng/Dịch/AI không bao giờ hiện với loại trang này — không liên quan cài đặt.
+- Nay: `containsRange` nhận vùng chọn trong `#stage` khi điểm chọn nằm trong `.en` **hoặc** trong một khối `[data-page]` (mọi loại trang của bộ xem).
+- Hệ quả đã biết: ghi chú trên đoạn PDF chưa gom khối được neo ở mức **trang** (`fileLevel`, `page`) chứ chưa tô tại chỗ từng chữ như đoạn `.para`.
+- File: `js/dashboard/documents.js`, `manifest.json`. Kiểm tra: `node --check` hợp lệ. **Chưa xác nhận trong Chrome.**
+
 **2026-11-18 | v3.5.484 | Arena.ai Agent sửa:**
 
 - Người dùng báo bản 3.5.483 **vẫn lỗi** lần mở đầu (`hasContentTools:true`, `iconExists:false`, `nativeInactive:false`): vậy không phải thời điểm mở tệp, mà là một cổng khác trong `content.js` chặn `showTranslateIcon()`.
