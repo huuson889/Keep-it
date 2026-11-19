@@ -164,6 +164,20 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.446 | Arena.ai Agent sửa:**
+
+- Lỗi "badge tối sai": luật nền tối cho nhãn Free (`html.dark #dashboardSidebar .reference-footer-button > .kp-plan-badge`, độ ưu tiên 1-3-1) **đè** luật Pro/Ultra (1-3-0), nên ở nền tối Pro/Ultra vẫn ra tím nhạt của Free. Đã buộc luật Free vào `[data-plan="free"]` → Pro/Ultra giữ đúng kiểu ở cả hai nền.
+- Bóng đổ của Pro/Ultra phải `!important` vì luật cũ `.dashboard-profile-free-badge` đặt `box-shadow:none!important`.
+- Avatar nền tối bị `html.dark .reference-avatar-letter{color:#a5a9ff}` nhuộm chữ/viền tím → thêm luật đè `color:#fff; border-color:#fff`.
+- Vòng avatar Pro/Ultra viết bằng longhand (`outline-width/style/color`) thay vì `var(--kp-plan)` để không phụ thuộc biến.
+- File: `css/dashboard/dashboard.css`, `manifest.json`.
+- **Kiểm chứng bằng computed style** (jsdom 29, nạp đủ 13 file CSS theo đúng thứ tự trong `pages/dashboard.html`, dựng lại đúng markup sidebar + thẻ hồ sơ Cài đặt, đo 2 nền × 4 gói):
+  - Nền tối Free: badge `rgba(165,169,255,.12)` / viền `rgba(165,169,255,.6)` / chữ `#b9b3ff` — **giống Cài đặt**.
+  - Nền tối Pro: `linear-gradient(135deg,#f59e0b,#b45309)`, chữ trắng, bóng `0 2px 8px rgba(180,83,9,.3)`, avatar viền `#fbbf24` — **giống Cài đặt**.
+  - Nền tối Ultra: `linear-gradient(135deg,#8b5cf6,#5b21b6)`, bóng `0 2px 8px rgba(109,40,217,.35)`, avatar `outline 2px #a78bfa` + quầng `rgba(139,92,246,.38)` — **giống Cài đặt**.
+  - Nền sáng Pro: `#f59e0b→#b45309`, avatar `2px #d97706`; Ultra: `#8b5cf6→#5b21b6`, avatar `2px #7c3aed`.
+- Vẫn **không chụp được ảnh** (sandbox thiếu `xvfb` + lib Chromium).
+
 **2026-11-18 | v3.5.445 | Arena.ai Agent sửa:**
 
 - Lỗi: Cài đặt đổi gói Pro/Ultra thì nhãn ở chân sidebar không đổi kiểu (vì nhãn đó là HTML tĩnh `data-plan="free"`, chỉ `#settingsProfilePlan` được cập nhật).
