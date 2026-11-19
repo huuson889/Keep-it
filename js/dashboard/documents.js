@@ -60,6 +60,8 @@ function finishPassword(value){const resolve=passwordResolve;passwordResolve=nul
 $('#pwOk').onclick=()=>{if(!$('#pwIn').value){$('#pwErr').style.visibility='visible';return;}finishPassword($('#pwIn').value);};$('#pwCancel').onclick=()=>{if(passwordForViewer)void closeViewer();else ++importCycle;finishPassword(null);};$('#pwIn').onkeydown=e=>{if(e.key==='Enter')$('#pwOk').click();if(e.key==='Escape')$('#pwCancel').click();};
 const extOf=name=>String(name).split('.').pop().toLowerCase();
 function kindOf(name){const ext=extOf(name);return ['jpg','jpeg','png','webp'].includes(ext)?'image':['pdf','docx','pptx'].includes(ext)?ext:null;}
+// v3.5.479: có tệp tới tay khung mà mất đuôi tên (chỉ còn MIME) → vẫn nhận đúng loại
+function kindByMime(mime){const m=String(mime||'').toLowerCase();if(m==='application/pdf')return 'pdf';if(/wordprocessingml/.test(m))return 'docx';if(/presentationml/.test(m))return 'pptx';if(m.startsWith('image/'))return 'image';return null;}
 function pdfSourceUrl(value){try{const u=new URL(value);return ['http:','https:','file:'].includes(u.protocol)&&/\.pdf$/i.test(decodeURIComponent(u.pathname))?(u.hash='',u.href):'';}catch{return '';}}
 function pdfFileName(url){try{const part=decodeURIComponent(new URL(url).pathname.split('/').pop()||'');return part&&/\.pdf$/i.test(part)?part:'document.pdf';}catch{return 'document.pdf';}}
 async function boundedPdfBlob(response){
@@ -88,8 +90,8 @@ async function importFiles(files){
  try{
   for(const file of [...files]){
    if(cycle!==importCycle)break;
-   const type=kindOf(file.name);if(!type){showError(new Error('unsupported'),file.name);$('#errMsg').textContent=t('unsupported');continue;}
-   if(!file.size||file.size>(type==='image'?30:50)*MB){showError(new Error('fileLimit'),file.name);$('#errMsg').textContent=t('fileLimit');continue;}
+   const type=kindOf(file.name)||kindByMime(file.type);if(!type){outcome.error=outcome.error||'unsupported';showError(new Error('unsupported'),file.name);$('#errMsg').textContent=t('unsupported');continue;}
+   if(!file.size||file.size>(type==='image'?30:50)*MB){outcome.error=outcome.error||'fileLimit';showError(new Error('fileLimit'),file.name);$('#errMsg').textContent=t('fileLimit');continue;}
    let engine=null;try{
     $('#oName').textContent=file.name;$('#oIco').textContent=TYPE[type].label;$('#oIco').style.background=TYPE[type].color;$('#oMeta').textContent=fmtSize(file.size);$('#oSteps').innerHTML=`<li class="run"><i></i>${t('opening')}</li>`;$('#oFill').style.width='0%';showModal('#openWrap',true);
     const id=await Store.fingerprint(file);check();const old=await Store.get('meta',id);if(old){first||=id;outcome.skipped++;continue;}

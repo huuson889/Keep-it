@@ -271,7 +271,7 @@
       // v3.5.478: "0 tài liệu" không còn là câu duy nhất — nói rõ vì sao không thêm được.
       const count = Number(data.count) || 0, skipped = Number(data.skipped) || 0, reason = String(data.error || '');
       const KNOWN = { unsupported:'unsupported', fileLimit:'fileLimit', documentsBusy:'documentsBusy', documentsBadFile:'badFile', storageFailed:'storageFailed', documentsDatabaseBlocked:'dbBlocked' };
-      if (reason) globalThis.toast?.(t(KNOWN[reason] || 'importFailed'));
+      if (reason) globalThis.toast?.(KNOWN[reason] ? t(KNOWN[reason]) : `${t('importFailed')} · ${reason.slice(0, 90)}`);
       else if (count) globalThis.toast?.(t('filesCount', { count }));
       else if (skipped) globalThis.toast?.(t('importDuplicate'));
       else globalThis.toast?.(t('importFailed'));

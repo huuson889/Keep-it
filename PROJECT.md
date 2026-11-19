@@ -164,6 +164,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.479 | Arena.ai Agent sửa:**
+
+- Sau 3.5.478 người dùng thấy đúng câu "Không thêm được tệp vào thư viện." → tức là `count=0, skipped=0, error` **rỗng hoặc lạ**.
+- Tìm ra lỗ hổng trong chính bản 3.5.478: hai nhánh từ chối (`!type`, quá dung lượng) **quên ghi `outcome.error`** → vẫn rơi vào câu chung. Nay ghi rõ `unsupported` / `fileLimit`.
+- Thêm `kindByMime()`: có tệp sang tay khung mà **mất đuôi tên**, chỉ còn MIME → vẫn nhận đúng PDF/DOCX/PPTX/ảnh thay vì báo sai định dạng.
+- Dashboard: lý do **không nằm trong danh sách quen** thì in luôn phần kỹ thuật sau dấu "·" (cắt 90 ký tự) để chốt nguyên nhân, không đoán.
+- File: `js/dashboard/documents.js`, `js/dashboard/documents-library.js`, `manifest.json`.
+- Kiểm tra: `node --check` hợp lệ. **Chưa chạy UI thật** — chờ câu toast mới để biết nguyên nhân gốc.
+
 **2026-11-18 | v3.5.478 | Arena.ai Agent sửa:**
 
 - Lỗi người dùng: chọn tệp ở tab Tài liệu → báo **"0 tài liệu"**, tệp **không vào** thư viện.
