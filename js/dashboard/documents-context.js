@@ -18,11 +18,13 @@
   globalThis.LHN_DOCUMENT_CONTEXT = Object.freeze({
     attach(value) { host = value; },
     receiveAIMessage:message=>aiSheet.handleMessage(message),
-    async refresh() {
+    async refresh(options) {
       document.documentElement.classList.toggle('documents-native-inactive', !context.active());
       if(!context.active())aiSheet.close(true);
-      /* v3.5.486: KHÔNG chờ refreshSource (nó chờ loadSettings + restoreAnnotations) —
-         chờ sẽ làm openViewer treo và cờ websiteDisabled bên content.js không được cập nhật. */
+      /* v3.5.489: refreshSource() vẽ lại ghi chú/tô sáng lên trang (restoreAnnotations). Chạy nó
+         trong lúc trang còn đang dựng sẽ xoá vùng chọn người dùng vừa bôi — đúng lỗi "mở tệp đầu
+         tiên không bôi đen được". Vì vậy gọi sớm chỉ để gỡ class (tools:false), cuối cùng mới vẽ. */
+      if(options?.tools === false) return;
       try { void globalThis.LHN_CONTENT_TOOLS?.refreshSource?.(); } catch { /* ignore */ }
       globalThis.LHN_READER_API?.refreshSource?.();
     }

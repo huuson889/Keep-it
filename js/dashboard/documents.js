@@ -127,7 +127,7 @@ async function openViewer(id,mode='orig',prepared=null){
   /* v3.5.487: khoá chọn chữ trong lúc #pageStack còn dựng lại (vùng chọn tạo lúc đó bị xoá ngay),
      chỉ khoá tối đa 2,5 giây để không bao giờ chặn người dùng nếu bước sau bị treo. */
   $('#viewer').dataset.selectLocked='true';const lockCycle=cycle;setTimeout(()=>{if(lockCycle===viewCycle)$('#viewer').dataset.selectLocked='false';},2500);$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
-  const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;void refreshNativeSource();   // v3.5.486: gỡ 'documents-native-inactive' ngay, không đợi bước cuốiV.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);if(cycle!==viewCycle)return;
+  const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;void refreshNativeSource(false);   // v3.5.489: chỉ gỡ class, KHÔNG vẽ lại ghi chú lúc trang còn đang dựngV.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);if(cycle!==viewCycle)return;
   for(const el of[$('#rail'),$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');$('#viewer').dataset.selectLocked='false';if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}if(V.mode==='read')await startNativeReader();$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
  }catch(error){prepared?.dispose();if(cycle===viewCycle){$('#viewer').classList.remove('show');notifyParent(false);showError(error);}}
 }
@@ -567,7 +567,15 @@ function nativeReaderState(state){
  if(visibilityChanged){fitToolbar();if(!visible)wakePager();}
  if(!state.reading)clearReaderParagraphHighlight();
 }
-async function refreshNativeSource(){if(!V.doc)return;await LHN_DOCUMENT_CONTEXT.refresh();}
+/* v3.5.489: nếu người dùng đang bôi đen thì HOÃN việc vẽ lại ghi chú (nó sẽ xoá vùng chọn). */
+const hasUserSelection=()=>{const s=getSelection();return !!s&&s.rangeCount>0&&!s.isCollapsed&&String(s).trim().length>0;};
+let refreshRetries=0;
+async function refreshNativeSource(tools=true){
+ if(!V.doc)return;
+ if(tools&&hasUserSelection()&&refreshRetries<5){refreshRetries++;setTimeout(()=>{if(V.doc&&!hasUserSelection())void refreshNativeSource(true);else refreshRetries=0;},1200);return;}
+ refreshRetries=0;
+ await LHN_DOCUMENT_CONTEXT.refresh(tools?undefined:{tools:false});
+}
 LHN_DOCUMENT_CONTEXT.attach({
  active:()=>!!activeEngine&&$('#viewer').classList.contains('show'),url:documentUrl,title:()=>V.doc?.name||document.title,hostname:()=> 'Keepit',thumbnail:()=>V.doc?.thumbnail||'',root:()=>$('#stage'),
  containsRange:range=>{if(!activeEngine||!$('#viewer').classList.contains('show')||!$('#stage').contains(range.commonAncestorContainer))return false;

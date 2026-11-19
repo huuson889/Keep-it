@@ -164,6 +164,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.489 | Arena.ai Agent sửa (theo dấu hiệu của người dùng: chỉ lỗi ở lần mở ĐẦU TIÊN sau khi cài lại extension):**
+
+- Người dùng: "relic 1 lần là mở tệp mới vẫn bôi đen đúng, còn remove app cũ cài app mới thì mở file pdf đầu tiên vẫn lỗi, reload lại và mở tệp khác mới hết" → lỗi thuộc **lần chạy đầu** (máy nguội), không phải lần mở đầu trong một phiên.
+- Nguyên nhân do chính bản 3.5.486 gây ra: `openViewer` gọi `refreshNativeSource()` **ngay khi engine sẵn sàng**, mà hàm này chạy `restoreAnnotations()` → **vẽ lại ghi chú/tô sáng lên trang trong lúc trang còn đang dựng**. Lần đầu tiên việc này lâu nhất (chưa cache) nên xoá sạch vùng chọn vừa bôi (đã đo trước đó: `mouseup.noTextOrEditable {text:false}` sau 20 ms, `#pageStack` bị gỡ rồi dựng lại). 3.5.430 chỉ vẽ ở **cuối**.
+- Sửa: `documents-context.js` `refresh({tools})` — gọi sớm chỉ gỡ `documents-native-inactive`, **không** vẽ lại ghi chú; `documents.js` gọi `refreshNativeSource(false)` sớm và bản đầy đủ ở cuối, **hoãn nếu người dùng đang bôi đen** (thử lại tối đa 5 lần, 1,2 giây/lần).
+- File: `js/dashboard/documents-context.js`, `js/dashboard/documents.js`, `manifest.json`. Kiểm tra: `node --check` hợp lệ. **Chưa xác nhận trong Chrome** (tunnel rớt kết nối khi khung tự nạp lại).
+
 **2026-11-18 | v3.5.488 | Arena.ai Agent sửa (so mã 3.5.430 thay vì đoán):**
 
 - Người dùng: "chỉ cần so sánh trước lúc reload và sau khi reload là biết khác chỗ nào… tại sao bản 3.5.430 không lỗi?"
