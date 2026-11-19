@@ -164,6 +164,14 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.483 | Arena.ai Agent sửa:**
+
+- Người dùng: bôi đen văn bản ở **lần mở tệp đầu tiên** không hiện thanh Tô sáng / Dịch / AI, reload khung thì lại được (như bản 3.5.430).
+- Nguyên nhân (đo trong Chrome của người dùng): lần mở đầu `iconExists:false` trong khi `nativeInactive:false` và mọi cờ cài đặt đều bật → **không phải CSS, không phải cài đặt**; khung mở tệp **khi `boot()` còn đang chạy** nên bộ công cụ chọn chữ chưa kịp gắn. Đường "reload" lại mở tệp **sau khi** boot xong (URL có `?document=` mở ở cuối `boot()`) nên có thanh.
+- Nay: `openViewer()` **chờ khung khởi tạo xong** (`await bootReady`) và chờ thêm 2 khung hình sau khi `LHN_CONTENT_TOOLS` có mặt (tối đa 1,5 giây), rồi mới dựng bộ xem. Cờ được mở ngay trước khi `boot()` tự mở tệp theo `?document=` để không tự khoá nhau.
+- File: `js/dashboard/documents.js`, `manifest.json`.
+- Kiểm tra: `node --check js/dashboard/documents.js` hợp lệ; diff chỉ 3 chỗ. **Chưa chạy thật trong Chrome** — cần người dùng mở tệp lần đầu để xác nhận.
+
 **2026-11-18 | v3.5.482 | Arena.ai Agent sửa:**
 
 - Người dùng: "load xong mới vào layout tài liệu mới hợp lý" — trước đó nhập xong là popup ẩn ngay trong khi khung còn đang dựng trang đầu, nên màn hình nhảy vào layout tài liệu giữa chừng.
