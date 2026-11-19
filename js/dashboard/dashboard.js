@@ -16,7 +16,7 @@ const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
 let bilingualPreviewRequestId = 0, bilingualPreviewPendingLanguage = null;
 const bilingualPreviewTranslations = new Map();
-let demoProfile = null, profileAuthMode = "login", profileAuthManual = false;
+let demoProfile = null, profileAuthMode = "login";
 let overviewSessionsReady = false, overviewSessionsLoading = false;
 let editingDisabledWebsite = null;
 let editingDisabledReaderWebsite = null;
@@ -582,14 +582,8 @@ function renderProfileMenu() {
   if (signOutButton) signOutButton.hidden = !demoProfile;
 
 }
-// Một form duy nhất: email quyết định đăng nhập hay tạo tài khoản (không còn 2 tab)
-function detectProfileAuthMode() {
-  const email = $("profileUsername").value;
-  if (!email.trim()) return;
-  const next = LHN_AUTH_POPUP.accountExists(email) ? "login" : "register";
-  if (next === profileAuthMode) return;
-  AUTH_POPUP.morph(() => setProfileAuthMode(next));
-}
+// Một form duy nhất, 2 tab đã bỏ. Chỉ khi bấm "Đăng nhập ngay" mà email CHƯA có tài khoản
+// thì mới báo và mở thêm "Nhập lại mật khẩu" + "Tạo tài khoản" (không đoán lúc đang gõ).
 function setProfileAuthMode(mode) {
   const isRegister = mode === "register";
   $("profileAuthForm").classList.toggle("is-register", isRegister);
@@ -603,7 +597,6 @@ function setProfileAuthMode(mode) {
 }
 // Login popup opens above Settings (Settings stays open); touch: no auto focus (the keyboard would cover the sheet)
 function openProfileAuth(mode = "login") {
-  profileAuthManual = false;
   setProfileAuthMode(mode); AUTH_POPUP.sync();
   if (!$("profileAuthDialog").open) $("profileAuthDialog").showModal();
   if (!document.documentElement.classList.contains("kp-coarse")) $("profileUsername").focus(); else document.activeElement?.blur?.();
@@ -3000,15 +2993,18 @@ $("studyDialog").addEventListener("close", () => { stopStudySpeech(); if (annota
 $("profileAuthDialog").addEventListener("click", event => { if (event.target === $("profileAuthDialog")) AUTH_POPUP.close(); });
 $("profileGoogleLogin").addEventListener("click", () => finishProfileAuth(LHN_AUTH_POPUP.check("google").profile));
 // Login ↔ Register: the "Retype password" field opens / closes smoothly
-// gõ xong email (rời ô / Enter) là biết tài khoản có sẵn hay chưa; sửa email thì tự dò lại
-$("profileUsername").addEventListener("input", () => { profileAuthManual = false; });
-$("profileUsername").addEventListener("blur", () => detectProfileAuthMode());
-$("profileUsername").addEventListener("keydown", event => { if (event.key === "Enter") detectProfileAuthMode(); });
-$("profileSwitchRegister").addEventListener("click", () => { profileAuthManual = true; AUTH_POPUP.morph(() => setProfileAuthMode("register")); });
-$("profileSwitchLogin").addEventListener("click", () => { profileAuthManual = true; AUTH_POPUP.morph(() => setProfileAuthMode("login")); });
+$("profileSwitchRegister").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("register")));
+$("profileSwitchLogin").addEventListener("click", () => AUTH_POPUP.morph(() => setProfileAuthMode("login")));
 $("profileAuthForm").addEventListener("submit", async event => {
   event.preventDefault();
-  if (!profileAuthManual) detectProfileAuthMode();
+  // bấm Đăng nhập mà email chưa có tài khoản → báo rồi mở nhánh tạo tài khoản
+  const typedEmail = $("profileUsername").value;
+  if (profileAuthMode === "login" && typedEmail.trim() && !LHN_AUTH_POPUP.accountExists(typedEmail)) {
+    AUTH_POPUP.morph(() => setProfileAuthMode("register"));
+    $("profileAuthError").textContent = t("profileAccountNotFound");
+    $("profileAuthError").hidden = false;
+    return;
+  }
   const result = LHN_AUTH_POPUP.check(profileAuthMode, $("profileUsername").value, $("profilePassword").value, $("profileRetypePassword").value);
   if (result.error) { $("profileAuthError").textContent = t(result.error); $("profileAuthError").hidden = false; return; }
   await finishProfileAuth(result.profile);

@@ -164,6 +164,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-18 | v3.5.461 | Arena.ai Agent sửa:**
+
+- Lỗi: 3.5.460 dò email **ngay khi rời ô**, nên vừa gõ email đã nhảy ra "Nhập lại mật khẩu" + "Tạo tài khoản" — sai hành vi yêu cầu.
+- Nay: **bỏ hết dò tự động** (xóa listener `input` / `blur` / `keydown` trên ô Email và cờ `profileAuthManual`). Chỉ khi bấm **Đăng nhập ngay**:
+  - Email **chưa có tài khoản** → hiện thông báo *"Email này chưa có tài khoản trên máy này. Nhập lại mật khẩu để tạo tài khoản."* và mở nhánh tạo tài khoản (**Nhập lại mật khẩu** + nút **Tạo tài khoản**) bằng `AUTH_POPUP.morph`.
+  - Email có tài khoản nhưng sai mật khẩu → giữ nguyên "Email hoặc mật khẩu không đúng."; đúng → vào Dashboard.
+  - Bấm **Tạo tài khoản** → `check("register")` kiểm email hợp lệ / mật khẩu / nhập lại khớp như cũ.
+- Thêm khoá i18n `profileAccountNotFound` (en/vi/ko).
+- File: `js/dashboard/dashboard.js`, `js/core/languages.js`, `manifest.json` (markup + CSS không đổi).
+- Kiểm tra: `node --check` hợp lệ; `grep` không còn `detectProfileAuthMode` / `profileAuthManual`; đọc lại thứ tự trong submit: chặn "chưa có tài khoản" → đổi chế độ → hiện lỗi → return; nhánh còn lại giữ `check()` như trước. **Chưa chạy UI thật.**
+
 **2026-11-18 | v3.5.460 | Arena.ai Agent sửa:**
 
 - Yêu cầu: popup đăng nhập chỉ còn **một form** (bỏ 2 tab Đăng nhập / Đăng ký) — kiểu "identifier-first" như Google, Microsoft, Slack, Notion.
