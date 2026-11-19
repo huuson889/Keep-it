@@ -2,14 +2,14 @@
 
 '## 1. Trạng thái hiện tại
 - Version **3.5.492**, nhánh `Keepit-Optimize-Test`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
-- Tài liệu: thư viện do Dashboard vẽ (từ 3.5.431); khung `pages/documents.html` nạp **một lần**, không nạp lại; mở/nhập tệp qua `postMessage`. Từ **3.5.492** khung được **nạp sẵn (ẩn)** ngay sau khi Dashboard dựng xong.
+- Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
 - Giới hạn: preview Office hạn chế phông/đối tượng, chưa có OCR; kiểm thử mới nhất là tĩnh (`node --check`), **chưa có ảnh/số đo** theo mục 3.4 AGENTS.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
-- **Tài liệu — bôi đen lần mở đầu tiên:** chờ người dùng thử 3.5.493 trên profile Chrome thật (remove + load lại extension → mở tệp đầu tiên → bôi đen ngay). Cách làm hiện tại: khung ẩn tới khi dựng xong (3.5.493) + khoá chọn chữ tới khi `#stage` im 500 ms (3.5.491). Nếu vẫn lỗi: phương án cuối là bỏ thư viện do Dashboard vẽ, trả `documents.html` tự lo như 3.5.430.
+- **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
 ### Tiếp theo (thứ tự đã chốt)
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
@@ -156,6 +156,19 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-18 | v3.5.503 | Arena.ai Agent sửa:**
+
+- Người dùng: "vẫn rất ngu và lỗi, mệt mỏi quá, quay tab tài liệu về v30".
+- **Đưa tab Tài liệu về kiến trúc v30 (3.5.430):** thư viện, mở tệp, nhập tệp do chính `pages/documents.html` lo; Dashboard chỉ hiển thị khung.
+  - Xoá `js/dashboard/documents-library.js`, `css/dashboard/documents-library.css` (lớp thư viện do Dashboard vẽ từ 3.5.431, kèm popup "Đang mở tệp", `openByReload`, `documents-opening`).
+  - Xoá `js/dashboard/open-trace.js`, `js/dashboard/selection-diagnostic.js` (bảng chẩn đoán tạm).
+  - `pages/dashboard.html`: bỏ 2 link/script của lớp đó + open-trace. `pages/documents.html`: bỏ script chẩn đoán.
+  - `css/dashboard/documents-host.css`: trả về **đúng bản v30** (`git checkout 3e29d46 -- …`) — khung nằm trong route, Dashboard đo chiều cao nội dung; chỉ full màn hình khi đang xem tệp. Bỏ mọi rule 3.5.492/3.5.493 (gating `documents-viewer-ready`).
+  - Giữ lại phần đã sửa trong **trang tài liệu**: `documents.js` của HEAD (bản sửa nhập tệp 3.5.480, khoá chọn chữ có mở khoá an toàn 3.5.494) — không revert file này để không mất bản sửa.
+- Hệ quả: không còn popup do Dashboard vẽ, không còn reload khung, không còn mảng đen; mở tệp ngay trong trang như v30.
+- File: `pages/dashboard.html`, `pages/documents.html`, `css/dashboard/documents-host.css`, xoá 4 file, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` dashboard.js/documents.js hợp lệ; `grep` không còn tham chiếu tới file đã xoá (chỉ còn một lời gọi `window.KeepitDocumentsLibrary?.mount?.()` có `?.` nên vô hại). **Chưa kiểm bằng ảnh/số đo.**
 
 **2026-11-18 | v3.5.502 | Arena.ai Agent sửa:**
 
