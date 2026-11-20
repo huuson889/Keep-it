@@ -631,7 +631,8 @@ function fillTextLayerGaps(){
       const box=boxes[i],ratio=Math.max(0.2,box.ratio);
       let next=null;
       for(let j=i+1;j<boxes.length;j++)if(boxes[j].r.top>=box.r.bottom-0.5){next=boxes[j].r;break;}
-      const bottom=i===boxes.length-1?layerRect.bottom:(next?next.top:box.r.bottom);   // dòng cuối: phủ tới đáy trang
+      const bottom=next?next.top:box.r.bottom;   /* v3.5.574: không kéo đệm đoạn cuối tới đáy trang —
+        hộp đệm 174px rỗng đó là một đích caret rất lớn nằm cách xa dòng chữ, góp phần làm vùng chọn nháy. */
       const gap=bottom-box.r.bottom;
       const pad=gap>0.5?(gap/ratio).toFixed(2)+'px':'';
       if(box.p.style.paddingBottom!==pad)box.p.style.paddingBottom=pad;
@@ -687,6 +688,43 @@ function updatePdfSpeakerHover(key){if(key===pdfSpeakerHoverKey)return;if(pdfSpe
 function pdfSpeakerPointerMove(event){if(event.pointerType==='touch')return;pdfSpeakerPointer={x:event.clientX,y:event.clientY,target:event.target};if(pdfSpeakerPointerFrame)return;pdfSpeakerPointerFrame=requestAnimationFrame(()=>{pdfSpeakerPointerFrame=0;const p=pdfSpeakerPointer;updatePdfSpeakerHover(pdfSpeakerKeyAtPoint(p.x,p.y,p.target));});}
 function pdfSpeakerPointerOut(event){if(event.pointerType==='touch')return;pdfSpeakerPointer={x:event.clientX,y:event.clientY,target:event.relatedTarget};if(pdfSpeakerPointerFrame){cancelAnimationFrame(pdfSpeakerPointerFrame);pdfSpeakerPointerFrame=0;}updatePdfSpeakerHover(event.relatedTarget?pdfSpeakerKeyAtPoint(event.clientX,event.clientY,event.relatedTarget):'');}
 document.addEventListener('pointermove',pdfSpeakerPointerMove,true);document.addEventListener('pointerout',pdfSpeakerPointerOut,true);addEventListener('blur',()=>updatePdfSpeakerHover(''));
+/* v3.5.574: chốt hãm đầu mút vùng chọn.
+   Log trên máy thật cho thấy đôi khi Chrome lấy một nút TRANG TRÍ (neo loa, khung tô đoạn, dòng đệm) hoặc
+   ranh giới đoạn làm đầu mút vùng chọn. Những nút đó nằm ngoài dòng chữ nên vùng chọn phình hết phần còn lại
+   của trang (2 000+ ký tự, khung tô cao bất thường) rồi bật lại ngay — đúng cái "nháy" người dùng thấy.
+   Cách chữa: giữ nguyên đầu neo, chỉ kéo đầu kia về vị trí chữ hợp lệ gần nhất vừa thấy. Không chặn cử chỉ,
+   không đụng tới thao tác chuột (chuột luôn neo vào chữ nên không bao giờ đi qua nhánh này). */
+const SEL_DECORATION='.docsReaderSpeakerOverlay,.docsReaderSpeakerAnchor,.lhnLineFiller,.docsReaderParagraphHighlight,.lhnPdfHighlight,.lhn-br-fill,.lhn-bilingual-speaker';
+let selectionGood=null,selectionRepairing=false,selectionRepairs=0,selectionRepairAt=0,selectionLenAt=0;
+function endpointOnReaderText(node){return !!node&&node.nodeType===3&&!!node.parentElement?.closest?.('#pageStack .pdfTextLayer');}
+function installSelectionEndpointGuard(){
+ document.addEventListener('selectionchange',()=>{
+  if(selectionRepairing)return;
+  const sel=globalThis.getSelection?.();
+  if(!sel||!sel.rangeCount||sel.isCollapsed){selectionGood=null;selectionRepairs=0;return;}
+  const anchor=sel.anchorNode;
+  if(!anchor||!anchor.parentElement?.closest?.('#pageStack')){selectionGood=null;selectionRepairs=0;return;}
+  const focus=sel.focusNode,holder=focus?.nodeType===3?focus.parentElement:focus;
+  if(endpointOnReaderText(focus)&&!holder.closest?.(SEL_DECORATION)){
+   const stamp=performance.now();
+   if(!selectionGood||selectionGood.anchor!==anchor){selectionGood={anchor,node:focus,offset:sel.focusOffset,len:sel.toString().length};selectionRepairs=0;selectionLenAt=stamp;}
+   else if(stamp-selectionLenAt>300){selectionGood.node=focus;selectionGood.offset=sel.focusOffset;selectionGood.len=sel.toString().length;selectionLenAt=stamp;}
+   else {selectionGood.node=focus;selectionGood.offset=sel.focusOffset;}
+   return;
+  }
+  if(!selectionGood||selectionGood.anchor!==anchor)return;   // chưa có mốc tốt: để trình duyệt tự xử
+  const stamp=performance.now();
+  if(stamp-selectionRepairAt>900){selectionRepairs=0;selectionRepairAt=stamp;}
+  if(selectionRepairs>=3)return;                             // đang phải sửa liên tục: nhường trình duyệt
+  const onDecoration=!!holder.closest?.(SEL_DECORATION);
+  if(!onDecoration&&sel.toString().length<=selectionGood.len+Math.max(80,selectionGood.len*0.5))return;  // ranh giới đoạn bình thường: không đụng
+  selectionRepairing=true;selectionRepairs++;selectionRepairAt=stamp;
+  try{sel.extend(selectionGood.node,selectionGood.offset);}                // giữ nguyên đầu neo, chỉ kéo đầu kia về chỗ cũ
+  catch{try{sel.setBaseAndExtent(anchor,sel.anchorOffset,selectionGood.node,selectionGood.offset);}catch{}}
+  setTimeout(()=>{selectionRepairing=false;},0);
+ },true);
+}
+installSelectionEndpointGuard();
 function nativeSpeakerHost(block){
  if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return null;
  const source=block.closest('.docsSource'),surface=source?.parentElement;if(!surface)return null;
