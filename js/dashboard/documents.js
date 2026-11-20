@@ -685,15 +685,37 @@ function fillTextLayerGaps(){
   for(const layer of $$('#pageStack .pdfTextLayer')){
     const paras=[...layer.querySelectorAll('.para')];
     if(!paras.length)continue;
-    for(const p of paras)if(p.style.paddingBottom)p.style.paddingBottom='';
-    const boxes=paras.map(p=>{const r=p.getBoundingClientRect();return {p,r,ratio:r.height/Math.max(1,p.offsetHeight)};}).filter(b=>b.r.height>0).sort((a,b)=>a.r.top-b.r.top);
+    for(const p of paras)p.style.paddingBottom='';
+    const layerRect=layer.getBoundingClientRect();
+    const boxes=paras.map(p=>{const r=p.getBoundingClientRect();return {p,r,ratio:r.height/Math.max(1,p.offsetHeight)};}).filter(b=>b.r.height>0&&b.r.width>0).sort((a,b)=>a.r.top-b.r.top);
     for(let i=0;i<boxes.length;i++){
-      const box=boxes[i];let next=null;
+      const box=boxes[i],ratio=Math.max(0.2,box.ratio);
+      let next=null;
       for(let j=i+1;j<boxes.length;j++)if(boxes[j].r.top>=box.r.bottom-0.5){next=boxes[j].r;break;}
-      if(!next)continue;
-      const gap=next.top-box.r.bottom;
-      if(gap<=0.5)continue;
-      box.p.style.paddingBottom=(gap/Math.max(0.2,box.ratio)).toFixed(2)+'px';
+      const gap=(next?next.top:box.r.bottom)-box.r.bottom;   // đệm dọc: khe giữa hai dòng không còn trống
+      if(gap>0.5)box.p.style.paddingBottom=(gap/ratio).toFixed(2)+'px';
+    }
+    fillLineEnds(layer,boxes,layerRect);
+  }
+}
+/* v3.5.569: phần bên phải chữ trên mỗi dòng cũng là chỗ trống — ngón tay trôi ra đó thì trình duyệt nhảy vùng chọn
+   xuống dòng dưới. Nay mỗi dòng có thêm một đoạn "chữ đệm" trong suốt (khoảng trắng cứng, user-select:none) phủ hết
+   bề ngang còn lại, nên điểm nào trên dòng cũng là điểm trên chữ của chính dòng đó. Chữ đệm không vào vùng chọn,
+   không vào bản dịch/đọc (chỉ nằm ngoài .en, không copy được). */
+function fillLineEnds(layer,boxes,layerRect){
+  for(const box of boxes){
+    const ratio=Math.max(0.2,box.ratio),en=box.p.querySelector('.en'),textRect=en?en.getBoundingClientRect():box.r;
+    let filler=box.p.querySelector(':scope > .lhnLineFiller');
+    if(!filler){filler=document.createElement('span');filler.className='lhnLineFiller';filler.setAttribute('aria-hidden','true');box.p.append(filler);}
+    filler.style.cssText='color:transparent;-webkit-user-select:none;user-select:none;pointer-events:none;white-space:pre';
+    const remain=(layerRect.right-textRect.right)/ratio;
+    if(remain<8){filler.textContent='';continue;}
+    filler.textContent='\u00a0';
+    for(let pass=0;pass<2;pass++){
+      const width=filler.getBoundingClientRect().width/Math.max(1,filler.textContent.length);
+      const need=Math.ceil((layerRect.right-filler.getBoundingClientRect().right)/Math.max(0.5,width));
+      if(need<=0)break;
+      filler.textContent='\u00a0'.repeat(filler.textContent.length+need);
     }
   }
 }

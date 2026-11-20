@@ -159,6 +159,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.569 | Arena.ai Agent sửa:**
+- Tóm tắt: Hai việc theo hướng A + B đã chốt.
+  (A) Chỗ trống **bên phải chữ** trên mỗi dòng cũng làm vùng chọn nháy xuống dòng dưới khi ngón tay trôi ra đó. Thử nới rộng hộp `.para` cho phủ hết bề ngang trang: **đo không có tác dụng** (10/24 như cũ) và làm đổi bề rộng các span chữ ⇒ đã hoàn lại. Cách chạy được: mỗi dòng thêm một đoạn **chữ đệm** trong suốt (khoảng trắng cứng, `user-select:none`, nằm ngoài `.en`) phủ hết phần ngang còn lại — `fillLineEnds()`. Chữ đệm không được chọn, không vào bản dịch/đọc, không đổi vị trí chữ.
+  (B) Popup/icon từng hiện khi đang chọn vì `installTouchSelectionBridge` (từ v3.5.159) hẹn giờ "vùng chọn im lặng 900 ms" rồi tự bắn `mouseup` giả; trong lúc kéo tay nắm chọn Android không gửi sự kiện chạm nào nên hẹn giờ đó luôn thắng. Nay **bỏ hẳn hẹn giờ**, chỉ mở khi có tín hiệu thả tay thật: `touchend`, hoặc `contextmenu` phát ra khi ngón tay đã nhấc.
+- File: `js/dashboard/documents.js`, `js/shared/selection-toolbar.js`, `manifest.json`
+- Kiểm tra: kéo trôi từ chữ ra lề phải (đường chọn mặc định của trình duyệt, tức đường cảm ứng dùng): **10/24 → 5/24** bước sai; kéo trong vùng chữ vẫn **0/24**; chuột **0/24**. Chữ không bị xô (so vị trí toàn bộ span trước/sau: không đổi). Chữ đệm phủ tới mép trang (1194 ≈ 1192 px), không lọt vào vùng chọn (rect chọn dừng ở mép chữ 803), `user-select:none`, Ctrl+A vẫn **1.920 ký tự** như trước. Popup: dừng 2,2 giây giữa lúc đang chọn → **không** còn hiện (trước đây hiện sau 0,9 giây). Nháy đúp chọn từ, icon dịch sau khi chọn, pinch zoom 135,6→162,4 %, không khung đoạn rác, đóng khung xem tệp bình thường, 0 lỗi console.
+
 **2026-11-17 | v3.5.568 | Arena.ai Agent sửa:**
 - Tóm tắt: Gỡ đoạn tự dựng vùng chọn cho cảm ứng vừa thêm ở 3.5.567 — nó chặn cử chỉ chọn mặc định của hệ điều hành (`preventDefault` ở `touchmove`), trên máy thật thành ra không nhấn giữ để chọn được nữa. Cảm ứng trả về cho hệ điều hành như trước 3.5.566; lỗi nháy khi kéo qua đoạn nay chỉ do phần lấp khe dòng `fillTextLayerGaps()` xử lý (thuần CSS, không bắt sự kiện chạm). Chuột vẫn giữ cách tự dựng vùng chọn của 3.5.566.
 - File: `js/dashboard/documents.js`, `manifest.json`

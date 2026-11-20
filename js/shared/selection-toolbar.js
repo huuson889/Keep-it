@@ -152,14 +152,15 @@
       if (target && isOwnTarget(target)) return;
       (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
     }
-    const SETTLE = 900;
-    const schedule = () => { if (!TOUCH.matches) return; clearTimeout(timer); timer = setTimeout(fire, SETTLE); };
-    // contextmenu while the finger is still down = the long press that starts a selection (more may follow) → keep waiting
+    /* v3.5.569: bỏ hẹn giờ "im lặng 900ms rồi mở". Trong lúc kéo tay nắm chọn, Android không gửi sự kiện chạm nào
+       (chỉ có selectionchange), nên hẹn giờ đó làm popup mở giữa lúc đang chọn. Nay chỉ mở khi có tín hiệu THẢ TAY thật:
+       touchend (bình thường), hoặc contextmenu phát ra khi ngón tay đã nhấc. Máy nào không gửi tín hiệu thả tay trong
+       chế độ chọn thì popup sẽ mở ở lần chạm kế tiếp — vẫn mở, nhưng không bao giờ mở khi tay còn đang chọn. */
+    const schedule = () => {};   // không hẹn giờ nữa: chỉ mở khi thả tay
     document.addEventListener("contextmenu", () => { if (!TOUCH.matches || touching) return; clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
-    document.addEventListener("touchstart", () => { touching = true; }, { capture:true, passive:true });
-    document.addEventListener("touchend", () => { touching = false; schedule(); }, { capture:true, passive:true });
-    document.addEventListener("touchcancel", () => { touching = false; schedule(); }, { capture:true, passive:true });
-    document.addEventListener("selectionchange", schedule);
+    document.addEventListener("touchstart", () => { touching = true; clearTimeout(timer); }, { capture:true, passive:true });
+    document.addEventListener("touchend", () => { touching = false; clearTimeout(timer); timer = setTimeout(fire, 80); }, { capture:true, passive:true });
+    document.addEventListener("touchcancel", () => { touching = false; clearTimeout(timer); }, { capture:true, passive:true });
     document.addEventListener("mouseup", event => { if (event.isTrusted) lastKey = selectionKey(); }, true);
     const bridge=Object.freeze({ schedule });touchBridges.set(doc,bridge);return bridge;
   }
