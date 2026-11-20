@@ -262,7 +262,9 @@
     home:t("homeTip"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
     notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`,
-    shorts:t("shorts"), subs:t("subs"), you:t("you"), fav:t("favTip"), wc:`${t("wc")} (Alt+G)`, wcblock:`${t("wcBlock")} (Alt+J)`
+    shorts:t("shorts"), subs:t("subs"), you:t("you"), fav:t("favTip"), wc:`${t("wc")} (Alt+G)`, wcblock:`${t("wcBlock")} (Alt+J)`,
+    // v3.5.543: chú thích cho 4 nút tab + 2 mục More của thanh trên home/dashboard (thiếu → hiện "undefined")
+    dashOverview:t("ovTab"), dashDictation:t("cap"), dashNotes:t("notesTab"), dashDocs:t("docsTab"), dashFlash:t("flashcards"), dashTrash:t("trash")
   }[id]);
   // Thanh chính: 3 kiểu trang (trang thường · trang YouTube · video YouTube) × 2 kiểu thanh (7 nút mọi màn hình · 5 nút = Gọn thanh).
   // Trang chủ luôn là trang chủ Keepit. Shorts / Kênh đăng ký / Bạn = đường dẫn tới trang của YouTube (không ẩn thanh của YouTube).
@@ -296,7 +298,7 @@
     screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
     screen.classList.toggle("ext", EXT);
     const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
-    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "wc" && wcOn()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
+    const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "wc" && wcOn()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() && tipFor(id) ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
     $("hzone").title = t("showBar"); $("btop").setAttribute("aria-label", t("toTop")); $("btop").title = t("toTop");
     $("offdot").setAttribute("aria-label", t("offDot")); $("offdot").title = t("offDot");

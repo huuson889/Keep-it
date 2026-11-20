@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.542**, nhánh `Keepit-Optimize-Test`; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.543**, nhánh `Keepit-Optimize-Test`; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -157,6 +157,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.543 | Arena.ai Agent sửa (thanh Keepit — tooltip hiện "undefined"):**
+
+- Người dùng báo: rê chuột vào các nút tab trên thanh ở dashboard/home thì tooltip hiện chữ **undefined** (ảnh kèm).
+- Nguyên nhân: 4 nút tab + 2 mục More là nút mới, không có mục trong `tipFor()`; thanh vẫn in `data-tip` nên ra chuỗi "undefined".
+- Sửa: thêm `dashOverview`, `dashDictation`, `dashNotes`, `dashDocs`, `dashFlash`, `dashTrash` vào `tipFor()` (nhãn: Tổng quan, Chép, Ghi chú, Tài liệu, Flashcards, Thùng rác); chỉ in `data-tip` khi có chú thích.
+- File: `js/content/keepit-bar.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: ảnh thật 1512 + 390, sáng + tối, phóng 4×; `data-tip` của cả 7 nút đều có chữ Việt, không còn `undefined`; rê chuột thấy hộp "Tổng quan"; `pageerror` + `console.error` = 0.
+- Không tạo CRX (sandbox không có khoá ký).
 
 **2026-11-17 | v3.5.542 | Arena.ai Agent sửa (thanh Keepit trên home + dashboard — làm lại từ 3.5.540):**
 
