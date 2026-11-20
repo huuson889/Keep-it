@@ -1140,12 +1140,25 @@
       onEnd: finish
     });
   }
-  // Range của CHỮ bên trong một nút highlight (nút mark) — dùng chung cho note + hàng tiện ích.
+  // Range của TOÀN BỘ vùng highlight — dùng chung cho note + hàng tiện ích, giống popup dịch dùng cả vùng chọn.
+  // Một highlight trải nhiều đoạn bị tách thành nhiều nút mark (data-lhn-id + lhnParts) nên phải gộp lại;
+  // nếu chỉ lấy một nút thì popup neo vào đoạn đầu và đè lên các đoạn sau.
   function textRangeOf(node) {
     if (!node?.isConnected) return null;
+    const id = node.dataset?.lhnId;
+    let parts = [node];
+    if (id) {
+      const found = [...document.querySelectorAll(".lhn-mark[data-lhn-id]")].filter(mark => mark.dataset.lhnId === id && mark.isConnected);
+      if (found.length) parts = found;
+    }
     const range = document.createRange();
-    try { range.selectNodeContents(node); } catch { return null; }
-    return range.collapsed ? null : range;
+    try {
+      range.setStartBefore(parts[0]);
+      range.setEndAfter(parts[parts.length - 1]);
+    } catch { return null; }
+    if (range.collapsed) return null;
+    const rect = range.getBoundingClientRect();
+    return rect.width || rect.height ? range : null;
   }
   function showNote(anchor, item) {
     if (!websiteSettingsReady || websiteDisabled) return;

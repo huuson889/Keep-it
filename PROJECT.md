@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.580** — từ 3.5.576 (`a13d342`): toàn bộ lớp nổi dùng **tầng của chữ** + **neo vào chữ** như popup dịch (icon, popup dịch, Full Dictionary, popup note, composer, hàng tiện ích): còn chỗ dưới thì ở dưới dòng, sát đáy lật lên trên dòng, cuộn thì đi theo chữ; **tam giác của popup note nằm giữa popup** (trước là `left:24px`) và lật xuống dưới khi popup nằm trên dòng chữ. Không đổi chiều cao popup, cách chọn chữ, đường sheet cảm ứng.
+- Version **3.5.581** — từ 3.5.576 (`a13d342`): toàn bộ lớp nổi dùng **tầng của chữ** + **neo vào chữ** như popup dịch; **note neo vào toàn bộ vùng highlight** (gộp mọi mảnh `.lhn-mark` cùng `data-lhn-id`) nên nằm **dưới và chính giữa cả vùng chọn**, không còn neo vào mảnh đầu rồi đè lên các đoạn sau; tam giác giữa popup và lật theo phía. Không đổi chiều cao popup, cách chọn chữ, đường sheet cảm ứng.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -159,6 +159,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.581 | Arena.ai Agent sửa:**
+- Base: tiếp ngay trên v3.5.580 (`a7776ae`), dòng làm từ 3.5.576 (`a13d342`).
+- Nguyên nhân: highlight trải nhiều đoạn bị tách thành **nhiều nút `.lhn-mark`** cùng `data-lhn-id` (`lhnParts`/`lhnPart`), nhưng note và hàng tiện ích neo vào **một** nút (`textRangeOf` dùng `selectNodeContents`). Với ảnh người dùng gửi: highlight 2 đoạn, note neo vào đoạn trên nên nằm **đè lên đoạn dưới**, lệch hẳn lên so với popup dịch (neo vào cả range chọn).
+- Sửa: `textRangeOf` gộp **mọi mảnh cùng `data-lhn-id`** (`setStartBefore(mảnh đầu)` → `setEndAfter(mảnh cuối)`) ⇒ note và hàng tiện ích dùng đúng **toàn bộ vùng highlight** như popup dịch: cùng một khối, cùng tâm ngang, nằm dưới khối khi còn chỗ, lật lên trên khi sát đáy, và đi theo chữ khi cuộn.
+- File: `js/content/content.js`, `PROJECT.md`, `manifest.json`
+- Kiểm tra (extension thật unpacked): highlight 2 đoạn (2 mảnh mark) → note `noteCx 246` = `blockCx 246` (lệch 0 px), `noteTop 746` nằm **dưới** `blockBottom 738`, không lật; ảnh 4× xác nhận note nằm dưới dòng highlight cuối, chữ highlight không bị che. Popup note 1 đoạn vẫn `dưới dòng` và đi theo cuộn (`307 → 107`); hàng tiện ích vẫn ngay trên dòng (`31 → -119` khi cuộn 150). Bộ `qa/t578_visual.py` 1512/390 sáng + tối: đạt, 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng cả 4 lượt; `t578probe`/`t577translate`/`t576follow`/`t578-dict` rc=0, console rỗng. Chưa kiểm: profile Chrome thật, trang web thật, highlight trải trên 3+ đoạn rất dài (chỉ đo tới 2 đoạn), cảm giác dùng.
 
 **2026-11-17 | v3.5.580 | Arena.ai Agent sửa:**
 - Base: tiếp ngay trên v3.5.579 (`698a2d3`, bản thân nó làm từ 3.5.576 `a13d342`).
