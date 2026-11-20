@@ -183,9 +183,11 @@ function setActivePage(page){if(!V.doc||page===V.page||page<1||page>V.doc.pages)
 async function setPage(value,fromReader=false){if(!V.doc)return;const page=Math.max(1,Math.min(V.doc.pages,Math.round(+value)||1));if(!fromReader)ttsStop();hideSel();getSelection()?.removeAllRanges();V.page=page;if(V.flow==='single'&&V.mode!=='read')renderViewer();else{scrollToPage(page);updatePaging();void ensurePage(page);applyTools();if(V.panel==='translation')renderTranslation();}savePosition();await ensurePage(page);LHN_READER_API.refreshSource();void LHN_CONTENT_TOOLS.restore();}
 function setFlow(value){if(!['continuous','single'].includes(value))return;lastFlow=value;void savePanelPrefs();if(V.flow===value)return;ttsStop();hideSel();V.flow=value;renderViewer();}
 /* v3.5.560: zoom tự do 10–400%. Chỉ khung tệp ở giữa đổi kích thước (--displayW/--source-scale);
-   thanh trên, dải trang, panel dịch và thanh .pager đứng yên. Ctrl/⌘+lăn chuột hoặc pinch trackpad
-   zoom quanh đúng điểm dưới con trỏ; phím Ctrl+= / Ctrl+- / Ctrl+0; nút − / + nhảy 10%. */
-const ZOOM_STEPS=[50,75,100,125,150,175,200],ZOOM_MIN=10,ZOOM_MAX=400,ZOOM_STEP=10,ZOOM_WHEEL_PX=90;
+   thanh trên, dải trang, panel dịch và thanh .pager đứng yên.
+   v3.5.562: bỏ lưới 10% cho con lăn — zoom LIÊN TỤC bám tay: mỗi pixel lăn/pinch đổi đúng 1% (1:1 với
+   khoảng cách 2 ngón), mỗi event kẹp tối đa ±15% để nấc chuột thô không nhảy cóc, và mọi event trong
+   cùng một khung hình được gộp lại (rAF) nên không phụ thuộc số trang. Nút − / + và phím vẫn nhảy 10%. */
+const ZOOM_STEPS=[50,75,100,125,150,175,200],ZOOM_MIN=10,ZOOM_MAX=400,ZOOM_STEP=10,ZOOM_GAIN=0.01,ZOOM_NOTCH_PX=40,ZOOM_NOTCH_STEP=0.15,ZOOM_EVENT_CAP=0.6;
 const clampZoom=value=>Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,Number.isFinite(+value)?+value:100));
 const roundZoom=value=>Math.round(clampZoom(value)*10)/10;
 function zoomPercent(){if(V.zoom!=='fit')return +V.zoom;const surface=$('#stage .docSurface'),spec=activeEngine?.pages[V.page-1];return surface&&spec?surface.getBoundingClientRect().width/spec.width*100:100;}
@@ -224,39 +226,38 @@ function setZoom(value){
   if(value!=='fit'&&!Number.isFinite(+value))return;
   setMore(false,false);applyZoom(value,null);scrollToPage(V.page);
 }
-function stepZoom(direction){
-  const base=zoomPercent();
-  const edge=direction>0?Math.floor(base/ZOOM_STEP+1e-6)*ZOOM_STEP:Math.ceil(base/ZOOM_STEP-1e-6)*ZOOM_STEP;
-  const next=clampZoom(edge+direction*ZOOM_STEP);
-  if(Math.abs(next-base)<.4)return;
-  setMore(false,false);applyZoom(next,{...stageCenterAnchor()});
-}
+function stepZoom(direction){const p=zoomPercent(),next=roundZoom(p+direction*ZOOM_STEP);if(Math.abs(next-p)<.4)return;setMore(false,false);applyZoom(next,{...stageCenterAnchor()});}
 async function closeViewer(){++viewCycle;const old=V.doc,engine=activeEngine;LHN_READER_API.reset();LHN_CONTENT_TOOLS.close();ttsStop();pageObserver?.disconnect();thumbnailObserver?.disconnect();translationView.observer?.disconnect();nativeCards.clear();V.tools.clear();V.panel=null;endPanelResize();setMore(false,false);hideSel();getSelection()?.removeAllRanges();finishPassword(null);clearTimeout(savePositionTimer);$('#viewer').dataset.nativeReady='false';$('#viewer').classList.remove('show');resetPagerFade();document.body.style.overflow='';notifyParent(false);$('#stage').replaceChildren();drawn.clear();activeEngine=null;document.documentElement.classList.add('documents-native-inactive');await LHN_DOCUMENT_CONTEXT.refresh();engine?.dispose();if(old)await Store.patch(old.id,{at:V.page,opened:Date.now()}).catch(()=>toast(t('storageFailed')));await refreshLibrary();/* v3.5.521: bấm ← về thư viện thì chạy lại hiệu ứng hiện dần y như lần đầu mở tab Tài liệu. */revealLibrary();}
 $('#vBack').onclick=()=>void closeViewer();$('#vFlow').onchange=e=>{setMore(false,false);setFlow(e.target.value);};$('#vZoom').onchange=e=>setZoom(e.target.value);$('#zOut').onclick=()=>stepZoom(-1);$('#zIn').onclick=()=>stepZoom(1);$('#pPrev').onclick=()=>setPage(V.page-1);$('#pNext').onclick=()=>setPage(V.page+1);$('#pNum').onchange=e=>{setPage(e.target.value);e.target.value=V.page;};$('#pNum').onfocus=e=>e.target.select();$('#pNum').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setPage(e.target.value);e.target.blur();}if(e.key==='Escape'){e.target.value=V.page;e.target.blur();e.stopPropagation();}};$('#rail').onclick=e=>{const b=e.target.closest('[data-p]');if(b)setPage(+b.dataset.p);};$('#vMode').onclick=e=>{const b=e.target.closest('[data-m]');if(!b||V.mode===b.dataset.m||!activeEngine?.pages.some((_,i)=>sourceEntries(i+1).length))return;ttsStop();setMore(false,false);hideSel();V.mode=b.dataset.m;if(V.panel==='translation')V.panel=null;paintPanels();renderViewer();void (async()=>{await ensurePage(V.page);await refreshNativeSource();if(V.mode==='read')await startNativeReader();})();};
 let scrollRAF=0;$('#stage').addEventListener('scroll',()=>{if(scrollRAF)return;scrollRAF=requestAnimationFrame(()=>{scrollRAF=0;if(!V.doc||!activeEngine||(V.flow!=='continuous'&&V.mode!=='read'))return;const st=$('#stage'),edge=st.getBoundingClientRect().top+Math.min(135,st.clientHeight*.22);let page=1;for(const f of $$('#pageStack>.pageFrame')){if(f.getBoundingClientRect().top<=edge)page=+f.dataset.page;else break;}if(st.scrollTop+st.clientHeight>=st.scrollHeight-4)page=V.doc.pages;setActivePage(page);if(V.doc.type==='pdf'){const box=st.getBoundingClientRect(),margin=st.clientHeight*2;for(const source of $$('#pageStack .docsSource')){const r=source.getBoundingClientRect();if((r.bottom<box.top-margin||r.top>box.bottom+margin)&&drawn.has(source)&&!source.querySelector('.docsReaderParagraphHighlight')){for(const c of source.querySelectorAll('canvas'))c.width=c.height=0;source.replaceChildren();drawn.delete(source);}}}runTranslate();});},{passive:true});new ResizeObserver(()=>{if($('#viewer').classList.contains('show')){sizePages();updateZoomControls();}}).observe($('#stage'));
 
 /* v3.5.560: cử chỉ zoom tự do — Ctrl/⌘ + lăn chuột & pinch trackpad (wheel kèm ctrlKey), pinch 2 ngón,
    phím Ctrl+= / Ctrl+- / Ctrl+0. Không can thiệp khi đang ở chế độ Đọc hoặc khi có hộp thoại. */
-/* v3.5.561: mỗi bước zoom đúng 10%. Con lăn gom đủ 90px mới nhảy 1 bước (nấc chuột ~100px = 1 bước,
-   pinch trackpad nhả ra nhiều event nhỏ nên gom lại), nhờ vậy tốc độ không phụ thuộc thiết bị. */
-let zoomWheelAccum=0,zoomWheelTimer=0;
+let zoomPulse=null,zoomPulseRAF=0;
+function flushZoomPulse(){
+  zoomPulseRAF=0;
+  const pulse=zoomPulse;zoomPulse=null;
+  if(!pulse||!V.doc||V.mode!=='orig')return;
+  const base=zoomPercent(),next=roundZoom(base*pulse.factor);
+  if(Math.abs(next-base)<.15)return;
+  setMore(false,false);
+  applyZoom(next,{clientX:pulse.x,clientY:pulse.y});
+}
 $('#stage').addEventListener('wheel', event => {
   if(!(event.ctrlKey||event.metaKey)||event.altKey||!V.doc||V.mode!=='orig'||$('.modalWrap.show'))return;
   event.preventDefault();
-  const delta=-event.deltaY;
-  if(!delta||Math.sign(delta)!==Math.sign(zoomWheelAccum||delta))zoomWheelAccum=0;
-  zoomWheelAccum+=delta;
-  clearTimeout(zoomWheelTimer);
-  zoomWheelTimer=setTimeout(()=>{zoomWheelAccum=0;},260);
-  const ticks=Math.trunc(zoomWheelAccum/ZOOM_WHEEL_PX);
-  if(!ticks)return;
-  zoomWheelAccum-=ticks*ZOOM_WHEEL_PX;
-  const base=zoomPercent(),direction=ticks>0?1:-1;
-  const edge=direction>0?Math.floor(base/ZOOM_STEP+1e-6)*ZOOM_STEP:Math.ceil(base/ZOOM_STEP-1e-6)*ZOOM_STEP;
-  const next=clampZoom(edge+direction*Math.min(Math.abs(ticks),200)*ZOOM_STEP);
-  if(!Number.isFinite(next)||Math.abs(next-base)<.4)return;
-  setMore(false,false);
-  applyZoom(next,{clientX:event.clientX,clientY:event.clientY});
+  if(!event.deltaY)return;
+  /* Pinch trackpad/cảm ứng: |deltaY| nhỏ và dày → 1 px ≈ 1% (đúng tỉ lệ ngón tay, không kẹp).
+     Nấc chuột rời: |deltaY| ≥ 40 → mỗi nấc +15%, lăn mạnh 300 px = 3 nấc = +45%. */
+  const magnitude=Math.abs(event.deltaY);
+  const logStep=magnitude>=ZOOM_NOTCH_PX
+    ? Math.max(1,Math.round(magnitude/100))*ZOOM_NOTCH_STEP
+    : magnitude*ZOOM_GAIN;
+  const factor=Math.exp(Math.sign(-event.deltaY)*Math.min(logStep,ZOOM_EVENT_CAP));
+  if(!zoomPulse)zoomPulse={factor,x:event.clientX,y:event.clientY};
+  else zoomPulse.factor*=factor;
+  zoomPulse.x=event.clientX;zoomPulse.y=event.clientY;
+  if(zoomPulse.factor!==1&&!zoomPulseRAF)zoomPulseRAF=requestAnimationFrame(flushZoomPulse);
 },{passive:false});
 (() => {
   let pinch=null;
@@ -269,12 +270,7 @@ $('#stage').addEventListener('wheel', event => {
   $('#stage').addEventListener('touchmove', event => {
     if(!pinch||event.touches.length!==2)return;
     event.preventDefault();
-    const base=zoomPercent(),target=pinch.base*dist(event.touches)/pinch.distance;
-    const direction=target>base?1:-1;
-    const edge=direction>0?Math.floor(base/ZOOM_STEP+1e-6)*ZOOM_STEP:Math.ceil(base/ZOOM_STEP-1e-6)*ZOOM_STEP;
-    const next=clampZoom(edge+direction*ZOOM_STEP);
-    if(Math.abs(next-base)<.4)return;
-    applyZoom(next,mid(event.touches));
+    applyZoom(pinch.base*dist(event.touches)/pinch.distance,mid(event.touches));
   },{passive:false});
   const end=event => { if(!event.touches||event.touches.length<2)pinch=null; };
   $('#stage').addEventListener('touchend',end,{passive:true});

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.561** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.562** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -159,16 +159,17 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.561 | Arena.ai Agent sửa:**
+**2026-11-17 | v3.5.562 | Arena.ai Agent sửa:**
 
-- Tóm tắt: mọi cách zoom trong trình xem tệp giờ nhảy **đúng bậc 10 %** trên cùng một lưới (100 %, 110 %, 120 %…). Trước đó nút/phím cộng 10 % từ số thực (127,7 → 137,7) còn con lăn thì tăng theo cấp số nhân (~12,7 % mỗi nấc 100 px, trackpad ~5 % mỗi event nhỏ) nên cảm giác lệch bước.
-- File: `js/dashboard/documents.js` (`ZOOM_WHEEL` thay bằng `ZOOM_WHEEL_PX=90` + bộ gom `zoomWheelAccum`/`zoomWheelTimer`: đủ 90 px mới nhảy 1 bậc, event lớn 300 px = 3 bậc, pinch nhả nhiều event nhỏ được cộng dồn; `stepZoom()` và pinch 2 ngón tính mốc theo lưới `Math.floor/ceil(base/10)`), `manifest.json` (3.5.560 → 3.5.561).
-- Kiểm tra: extension thật, PDF 3 trang, 1512×900.
-  - Mở tệp `fit` (thực tế 127,7 %); Ctrl+lăn nấc 100 px ×4 → **130 · 140 · 150 · 160**; lăn xuống ×4 → **150 · 140 · 130 · 120**.
-  - Một event 300 px → 130 → **160** (+30 = 3 bậc). Pinch nhỏ delta 8 ×15: 11 event đầu cộng dồn chưa đủ 90 px (giữ 120), event thứ 12 nhảy **130**.
-  - Phím Ctrl+= ×3 → **130 · 140 · 150**; Ctrl+− ×2 → 140 · 130; nút + / − → 130 → 140 → 130; Ctrl+0 → `Fit width`.
-  - `console.error` + `pageerror` = 0.
-  - Chưa kiểm được: cảm giác lăn/pinch thật trên máy người dùng. CRX không tạo vì sandbox thiếu khoá ký.
+- Base theo lệnh: **đúng 3.5.560 (`50acddc`)** — bỏ phần lưới 10 % của 3.5.561 vì nó làm zoom chậm, không theo nhịp touchpad.
+- Tóm tắt: zoom trong trình xem tệp giờ **liên tục, bám tay 1:1**: mỗi pixel lăn/pinch đổi đúng 1 % (đúng tỉ lệ khoảng cách 2 ngón), không còn cổng gom 90 px, không còn lưới 10 %. Phân biệt hai loại thiết bị theo `|deltaY|`: nhỏ (< 40 px, pinch trackpad/cảm ứng) → 1:1 không kẹp; lớn (nấc chuột rời) → mỗi nấc +16 %. Mọi event trong cùng một khung hình gộp thành một lần vẽ (rAF) nên không phụ thuộc số trang. Nút − / + và phím Ctrl+= / Ctrl+− vẫn nhảy 10 %, Ctrl+0 về “Vừa chiều rộng”.
+- File: `js/dashboard/documents.js` (`ZOOM_WHEEL` thay bằng `ZOOM_GAIN=0.01`, `ZOOM_NOTCH_PX=40`, `ZOOM_NOTCH_STEP=0.15`, `ZOOM_EVENT_CAP=0.6`; thêm `zoomPulse`/`zoomPulseRAF` + `flushZoomPulse()` gộp khung hình, giữ neo dưới con trỏ), `manifest.json` (3.5.560 → 3.5.562).
+- Kiểm tra: extension thật, PDF 3 trang.
+  - 1512×900: `fit` = 127,7 %. Pinch nhỏ `deltaY -2` ×10 → **151,4 · 154,5 · 157,6 · 160,8 · 164,0 · 167,3 · 170,7 · 174,1 · 177,6 · 181,2** (+2,04 % mỗi event ≈ 1:1, mượt từng bước). Tổng 70 px lăn → 127,7 → **257,2 %** (lý thuyết ×2 = 255,5). Nấc chuột 100 px → **+16 %**. 5 event −20 px dồn 1 khung → ×2,72 đúng 1:1 rồi kẹp trần 400 %.
+  - Neo dưới con trỏ ở 400 %: lệch **0 px**. Ctrl+0 → 127,7 → Ctrl+= → 137,7 → nút + → 147,7 (vẫn ±10 %).
+  - 390×844: `fit` 62,2 %, pinch `deltaY -3` ×6 → 64,1 · 66,1 · 68,1 · 70,2 · 72,3 · 74,5 (+3 %/event).
+  - `console.error` + `pageerror` = 0. Ảnh: `qa/shots/562-390-zoom.png`.
+  - Chưa kiểm được: nhịp pinch thật trên touchpad máy người dùng (sandbox không có touchpad). CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.560 | Arena.ai Agent sửa:**
 
