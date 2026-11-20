@@ -354,12 +354,26 @@
   let scroller = null;
   const scrollTopOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? (document.scrollingElement?.scrollTop || scrollY) : el.scrollTop;
   const clientHOf = el => !el || el === document.scrollingElement || el === document.documentElement || el === document.body ? innerHeight : el.clientHeight;
+  // v3.5.559: nút về đầu trang dùng ĐÚNG cơ chế mờ/hiện của thanh chuyển trang (.pager) trong khung xem tệp
+  // (js/dashboard/documents.js dòng 200–226, documents.css dòng 238–240): rảnh 1000 ms → mờ còn 24% (vẫn bấm được);
+  // rê chuột vào vùng ±28px ngang / ±24px dọc quanh nút, bấm, focus, gõ phím, cuộn trang, resize, quay lại tab → hiện 100%.
+  const BTOP_IDLE_MS = 1000;
+  let btopTimer = 0, btopNear = false, btopRect = null;
+  const btopHeld = () => { const b = $("btop"); return btopNear || !!b?.matches(":focus-visible, :focus"); };
+  function armBtopFade() {
+    clearTimeout(btopTimer);
+    if (document.hidden) return;
+    btopTimer = setTimeout(() => { const b = $("btop"); if (b && b.classList.contains("on") && !btopHeld()) b.classList.add("dimmed"); }, BTOP_IDLE_MS);
+  }
+  function wakeBtop() { const b = $("btop"); if (!b) return; b.classList.remove("dimmed"); armBtopFade(); }
   function updBtop() {
     const b = $("btop"); if (!b) return;
     // v3.5.237: Reader open → back-to-top stays (video overlay still hides it). v3.5.240: always 110px from the bottom (CSS)
     const activeScroller = DOCUMENTS_HOST ? document.getElementById("stage") : scroller;
     b.classList.toggle("on", S.btop && !onHome() && scrollTopOf(activeScroller) > Math.min(200, clientHOf(activeScroller) * 0.25) && !S.kbd && !S.vfs && !S.siteOff && (!S.extYield || S.readerOn));
     b.classList.toggle("low", (barOff() || S.yieldBar) && !S.peek);
+    btopRect = b.classList.contains("on") ? b.getBoundingClientRect() : null;
+    if (btopRect) wakeBtop(); else { clearTimeout(btopTimer); btopNear = false; b.classList.remove("dimmed"); }
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
   let ovRaf = 0;
@@ -684,6 +698,24 @@
     bar.addEventListener("mouseenter", () => { if (isDesk() && S.peek) clearTimeout(peekT); });
     bar.addEventListener("mouseleave", () => { if (isDesk() && S.peek) wireBar.peekLater(); });
     wireOffDot();
+    {   // v3.5.559: sự kiện đánh thức nút về đầu trang (giống .pager)
+      const bt = $("btop");
+      bt.addEventListener("pointerdown", () => wakeBtop(), { passive:true });
+      bt.addEventListener("pointerenter", () => { btopNear = true; wakeBtop(); }, { passive:true });
+      bt.addEventListener("pointerleave", () => { btopNear = false; armBtopFade(); }, { passive:true });
+      bt.addEventListener("focusin", () => wakeBtop());
+      bt.addEventListener("focusout", () => requestAnimationFrame(() => wakeBtop()));
+      bt.addEventListener("keydown", () => wakeBtop());
+      document.addEventListener("pointermove", e => {
+        if (e.pointerType !== "mouse" || !btopRect) return;
+        const r = btopRect;
+        const near = e.clientX >= r.left - 28 && e.clientX <= r.right + 28 && e.clientY >= r.top - 24 && e.clientY <= r.bottom + 24;
+        if (near === btopNear) return;
+        btopNear = near; if (near) wakeBtop(); else armBtopFade();
+      }, { passive:true });
+      addEventListener("resize", () => { btopNear = false; wakeBtop(); }, { passive:true });
+      document.addEventListener("visibilitychange", () => { if (document.hidden) clearTimeout(btopTimer); else wakeBtop(); });
+    }
     $("btop").addEventListener("click", () => {
       if (DOCUMENTS_HOST) {
         if (!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.scrollToTop?.()) document.getElementById("stage")?.scrollTo({ top:0, behavior:smooth() });

@@ -325,9 +325,10 @@ button,input{font-family:inherit}
 .btop{right:16px;bottom:calc(110px + var(--sab));z-index:5;padding:0;border-radius:50%;display:grid;place-items:center;cursor:pointer;opacity:0;transform:translateY(10px) scale(.92);pointer-events:none;transition:opacity .2s,transform .2s,bottom .25s;-webkit-tap-highlight-color:transparent;height:46px}
 .btop svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .btop.on{opacity:1;transform:none;pointer-events:auto}
-/* v3.5.558: nút về đầu trang dùng CHUNG cơ chế mờ/hiện với thanh dưới — thanh trượt xuống thì nút mờ đi theo,
-   thanh hiện lại thì nút hiện lại; ở màn xem tệp của dashboard thì ẩn hẳn (rule .screen.extdocs bên dưới). */
-.screen.shid .btop{opacity:0;transform:translateY(10px) scale(.92);pointer-events:none}
+/* v3.5.559: mờ/hiện y thanh .pager ở khung xem tệp — rảnh 1s mờ còn 24% (vẫn bấm được), hiện lại 0,14s */
+.btop.dimmed{opacity:.24;transition-duration:.55s}
+.btop:focus-visible{opacity:1}
+@media (prefers-reduced-motion:reduce){.btop,.btop.dimmed{transition:none}}
 .btop:active{transform:scale(.93)}
 .wide .btop{right:24px}
 .dark .btop{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}

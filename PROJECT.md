@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.558** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.559** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -159,19 +159,18 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.558 | Arena.ai Agent sửa:**
+**2026-11-17 | v3.5.559 | Arena.ai Agent sửa:**
 
-- Tóm tắt: nút về đầu trang (`#btop`) dùng chung cơ chế mờ/hiện với thanh dưới ở toàn app — thanh trượt xuống thì nút mờ dần và không bấm được; thanh hiện lại thì nút hiện lại (cùng transition 0,2 s). Màn xem tệp của dashboard vẫn ẩn hẳn nút như 3.5.555.
-- Cách hiểu câu lệnh (nói rõ): "mờ/hiện chung với cơ chế mờ hiện của thanh dưới" = nút đi theo trạng thái ẩn/hiện của thanh, không đứng yên như trước (v3.5.240 từng cố ý để nút cách đáy 110px và không trượt theo thanh).
-- File: `js/content/keepit-bar-css.js` (thêm `.screen.shid .btop{opacity:0;transform:translateY(10px) scale(.92);pointer-events:none}` — dùng đúng cờ `screen.shid` mà thanh đang dùng), `manifest.json` (3.5.557 → 3.5.558).
+- Tóm tắt: nút về đầu trang (`#btop`) ở toàn app, **sau khi hiện**, dùng đúng cơ chế mờ/hiện của thanh chuyển trang `.pager` trong khung xem tệp: rảnh 1000 ms → mờ còn 24% (vẫn bấm được); rê chuột vào vùng ±28px ngang / ±24px dọc quanh nút, bấm, focus, gõ phím, cuộn trang, resize, quay lại tab → hiện 100%; chuyển động 0,14 s khi hiện và 0,55 s khi mờ. Màn xem tệp vẫn ẩn hẳn thanh + nút (3.5.555).
+- Base theo lệnh: **đúng 3.5.557 (`0372474`)** — nhánh `fix-35557`; `manifest` 3.5.557; có mục “Cài đặt” ở sidebar (557); không có rule `.screen.shid .btop` của 3.5.558 (bản 558 làm sai đối tượng nên bị bỏ).
+- File: `js/content/keepit-bar.js` (thêm `BTOP_IDLE_MS = 1000`, `armBtopFade()`, `wakeBtop()`, `btopRect`; `updBtop()` cập nhật rect + đánh thức; nối pointerdown/pointerenter/pointerleave/focusin/focusout/keydown, `pointermove` toàn trang với vùng ±28/±24, resize, visibilitychange), `js/content/keepit-bar-css.js` (`.btop.dimmed{opacity:.24;transition-duration:.55s}`, `.btop:focus-visible{opacity:1}`, giảm chuyển động theo `prefers-reduced-motion`), `manifest.json` (3.5.557 → 3.5.559).
 - Kiểm tra: extension thật (unpacked), dựng cảnh Windows bằng class `lhn-twemoji-country-flags`.
-  - Dashboard 1512×900 sáng & tối: cuộn xuống → `bar translate 0 78px`, `screen.shid=true`, nút `opacity 0`, `pointer-events:none`; lăn lên 70px → thanh hiện, nút `opacity 0,98 → 1`, `pointer-events:auto`; cuộn xuống lại → nút về 0,075 → 0 (đang chuyển động đúng 0,2 s).
-  - Dashboard 390×844: cuộn xuống nút opacity 0, cuộn lên opacity 1.
-  - Trang web (example.com): cuộn xuống `opacity 0`, cuộn lên `opacity 1`.
+  - Dashboard 1512×900 sáng & tối, 390×844: hiện → `opacity 1`, lớp `btop on`; rảnh 1,4 s → `opacity 0,24`, lớp `btop on dimmed`; rê chuột vào nút → `opacity 1`; để rảnh lại → đang mờ dần (đo được 0,29 / 0,40 giữa chuyển động 0,55 s); **bấm lúc đang mờ vẫn chạy** (`scrollTop` về 0).
   - Màn xem tệp: nút `display:none`.
+  - Trang web example.com: hiện → 1; rảnh 1,4 s → 0,24; chuột vào → 1. (Bấm `^` trên trang giả lập này không cuộn ở **cả bản nền 3.5.557**, nên không phải do thay đổi này — ghi nhận là hạn chế của trang test.)
   - `console.error` + `pageerror` = 0.
-  - Ảnh: `qa/shots/558-1512-sang-down.png`, `558-1512-sang-down-zoom3x.png`, `558-1512-toi-down.png`, `558-390-sang-down.png`, `558-1512-both-visible.png`.
-  - Chưa kiểm được: cảm giác dùng trên Chrome người dùng (thời điểm mờ so với thanh). CRX không tạo vì sandbox thiếu khoá ký.
+  - Ảnh: `qa/shots/559-1512-sang-dim.png`.
+  - Chưa kiểm được: cảm giác dùng trên Chrome người dùng; hành vi bấm `^` trên trang web thật. CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.557 | Arena.ai Agent sửa:**
 
