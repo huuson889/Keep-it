@@ -221,3 +221,31 @@ function setupShortcutField(id, key) {
 }
 setupShortcutField("shortcut", "shortcut"); setupShortcutField("sidebarShortcut", "sidebarShortcut"); setupShortcutField("translateSelectedShortcut", "translateSelectedShortcut"); setupShortcutField("toggleWebsiteShortcut", "toggleWebsiteShortcut");
 load();
+
+// Temporary diagnostic controls for the touch-selection test build.
+$("diagStart").addEventListener("click", async () => {
+  await browser.storage.local.set({kpTouchDiagEnabled:false});
+  await new Promise(resolve => setTimeout(resolve, 300));
+  const all = await browser.storage.local.get(null);
+  const keys = Object.keys(all).filter(key => key.startsWith("kpTouchDiag_"));
+  if (keys.length) await browser.storage.local.remove(keys);
+  $("diagOutput").value = "";
+  await browser.storage.local.set({kpTouchDiagEnabled:true});
+  $("diagState").textContent = t("diagRecording");
+});
+$("diagStop").addEventListener("click", async () => {
+  await browser.storage.local.set({kpTouchDiagEnabled:false});
+  await new Promise(resolve => setTimeout(resolve, 500));
+  const all = await browser.storage.local.get(null);
+  const logs = Object.entries(all).filter(([key]) => key.startsWith("kpTouchDiag_")).map(([,value]) => value);
+  $("diagState").textContent = t("diagStopped");
+  $("diagOutput").value = logs.length ? JSON.stringify(logs, null, 2) : t("diagEmpty");
+});
+
+$("diagCopy").addEventListener("click", async () => {
+  const output = $("diagOutput");
+  if (!output.value) return;
+  output.focus(); output.select();
+  try { $("diagState").textContent = t(document.execCommand("copy") ? "diagCopied" : "diagCopyFailed"); }
+  catch { $("diagState").textContent = t("diagCopyFailed"); }
+});

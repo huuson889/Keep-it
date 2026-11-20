@@ -1,7 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.586**, tiếp từ **3.5.585** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển; tam giác ô tô sáng dịch theo tâm chữ và tránh góc bo.
+- Version **3.5.587** (bản log thử), tiếp từ **3.5.586** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển; tam giác ô tô sáng dịch theo tâm chữ và tránh góc bo.
+- Bản thử có log chọn chữ bật thủ công trong popup; chỉ ghi thời điểm, trạng thái, độ dài, không ghi nội dung chữ hay URL. Chưa sửa lỗi chậm trên cảm ứng.
 - Khi cụm chọn chữ sát đáy phải lật lên, đặt toàn bộ cụm kể cả nút dưới logo phía trên dòng đầu của toàn vùng chọn; khi đủ chỗ vẫn đặt phía dưới như cũ.
 - Khi lớp phủ Trang tối đang hiện, popup được phép nằm trên lớp phủ để giữ màu; không sửa mã nhận diện, màu hay chuyển Trang tối. Sheet cảm ứng dịch/từ điển giữ nguyên.
 - Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; đo tam giác ở hai mép, chữ ngắn và khi popup lật lên; hồi quy cuộn và Trang tối bật/tắt trên vùng màu rực. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
@@ -10,6 +11,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
+- **Chọn một chữ cảm ứng:** dùng bản 3.5.587 bật log, tái hiện và gửi log; chưa xác định nguyên nhân trên máy thật.
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
@@ -160,6 +162,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.587 | Arena:**
+
+- Tóm tắt: bản thử ghi log chọn chữ chỉ khi bật, xem và sao chép trong popup; không thu chữ hoặc URL, chưa thay đổi xử lý chọn chữ.
+- File: `js/shared/selection-toolbar.js`, `js/content/content.js`, `pages/popup.html`, `js/popup/popup.js`, `js/core/languages.js`, `manifest.json`.
+- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh + crop 4×, sự kiện cảm ứng mô phỏng và sao chép log; không lỗi console/pageerror, hồi quy sheet cảm ứng mô phỏng đạt. Chưa thử thiết bị cảm ứng thật.
 - **3.5.586:** tính phần dưới cùng của cả cụm chọn chữ khi xét tràn và khi lật; neo lên trên dòng đầu vùng chọn nhiều dòng. Kiểm Chromium unpacked 1512/390 sáng/tối, cụm tròn 1–4, thanh/icon, ảnh và crop 4×, đo lật lên và đủ chỗ phía dưới; hồi quy popup, Trang tối, sheet cảm ứng đạt, không ghi nhận lỗi console/pageerror trong các ca kiểm. Chưa kiểm mọi số lượng nút, trang/profile và thiết bị thật.
 
 
