@@ -109,12 +109,11 @@ function syncDashboardTheme() {
   if (state) state.textContent = t(dark ? "darkMode" : "lightMode");
   syncDashboardDocumentsTheme();
   const sidebarThemeLabel = $("dashboardSidebarThemeText"), sidebarThemeButton = $("dashboardSidebarThemeToggle");
-  if (sidebarThemeLabel) sidebarThemeLabel.textContent = dark ? "Giao diện tối" : "Giao diện sáng";
+  if (sidebarThemeLabel) sidebarThemeLabel.textContent = t(dark ? "dashboardThemeDark" : "dashboardThemeLight");
   if (sidebarThemeButton) {
-    const label = dark ? "Giao diện tối" : "Giao diện sáng";
     sidebarThemeButton.setAttribute("aria-pressed", String(dark));
-    sidebarThemeButton.setAttribute("aria-label", label);
-    sidebarThemeButton.title = "Đổi giao diện Sáng / Tối";
+    sidebarThemeButton.setAttribute("aria-label", t(dark ? "dashboardThemeDark" : "dashboardThemeLight"));
+    sidebarThemeButton.title = t("dashboardThemeToggleLabel");
   }
 }
 function showDashboardSettingsPanel(name) {
@@ -1299,6 +1298,7 @@ function applyTranslations() {
   document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll("[data-i18n-aria-label]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel)); });
   renderOverviewGreeting();
+  syncDashboardTheme();   // v3.5.556: nhãn "Giao diện tối/sáng" phụ thuộc theme nên phải vẽ lại theo ngôn ngữ mới
   // tiêu đề popup đăng nhập đổi theo chế độ đang mở (data-i18n chỉ biết "Đăng nhập")
   if ($("profileAuthTitle")) $("profileAuthTitle").textContent = t(profileAuthMode === "register" ? "profileRegister" : "profileLogin");
   populateStudyLanguageSelects();

@@ -96,10 +96,11 @@ Thả ZIP vào `D:\Keepit\Keepit - Optimize Test` — **không tự giải nén*
    if (-not (Test-Path $chrome)) { $chrome = "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe" }
    Start-Process $chrome -ArgumentList @('--remote-debugging-port=9222', '--user-data-dir=D:\Keepit\Chrome-CDP-Test')
    ```
-3. Trong PowerShell thứ hai, mở tunnel tới cổng CDP:
+3. Trong PowerShell thứ hai, mở tunnel tới cổng CDP — **phải có `--http-host-header`**:
    ```powershell
-   cloudflared tunnel --url http://localhost:9222
+   cloudflared tunnel --url http://127.0.0.1:9222 --http-host-header 127.0.0.1:9222
    ```
+   Không có `--http-host-header` thì Cloudflare gửi Host là tên miền tunnel, Chrome chặn (chống DNS-rebinding) và mọi request trả `HTTP 500 — Host header is specified and is not an IP address or localhost`; tunnel trông như "đang chạy" nhưng agent không vào được. Kiểm tra bằng `https://<URL>/json/version` — phải ra JSON có `"Browser": "Chrome/…"`.
    Sao chép URL `https://….trycloudflare.com` do lệnh in ra và gửi riêng trong chat. Đừng ghi URL/token vào repo. **Tunnel này trao quyền điều khiển toàn bộ Chrome cho người có URL:** chỉ dùng profile test, không mở nội dung nhạy cảm, và dừng bằng Ctrl+C ngay sau kiểm thử.
 4. Agent lấy CDP WebSocket từ `https://<URL>/json/version`, kết nối Playwright `connectOverCDP`, rồi thao tác/reload tab. Ví dụ phía Agent:
    ```js

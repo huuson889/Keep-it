@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.555** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.556** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -159,22 +159,27 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.555 | Arena.ai Agent thêm (dashboard: mở tệp trong tab Tài liệu thì ẩn HOÀN TOÀN thanh):**
+**2026-11-17 | v3.5.556 | Arena.ai Agent sửa:**
 
-- Lệnh: "ok làm" sau khi agent chỉ ra 3.5.554 không có phần này (đã bị bỏ khi người dùng chọn "chỉ A").
-- Base: `4e1ccce` (= 3.5.550 + sửa `isOwnUi`), +18/−3 trên 3 file; không mang gì khác từ 551/552/553.
-- Sửa:
-  1. `js/content/keepit-bar.js`: `syncExtDocs()` — dashboard đọc `body.documents-viewer-open` (cờ do `dashboard.js` gắn khi mở tệp) → bật/tắt class `extdocs` trên khung thanh; theo dõi bằng MutationObserver trên class của `body` + nhịp 700 ms; mở tệp thì đưa `S.sOff = 0`, `S.peek = false` rồi `applyOff(false)`.
-  2. `js/content/keepit-bar-css.js`: `.screen.extdocs .bbar,.screen.extdocs .hzone,.screen.extdocs .btop{display:none!important}`.
-- Đo (sandbox 1536×746, extension 3.5.555):
-  - Bình thường: thanh `display:block`.
-  - Bật cờ mở tệp: sau 0,12 s (observer) thanh `none`, nút về đầu trang `none`, vạch tím `none`, `extdocs=true`; sau 0,9 s vẫn vậy.
-  - Tắt cờ: thanh `block`, nút về đầu trang `grid`, `extdocs=false`.
-  - Cuộn xuống khi đã có sửa `isOwnUi`: vẫn ẩn (`translate 0 78px`, `shid=true`) → không phá 3.5.554.
-  - Trang web có gắn tay `body.documents-viewer-open`: `extdocs=false`, thanh hiện → không ảnh hưởng web.
-  - `pageerror` + `console.error` = 0.
-- Chưa kiểm được: tệp thật (thư viện sandbox trống) — cần đo trên Chrome người dùng sau khi cài.
-- ZIP: `Keepit - Optimize Test-v3.5.555.zip` (389 file, SHA-256 từng file khớp). Không tạo CRX.
+- Tóm tắt: nhãn menu hồ sơ (avatar "You") và nút đổi giao diện ở sidebar dashboard không theo ngôn ngữ — một nửa lấy từ `t()` nên đổi theo ngôn ngữ, một nửa viết cứng tiếng Việt trong HTML/JS nên đứng im (ảnh người dùng: "My profile"/"Sign in to synchronize" tiếng Anh cạnh "Hồ sơ cá nhân"/"Phím tắt" tiếng Việt). Nay toàn bộ nhãn đi qua `t()`; nhãn theme vẫn phụ thuộc sáng/tối nên vẽ lại khi đổi ngôn ngữ.
+- File: `pages/dashboard.html` (10 nhãn gắn `data-i18n`/`data-i18n-title`/`data-i18n-aria-label`), `js/dashboard/dashboard.js` (`syncDashboardTheme()` dùng `t("dashboardThemeDark|Light|ToggleLabel")`, `applyTranslations()` gọi lại `syncDashboardTheme()`), `js/core/languages.js` (+8 key × en/vi/ko: `profileItemAccount`, `profileItemSettings`, `profileItemSync`, `profileItemHelp`, `profileMenuToggleTitle`, `dashboardThemeDark`, `dashboardThemeLight`, `dashboardThemeToggleLabel`), `manifest.json` (3.5.555 → 3.5.556).
+- Kiểm tra: extension thật (unpacked), đổi `lhnSettings.language` rồi reload.
+  - 1512×900: en → "My profile / Extension settings / Appearance / Keyboard shortcuts / Sign in", "Sign in to synchronize", "You", "Light mode", "Settings & Account"; vi → "Hồ sơ cá nhân / Cài đặt tiện ích / Giao diện / Phím tắt / Đăng nhập", "Đăng nhập để đồng bộ", "Bạn", "Giao diện sáng", "Cài đặt & Tài khoản"; ko → "내 프로필 / 확장 프로그램 설정 / 화면 모양 / 단축키 / 로그인", "동기화하려면 로그인하세요", "나", "라이트 모드", "설정 및 계정". Bật tối: en "Dark mode", vi "Giao diện tối".
+  - 390×844: en/vi/ko đổi đúng (nút theme + nhãn người dùng + trạng thái đồng bộ).
+  - Quét toàn trang khi ngôn ngữ = en (1512 và 390, có mở menu): **0 chuỗi còn dấu tiếng Việt**.
+  - `console.error` + `pageerror` = 0.
+  - Ảnh: `qa/shots/556-<en|vi>-1512-<light|dark>-popover.png`, `556-390-en-phone-menu.png`, `556-vi-1512-dark-popover-zoom2x.png`.
+  - Chưa kiểm được: bản chạy trên Chrome người dùng. CRX không tạo vì sandbox thiếu khoá ký.
+
+**2026-11-17 | v3.5.555 | Arena.ai Agent sửa:**
+
+- Tóm tắt: dashboard — đang mở tệp trong tab Tài liệu (`body.documents-viewer-open`) thì ẩn hoàn toàn thanh Keepit (thanh, vạch tím, nút về đầu trang); đóng tệp hiện lại; màn danh sách tệp vẫn hiện thanh. Làm trên nền `4e1ccce` (= 3.5.550 + sửa `isOwnUi`), +18/−3, không mang gì từ 551/552/553. Kèm sửa tài liệu: `OPT-ARENA.md` bước 3 phải có `--http-host-header 127.0.0.1:9222` (thiếu thì Chrome trả 500 `Host header is specified and is not an IP address or localhost`).
+- File: `js/content/keepit-bar.js` (`syncExtDocs()` + MutationObserver trên class `body` + gọi trong nhịp 700 ms), `js/content/keepit-bar-css.js` (`.screen.extdocs .bbar,.hzone,.btop{display:none!important}`), `manifest.json` (3.5.554 → 3.5.555), `OPT-ARENA.md`.
+- Kiểm tra: extension thật (unpacked), dựng cảnh Chrome/Windows bằng class `lhn-twemoji-country-flags`.
+  - 1512×900 sáng & tối, 390×844 sáng & tối: bình thường thanh `block`; cuộn xuống `translate 0 78px` + `shid=true` + vạch tím `block`; mở tệp thanh `none`, `^` `none`, vạch tím `none`, `extdocs=true`; đóng tệp thanh `block`, `^` `grid`.
+  - `console.error` + `pageerror` = 0 (cả 4 phiên).
+  - Ảnh: `qa/shots/555-<1512|390>-<light|dark>-<1-normal|2-scrolled|3-file-open>.png` + bản `-zoom4x.png`.
+  - Chưa kiểm được: tệp thật (thư viện sandbox trống) — phải đo trên Chrome người dùng; CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.554 | Arena.ai Agent sửa (CHỈ một chỗ: `isOwnUi` — lấy đúng nền 3.5.550):**
 
