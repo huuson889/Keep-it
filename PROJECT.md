@@ -159,6 +159,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.573 | Arena.ai Agent sửa:**
+- Base: vẫn từ **v3.5.564** (`ddffbaa`, nhánh `fix-35571`) + hai bản vá 3.5.571/3.5.572. Bản này **chỉ thêm công cụ chẩn đoán**, không đổi hành vi chọn chữ.
+- Tóm tắt: Chưa tìm ra nguyên nhân lỗi "vùng chọn nháy" khi chọn bằng cảm ứng (lúc bị lúc không, kéo xuôi hay ngược đều có, hay gặp khi kéo qua **khoảng trống trong đoạn**). Đo "vùng chết" cho thấy 3.5.571 → 3.5.572 giảm 296/418 → 88/418 điểm nhưng người dùng vẫn thấy y như cũ ⇒ vùng chết không phải nguyên nhân. Hai lần thử phủ nốt dải trên/lề trái đều làm **chữ xê dịch** (78–89 px, rồi 9,5 px) nên đã hoàn lại, không phát hành. Nay thêm `js/dashboard/documents-diag.js` (chỉ nạp ở `pages/documents.html`, **sẽ gỡ** khi tìm ra lỗi): ghi vòng 800 mục vào bộ nhớ gồm chạm/kéo (toạ độ, cancelable, defaultPrevented), mỗi lần vùng chọn đổi (độ dài, số rect, dòng đầu/dòng cuối, neo/đầu kia, `caretRangeFromPoint` tại điểm chạm cuối), thay đổi DOM trong lớp chữ, cuộn `#stage`, và hộp UI `lhn-*` hiện ra. Nút "Log" ở góc dưới trái mở bảng có Copy/Làm mới/Xoá/Đóng.
+- File: `js/dashboard/documents-diag.js` (mới), `pages/documents.html`, `manifest.json`
+- Kiểm tra: nút Log hiện, log bắt đủ loại sự kiện (sau một lần kéo chuột + một lần kéo chạm: `start` 1, `dom` 7, `mouse` 2, `drag` 8, `sel` 7, `touch` 7), bảng mở được, ô log 4.126 ký tự, nút Copy báo "đã copy"; mục `sel` mẫu có đủ `anchor/focus/firstLine/lastLine/caret` (`caret` trỏ vào `SPAN.lhnLineFiller@43` — đáng chú ý cho việc tìm lỗi). Không lỗi console. Chọn chữ bằng chuột vẫn 0/24 bước sai, cảm ứng chọn + thả tay mới hiện icon vẫn như 3.5.572.
+
 **2026-11-17 | v3.5.572 | Arena.ai Agent sửa:**
 - Base: vẫn từ **v3.5.564** (`ddffbaa`, nhánh `fix-35571`), cộng tiếp một bản vá duy nhất cho lỗi cảm ứng còn nháy.
 - Tóm tắt: đo "vùng chết" của lớp chữ (lấy mẫu 19×29 điểm trên trang, xem `document.caretRangeFromPoint` trả về chữ hay phần tử): 3.5.571 có **296/418 điểm rơi vào phần tử chứa** — đó là các chỗ trình duyệt còn cớ neo vùng chọn vào ranh giới khối, nên khi bôi đen nhiều đoạn vẫn nháy (lúc có lúc không, tuỳ ngón tay rơi vào đâu). Phần lớn nằm ở **khoảng trống phía dưới dòng cuối** (slide có nhiều chỗ trống). Nay hộp chữ của dòng cuối được đệm tới **đáy trang**: vùng chết còn **88/418** (giảm 71 % → 21 %), 330 điểm rơi vào chữ.
