@@ -155,28 +155,44 @@
   function position(el, x, y) {
     const margin = 10;
     const left = Math.max(margin, Math.min(x, innerWidth - el.offsetWidth - margin));
-    const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
-    el.style.left = left + "px"; el.style.top = top + "px";
+    el.style.left = left + "px";
+    el.style.top = y + "px";   // v3.5.575: KHÔNG kẹp dọc — xem anchoredTop()
   }
-  /* v3.5.575: neo trôi khỏi màn hình thì ẩn thanh nổi đi, không được "ghim" ở mép.
-     position() kẹp toạ độ vào khung nhìn (Math.max(10, …)) nên khi cuộn cho đoạn đã chọn ra khỏi màn hình,
-     thanh logo + tiện ích bị ghim ở mép trên (top:10) và nằm đè lên trang — đúng lỗi "kẹt ở đỉnh".
-     Ở đây chỉ ẩn/hiện bằng class, giữ nguyên mọi trạng thái; cuộn trở lại thì thanh hiện lại như cũ. */
-  function anchorOffstage(rect) { return !rect || rect.bottom <= 0 || rect.top >= innerHeight; }
-  function setOffstage(el, off) {
-    if (!el || el.classList.contains("lhn-offstage") === off) return;
-    el.classList.toggle("lhn-offstage", off);
-    // Thanh nổi / popup mang sẵn style inline !important (display, visibility, pointer-events) nên luật CSS không thắng
-    // được — phải ghi đè bằng inline, và giữ lại giá trị cũ để trả về đúng như trước (popup dùng display:flex).
-    if (off) {
-      el.__lhnOffDisplay = { value: el.style.getPropertyValue("display"), priority: el.style.getPropertyPriority("display") };
-      el.style.setProperty("display", "none", "important");
-    } else if (el.__lhnOffDisplay) {
-      const { value, priority } = el.__lhnOffDisplay;
-      delete el.__lhnOffDisplay;
-      if (value) el.style.setProperty("display", value, priority);
-      else el.style.removeProperty("display");
+  /* v3.5.575: thanh nổi neo vào vùng chọn phải ĐI THEO CHỮ, không bị ghim ở mép màn hình.
+     Trước đây position() kẹp dọc vào [10, innerHeight-cao-10] nên khi cuộn cho đoạn đã chọn ra khỏi
+     màn hình, thanh bị dán ở top:10 và nằm đè lên trang. Nay:
+       • dòng chọn còn chỗ phía dưới → đặt dưới dòng như cũ;
+       • sát đáy (không đủ chỗ) → lật LÊN TRÊN dòng, không kẹp vào đáy;
+       • dòng chọn đã trôi ra ngoài màn hình → toạ độ âm hoặc quá innerHeight, thanh đi theo chữ và
+         khuất khỏi màn hình một cách tự nhiên (không cần ẩn/hiện). */
+  function anchoredTop(el, rect, gap) {
+    const h = el.offsetHeight || 28;
+    const below = rect.bottom + gap;
+    if (below + h > innerHeight - 4) {
+      const above = rect.top - gap - h;
+      if (above > 4 || rect.top > innerHeight) return above;   // lật lên, hoặc đi theo chữ đang ở dưới màn hình
     }
+    return below;
+  }
+  /* v3.5.575: thanh nổi thuộc TẦNG CỦA CHỮ, không nằm trên mọi lớp của trang web.
+     Lấy z-index lớn nhất trong các khối cha CÓ stacking context của vùng chọn rồi +1 (sàn 20). Vì vậy header/nav
+     của trang (thường z-index ≥ 100) sẽ che thanh — đúng như một thành phần nằm trong nội dung, không đè lên
+     các lớp khác. Trần 2147482900 để vẫn nằm dưới thanh Keepit (host 2147483000).
+     Kết quả được nhớ theo nút neo: hàm này chỉ chạy lại khi vùng chọn đổi, không chạy mỗi lần cuộn. */
+  let floatZ = { node:null, value:2147482900 };
+  function contentZIndex(node) {
+    const start = node?.nodeType === 1 ? node : node?.parentElement;
+    if (floatZ.node === start) return floatZ.value;
+    let z = 0;
+    for (let el = start; el && el !== document.documentElement; el = el.parentElement) {
+      const cs = getComputedStyle(el);
+      if (cs.position === "static" || cs.zIndex === "auto") continue;
+      const value = parseInt(cs.zIndex, 10);
+      if (Number.isFinite(value) && value > z) z = value;
+    }
+    const value = Math.min(2147482900, Math.max(20, z + 1));
+    floatZ = { node:start, value };
+    return value;
   }
   // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
   function placeTouchOverlaySheet(popup, anchor) {
@@ -203,11 +219,10 @@
     if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
     if (placeTouchOverlaySheet(popup, anchor)) return;
     const rect = anchor.getBoundingClientRect();
-    const off = anchorOffstage(rect); setOffstage(popup, off);
-    if (off) return;
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
-    position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.bottom + 8);
+    popup.style.setProperty("z-index", String(contentZIndex(anchor.startContainer)), "important");
+    position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, anchoredTop(popup, rect, 8));
     popup.style.setProperty("left", popup.style.left, "important");
     popup.style.setProperty("top", popup.style.top, "important");
   }
@@ -217,12 +232,12 @@
     const lineRects = Array.from(range.getClientRects?.() || []).filter(item => item.width > 0 && item.height > 0);
     const rect = lineRects[lineRects.length - 1] || range.getBoundingClientRect();
     if (!rect.width && !rect.height) return;
-    const off = anchorOffstage(rect); setOffstage(translateIcon, off);
-    if (off) return;                                    // v3.5.575: neo đã ra khỏi màn hình → ẩn, không ghim ở mép
     const shell = translateIcon.querySelector(".lhn-translate-shell");
     // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
     const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
-    position(translateIcon, rect.right - 28, rect.bottom + shellOverflow + 4);
+    translateIcon.style.setProperty("z-index", String(contentZIndex(range.startContainer)), "important");
+    position(translateIcon, rect.right - 28, anchoredTop(translateIcon, rect, shellOverflow + 4));
+    translateIcon.style.setProperty("top", translateIcon.style.top, "important");
     if (shell?.dataset.layout === "radial") {
       // Radial: keep the side buttons on screen by sliding the whole group inward (badge centre = launcher right - half badge).
       const half = (shell.offsetWidth || 38) / 2, labelled = shell.dataset.labels === "true";
