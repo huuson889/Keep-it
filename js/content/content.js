@@ -242,7 +242,6 @@
     const y = popup._lhnAbove ? rect.top - popup.offsetHeight - 8 : rect.bottom + 8;
     const x = rect.left + rect.width / 2 - popup.offsetWidth / 2;
     position(popup, x, y); // keep the translation popup's existing horizontal edge handling
-    if (popup === panel || popup === tooltip) popup.style.left = `${x}px`;
     popup.style.setProperty("left", popup.style.left, "important");
     popup.style.setProperty("top", `${y}px`, "important");
   }

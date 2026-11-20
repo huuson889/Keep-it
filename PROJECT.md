@@ -1,9 +1,9 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.583**, làm lại từ **3.5.574 (`3ab24bf`)**: popup nổi bám tầng chữ và bám vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo vào toàn bộ vùng chọn và căn giữa tuyệt đối.
+- Version **3.5.584**, tiếp từ **3.5.583** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển.
 - Khi lớp phủ Trang tối đang hiện, popup được phép nằm trên lớp phủ để giữ màu; không sửa mã nhận diện, màu hay chuyển Trang tối. Sheet cảm ứng dịch/từ điển giữ nguyên.
-- Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; hai đoạn, sát đáy, cuộn ngoài màn hình, header lồng tầng; Trang tối bật/tắt trên vùng màu rực; PDF fixture và sheet cảm ứng. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
+- Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; popup tô sáng và note sát cả hai mép; hai đoạn, sát đáy và cuộn ngoài màn hình; Trang tối bật/tắt trên vùng màu rực; PDF fixture và sheet cảm ứng. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
 - Tài liệu: kiến trúc v30, `pages/documents.html` tự vẽ thư viện và mở tệp; Dashboard hiển thị khung. Ghi chú tài liệu dùng annotations chung.
 - Giới hạn: chưa kiểm profile Chrome thật, nhiều trang web thật, tệp PDF/Office của người dùng, cảm giác dùng/tốc độ hay mọi cấu trúc stacking context; preview Office hạn chế phông/đối tượng, chưa có OCR.
 
@@ -16,7 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- **Popup 3.5.583:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
+- **Popup 3.5.584:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
 - Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
@@ -159,6 +159,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.584 | Arena.ai Agent sửa:**
+
+- Tóm tắt: sửa cơ chế đẩy ngang của ô tô sáng và popup note; bỏ ngoại lệ bỏ kẹp ngang trong `positionPopupAtAnchor`, dùng chung `position()` với popup dịch/Full Dictionary. Khi đủ chỗ vẫn căn giữa toàn vùng chọn; khi tràn mép, đẩy vào trong với lề 10 px. Không thay đổi tầng, lật dọc, kích thước, cách chọn, sheet, icon/tiện ích hay cơ chế Trang tối.
+- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: extension unpacked Chromium 159; ca sát hai mép 1512/390 sáng/tối cho cả ô tô sáng và popup note, ảnh + crop 4× (`qa/v584-edges.log`): ô 270 px, 1512 trái 10–280/phải 1232–1502; 390 trái 10–280/phải 110–380. Chụp/đo hai đoạn, sát đáy và cuộn ra ngoài (`qa/v584-multi.log`, `qa/v584-bottom.log`); bộ 4 kịch bản 72 ảnh + crop (`qa/v584-regression.log`); Trang tối bật/tắt vùng màu rực (`qa/v584-toggle.log`) và sheet dịch/từ điển 390 (`qa/v584-sheet.log`); console.error/pageerror rỗng. Chưa kiểm profile Chrome thật, Wikipedia thật trên máy người dùng, các website khác, PDF/Office của người dùng, cảm ứng/vận hành trên thiết bị thật.
 
 **2026-11-17 | v3.5.583 | Arena.ai Agent sửa:**
 
