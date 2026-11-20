@@ -132,13 +132,13 @@
   function installTouchSelectionBridge({ document:doc=globalThis.document, touchQuery=matchMedia("(pointer:coarse)"), isOwnTarget=()=>false }={}) {
     if(touchBridges.has(doc))return touchBridges.get(doc);
     const document=doc,TOUCH=touchQuery;
-    let touching = false, timer = 0, lastKey = "";
+    let touching = false, timer = 0, lastKey = "", fallbackTimer = 0, fallbackKey = "";
     // Temporary opt-in diagnostics: metadata only, never selected text or page URLs.
     const logKey = `kpTouchDiag_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     let logging = false, logTimer = 0, events = [], writeChain = Promise.resolve();
     function writeLog() {
       clearTimeout(logTimer); logTimer = 0;
-      const snapshot = { version:"3.5.587", events:events.slice(-200) };
+      const snapshot = { version:browser.runtime.getManifest().version, events:events.slice(-200) };
       writeChain = writeChain.then(() => browser.storage.local.set({ [logKey]:snapshot })).catch(() => {});
     }
     function log(stage, extra = {}) {
@@ -178,15 +178,29 @@
       log("bridge.dispatchMouseup");
       (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
     }
-    /* v3.5.571: bỏ hẹn giờ "vùng chọn im lặng 900 ms rồi mở popup". Trong lúc kéo tay nắm chọn, Android không gửi sự kiện
-       chạm nào (chỉ có selectionchange) nên hẹn giờ đó làm popup mở giữa lúc đang chọn. Nay chỉ mở khi có tín hiệu THẢ TAY
-       thật: touchend, hoặc contextmenu phát ra khi ngón tay đã nhấc. Máy nào không gửi tín hiệu thả tay trong chế độ chọn
-       thì popup mở ở lần chạm kế tiếp — vẫn mở, nhưng không bao giờ mở khi tay còn đang chọn. */
-    const schedule = () => {};   // không hẹn giờ nữa: chỉ mở khi thả tay
-    document.addEventListener("contextmenu", () => { log("contextmenu"); if (!TOUCH.matches || touching) return; clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
-    document.addEventListener("touchstart", () => { touching = true; log("touchstart"); clearTimeout(timer); }, { capture:true, passive:true });
-    document.addEventListener("touchend", () => { touching = false; log("touchend"); clearTimeout(timer); timer = setTimeout(fire, 80); }, { capture:true, passive:true });
-    document.addEventListener("touchcancel", () => { touching = false; log("touchcancel"); clearTimeout(timer); }, { capture:true, passive:true });
+    // The OS can cancel the touch as it takes over native selection. For a single word only,
+    // offer the old 900 ms fallback; this is a compromise, not proof that the finger lifted.
+    const cancelFallback = () => { clearTimeout(fallbackTimer); fallbackTimer = 0; fallbackKey = ""; };
+    const schedule = () => {};
+    document.addEventListener("selectionchange", () => {
+      if (fallbackTimer && selectionKey() !== fallbackKey) { cancelFallback(); log("bridge.fallbackCancelled"); }
+    });
+    document.addEventListener("contextmenu", () => { log("contextmenu"); if (!TOUCH.matches || touching) return; cancelFallback(); clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
+    document.addEventListener("touchstart", () => { touching = true; log("touchstart"); cancelFallback(); clearTimeout(timer); }, { capture:true, passive:true });
+    document.addEventListener("touchend", () => { touching = false; log("touchend"); cancelFallback(); clearTimeout(timer); timer = setTimeout(fire, 80); }, { capture:true, passive:true });
+    document.addEventListener("touchcancel", () => {
+      touching = false; log("touchcancel"); clearTimeout(timer); cancelFallback();
+      const selection = getSelection(), text = selection?.toString().trim() || "";
+      if (!TOUCH.matches || !text || /\s/u.test(text) || selection.isCollapsed || !selection.rangeCount) return;
+      fallbackKey = selectionKey();
+      if (!fallbackKey) return;
+      log("bridge.fallbackScheduled");
+      fallbackTimer = setTimeout(() => {
+        const unchanged = fallbackKey && fallbackKey === selectionKey();
+        cancelFallback();
+        if (unchanged) { log("bridge.fallbackFire"); fire(); }
+      }, 900);
+    }, { capture:true, passive:true });
     document.addEventListener("mouseup", event => { if (event.isTrusted) lastKey = selectionKey(); }, true);
     const bridge=Object.freeze({ schedule });touchBridges.set(doc,bridge);return bridge;
   }
