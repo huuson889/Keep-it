@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.552** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.553** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -158,6 +158,20 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.553 | Arena.ai Agent sửa (NGUYÊN NHÂN GỐC, tìm bằng Debugger trên Chrome thật của người dùng):**
+
+- Người dùng mở cổng debug Chrome của máy mình qua tunnel → agent nối CDP trực tiếp vào Chrome 157 (Windows, 1536×746, dpr 1,25, extension id `pindjkfhedajepnjoljgbcaagjogbgla`), đo được: file đang chạy **trùng byte** với repo 3.5.552; cuộn thật thì `scrollTop` 0→552 nhưng thanh `translate=(none)`, `shid=false` ở CẢ 3 kiểu lăn.
+- Cắm breakpoint vào `onScroll` (Debugger domain): dừng ở dòng 1391 (`mounted:true`, target `dashboardScroller`) rồi dòng 1393 → `{laElement:true, own:true}` → **thoát ngay**, không bao giờ tới dòng 1398 (`scrollOff`). Tức `isOwnUi(#dashboardScroller) === true`.
+- Nguyên nhân gốc: `isOwnUi()` dùng `el.closest('#lhn-touch-ui,…,[class*="lhn-"]')`, mà `closest()` đi ngược lên tới `<html>`; `js/dashboard/flags.js` gắn class **`lhn-twemoji-country-flags`** vào `<html>` khi trình duyệt có emoji màu nhưng thiếu glyph cờ (Windows Chrome: có → gắn; Chromium trên Linux của agent: không gắn). Vì vậy **mọi phần tử trên dashboard bị coi là "UI của mình"** → `onScroll` bỏ qua mọi lần cuộn → thanh không bao giờ ẩn. Web không bị vì `flags.js` chỉ chạy ở dashboard.
+- Vì sao 3.5.550/551/552 test ở sandbox đều "chạy đúng": máy sandbox không gắn class đó → lỗi vô hình.
+- Sửa (`js/content/keepit-bar.js`, base `d29d47a`): `isOwnUi()` không tính `<html>`/`<body>` (chỉ phần tử thật sự nằm trong UI của Keepit).
+- Đo lại (sandbox 1536×746, gắn tay class `lhn-twemoji-country-flags` để dựng đúng cảnh Windows):
+  - 3.5.552: 1 phát 800 / 2 phát nhanh / 4 phát chậm → **đều không ẩn** (`shid=false`) — tái hiện đúng lỗi của người dùng.
+  - 3.5.553: cả 3 kiểu → **ẩn hết** (`translate 0 78px`, `shid=true`); trang web cũng ẩn (`scrollY 800`, `shid=true`); `pageerror` = 0.
+- Harness: `qa/real1.py`…`qa/real5.py` (đo trên Chrome thật qua CDP), `qa/t553.py` (đối chiếu 552/553).
+- Chưa kiểm được: bản 3.5.553 chạy trên Chrome người dùng (cần họ Reload extension).
+- Không tạo CRX.
 
 **2026-11-17 | v3.5.552 | Arena.ai Agent sửa (nguyên nhân thật: sự kiện cuộn đầu tiên bị coi là dy=0):**
 

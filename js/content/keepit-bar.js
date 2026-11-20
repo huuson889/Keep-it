@@ -364,7 +364,16 @@
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
   let ovRaf = 0;
-  const isOwnUi = el => el === host || !!el.closest?.('#lhn-touch-ui,[data-lhn-bilingual-ui],[id^="lhn-"],#keepit-host,[class*="lhn-"]');
+  // v3.5.553: `closest()` đi ngược lên tới <html>. Dashboard gắn class "lhn-twemoji-country-flags" vào <html>
+  // (js/dashboard/flags.js) → MỌI phần tử trên dashboard bị coi là "UI của mình" → onScroll thoát ngay ở dòng 2 →
+  // thanh không bao giờ ẩn. Chỉ tính phần tử thật sự nằm trong UI, không tính <html>/<body>.
+  const isOwnUi = el => {
+    if (!el) return false;
+    if (el === host) return true;
+    if (el === document.documentElement || el === document.body) return false;
+    const n = el.closest?.('#lhn-touch-ui,[data-lhn-bilingual-ui],[id^="lhn-"],#keepit-host,[class*="lhn-"]');
+    return !!n && n !== document.documentElement && n !== document.body;
+  };
   function checkOverlap() {
     if (!mounted) return;
     let h = 0;
