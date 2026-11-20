@@ -8,7 +8,7 @@
 [data-lhn-id].lhn-black-text{ color:#000 !important; }
 [data-lhn-id].lhn-mark.lhn-fragmented{ border-radius:0 !important; }
 [data-lhn-id].lhn-mark:hover{ box-shadow: 0 0 0 1px #5555; }
-#lhn-selection-overlay{ position: fixed; inset: 0; z-index: 2147483645; pointer-events: none; }
+#lhn-selection-overlay{ position: fixed; inset: 0; z-index: 20; pointer-events: none; }
 .lhn-selection-preview-mark{ display:inline !important; }
 #lhn-panel, #lhn-note-pop{ position: fixed; z-index: 20; font-family: var(--lhn-tooltip-font-family); font-size: var(--lhn-tooltip-font-size); line-height: var(--lhn-tooltip-line-height); color: #202124; background: rgba(255,255,255,.98); border: 1px solid #dadce0; border-radius: 12px; box-shadow: 0 10px 32px #0002, 0 2px 8px #0001; padding: 13px; width: 290px; box-sizing: border-box; opacity: 0; transform: translateY(6px) scale(.985); transition: opacity 150ms ease, transform 180ms cubic-bezier(.2,.8,.2,1); }
 #lhn-panel.lhn-visible, #lhn-note-pop.lhn-visible{ opacity: 1; transform: translateY(0) scale(1); }

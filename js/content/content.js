@@ -59,8 +59,7 @@
   globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
   const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
 
-  // Safe default until an anchor supplies the same computed layer to all floating tools.
-  const FLOAT_Z = "20";
+  // v3.5.164: selection tools and floating popups sit under the Keepit bar, its sheets and search (keepit-bar host 2147483000)
   function animateRemove(el) {
     if (!el) return;
     el.classList.add("lhn-closing");
@@ -134,7 +133,6 @@
     if (dictionaryPopup?._lhnHideForNote) { dictionaryRequestId++; dictionaryPopup = null; }
     composerSave = null; colorChosen = false; composerOriginalColor = null;
     if (panel) { const old = panel; panel = null; animateRemove(old); }
-    composerAnchor = null;
     webHighlighter.clearPreview(); activeRange = null; activeAnnotationId = null;
   }
   function removeTooltip(cancelColorPreview = false) {
@@ -156,55 +154,49 @@
   function position(el, x, y) {
     const margin = 10;
     const left = Math.max(margin, Math.min(x, innerWidth - el.offsetWidth - margin));
-    const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
-    el.style.left = left + "px"; el.style.top = top + "px";
+    el.style.left = left + "px";
+    el.style.top = y + "px";   // v3.5.575: KHÔNG kẹp dọc — xem anchoredTop()
   }
-  // All floating tools use the same anchor geometry, viewport limit and layer as translation and Full Dictionary.
-  // Keep the original vertical limit: near the bottom the tool moves UP, as it did in 3.5.574.
-  function anchoredGeometry(anchor, lastLine = false) {
-    const start = anchor?.startContainer || anchor;
-    if (!start?.isConnected || !anchor?.getBoundingClientRect) return null;
-    let rect = anchor.getBoundingClientRect();
-    if (lastLine && anchor.getClientRects) {
-      const lines = Array.from(anchor.getClientRects()).filter(line => line.width > 0 && line.height > 0);
-      if (lines.length) rect = lines[lines.length - 1];
+  /* v3.5.575: thanh nổi neo vào vùng chọn phải ĐI THEO CHỮ, không bị ghim ở mép màn hình.
+     Trước đây position() kẹp dọc vào [10, innerHeight-cao-10] nên khi cuộn cho đoạn đã chọn ra khỏi
+     màn hình, thanh bị dán ở top:10 và nằm đè lên trang. Nay:
+       • dòng chọn còn chỗ phía dưới → đặt dưới dòng như cũ;
+       • sát đáy (không đủ chỗ) → lật LÊN TRÊN dòng, không kẹp vào đáy;
+       • dòng chọn đã trôi ra ngoài màn hình → toạ độ âm hoặc quá innerHeight, thanh đi theo chữ và
+         khuất khỏi màn hình một cách tự nhiên (không cần ẩn/hiện). */
+  function anchoredTop(el, rect, gap) {
+    const h = el.offsetHeight || 28;
+    const below = rect.bottom + gap;
+    if (below + h > innerHeight - 4) {
+      const above = rect.top - gap - h;
+      if (above > 4 || rect.top > innerHeight) return above;   // lật lên, hoặc đi theo chữ đang ở dưới màn hình
     }
-    if (!rect?.width && !rect?.height) return null;
-    return { rect, node:start.nodeType === Node.ELEMENT_NODE ? start : start.parentElement };
+    return below;
   }
-  function anchorLayer(node) {
+  /* v3.5.575: thanh nổi thuộc TẦNG CỦA CHỮ, không nằm trên mọi lớp của trang web.
+     Lấy z-index lớn nhất trong các khối cha CÓ stacking context của vùng chọn rồi +1 (sàn 20). Vì vậy header/nav
+     của trang (thường z-index ≥ 100) sẽ che thanh — đúng như một thành phần nằm trong nội dung, không đè lên
+     các lớp khác. Trần 2147482900 để vẫn nằm dưới thanh Keepit (host 2147483000).
+     Kết quả được nhớ theo nút neo: hàm này chỉ chạy lại khi vùng chọn đổi, không chạy mỗi lần cuộn. */
+  let floatZ = { node:null, value:2147482900 };
+  function contentZIndex(node) {
+    const start = node?.nodeType === 1 ? node : node?.parentElement;
+    if (floatZ.node === start) return floatZ.value;
+    // v3.5.579: nhiều nút chữ của cùng một dòng/khung xem tệp → cùng tầng. Tầng luôn lớn hơn 0 nên
+    // không mất mát gì, và tránh cảnh hai lớp nổi cạnh nhau lệch tầng chỉ vì neo vào nút chữ khác nhau.
+    let anchor = start;
+    for (let up = start, i = 0; up && i < 3 && up !== document.documentElement; up = up.parentElement, i++) anchor = up;
+    if (floatZ.node === anchor) return floatZ.value;
     let z = 0;
-    for (let parent = node; parent && parent !== document.documentElement; parent = parent.parentElement) {
-      const css = getComputedStyle(parent);
-      if (css.position === "static" || css.zIndex === "auto") continue;
-      z = Math.max(z, Number.parseInt(css.zIndex, 10) || 0);
+    for (let el = anchor; el && el !== document.documentElement; el = el.parentElement) {
+      const cs = getComputedStyle(el);
+      if (cs.position === "static" || cs.zIndex === "auto") continue;
+      const value = parseInt(cs.zIndex, 10);
+      if (Number.isFinite(value) && value > z) z = value;
     }
-    return Math.min(2147482900, Math.max(20, z + 1));
-  }
-  function placeAnchored(el, anchor, { gap = 8, side = "below", lastLine = false, x = null, geometry = null } = {}) {
-    if (!el?.isConnected) return null;
-    const target = (typeof geometry === "function" ? geometry() : geometry) || anchoredGeometry(anchor, lastLine);
-    if (!target) return null;
-    const { rect, node } = target;
-    el.style.setProperty("z-index", String(anchorLayer(node)), "important");
-    const left = typeof x === "function" ? x(rect) : (x === null ? rect.left + rect.width / 2 - el.offsetWidth / 2 : x);
-    const top = side === "above" ? rect.top - el.offsetHeight - gap : rect.bottom + gap;
-    position(el, left, top);
-    el.style.setProperty("left", el.style.left, "important");
-    el.style.setProperty("top", el.style.top, "important");
-    return rect;
-  }
-  // Preview can replace the selected text node. Follow its original parent to keep the composer beside the text.
-  let composerAnchor = null;
-  function composerGeometry() {
-    if (!composerAnchor) return null;
-    const live = anchoredGeometry(activeRange);
-    if (live) return live;
-    const { rect, reference, referenceRect } = composerAnchor;
-    if (!reference?.isConnected) return null;
-    const now = reference.getBoundingClientRect();
-    return { node:reference, rect:new DOMRect(rect.left + now.left - referenceRect.left,
-      rect.top + now.top - referenceRect.top, rect.width, rect.height) };
+    const value = Math.min(2147482900, Math.max(20, z + 1));
+    floatZ = { node:anchor, value };
+    return value;
   }
   // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
   function placeTouchOverlaySheet(popup, anchor) {
@@ -226,25 +218,42 @@
     else if (popup === dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
     else popup.remove();
   }
-  function positionPopupAtAnchor(popup, anchor) {
+  // v3.5.579: vùng chọn có thể bị thay nút chữ khi lưu highlight (range trả 0×0). Giữ rect lúc mở làm
+  // dự phòng và trượt theo cuộn, để lớp nổi vẫn đi theo chữ thay vì nhảy về góc màn hình.
+  function liveAnchorRect(anchor, fallback) {
+    const rect = anchor?.getBoundingClientRect?.();
+    if (rect && (rect.width || rect.height)) return rect;
+    if (!fallback?.rect) return rect;
+    // Cuộn xuống dy thì điểm neo trôi LÊN trong khung nhìn dy — trừ đi để vẫn bám chữ.
+    const dy = scrollY - fallback.scrollY;
+    return { left: fallback.rect.left, right: fallback.rect.right, width: fallback.rect.width,
+      top: fallback.rect.top - dy, bottom: fallback.rect.bottom - dy };
+  }
+  function positionPopupAtAnchor(popup, anchor, fallback = null) {
     const anchorNode = anchor?.startContainer || anchor;
     if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
     if (placeTouchOverlaySheet(popup, anchor)) return;
-    const rect = anchor.getBoundingClientRect();
+    const rect = liveAnchorRect(anchor, fallback);
+    if (!rect) return;
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
-    placeAnchored(popup, anchor);
+    popup.style.setProperty("z-index", String(contentZIndex(anchor.startContainer)), "important");
+    position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, anchoredTop(popup, rect, 8));
+    popup.style.setProperty("left", popup.style.left, "important");
+    popup.style.setProperty("top", popup.style.top, "important");
   }
   function positionTranslateIcon(range = selectedRange) {
     if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;
     // Anchor under the end of the selection (last non-empty line box), not the right edge of the whole block.
-    const geometry = anchoredGeometry(range, true);
-    if (!geometry) return;
-    const { rect } = geometry;
+    const lineRects = Array.from(range.getClientRects?.() || []).filter(item => item.width > 0 && item.height > 0);
+    const rect = lineRects[lineRects.length - 1] || range.getBoundingClientRect();
+    if (!rect.width && !rect.height) return;
     const shell = translateIcon.querySelector(".lhn-translate-shell");
     // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
     const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
-    placeAnchored(translateIcon, range, { geometry, gap:shellOverflow + 4, x:line => line.right - 28 });
+    translateIcon.style.setProperty("z-index", String(contentZIndex(range.startContainer)), "important");
+    position(translateIcon, rect.right - 28, anchoredTop(translateIcon, rect, shellOverflow + 4));
+    translateIcon.style.setProperty("top", translateIcon.style.top, "important");
     if (shell?.dataset.layout === "radial") {
       // Radial: keep the side buttons on screen by sliding the whole group inward (badge centre = launcher right - half badge).
       const half = (shell.offsetWidth || 38) / 2, labelled = shell.dataset.labels === "true";
@@ -281,7 +290,9 @@
     if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi, .ov .sub-en, .ov .sub-vi")) {
       const rect = range.getBoundingClientRect();
       if (rect.width || rect.height) {
-        placeAnchored(popup, range, { side:"above" });
+        position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.top - popup.offsetHeight - 8);
+        popup.style.setProperty("left", popup.style.left, "important");
+        popup.style.setProperty("top", popup.style.top, "important");
         return;
       }
     }
@@ -674,7 +685,7 @@
     launcher.classList.toggle("lhn-ui-light", !isSidebarDark());
     document.documentElement.appendChild(launcher);
     translateIcon = launcher;
-    for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", zIndex:FLOAT_Z, width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionTranslateIcon(range);
     // v3.5.487: vừa mở tệp, trang còn đổi kích thước → đo lại vị trí vài lần để thanh không nằm lệch về mép trái.
     for (const delay of [80, 250, 600, 1200]) setTimeout(() => { if (launcher.isConnected) positionTranslateIcon(range); }, delay);
@@ -702,7 +713,7 @@
     popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
     popup.append(speak, text); popup._lhnAnchorRange = range; document.documentElement.appendChild(popup); translationPopup = popup;
     // Keep host-page rules from hiding or restyling this extension-owned popup.
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:FLOAT_Z, padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) popup.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionPopupAtAnchor(popup, range);
     requestAnimationFrame(() => popup.isConnected && popup.classList.add("lhn-visible"));
     return { popup, text, speak, setResult(value) { text.textContent = value || t("translationUnavailable"); text.removeAttribute("aria-label"); positionPopupAtAnchor(popup, range); } };
@@ -752,6 +763,8 @@
   }
   function showComposer(range, existing = null, { skipAutoTranslate = false, dictionaryWord = "" } = {}) {
     if (!websiteSettingsReady || websiteDisabled) return;
+    // v3.5.579: đo chỗ neo NGAY khi mở — lưu highlight thay nút chữ làm range trả 0×0 về sau.
+    const openedRect = range?.getBoundingClientRect?.();
     const selectedBeforeComposer = cleanText(range?.toString());
     const useEnglishDictionary = !existing && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedBeforeComposer);
     if (useEnglishDictionary) {
@@ -823,17 +836,11 @@
     });
     panel.addEventListener("mousedown", e => e.stopPropagation());
     panel.addEventListener("click", e => e.stopPropagation());
-    const rect = range?.getBoundingClientRect();
-    const start = range?.startContainer;
-    const element = start?.nodeType === Node.ELEMENT_NODE ? start : start?.parentElement;
-    const reference = element?.closest?.(".lhn-mark")?.parentElement || element;
-    composerAnchor = rect && reference ? { rect, reference, referenceRect:reference.getBoundingClientRect() } : null;
+    if (!activeRange && range) activeRange = range.cloneRange();
+    panel._lhnFallback = openedRect && (openedRect.width || openedRect.height)
+      ? { rect: { left: openedRect.left, right: openedRect.right, width: openedRect.width, top: openedRect.top, bottom: openedRect.bottom }, scrollY } : null;
     document.documentElement.appendChild(panel);
-    requestAnimationFrame(() => { if (panel) {
-      panel.classList.add("lhn-visible");
-      if (!placeAnchored(panel, activeRange, { geometry:composerGeometry, x:line => line.left }))
-        position(panel, rect?.left ?? innerWidth / 2 - 140, rect ? rect.bottom + 8 : innerHeight / 2);
-    } });
+    requestAnimationFrame(() => { if (panel) { panel.classList.add("lhn-visible"); positionPopupAtAnchor(panel, activeRange, panel._lhnFallback); } });
     updateDefaultColorIndicators();
     resizeNote();
     if (settings.autoSpeakSelectedText && selectedQuote) {
@@ -1131,6 +1138,13 @@
       onEnd: finish
     });
   }
+  // Range của CHỮ bên trong một nút highlight (nút mark) — dùng chung cho note + hàng tiện ích.
+  function textRangeOf(node) {
+    if (!node?.isConnected) return null;
+    const range = document.createRange();
+    try { range.selectNodeContents(node); } catch { return null; }
+    return range.collapsed ? null : range;
+  }
   function showNote(anchor, item) {
     if (!websiteSettingsReady || websiteDisabled) return;
     removeTranslationUI();
@@ -1138,7 +1152,11 @@
     clearTimer("dismiss");
     if (tooltip && hoveredMark === anchor && tooltip.dataset.itemId === item.id) return;
     removeTooltip(); hoveredMark = anchor;
-    tooltip = document.createElement("div"); tooltip.id = "lhn-note-pop"; tooltip.dataset.itemId = item.id; tooltip._lhnAnchor = anchor; syncSidebarTheme();
+    // v3.5.579: cùng cơ chế với popup dịch — neo vào CHỮ của highlight (range của nút mark), không neo vào
+    // nút mark: tầng lấy đúng tầng của chữ (web 20, khung xem tệp 61) và popup bám dòng chữ khi cuộn.
+    const textRange = textRangeOf(anchor);
+    tooltip = document.createElement("div"); tooltip.id = "lhn-note-pop"; tooltip.dataset.itemId = item.id;
+    tooltip._lhnAnchor = anchor; tooltip._lhnTextRange = textRange; syncSidebarTheme();
     tooltipColorUndo = null;
     const note = document.createElement("div"); note.className = "lhn-tooltip-note"; note.dataset.emptyNote = String(!item.note); note.textContent = item.note || t("noNote");
     const heading = document.createElement("div"); heading.className = "lhn-tooltip-heading";
@@ -1213,9 +1231,9 @@
     tooltip.addEventListener("mouseenter", () => clearTimer("dismiss")); tooltip.addEventListener("mouseleave", scheduleTooltipClose);
     tooltip.addEventListener("mousedown", e => e.stopPropagation()); tooltip.addEventListener("click", e => e.stopPropagation());
     document.documentElement.appendChild(tooltip);
-    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", zIndex:FLOAT_Z, padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
+    for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     updateDefaultColorIndicators();
-    requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, anchor); } });
+    requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, textRange || anchor); } });
   }
   function showHighlightActions(anchor, item, clickX) {
     if (!websiteSettingsReady || websiteDisabled) return;
@@ -1231,10 +1249,21 @@
     actionPopup.addEventListener("mousedown", e => e.stopPropagation()); actionPopup.addEventListener("click", e => e.stopPropagation());
     document.documentElement.appendChild(actionPopup);
     updateDefaultColorIndicators();
-    actionPopup._lhnAnchor = anchor;
-    actionPopup._lhnClickOffset = Number.isFinite(clickX) ? clickX - anchor.getBoundingClientRect().left : null;
-    requestAnimationFrame(() => { if (actionPopup) placeAnchored(actionPopup, anchor, { gap:7, side:"above",
-      x:line => actionPopup._lhnClickOffset === null ? line.left : line.left + actionPopup._lhnClickOffset - actionPopup.offsetWidth / 2 }); });
+    actionPopup._lhnAnchor = anchor; actionPopup._lhnTextRange = textRangeOf(anchor) || tooltip?._lhnTextRange; actionPopup._lhnClickX = clickX;
+    // v3.5.579: hàng tiện ích (dưới cùng) trước đây không có tầng động → CSS 2147483647 đè lên header trang.
+    // Nay cùng tầng của chữ như popup dịch; đo lại ngay để không lóe ở tầng cũ trong khung hình đầu.
+    actionPopup.style.setProperty("z-index", String(contentZIndex((actionPopup._lhnTextRange || anchor).startContainer || anchor)), "important");
+    requestAnimationFrame(() => { if (actionPopup) positionActionPopup(); });
+  }
+  // v3.5.579: hàng tiện ích của note cũng nằm trong cùng cơ chế với popup dịch — cùng tầng của chữ,
+  // ngay TRÊN dòng note và đi theo chữ khi cuộn (không ghim mép màn hình).
+  function positionActionPopup() {
+    if (!actionPopup?.isConnected) return;
+    const anchored = actionPopup._lhnTextRange || actionPopup._lhnAnchor;
+    const rect = liveAnchorRect(anchored, actionPopup._lhnFallback);
+    if (!rect) return;
+    actionPopup.style.setProperty("z-index", String(contentZIndex(anchored.startContainer || actionPopup._lhnAnchor)), "important");
+    position(actionPopup, Number.isFinite(actionPopup._lhnClickX) ? actionPopup._lhnClickX - actionPopup.offsetWidth / 2 : rect.left, rect.top - actionPopup.offsetHeight - 7);
   }
   function openSidebarEdit(item) {
     const pageScrollX = window.scrollX, pageScrollY = window.scrollY;
@@ -2002,22 +2031,23 @@
       if (range && !range.collapsed && cleanText(range.toString())) { e.preventDefault(); e.stopPropagation(); showComposer(range); }
     }
   }, true);
-  function followAnchors() {
+  window.addEventListener("scroll", () => {
     if (translateIcon) positionTranslateIcon();
     if (translationPopup?._lhnAnchorRange) positionPopupAtAnchor(translationPopup, translationPopup._lhnAnchorRange);
     if (dictionaryPopup?._lhnAnchorRange) positionPopupAtAnchor(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
-    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnAnchor);
-    if (actionPopup?._lhnAnchor) placeAnchored(actionPopup, actionPopup._lhnAnchor, { gap:7, side:"above",
-      x:line => actionPopup._lhnClickOffset === null ? line.left : line.left + actionPopup._lhnClickOffset - actionPopup.offsetWidth / 2 });
-    if (panel) placeAnchored(panel, activeRange, { geometry:composerGeometry, x:line => line.left });
-  }
-  window.addEventListener("scroll", () => {
+    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnTextRange || tooltip._lhnAnchor);
+    if (panel && activeRange) positionPopupAtAnchor(panel, activeRange, panel._lhnFallback);
+    if (actionPopup?.dataset.itemId) positionActionPopup();
     if (activeRange && panel) webHighlighter.drawPreview(activeRange, selectedColor);
-    followAnchors();
   }, true);
   window.addEventListener("resize", () => {
+    if (translateIcon) positionTranslateIcon();
+    if (translationPopup?._lhnAnchorRange) positionPopupAtAnchor(translationPopup, translationPopup._lhnAnchorRange);
+    if (dictionaryPopup?._lhnAnchorRange) positionPopupAtAnchor(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
+    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnTextRange || tooltip._lhnAnchor);
+    if (panel && activeRange) positionPopupAtAnchor(panel, activeRange, panel._lhnFallback);
+    if (actionPopup?.dataset.itemId) positionActionPopup();
     if (activeRange && panel) webHighlighter.drawPreview(activeRange, selectedColor);
-    followAnchors();
   });
 
   const RESTORE_EXCLUDED = "script,style,noscript,textarea,input,select,option,button,[contenteditable='true'],[contenteditable=''],mark,#lhn-panel,#lhn-note-pop,#lhn-direct-translation,#lhn-translate-icon,#lhn-sidebar,.lhn-selection-preview-mark,#lhn-selection-overlay,#lhn-sidebar-edge-toggle,#lhn-sidebar-toast";
