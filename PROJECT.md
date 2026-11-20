@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.547**, nhánh `Keepit-Optimize-Test`; nhãn thanh Keepit tự thu **cùng một cỡ** cho toàn bộ nút (nấc 0,5px, 12/11px → đáy 8px) khi nhãn dài quá; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.548**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: nhãn 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -16,8 +16,8 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- Đã kiểm bằng ảnh 3.5.547: thanh ở 1512 và 390, sáng + tối, phóng 4×; đo 11 độ rộng (1512 → 320) trên cả trang web thật, home, dashboard; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
-- Còn hở: ở 360px khe "Trang chủ"/"Tổng quan" = −0,5px, ở 320px = −7,2px (đáy 8px không đủ cho 7 nhãn trong 300px) — chờ người dùng chốt có hạ đáy hay không.
+- Đã kiểm bằng ảnh 3.5.548: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
+- Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
 ### Chưa triển khai
 - Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: đã chốt phạm vi, chưa làm.
@@ -158,6 +158,28 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.548 | Arena.ai Agent sửa (thanh Keepit — cỡ nhãn theo cách 3.5.545, dùng chung một thanh):**
+
+- Người dùng: "từ 3.5.546, làm cách scale như 3.5.545, dùng chung cho 1 thanh keepit duy nhất, màn hình rộng vẫn 12px".
+- Nguyên nhân gốc của ảnh bị dính: thanh đang dùng **đúng CSS của thanh web** — `.nb .lb{max-width:calc(100% + 14px);margin:0 -7px}` cho phép nhãn **tràn sang nút bên cạnh**; nhãn tiếng Việt dài nên chồng nhau. 3.5.545 không dính vì nhãn bị **nhốt trong nút** (`max-width:100%;margin:0`), chữ 10px + giãn chữ âm + khe nút 0 + đệm hẹp.
+- Sửa CSS (`js/content/keepit-bar-css.js`), tất cả dùng chung, không có khối riêng cho trang nào:
+  - `.nb .lb{max-width:100%;margin:0;letter-spacing:-.45px}` (nhốt nhãn trong nút);
+  - `.wide .nb .lb,.pland .nb .lb{max-width:calc(100% + 14px);margin:0 -7px;letter-spacing:-.3px}` (màn rộng vẫn 12px, cho tràn nhẹ để không bị "…");
+  - cỡ nhãn: `.nb{10px}`; `.wide .nb,.pland .nb{12px}`; `.bbar.tight` → 9px (chỉ khi không rộng); `@media ≤419,98px` → 8,5px; `@media ≤379,98px` → 8,5px, giãn chữ −0,45px;
+  - `.bin{padding:0 2px;gap:0}` + `.nb{padding:3px 0}` (thêm chỗ cho nhãn như 3.5.545);
+  - `.bbar.wrap .nb .lb{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05}` — xuống 2 dòng thay vì cắt chữ.
+- Sửa JS (`js/content/keepit-bar.js` — `fitLabels()`): bỏ cơ chế hạ 0,5px của 3.5.547; trở lại đúng 2 bước của 3.5.545 — chật thì bật `.tight` (9px), vẫn chật thì bật `.wrap` (xuống 2 dòng), vẫn chật mới thu về 5 nút.
+- Đo thật (vi; web = example.com; cả 3 nơi giống nhau trừ nhãn web ngắn hơn; sáng và tối ra cùng số):
+  - 1512/1200/1024/820/768: **12px**, khe home/dashboard **2,7px** (web 22,9px), cao 72, không cắt.
+  - 600/480: **10px**, khe 29,3 / 10,9px, 1 dòng, cao 72.
+  - 414/390/384: **8,5px**, khe 5 / 5 / 4px, 1 dòng, cao 72, `cut: []`.
+  - 360/320: **8,5px**, nhãn dài xuống **2 dòng** (`tight wrap`), khe 2px, cao 72, `cut: []`.
+  - Chrome bật **cỡ chữ tối thiểu 12px**: mọi cỡ chữ bị kéo về 12px → thanh tự bật `wrap`, nhãn dài xuống 2 dòng, **không còn chồng chữ**, `cut: []`, thanh cao 78px. (Trước 3.5.548: chữ 12px tràn sang nhau, khe −12px.)
+- So với 3.5.547: 390 từ "8px + khe 4,5" → "8,5px + khe 5"; 384 (đúng ảnh người dùng) từ dính → **khe 4px**; 1512 giữ đúng **12px** như yêu cầu.
+- Ảnh: `qa/shots/548f-LIGHT-dash-{1512,390,384}-4x.png`, `548f-DARK-…`, `548mf-{384,390}-4x.png` (Chrome cỡ chữ tối thiểu 12px). Harness: `qa/bar548.py`, `qa/chk548.py`, `qa/minfont548.py`, `qa/final548.py`.
+- File: `js/content/keepit-bar-css.js`, `js/content/keepit-bar.js`, `manifest.json`, `PROJECT.md`.
+- Không tạo CRX (sandbox không có khoá ký).
 
 **2026-11-17 | v3.5.547 | Arena.ai Agent sửa (thanh Keepit — nhãn dài thì mọi nhãn tự nhỏ cùng một cỡ):**
 

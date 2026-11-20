@@ -7,13 +7,15 @@ button,input{font-family:inherit}
 .screen{position:fixed;inset:0;pointer-events:none;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;color:#111827;line-height:normal;text-align:left;-webkit-text-size-adjust:100%;--ts:1;--sab:0px;--yb:0px}
 .bbar{--accent:#9c27b0;--accent-rgb:156,39,176;left:0;right:0;bottom:0;z-index:6;padding:6px 6px;border-top:1px solid rgba(148,163,184,.35);box-shadow:0 -6px 18px rgba(15,23,42,.06);transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .2s;touch-action:pan-y;user-select:none;-webkit-user-select:none;--accent:#7c3aed;--accent-rgb:124,58,237}
 .dark .bbar{box-shadow:0 -6px 18px rgba(0,0,0,.3)}
-.bin{display:flex;align-items:center;max-width:560px;margin:0 auto;padding:0 4px;transition:transform .2s}
+.bin{display:flex;align-items:center;max-width:560px;margin:0 auto;padding:0 2px;gap:0;transition:transform .2s}
+.nb{padding:3px 0}
 .bbar.swiping .bin{transition:none}
 .nb{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;font-weight:600;line-height:1.15;padding:3px 1px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .nb .ico{height:30px;display:grid;place-items:center;transition:background-color .15s,transform .12s}
 .nb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
 .bbar.tight .nb{letter-spacing:-.2px}
-.nb .lb{max-width:calc(100% + 14px);margin:0 -7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb .lb{max-width:100%;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:-.45px}
+.wide .nb .lb,.pland .nb .lb{max-width:calc(100% + 14px);margin:0 -7px;letter-spacing:-.3px}
 .nb:active .ico{background:rgba(148,163,184,.2);transform:scale(.94)}
 .desk .nb:hover .ico{background:rgba(148,163,184,.16)}
 .sbtn{position:relative;flex:none;width:52px;height:52px;margin:0 4px;border:0;color:#fff;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,filter .12s}
@@ -302,11 +304,20 @@ button,input{font-family:inherit}
 .wide .coach{bottom:calc(92px + var(--sab))}
 .panel{padding-bottom:calc(16px + var(--sab))}
 .wide .panel{padding-bottom:14px}
-.nb{font-size:calc(var(--lb,11px) * var(--ts,1))}
-.wide .nb{font-size:calc(var(--lb,12px) * var(--ts,1))}
+/* v3.5.548: cỡ nhãn của MỘT thanh dùng chung, theo cách của 3.5.545 — nhãn bị nhốt trong nút (không tràn sang
+   nhãn bên cạnh), hẹp thì hạ 10px → 9px (tight) → 9px (≤379,98) → 8,5px + xuống 2 dòng (≤339,98);
+   màn rộng và tablet ngang luôn 12px. */
+.nb{font-size:calc(10px * var(--ts,1))}
+.wide .nb,.pland .nb{font-size:calc(12px * var(--ts,1))}
+.screen:not(.wide) .bbar.tight .nb{font-size:calc(9px * var(--ts,1))}
+.screen:not(.wide) .bbar.tight .nb .lb{letter-spacing:-.5px}
+@media (max-width:419.98px){.screen:not(.wide) .nb,.screen:not(.wide) .bbar.tight .nb{font-size:calc(8.5px * var(--ts,1))}.screen:not(.wide) .nb .lb{letter-spacing:-.5px}}
+@media (max-width:379.98px){.screen:not(.wide) .nb,.screen:not(.wide) .bbar.tight .nb{font-size:calc(8.5px * var(--ts,1))}.screen:not(.wide) .nb .lb{letter-spacing:-.45px}}
+/* nhãn không bị cắt: chỉ khi thật chật mới cho xuống dòng thay vì hiện "…" (cách 3.5.545), thanh tự bật .wrap */
+.bbar.wrap .nb .lb{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05;max-width:100%;margin:0}
 .pland .bbar{padding-top:3px;padding-bottom:calc(3px + var(--sab))}
 .pland .bin{max-width:760px}
-.pland .nb{flex-direction:row;justify-content:center;gap:2px;padding:1px 2px;font-size:calc(var(--lb,12px) * var(--ts,1))}
+.pland .nb{flex-direction:row;justify-content:center;gap:2px;padding:1px 2px}
 .pland .nb .ico{width:34px;height:30px}
 .pland .nb .lb{margin:0;max-width:100%}
 .pland .sbtn{width:42px;height:42px}
