@@ -149,6 +149,10 @@
   const siteInList = (list, host = websiteKey()) => (Array.isArray(list) ? list : []).some(d => { d = String(d || "").toLowerCase().replace(/^www\./, ""); return !!d && (host === d || host.endsWith("." + d)); });
   const barHiddenList = b => Array.isArray(b?.hiddenSites) ? b.hiddenSites : (globalThis.LHN_CONFIG?.DEFAULT_BAR_HIDDEN_WEBSITES || []);
   const barOff = () => S.hidden || S.siteHidden;
+  // v3.5.563: trong trình xem tệp (pages/documents.html) KHÔNG vuốt trái để dịch đoạn nữa — cử chỉ đó
+  // hiểu nhầm thao tác bôi đen thành vuốt và gọi getSelection().removeAllRanges() nên xoá mất vùng chọn.
+  // "2 ngón chạm = dịch cả trang" vẫn giữ (chỉ vuốt đoạn bị tắt). Trang web thường không đổi gì.
+  const inDocsViewer = () => document.documentElement.hasAttribute("data-keepit-documents");
   const gestTranslate = () => S.gest.translate && settings.translateEnabled !== false;   // Settings → Translate off = no translate gestures
   const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
   const langCode = () => { const code = globalThis.LHN_LANGUAGES?.languageFor?.(settings) || "en"; return ["en","vi","ko"].includes(code) ? code : "en"; };
@@ -1022,7 +1026,7 @@
     else tri = null;
     if (!gestureAllowed() || e.touches.length !== 1) { pg = null; return; }
     const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
-    const para = gestTranslate() ? paraOf(target, p0.clientX, p0.clientY) : null;
+    const para = gestTranslate() && !inDocsViewer() ? paraOf(target, p0.clientX, p0.clientY) : null;
     if (!para) { pg = null; return; }
     pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
       edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed };
@@ -1052,7 +1056,7 @@
 
   // ---------- v6: gesture tips once on touch (after the v8 intro) ----------
   let coachT = 0;
-  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && gestTranslate()) { it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
+  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && gestTranslate()) { if (!inDocsViewer()) it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
   function showCoach() {
     const it = coachItems(); if (!it.length || !isTouch() || S.kbd || S.vfs || S.siteOff || S.extYield) return;
     $("coach").innerHTML = `<div class="ch1">${ic("hand")}<b>${esc(t(S.coachRe ? "coachTitle" : "coachNew"))}</b></div><ul>${it.map(([g, r]) => `<li><span>${esc(g)}</span><em>${esc(r)}</em></li>`).join("")}</ul><div class="cb"><button type="button" data-c="all">${esc(t("seeAll"))}</button><button type="button" class="pri" data-c="ok">${esc(t("gotIt"))}</button></div>`;
