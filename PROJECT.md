@@ -1,8 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.588**, tiếp từ **3.5.587** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển; tam giác ô tô sáng dịch theo tâm chữ và tránh góc bo.
-- Chọn cảm ứng: sau `touchcancel`, vùng chọn một từ không có khoảng trắng được chờ 900 ms; hủy nếu vùng chọn thay đổi hoặc có chạm mới. Đây là dự phòng, có thể hiện khi tay vẫn giữ bất động. Giữ log thử bật thủ công, không ghi chữ hay URL.
+- Version **3.5.589**, tiếp từ **3.5.588** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển; tam giác ô tô sáng dịch theo tâm chữ và tránh góc bo.
+- Chọn cảm ứng: sau `touchcancel`, vùng chọn một từ không có khoảng trắng được chờ 900 ms; hủy nếu vùng chọn thay đổi hoặc có chạm mới. Đây là dự phòng, có thể hiện khi tay vẫn giữ bất động. Log thử và giao diện điều khiển đã được gỡ.
 - Khi cụm chọn chữ sát đáy phải lật lên, đặt toàn bộ cụm kể cả nút dưới logo phía trên dòng đầu của toàn vùng chọn; khi đủ chỗ vẫn đặt phía dưới như cũ.
 - Khi lớp phủ Trang tối đang hiện, popup được phép nằm trên lớp phủ để giữ màu; không sửa mã nhận diện, màu hay chuyển Trang tối. Sheet cảm ứng dịch/từ điển giữ nguyên.
 - Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; đo tam giác ở hai mép, chữ ngắn và khi popup lật lên; hồi quy cuộn và Trang tối bật/tắt trên vùng màu rực. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
@@ -11,7 +11,6 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
-- **Chọn một chữ cảm ứng:** thử 3.5.588 trên Android thật; kiểm tra một chữ, kéo chọn nhiều dòng/tệp và trường hợp giữ tay bất động; theo dõi log khi cần.
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
@@ -162,6 +161,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.589 | Arena:**
+
+- Tóm tắt: gỡ giao diện và mã ghi log chọn chữ thử nghiệm; giữ nguyên dự phòng 900 ms của 3.5.588 đã được người dùng xác nhận.
+- File: `pages/popup.html`, `js/popup/popup.js`, `js/core/languages.js`, `js/content/content.js`, `js/shared/selection-toolbar.js`, `manifest.json`.
+- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh popup + crop 4×, đo không còn phần log; mô phỏng chọn chữ và hồi quy sheet, console/pageerror rỗng. Chưa kiểm bản này trên Android thật.
 
 **2026-11-17 | v3.5.588 | Arena:**
 

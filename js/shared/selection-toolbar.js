@@ -133,30 +133,6 @@
     if(touchBridges.has(doc))return touchBridges.get(doc);
     const document=doc,TOUCH=touchQuery;
     let touching = false, timer = 0, lastKey = "", fallbackTimer = 0, fallbackKey = "";
-    // Temporary opt-in diagnostics: metadata only, never selected text or page URLs.
-    const logKey = `kpTouchDiag_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-    let logging = false, logTimer = 0, events = [], writeChain = Promise.resolve();
-    function writeLog() {
-      clearTimeout(logTimer); logTimer = 0;
-      const snapshot = { version:browser.runtime.getManifest().version, events:events.slice(-200) };
-      writeChain = writeChain.then(() => browser.storage.local.set({ [logKey]:snapshot })).catch(() => {});
-    }
-    function log(stage, extra = {}) {
-      if (!logging) return;
-      const sel = getSelection();
-      events.push({ time:Date.now(), stage, length:sel?.toString().length || 0, ranges:sel?.rangeCount || 0, collapsed:sel?.isCollapsed ?? true, touching, coarse:TOUCH.matches, ...extra });
-      if (events.length > 200) events.shift();
-      if (!logTimer) logTimer = setTimeout(writeLog, 200);
-    }
-    globalThis.LHN_TOUCH_DIAG = log;
-    browser.storage.local.get("kpTouchDiagEnabled").then(value => { logging = !!value.kpTouchDiagEnabled; if (logging) log("bridge.ready"); }).catch(() => {});
-    browser.storage.onChanged.addListener((changes, area) => {
-      if (area !== "local" || !changes.kpTouchDiagEnabled) return;
-      if (changes.kpTouchDiagEnabled.newValue) { events = []; logging = true; log("bridge.enabled"); }
-      else { if (logging) { log("bridge.disabled"); writeLog(); } logging = false; }
-    });
-    document.addEventListener("selectionchange", () => log("selectionchange"), true);
-    document.addEventListener("mouseup", e => log("mouseup", { trusted:e.isTrusted, button:e.button }), true);
     const selectionKey = () => {
       const selection = getSelection();
       if (!selection || selection.isCollapsed || !selection.rangeCount) return "";
@@ -164,18 +140,16 @@
       return `${selection.toString()}|${Math.round(rect.left)}|${Math.round(rect.top)}|${Math.round(rect.width)}`;
     };
     function fire() {
-      log("bridge.fire");
       if (touching || !TOUCH.matches) return;
       const selection = getSelection();
       if (!selection || selection.isCollapsed || !selection.rangeCount || !selection.toString().trim()) { lastKey = ""; return; }
       const key = selectionKey();
-      if (key === lastKey) { log("bridge.duplicate"); return; }
+      if (key === lastKey) return;
       lastKey = key;
       const range = selection.getRangeAt(0), rects = range.getClientRects();
       const last = rects[rects.length - 1] || range.getBoundingClientRect();
       const node = range.endContainer, target = node.nodeType === 1 ? node : node.parentElement;
-      if (target && isOwnTarget(target)) { log("bridge.ownTarget"); return; }
-      log("bridge.dispatchMouseup");
+      if (target && isOwnTarget(target)) return;
       (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
     }
     // The OS can cancel the touch as it takes over native selection. For a single word only,
@@ -183,22 +157,21 @@
     const cancelFallback = () => { clearTimeout(fallbackTimer); fallbackTimer = 0; fallbackKey = ""; };
     const schedule = () => {};
     document.addEventListener("selectionchange", () => {
-      if (fallbackTimer && selectionKey() !== fallbackKey) { cancelFallback(); log("bridge.fallbackCancelled"); }
+      if (fallbackTimer && selectionKey() !== fallbackKey) cancelFallback();
     });
-    document.addEventListener("contextmenu", () => { log("contextmenu"); if (!TOUCH.matches || touching) return; cancelFallback(); clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
-    document.addEventListener("touchstart", () => { touching = true; log("touchstart"); cancelFallback(); clearTimeout(timer); }, { capture:true, passive:true });
-    document.addEventListener("touchend", () => { touching = false; log("touchend"); cancelFallback(); clearTimeout(timer); timer = setTimeout(fire, 80); }, { capture:true, passive:true });
+    document.addEventListener("contextmenu", () => { if (!TOUCH.matches || touching) return; cancelFallback(); clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
+    document.addEventListener("touchstart", () => { touching = true; cancelFallback(); clearTimeout(timer); }, { capture:true, passive:true });
+    document.addEventListener("touchend", () => { touching = false; cancelFallback(); clearTimeout(timer); timer = setTimeout(fire, 80); }, { capture:true, passive:true });
     document.addEventListener("touchcancel", () => {
-      touching = false; log("touchcancel"); clearTimeout(timer); cancelFallback();
+      touching = false; clearTimeout(timer); cancelFallback();
       const selection = getSelection(), text = selection?.toString().trim() || "";
       if (!TOUCH.matches || !text || /\s/u.test(text) || selection.isCollapsed || !selection.rangeCount) return;
       fallbackKey = selectionKey();
       if (!fallbackKey) return;
-      log("bridge.fallbackScheduled");
       fallbackTimer = setTimeout(() => {
         const unchanged = fallbackKey && fallbackKey === selectionKey();
         cancelFallback();
-        if (unchanged) { log("bridge.fallbackFire"); fire(); }
+        if (unchanged) fire();
       }, 900);
     }, { capture:true, passive:true });
     document.addEventListener("mouseup", event => { if (event.isTrusted) lastKey = selectionKey(); }, true);

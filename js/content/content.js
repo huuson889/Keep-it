@@ -34,7 +34,7 @@
   let websiteDisabled = false, websiteSettingsReady = false;
   // v3.5.484: chỉ để đọc — ghi lại cổng nào chặn thanh chọn chữ (xem LHN_SELECTION_DEBUG trong Console).
   const selDebug = { mouseups:0, last:null };
-  const selNote = (stage, detail = null) => { try { selDebug.last = { stage, at:Math.round(performance.now()), detail }; globalThis.LHN_TOUCH_DIAG?.(`content.${stage}`, detail?.reason ? {reason:detail.reason} : {}); } catch { /* ignore */ } };
+  const selNote = (stage, detail = null) => { try { selDebug.last = { stage, at:Math.round(performance.now()), detail }; } catch { /* ignore */ } };
   const pageUrl = () => pageContext?.url?.() || location.href;
   const displayWebsiteName = host => { if(pageContext?.active())return "Keepit";const value = String(host || ""); return value ? value[0].toLocaleUpperCase() + value.slice(1) : value; };
   const pageTitle = () => pageContext?.title?.() || document.title || displayWebsiteName(location.hostname);
@@ -704,7 +704,6 @@
     launcher.classList.toggle("lhn-ui-light", !isSidebarDark());
     document.documentElement.appendChild(launcher);
     translateIcon = launcher;
-    globalThis.LHN_TOUCH_DIAG?.("content.iconShown");
     for (const [property, value] of Object.entries({ position:"fixed", display:"block", visibility:"visible", pointerEvents:"auto", width:"28px", height:"28px" })) launcher.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     positionTranslateIcon(range);
     // v3.5.487: vừa mở tệp, trang còn đổi kích thước → đo lại vị trí vài lần để thanh không nằm lệch về mép trái.
@@ -1824,7 +1823,6 @@
     if (handledSelectionMouseUps.has(e)) return;
     handledSelectionMouseUps.add(e);
     selDebug.mouseups++;
-    globalThis.LHN_TOUCH_DIAG?.("content.handleMouseup", { trusted:e.isTrusted });
     if (websiteSettingsReady && pageToolsDisabled()) { selNote("mouseup.websiteDisabled", { live:true, active:pageContext?.active?.() }); return; }
     if (suppressMouseUp) { suppressMouseUp = false; selNote("mouseup.suppressed"); return; }
     if (outsideMouseDown?.dismissTranslateIcon && Math.abs(e.clientX - outsideMouseDown.x) < 5 && Math.abs(e.clientY - outsideMouseDown.y) < 5) return;
