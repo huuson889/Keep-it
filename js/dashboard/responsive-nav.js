@@ -62,7 +62,7 @@
     if (!action) return;
     closeSheet();
     if (action === "documents") click(navItem('[data-dashboard-view="documents"]'));
-    else if (action === "settings") click(document.querySelector('#profileMenu [data-profile-menu-action="settings"]'));
+    else if (action === "settings") click(document.getElementById("dashboardSidebarSettings"));
     else if (action === "account") { wantSettingsPanel = true; click(document.querySelector('#profileMenu [data-profile-menu-action="account"]')); }
     else if (action === "theme") click(document.getElementById("dashboardSidebarThemeToggle"));
   });

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.556** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.557** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -158,6 +158,19 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.557 | Arena.ai Agent sửa:**
+
+- Tóm tắt: đưa mục cài đặt ra khỏi menu hồ sơ, thành mục riêng ở sidebar dashboard **nằm ngay dưới nút đổi giao diện** (Thùng rác → Giao diện → **Cài đặt** → You), nhãn đổi thành "Cài đặt"; bấm mở đúng bảng cài đặt như mục cũ (`openDashboardSettings(lastDashboardSettingsTab)`); sheet "Thêm" trên điện thoại trỏ sang mục mới.
+- File: `pages/dashboard.html` (thêm `#dashboardSidebarSettings` sau `#dashboardSidebarThemeToggle`, dùng icon bánh răng cũ, `data-i18n="settings"`; bỏ mục `data-profile-menu-action="settings"` khỏi popup hồ sơ), `js/dashboard/dashboard.js` (listener mở bảng cài đặt), `js/dashboard/responsive-nav.js` (row `settings` của sheet điện thoại bấm `#dashboardSidebarSettings`), `manifest.json` (3.5.556 → 3.5.557).
+- Kiểm tra: extension thật (unpacked), vi/en/ko.
+  - 1512×900 — thứ tự footer đo theo `getBoundingClientRect().top`: Thùng rác 720 → Giao diện 764 → **Cài đặt 808** → You 852; nhãn vi "Cài đặt", en "Settings", ko "설정" (cả `aria-label`), đều hiện.
+  - Bấm mục mới → bảng cài đặt mở (`[data-settings-panel].is-active` = `account`, `visible: true`) ở 1512 và 390.
+  - Popup hồ sơ không còn mục cài đặt (còn: Hồ sơ cá nhân · Giao diện · Phím tắt · [Đồng bộ dữ liệu · Trợ giúp & Phản hồi · Đăng xuất khi đã đăng nhập] · Đăng nhập).
+  - 390×844: footer ẩn theo bố cục điện thoại (như trước); sheet "Thêm" có row "Cài đặt" và bấm vẫn mở bảng cài đặt (`visible: true`).
+  - `console.error` + `pageerror` = 0.
+  - Ảnh: `qa/shots/557-1512-vi-dark-sidebar.png` (footer tiếng Hàn ở ảnh dark của phiên ko), `557-390-vi-sheet.png`, `557-390-vi-settings-from-sheet.png`, `557-1512-vi-settings.png`, `557-*`.
+  - Chưa kiểm được: bản chạy trên Chrome người dùng. CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.556 | Arena.ai Agent sửa:**
 

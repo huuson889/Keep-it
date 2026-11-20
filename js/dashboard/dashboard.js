@@ -4280,6 +4280,8 @@ async function toggleDashboardTheme() {
   catch (error) { dashboardSettings = previous; syncDashboardTheme(); console.warn("Could not save dashboard theme", error); }
 }
 $("dashboardSidebarThemeToggle").addEventListener("click", toggleDashboardTheme);
+// v3.5.557: mục "Cài đặt" ở sidebar (dưới nút đổi giao diện) mở đúng bảng cài đặt như mục cũ trong menu hồ sơ
+$("dashboardSidebarSettings")?.addEventListener("click", e => { e.preventDefault(); openDashboardSettings(lastDashboardSettingsTab); });
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
   if (changes.lhnUsageLimitState && $("dashboardSettingsDialog")?.open) refreshUsageLimitSettings();
