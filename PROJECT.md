@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.548**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: nhãn 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.550** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -16,7 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- Đã kiểm bằng ảnh 3.5.548: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
+- Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
 - Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
 ### Chưa triển khai
@@ -159,9 +159,31 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.548 | Arena.ai Agent sửa (thanh Keepit — cỡ nhãn theo cách 3.5.545, dùng chung một thanh):**
+**2026-11-17 | v3.5.550 | Arena.ai Agent sửa (thanh Keepit — LÀM LẠI TỪ ĐÚNG 3.5.546, cỡ nhãn theo cách 3.5.545, dùng chung một thanh):**
+
+- Lệnh: "làm lại, lấy đúng 3.5.546" + trước đó "làm cách scale như 3.5.545, dùng chung cho 1 thanh keepit duy nhất, màn hình rộng vẫn 12px".
+- **Base: `40b8f77` (3.5.546).** Bước 1: `git checkout 40b8f77 -- js/content/keepit-bar-css.js js/content/keepit-bar.js manifest.json` → `git diff 40b8f77` rỗng, md5 2 file trùng đúng bản gốc (`0c16e7e7…`, `99015514…`). Bước 2: sửa tay đúng 5 chỗ bằng `qa/patch_546_550.py` (ngoài repo).
+- 5 chỗ sửa (giữ nguyên cách của 3.5.545, áp cho một thanh duy nhất):
+  1. `.bin{padding:0 2px;gap:0}` + `.nb{padding:3px 0}` — thêm chỗ cho nhãn như 3.5.545;
+  2. `.nb .lb{max-width:100%;margin:0;letter-spacing:-.45px}` — **nhốt nhãn trong nút**, bỏ lề âm `−7px` (nguyên nhân chữ tràn sang nhau); `.wide/.pland .nb .lb` giữ lề `−7px`, giãn chữ −0,3px để màn rộng không bị "…";
+  3. thang cỡ nhãn: `.nb{10px}` → `.tight` 9px → `@media ≤419,98px` 8,5px; `.wide/.pland` **12px** (đúng yêu cầu "màn hình rộng vẫn 12px");
+  4. `.bbar.wrap .nb .lb{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05}` — hết nấc cỡ chữ mà vẫn chật thì **xuống 2 dòng**, không cắt chữ;
+  5. `fitLabels()`: bỏ nấc cứng `.tight` 10px của 3.5.546; chỉ đo rồi bật `.tight` → `.wrap` → thu về 5 nút.
+- `git diff 40b8f77` sau khi sửa: **3 file**, +20/−9 (CSS 20 dòng, JS 7 dòng, manifest đổi version). Không đụng gì khác.
+- Đo thật (Chrome + extension thật, vi, sáng và tối ra cùng số; web = example.com):
+  - 1512/1200/1024/820/768: **12px**, khe home/dashboard **2,7px** (web 22,9px), cao 72, không cắt, 1 dòng.
+  - 600/480: **10px**, khe 29,3 / 10,9px, 1 dòng, cao 72.
+  - 414/390/**384**: **8,5px**, khe 5 / 4,5 / **4px**, 1 dòng, cao 72, `cut: []`.
+  - 360/320: **8,5px**, nhãn dài xuống 2 dòng (`tight wrap`), khe 2px, cao 72, `cut: []`.
+  - Chrome bật **cỡ chữ tối thiểu 12px**: nhãn bị kéo về 12px → thanh tự bật `wrap`, nhãn dài xuống 2 dòng, **không chồng chữ**, `cut: []`, cao 78px.
+- Ảnh: `qa/shots/550-LIGHT-{home,dash}-{1512,390,384}-4x.png`, `550-DARK-…`, `550-MINFONT12-…`. Harness: `qa/final550.py`, patch: `qa/patch_546_550.py`.
+- `pageerror` + `console.error` = 0 ở cả 3 lượt chạy.
+- Không tạo CRX (sandbox không có khoá ký).
+
+**2026-11-17 | v3.5.548 | Arena.ai Agent sửa (thanh Keepit — cỡ nhãn theo cách 3.5.545, dùng chung một thanh) — ĐÃ BỊ THAY THẾ:**
 
 - Người dùng: "từ 3.5.546, làm cách scale như 3.5.545, dùng chung cho 1 thanh keepit duy nhất, màn hình rộng vẫn 12px".
+- **Sai quy trình:** bản này sửa tiếp trên HEAD 3.5.547 thay vì `git checkout 40b8f77` lấy đúng file 3.5.546; nội dung cuối tương đương nhưng trái lệnh và đẻ ra chú thích CSS sai (≤379,98/≤339,98 trong khi code là ≤419,98). Toàn bộ được làm lại từ 3.5.546 ở v3.5.550.
 - Nguyên nhân gốc của ảnh bị dính: thanh đang dùng **đúng CSS của thanh web** — `.nb .lb{max-width:calc(100% + 14px);margin:0 -7px}` cho phép nhãn **tràn sang nút bên cạnh**; nhãn tiếng Việt dài nên chồng nhau. 3.5.545 không dính vì nhãn bị **nhốt trong nút** (`max-width:100%;margin:0`), chữ 10px + giãn chữ âm + khe nút 0 + đệm hẹp.
 - Sửa CSS (`js/content/keepit-bar-css.js`), tất cả dùng chung, không có khối riêng cho trang nào:
   - `.nb .lb{max-width:100%;margin:0;letter-spacing:-.45px}` (nhốt nhãn trong nút);

@@ -304,16 +304,14 @@ button,input{font-family:inherit}
 .wide .coach{bottom:calc(92px + var(--sab))}
 .panel{padding-bottom:calc(16px + var(--sab))}
 .wide .panel{padding-bottom:14px}
-/* v3.5.548: cỡ nhãn của MỘT thanh dùng chung, theo cách của 3.5.545 — nhãn bị nhốt trong nút (không tràn sang
-   nhãn bên cạnh), hẹp thì hạ 10px → 9px (tight) → 9px (≤379,98) → 8,5px + xuống 2 dòng (≤339,98);
-   màn rộng và tablet ngang luôn 12px. */
+/* v3.5.550: cỡ nhãn của MỘT thanh dùng chung, theo cách 3.5.545 — nhãn bị nhốt trong nút nên không tràn sang nhãn
+   bên cạnh: 10px (màn hẹp) -> 9px khi .tight -> 8,5px khi màn <=419,98px; màn rộng và tablet ngang luôn 12px. */
 .nb{font-size:calc(10px * var(--ts,1))}
 .wide .nb,.pland .nb{font-size:calc(12px * var(--ts,1))}
 .screen:not(.wide) .bbar.tight .nb{font-size:calc(9px * var(--ts,1))}
 .screen:not(.wide) .bbar.tight .nb .lb{letter-spacing:-.5px}
-@media (max-width:419.98px){.screen:not(.wide) .nb,.screen:not(.wide) .bbar.tight .nb{font-size:calc(8.5px * var(--ts,1))}.screen:not(.wide) .nb .lb{letter-spacing:-.5px}}
-@media (max-width:379.98px){.screen:not(.wide) .nb,.screen:not(.wide) .bbar.tight .nb{font-size:calc(8.5px * var(--ts,1))}.screen:not(.wide) .nb .lb{letter-spacing:-.45px}}
-/* nhãn không bị cắt: chỉ khi thật chật mới cho xuống dòng thay vì hiện "…" (cách 3.5.545), thanh tự bật .wrap */
+@media (max-width:419.98px){.screen:not(.wide) .nb,.screen:not(.wide) .bbar.tight .nb{font-size:calc(8.5px * var(--ts,1))}.screen:not(.wide) .nb .lb{letter-spacing:-.45px}}
+/* hết nấc cỡ chữ mà vẫn chật: thanh bật .wrap để nhãn xuống 2 dòng (cách 3.5.545), không cắt chữ */
 .bbar.wrap .nb .lb{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05;max-width:100%;margin:0}
 .pland .bbar{padding-top:3px;padding-bottom:calc(3px + var(--sab))}
 .pland .bin{max-width:760px}

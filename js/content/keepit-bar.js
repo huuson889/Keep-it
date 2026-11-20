@@ -306,8 +306,9 @@
     if (DOCUMENTS_HOST) { $("bar").style.display="none"; $("hzone").style.display="none"; $("offdot").style.display="none"; }
     else fitLabels();
   }
-  // v3.5.548: giữ đúng cách của 3.5.545 — cỡ nhãn đặt bằng CSS (10px, hẹp hơn 9px → 8,5px, màn rộng 12px);
-  // ở đây chỉ đo để bật .tight (nấc 9px) khi nhãn bị "…" hoặc 2 nhãn cách nhau < 4px; vẫn chật thì thu về 5 nút.
+  // v3.5.550: cỡ nhãn đặt bằng CSS (10px → 9px khi .tight → 8,5px ở màn ≤419,98px; màn rộng 12px) — cách của 3.5.545.
+  // Ở đây chỉ đo: chật (nhãn bị "…" do bị nhốt trong nút, hoặc 2 nhãn cách nhau < 4px) → bật .tight;
+  // vẫn chật → bật .wrap (nhãn xuống 2 dòng, không cắt chữ); vẫn chật nữa mới thu về 5 nút.
   function fitLabels() {
     if (DOCUMENTS_HOST) return;
     const bar = $("bar"), bin = $("bin");
@@ -315,7 +316,7 @@
     if (!bar.offsetWidth) { requestAnimationFrame(() => { if (mounted && $("bar").offsetWidth) fitLabels(); }); return; }   // not laid out yet: measure on the next frame
     const bad = () => { const nbs = [...bin.children]; return nbs.some((b, i) => { const l = b.querySelector(".lb"); if (!l) return false; if (l.scrollWidth > l.clientWidth + 0.5) return true; const n = nbs[i + 1]?.querySelector(".lb"); return n && n.getBoundingClientRect().left - l.getBoundingClientRect().right < 4; }); };
     if (!bad()) return; bar.classList.add("tight");
-    if (!bad()) return; bar.classList.add("wrap");   // v3.5.548: hết nấc cỡ chữ mà vẫn chật → xuống dòng, không cắt chữ
+    if (!bad()) return; bar.classList.add("wrap");
     if (bad() && !isFive()) { S.autoFive = true; renderBar(); }
   }
   function syncBarVis() {
