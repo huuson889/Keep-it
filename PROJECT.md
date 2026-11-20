@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.560** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.561** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -158,6 +158,17 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.561 | Arena.ai Agent sửa:**
+
+- Tóm tắt: mọi cách zoom trong trình xem tệp giờ nhảy **đúng bậc 10 %** trên cùng một lưới (100 %, 110 %, 120 %…). Trước đó nút/phím cộng 10 % từ số thực (127,7 → 137,7) còn con lăn thì tăng theo cấp số nhân (~12,7 % mỗi nấc 100 px, trackpad ~5 % mỗi event nhỏ) nên cảm giác lệch bước.
+- File: `js/dashboard/documents.js` (`ZOOM_WHEEL` thay bằng `ZOOM_WHEEL_PX=90` + bộ gom `zoomWheelAccum`/`zoomWheelTimer`: đủ 90 px mới nhảy 1 bậc, event lớn 300 px = 3 bậc, pinch nhả nhiều event nhỏ được cộng dồn; `stepZoom()` và pinch 2 ngón tính mốc theo lưới `Math.floor/ceil(base/10)`), `manifest.json` (3.5.560 → 3.5.561).
+- Kiểm tra: extension thật, PDF 3 trang, 1512×900.
+  - Mở tệp `fit` (thực tế 127,7 %); Ctrl+lăn nấc 100 px ×4 → **130 · 140 · 150 · 160**; lăn xuống ×4 → **150 · 140 · 130 · 120**.
+  - Một event 300 px → 130 → **160** (+30 = 3 bậc). Pinch nhỏ delta 8 ×15: 11 event đầu cộng dồn chưa đủ 90 px (giữ 120), event thứ 12 nhảy **130**.
+  - Phím Ctrl+= ×3 → **130 · 140 · 150**; Ctrl+− ×2 → 140 · 130; nút + / − → 130 → 140 → 130; Ctrl+0 → `Fit width`.
+  - `console.error` + `pageerror` = 0.
+  - Chưa kiểm được: cảm giác lăn/pinch thật trên máy người dùng. CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.560 | Arena.ai Agent sửa:**
 
