@@ -152,10 +152,10 @@
       if (target && isOwnTarget(target)) return;
       (target || document.body).dispatchEvent(new MouseEvent("mouseup", { bubbles:true, cancelable:true, composed:true, button:0, clientX:Math.max(0, last.right - 1), clientY:last.top + last.height / 2 }));
     }
-    /* v3.5.569: bỏ hẹn giờ "im lặng 900ms rồi mở". Trong lúc kéo tay nắm chọn, Android không gửi sự kiện chạm nào
-       (chỉ có selectionchange), nên hẹn giờ đó làm popup mở giữa lúc đang chọn. Nay chỉ mở khi có tín hiệu THẢ TAY thật:
-       touchend (bình thường), hoặc contextmenu phát ra khi ngón tay đã nhấc. Máy nào không gửi tín hiệu thả tay trong
-       chế độ chọn thì popup sẽ mở ở lần chạm kế tiếp — vẫn mở, nhưng không bao giờ mở khi tay còn đang chọn. */
+    /* v3.5.571: bỏ hẹn giờ "vùng chọn im lặng 900 ms rồi mở popup". Trong lúc kéo tay nắm chọn, Android không gửi sự kiện
+       chạm nào (chỉ có selectionchange) nên hẹn giờ đó làm popup mở giữa lúc đang chọn. Nay chỉ mở khi có tín hiệu THẢ TAY
+       thật: touchend, hoặc contextmenu phát ra khi ngón tay đã nhấc. Máy nào không gửi tín hiệu thả tay trong chế độ chọn
+       thì popup mở ở lần chạm kế tiếp — vẫn mở, nhưng không bao giờ mở khi tay còn đang chọn. */
     const schedule = () => {};   // không hẹn giờ nữa: chỉ mở khi thả tay
     document.addEventListener("contextmenu", () => { if (!TOUCH.matches || touching) return; clearTimeout(timer); timer = setTimeout(fire, 60); }, true);
     document.addEventListener("touchstart", () => { touching = true; clearTimeout(timer); }, { capture:true, passive:true });
