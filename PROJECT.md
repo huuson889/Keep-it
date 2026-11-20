@@ -159,6 +159,24 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.577 | Arena.ai Agent sửa:**
+- Base: nhánh `fix-35571`, nền vẫn là **v3.5.574** (`3ab24bf`); nối tiếp bản 3.5.576.
+- Tóm tắt: theo yêu cầu "icon/tiện ích và popup highlight note dùng chung 1 cơ chế dính vào chữ và hiện layer giống popup dịch và full dict" — trước đây mỗi lớp nổi neo vào chữ tự đặt vị trí một kiểu:
+  thanh icon thì kẹp vào mép màn hình, composer (#lhn-panel) rơi về **giữa màn hình** khi vùng chọn mất rect, popup highlight note (#lhn-note-pop) đặt bằng z-index 2147483647, còn hàng tiện ích (#lhn-highlight-actions) đặt trên dòng nhưng **không đi theo chữ** khi cuộn.
+  Nay tất cả đi qua **một cơ chế duy nhất**: `anchoredRect()` + `contentZIndex()` + `placeAnchored(el, anchor, {gap, side, lastLine, x, geometry})`:
+  • dính vào chữ: mặc định ngay dưới dòng được neo (`rect.bottom + gap`), hoặc ngay trên dòng khi `side:"above"`;
+  • đi theo chữ: `followAnchors()` chạy trong listener `scroll` (capture) + `resize` cho **mọi** lớp nổi, gồm cả composer và hàng tiện ích của note;
+  • cùng tầng với chữ: `z-index = contentZIndex(vùng chọn)` (max z của khối cha có stacking context + 1, sàn 20, trần 2147482900, nhớ theo nút bằng WeakMap) nên header/nav của trang che được, không đè lên lớp khác;
+  • composer chốt hình học của vùng chọn lúc mở (`composerAnchor`) và dịch theo độ cuộn khi range đã bị preview/mark thay — hết cảnh nhảy về giữa màn hình.
+  Bỏ phần "cắt chiều cao popup khi sát đáy" của bản nháp trước (không dùng).
+- File: `js/content/content.js`, `manifest.json`
+- Kiểm tra (`qa/t577shared.py`, trang có header dính z-index 1000, 0 lỗi console): chọn một dòng ở `[280,299]` →
+  • thanh icon/tiện ích: `top:308` (dưới dòng), `z-index:20`;
+  • composer `#lhn-panel`: `top:307` (trước vá: `top:400` = giữa màn hình, z 2147482900), `z:20`;
+  • popup highlight note `#lhn-note-pop`: `top:307`, `z:20`, cuộn 200 → `top:107` với mark `[80,99]` (đi theo chữ ✔);
+  • hàng tiện ích `#lhn-highlight-actions`: `[31,73]` nằm ngay TRÊN mark `[80,99]`, `z:20`, cuộn 150 → `[-119,-77]` với mark `[-70,-51]` (đi theo chữ ✔).
+  `qa/t577translate.py`: popup dịch `#lhn-direct-translation` → `top:246` = đáy dòng 238 + 8, `z:20`, cuộn 150 → `top:96` với dòng `[69,88]` (đi theo chữ ✔). `qa/t576follow.py`: thanh luôn ở dưới dòng (kể cả dòng sát đáy), đi theo chữ, khung xem tệp `z:61`. Không hồi quy: chọn bằng chuột 0/24 bước sai, popup cảm ứng chỉ hiện khi thả tay.
+
 **2026-11-17 | v3.5.576 | Arena.ai Agent sửa:**
 - Base: **làm lại từ đúng v3.5.574** (`3ab24bf`, nhánh `fix-35571`, gốc v3.5.564 `ddffbaa`) — hướng "ẩn thanh khi neo ra khỏi màn hình" **bị bỏ hoàn toàn** theo yêu cầu (bản đóng gói 3.5.575 theo hướng đó không phát hành, số version được nâng lên 3.5.576 để Chrome nhận đúng là bản mới): lớp icon/tiện ích không được ẩn, cũng không được nằm trên các lớp khác của trang.
 - Tóm tắt: **thanh nổi (Tô sáng · logo · Hỏi AI) "kẹt" ở mép trên sau khi cuộn** — cả trang web lẫn khung xem tệp. Nguyên nhân: `position()` kẹp toạ độ vào khung nhìn (`Math.max(10, Math.min(y, innerHeight - cao - 10))`), nên khi đoạn đã chọn trôi ra khỏi màn hình, thanh bị **ghim ở `top:10`** thay vì đi theo chữ. Ngoài ra thanh đặt `z-index` gần cực đại (`2147482900` / CSS `2147483646`) nên luôn nổi trên **mọi** lớp: header/nav dính của trang, thanh công cụ của khung xem tệp — đúng ảnh người dùng gửi. Hai việc:
