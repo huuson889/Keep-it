@@ -59,7 +59,6 @@
   globalThis.LHN_IPA_UTILS = Object.freeze({ convertGoogleToIPA });
   const clearTimer = name => { if (name === "hover" && hoverTimer) clearTimeout(hoverTimer); if (name === "dismiss" && dismissTimer) clearTimeout(dismissTimer); };
 
-  // v3.5.164: selection tools and floating popups sit under the Keepit bar, its sheets and search (keepit-bar host 2147483000)
   function animateRemove(el) {
     if (!el) return;
     el.classList.add("lhn-closing");
@@ -132,7 +131,7 @@
     if (colorChosen && activeAnnotationId && composerOriginalColor) webHighlighter.setMarkColor(activeAnnotationId, composerOriginalColor);
     if (dictionaryPopup?._lhnHideForNote) { dictionaryRequestId++; dictionaryPopup = null; }
     composerSave = null; colorChosen = false; composerOriginalColor = null;
-    if (panel) { const old = panel; panel = null; animateRemove(old); }
+    if (panel) { const old = panel; panel = null; old._lhnSizeObserver?.disconnect(); animateRemove(old); }
     webHighlighter.clearPreview(); activeRange = null; activeAnnotationId = null;
   }
   function removeTooltip(cancelColorPreview = false) {
@@ -154,49 +153,8 @@
   function position(el, x, y) {
     const margin = 10;
     const left = Math.max(margin, Math.min(x, innerWidth - el.offsetWidth - margin));
-    el.style.left = left + "px";
-    el.style.top = y + "px";   // v3.5.575: KHÔNG kẹp dọc — xem anchoredTop()
-  }
-  /* v3.5.575: thanh nổi neo vào vùng chọn phải ĐI THEO CHỮ, không bị ghim ở mép màn hình.
-     Trước đây position() kẹp dọc vào [10, innerHeight-cao-10] nên khi cuộn cho đoạn đã chọn ra khỏi
-     màn hình, thanh bị dán ở top:10 và nằm đè lên trang. Nay:
-       • dòng chọn còn chỗ phía dưới → đặt dưới dòng như cũ;
-       • sát đáy (không đủ chỗ) → lật LÊN TRÊN dòng, không kẹp vào đáy;
-       • dòng chọn đã trôi ra ngoài màn hình → toạ độ âm hoặc quá innerHeight, thanh đi theo chữ và
-         khuất khỏi màn hình một cách tự nhiên (không cần ẩn/hiện). */
-  function anchoredTop(el, rect, gap) {
-    const h = el.offsetHeight || 28;
-    const below = rect.bottom + gap;
-    if (below + h > innerHeight - 4) {
-      const above = rect.top - gap - h;
-      if (above > 4 || rect.top > innerHeight) return above;   // lật lên, hoặc đi theo chữ đang ở dưới màn hình
-    }
-    return below;
-  }
-  /* v3.5.575: thanh nổi thuộc TẦNG CỦA CHỮ, không nằm trên mọi lớp của trang web.
-     Lấy z-index lớn nhất trong các khối cha CÓ stacking context của vùng chọn rồi +1 (sàn 20). Vì vậy header/nav
-     của trang (thường z-index ≥ 100) sẽ che thanh — đúng như một thành phần nằm trong nội dung, không đè lên
-     các lớp khác. Trần 2147482900 để vẫn nằm dưới thanh Keepit (host 2147483000).
-     Kết quả được nhớ theo nút neo: hàm này chỉ chạy lại khi vùng chọn đổi, không chạy mỗi lần cuộn. */
-  let floatZ = { node:null, value:2147482900 };
-  function contentZIndex(node) {
-    const start = node?.nodeType === 1 ? node : node?.parentElement;
-    if (floatZ.node === start) return floatZ.value;
-    // v3.5.579: nhiều nút chữ của cùng một dòng/khung xem tệp → cùng tầng. Tầng luôn lớn hơn 0 nên
-    // không mất mát gì, và tránh cảnh hai lớp nổi cạnh nhau lệch tầng chỉ vì neo vào nút chữ khác nhau.
-    let anchor = start;
-    for (let up = start, i = 0; up && i < 3 && up !== document.documentElement; up = up.parentElement, i++) anchor = up;
-    if (floatZ.node === anchor) return floatZ.value;
-    let z = 0;
-    for (let el = anchor; el && el !== document.documentElement; el = el.parentElement) {
-      const cs = getComputedStyle(el);
-      if (cs.position === "static" || cs.zIndex === "auto") continue;
-      const value = parseInt(cs.zIndex, 10);
-      if (Number.isFinite(value) && value > z) z = value;
-    }
-    const value = Math.min(2147482900, Math.max(20, z + 1));
-    floatZ = { node:anchor, value };
-    return value;
+    const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
+    el.style.left = left + "px"; el.style.top = top + "px";
   }
   // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
   function placeTouchOverlaySheet(popup, anchor) {
@@ -218,34 +176,75 @@
     else if (popup === dictionaryPopup) { dictionaryRequestId++; dictionaryPopup.remove(); dictionaryPopup = null; }
     else popup.remove();
   }
-  // v3.5.579: vùng chọn có thể bị thay nút chữ khi lưu highlight (range trả 0×0). Giữ rect lúc mở làm
-  // dự phòng và trượt theo cuộn, để lớp nổi vẫn đi theo chữ thay vì nhảy về góc màn hình.
-  function liveAnchorRect(anchor, fallback) {
-    const rect = anchor?.getBoundingClientRect?.();
-    if (rect && (rect.width || rect.height)) return rect;
-    if (!fallback?.rect) return rect;
-    // Cuộn xuống dy thì điểm neo trôi LÊN trong khung nhìn dy — trừ đi để vẫn bám chữ.
-    const dy = scrollY - fallback.scrollY;
-    return { left: fallback.rect.left, right: fallback.rect.right, width: fallback.rect.width,
-      top: fallback.rect.top - dy, bottom: fallback.rect.bottom - dy };
+  // Popup is appended to the document root. Match the outermost stacking context
+  // of the source, rather than the largest nested z-index inside that context.
+  function sourceLayer(anchor) {
+    let node = anchor?.startContainer || anchor;
+    if (node?.nodeType !== Node.ELEMENT_NODE) node = node?.parentElement;
+    let level = 0;
+    while (node && node !== document.documentElement) {
+      const style = getComputedStyle(node), z = Number.parseInt(style.zIndex, 10);
+      const parent = node.parentElement;
+      const flexItem = parent && /^(inline-)?(flex|grid)$/.test(getComputedStyle(parent).display);
+      const indexed = Number.isFinite(z) && (style.position !== "static" || flexItem);
+      const context = indexed || /^(fixed|sticky)$/.test(style.position) || Number(style.opacity) < 1 ||
+        style.transform !== "none" || style.filter !== "none" || (style.backdropFilter && style.backdropFilter !== "none") ||
+        style.perspective !== "none" || style.isolation === "isolate" || style.mixBlendMode !== "normal" ||
+        /(^|\s)(paint|layout|strict|content)(\s|$)/.test(style.contain) || /transform|opacity|filter|perspective/.test(style.willChange);
+      if (context) level = indexed ? z : 0;
+      node = parent || node.getRootNode?.()?.host;
+    }
+    return level;
   }
-  function positionPopupAtAnchor(popup, anchor, fallback = null) {
+  function setSourceLayer(popup, source) {
+    popup.style.setProperty("--lhn-source-layer", String(sourceLayer(source)), "important");
+  }
+  function boundsForMarks(marks) {
+    if (!marks.length) return null;
+    // Web marks wrap selected text; their Range reproduces the original selection bounds.
+    if (!marks.some(mark => mark.classList.contains("lhnPdfHighlightGroup"))) {
+      const range = document.createRange();
+      range.setStartBefore(marks[0]); range.setEndAfter(marks[marks.length - 1]);
+      const rect = range.getBoundingClientRect();
+      if (rect.width || rect.height) return rect;
+    }
+    // PDF marks are absolutely positioned overlay groups, not text wrappers.
+    const rects = marks.flatMap(mark => Array.from(mark.getClientRects())).filter(rect => rect.width && rect.height);
+    if (!rects.length) return null;
+    const left = Math.min(...rects.map(rect => rect.left)), right = Math.max(...rects.map(rect => rect.right));
+    const top = Math.min(...rects.map(rect => rect.top)), bottom = Math.max(...rects.map(rect => rect.bottom));
+    return {left, right, top, bottom, width:right-left, height:bottom-top};
+  }
+  function popupSource(popup, anchor) {
+    if (popup === panel) {
+      const marks = Array.from(document.querySelectorAll(".lhn-selection-preview-mark"));
+      const rect = boundsForMarks(marks);
+      if (rect) return {rect, node:marks[0]};
+    }
+    if (popup === tooltip && anchor?.dataset?.lhnId) {
+      const marks = Array.from(document.querySelectorAll(".lhn-mark[data-lhn-id]")).filter(mark => mark.dataset.lhnId === anchor.dataset.lhnId);
+      const rect = boundsForMarks(marks);
+      if (rect) return {rect, node:anchor};
+    }
+    return {rect:anchor.getBoundingClientRect(), node:anchor};
+  }
+  function positionPopupAtAnchor(popup, anchor) {
     const anchorNode = anchor?.startContainer || anchor;
     if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
     if (placeTouchOverlaySheet(popup, anchor)) return;
-    const rect = liveAnchorRect(anchor, fallback);
-    if (!rect) return;
+    const {rect, node} = popupSource(popup, anchor);
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
-    // v3.5.582: note lấy ĐÚNG bề rộng vùng chọn ở mọi cỡ (không chỉ >400px) để tâm popup trùng tâm vùng
-    // chọn như popup dịch — nếu không, popup rộng 512px sẽ bị đẩy vào mép màn hình và lệch ~20px.
-    if (popup.id === "lhn-note-pop") popup.classList.toggle("lhn-note-anchor-width", rect.width > 0);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
-    popup.style.setProperty("z-index", String(contentZIndex(anchor.startContainer)), "important");
-    position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, anchoredTop(popup, rect, 8));
+    setSourceLayer(popup, node);
+    // When the anchor leaves the viewport, retain its last side instead of clamping it.
+    if (rect.bottom >= 0 && rect.top <= innerHeight) popup._lhnAbove = rect.bottom + 8 + popup.offsetHeight > innerHeight - 10;
+    popup.classList.toggle("lhn-popup-above", !!popup._lhnAbove);
+    const y = popup._lhnAbove ? rect.top - popup.offsetHeight - 8 : rect.bottom + 8;
+    const x = rect.left + rect.width / 2 - popup.offsetWidth / 2;
+    position(popup, x, y); // keep the translation popup's existing horizontal edge handling
+    if (popup === panel || popup === tooltip) popup.style.left = `${x}px`;
     popup.style.setProperty("left", popup.style.left, "important");
-    popup.style.setProperty("top", popup.style.top, "important");
-    // v3.5.580: tam giác của popup note nằm giữa popup (CSS) và đổi hướng theo phía popup so với dòng chữ.
-    popup.classList.toggle("lhn-popup-above", (parseFloat(popup.style.top) || 0) < rect.top);
+    popup.style.setProperty("top", `${y}px`, "important");
   }
   function positionTranslateIcon(range = selectedRange) {
     if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;
@@ -256,9 +255,11 @@
     const shell = translateIcon.querySelector(".lhn-translate-shell");
     // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
     const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
-    translateIcon.style.setProperty("z-index", String(contentZIndex(range.startContainer)), "important");
-    position(translateIcon, rect.right - 28, anchoredTop(translateIcon, rect, shellOverflow + 4));
-    translateIcon.style.setProperty("top", translateIcon.style.top, "important");
+    setSourceLayer(translateIcon, range);
+    if (rect.bottom >= 0 && rect.top <= innerHeight) translateIcon._lhnAbove = rect.bottom + shellOverflow + 4 + translateIcon.offsetHeight > innerHeight - 10;
+    const y = translateIcon._lhnAbove ? rect.top - shellOverflow - translateIcon.offsetHeight - 4 : rect.bottom + shellOverflow + 4;
+    position(translateIcon, rect.right - 28, y);
+    translateIcon.style.top = `${y}px`;
     if (shell?.dataset.layout === "radial") {
       // Radial: keep the side buttons on screen by sliding the whole group inward (badge centre = launcher right - half badge).
       const half = (shell.offsetWidth || 38) / 2, labelled = shell.dataset.labels === "true";
@@ -295,9 +296,10 @@
     if (anchorRoot?.host?.id === "keepit-host" && anchorElement?.closest?.(".te-sub-en, .te-sub-vi, .ov .sub-en, .ov .sub-vi")) {
       const rect = range.getBoundingClientRect();
       if (rect.width || rect.height) {
+        setSourceLayer(popup, range);
         position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.top - popup.offsetHeight - 8);
         popup.style.setProperty("left", popup.style.left, "important");
-        popup.style.setProperty("top", popup.style.top, "important");
+        popup.style.setProperty("top", `${rect.top - popup.offsetHeight - 8}px`, "important");
         return;
       }
     }
@@ -768,8 +770,6 @@
   }
   function showComposer(range, existing = null, { skipAutoTranslate = false, dictionaryWord = "" } = {}) {
     if (!websiteSettingsReady || websiteDisabled) return;
-    // v3.5.579: đo chỗ neo NGAY khi mở — lưu highlight thay nút chữ làm range trả 0×0 về sau.
-    const openedRect = range?.getBoundingClientRect?.();
     const selectedBeforeComposer = cleanText(range?.toString());
     const useEnglishDictionary = !existing && settings.showFullEnglishDictionary !== false && LHN_DICTIONARY.isEnglishWord(selectedBeforeComposer);
     if (useEnglishDictionary) {
@@ -841,11 +841,10 @@
     });
     panel.addEventListener("mousedown", e => e.stopPropagation());
     panel.addEventListener("click", e => e.stopPropagation());
-    if (!activeRange && range) activeRange = range.cloneRange();
-    panel._lhnFallback = openedRect && (openedRect.width || openedRect.height)
-      ? { rect: { left: openedRect.left, right: openedRect.right, width: openedRect.width, top: openedRect.top, bottom: openedRect.bottom }, scrollY } : null;
     document.documentElement.appendChild(panel);
-    requestAnimationFrame(() => { if (panel) { panel.classList.add("lhn-visible"); positionPopupAtAnchor(panel, activeRange, panel._lhnFallback); } });
+    panel._lhnSizeObserver = new ResizeObserver(() => { if (panel === composerPanel && activeRange) positionPopupAtAnchor(panel, activeRange); });
+    panel._lhnSizeObserver.observe(panel);
+    requestAnimationFrame(() => { if (panel && activeRange) { panel.classList.add("lhn-visible"); positionPopupAtAnchor(panel, activeRange); } });
     updateDefaultColorIndicators();
     resizeNote();
     if (settings.autoSpeakSelectedText && selectedQuote) {
@@ -1143,26 +1142,6 @@
       onEnd: finish
     });
   }
-  // Range của TOÀN BỘ vùng highlight — dùng chung cho note + hàng tiện ích, giống popup dịch dùng cả vùng chọn.
-  // Một highlight trải nhiều đoạn bị tách thành nhiều nút mark (data-lhn-id + lhnParts) nên phải gộp lại;
-  // nếu chỉ lấy một nút thì popup neo vào đoạn đầu và đè lên các đoạn sau.
-  function textRangeOf(node) {
-    if (!node?.isConnected) return null;
-    const id = node.dataset?.lhnId;
-    let parts = [node];
-    if (id) {
-      const found = [...document.querySelectorAll(".lhn-mark[data-lhn-id]")].filter(mark => mark.dataset.lhnId === id && mark.isConnected);
-      if (found.length) parts = found;
-    }
-    const range = document.createRange();
-    try {
-      range.setStartBefore(parts[0]);
-      range.setEndAfter(parts[parts.length - 1]);
-    } catch { return null; }
-    if (range.collapsed) return null;
-    const rect = range.getBoundingClientRect();
-    return rect.width || rect.height ? range : null;
-  }
   function showNote(anchor, item) {
     if (!websiteSettingsReady || websiteDisabled) return;
     removeTranslationUI();
@@ -1170,11 +1149,7 @@
     clearTimer("dismiss");
     if (tooltip && hoveredMark === anchor && tooltip.dataset.itemId === item.id) return;
     removeTooltip(); hoveredMark = anchor;
-    // v3.5.579: cùng cơ chế với popup dịch — neo vào CHỮ của highlight (range của nút mark), không neo vào
-    // nút mark: tầng lấy đúng tầng của chữ (web 20, khung xem tệp 61) và popup bám dòng chữ khi cuộn.
-    const textRange = textRangeOf(anchor);
-    tooltip = document.createElement("div"); tooltip.id = "lhn-note-pop"; tooltip.dataset.itemId = item.id;
-    tooltip._lhnAnchor = anchor; tooltip._lhnTextRange = textRange; syncSidebarTheme();
+    tooltip = document.createElement("div"); tooltip.id = "lhn-note-pop"; tooltip.dataset.itemId = item.id; tooltip._lhnAnchor = anchor; syncSidebarTheme();
     tooltipColorUndo = null;
     const note = document.createElement("div"); note.className = "lhn-tooltip-note"; note.dataset.emptyNote = String(!item.note); note.textContent = item.note || t("noNote");
     const heading = document.createElement("div"); heading.className = "lhn-tooltip-heading";
@@ -1251,7 +1226,17 @@
     document.documentElement.appendChild(tooltip);
     for (const [property, value] of Object.entries({ position:"fixed", display:"flex", visibility:"visible", opacity:"1", transform:"none", pointerEvents:"auto", padding:"var(--lhn-popup-padding)", boxShadow:"var(--lhn-popup-shadow)" })) tooltip.style.setProperty(property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`), value, "important");
     updateDefaultColorIndicators();
-    requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, textRange || anchor); } });
+    requestAnimationFrame(() => { if (tooltip) { tooltip.classList.add("lhn-visible"); positionPopupAtAnchor(tooltip, anchor); } });
+  }
+  function positionHighlightActions() {
+    const anchor = actionPopup?._lhnAnchor;
+    if (!anchor?.isConnected) return;
+    const rect = anchor.getBoundingClientRect();
+    setSourceLayer(actionPopup, anchor);
+    const x = actionPopup._lhnClickOffset == null ? rect.left : rect.left + actionPopup._lhnClickOffset - actionPopup.offsetWidth / 2;
+    const y = rect.top - actionPopup.offsetHeight - 7;
+    position(actionPopup, x, y);
+    actionPopup.style.setProperty("top", `${y}px`, "important");
   }
   function showHighlightActions(anchor, item, clickX) {
     if (!websiteSettingsReady || websiteDisabled) return;
@@ -1267,21 +1252,9 @@
     actionPopup.addEventListener("mousedown", e => e.stopPropagation()); actionPopup.addEventListener("click", e => e.stopPropagation());
     document.documentElement.appendChild(actionPopup);
     updateDefaultColorIndicators();
-    actionPopup._lhnAnchor = anchor; actionPopup._lhnTextRange = textRangeOf(anchor) || tooltip?._lhnTextRange; actionPopup._lhnClickX = clickX;
-    // v3.5.579: hàng tiện ích (dưới cùng) trước đây không có tầng động → CSS 2147483647 đè lên header trang.
-    // Nay cùng tầng của chữ như popup dịch; đo lại ngay để không lóe ở tầng cũ trong khung hình đầu.
-    actionPopup.style.setProperty("z-index", String(contentZIndex((actionPopup._lhnTextRange || anchor).startContainer || anchor)), "important");
-    requestAnimationFrame(() => { if (actionPopup) positionActionPopup(); });
-  }
-  // v3.5.579: hàng tiện ích của note cũng nằm trong cùng cơ chế với popup dịch — cùng tầng của chữ,
-  // ngay TRÊN dòng note và đi theo chữ khi cuộn (không ghim mép màn hình).
-  function positionActionPopup() {
-    if (!actionPopup?.isConnected) return;
-    const anchored = actionPopup._lhnTextRange || actionPopup._lhnAnchor;
-    const rect = liveAnchorRect(anchored, actionPopup._lhnFallback);
-    if (!rect) return;
-    actionPopup.style.setProperty("z-index", String(contentZIndex(anchored.startContainer || actionPopup._lhnAnchor)), "important");
-    position(actionPopup, Number.isFinite(actionPopup._lhnClickX) ? actionPopup._lhnClickX - actionPopup.offsetWidth / 2 : rect.left, rect.top - actionPopup.offsetHeight - 7);
+    actionPopup._lhnAnchor = anchor;
+    actionPopup._lhnClickOffset = Number.isFinite(clickX) ? clickX - anchor.getBoundingClientRect().left : null;
+    requestAnimationFrame(positionHighlightActions);
   }
   function openSidebarEdit(item) {
     const pageScrollX = window.scrollX, pageScrollY = window.scrollY;
@@ -2052,20 +2025,18 @@
   window.addEventListener("scroll", () => {
     if (translateIcon) positionTranslateIcon();
     if (translationPopup?._lhnAnchorRange) positionPopupAtAnchor(translationPopup, translationPopup._lhnAnchorRange);
-    if (dictionaryPopup?._lhnAnchorRange) positionPopupAtAnchor(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
-    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnTextRange || tooltip._lhnAnchor);
-    if (panel && activeRange) positionPopupAtAnchor(panel, activeRange, panel._lhnFallback);
-    if (actionPopup?.dataset.itemId) positionActionPopup();
-    if (activeRange && panel) webHighlighter.drawPreview(activeRange, selectedColor);
+    if (dictionaryPopup?._lhnAnchorRange) dictionaryPopupAt(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
+    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnAnchor);
+    if (actionPopup) positionHighlightActions();
+    if (activeRange && panel) { webHighlighter.drawPreview(activeRange, selectedColor); positionPopupAtAnchor(panel, activeRange); }
   }, true);
   window.addEventListener("resize", () => {
     if (translateIcon) positionTranslateIcon();
     if (translationPopup?._lhnAnchorRange) positionPopupAtAnchor(translationPopup, translationPopup._lhnAnchorRange);
-    if (dictionaryPopup?._lhnAnchorRange) positionPopupAtAnchor(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
-    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnTextRange || tooltip._lhnAnchor);
-    if (panel && activeRange) positionPopupAtAnchor(panel, activeRange, panel._lhnFallback);
-    if (actionPopup?.dataset.itemId) positionActionPopup();
-    if (activeRange && panel) webHighlighter.drawPreview(activeRange, selectedColor);
+    if (dictionaryPopup?._lhnAnchorRange) dictionaryPopupAt(dictionaryPopup, dictionaryPopup._lhnAnchorRange);
+    if (tooltip?._lhnAnchor) positionPopupAtAnchor(tooltip, tooltip._lhnAnchor);
+    if (actionPopup) positionHighlightActions();
+    if (activeRange && panel) { webHighlighter.drawPreview(activeRange, selectedColor); positionPopupAtAnchor(panel, activeRange); }
   });
 
   const RESTORE_EXCLUDED = "script,style,noscript,textarea,input,select,option,button,[contenteditable='true'],[contenteditable=''],mark,#lhn-panel,#lhn-note-pop,#lhn-direct-translation,#lhn-translate-icon,#lhn-sidebar,.lhn-selection-preview-mark,#lhn-selection-overlay,#lhn-sidebar-edge-toggle,#lhn-sidebar-toast";

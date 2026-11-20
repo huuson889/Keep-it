@@ -1,22 +1,22 @@
 # Keepit - Hồ sơ dự án
 
-'## 1. Trạng thái hiện tại
-- Version **3.5.582** — từ 3.5.576 (`a13d342`): mọi lớp nổi dùng **tầng của chữ** + **neo vào chữ** như popup dịch; popup note **rộng đúng bằng vùng highlight** (gộp mọi mảnh `.lhn-mark` cùng `data-lhn-id`, sàn 230 px) nên **nằm dưới và chính giữa vùng chọn**, lệch 0 px kể cả khi chọn một từ ngắn; tam giác giữa popup, lật theo phía. Không đổi chiều cao/khung popup, cách chọn chữ, đường sheet cảm ứng.
-- Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
-- Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
-- Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
-- Giới hạn: preview Office hạn chế phông/đối tượng, chưa có OCR; kiểm thử mới nhất là tĩnh (`node --check`), **chưa có ảnh/số đo** theo mục 3.4 AGENTS.
+## 1. Trạng thái hiện tại
+- Version **3.5.583**, làm lại từ **3.5.574 (`3ab24bf`)**: popup nổi bám tầng chữ và bám vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo vào toàn bộ vùng chọn và căn giữa tuyệt đối.
+- Khi lớp phủ Trang tối đang hiện, popup được phép nằm trên lớp phủ để giữ màu; không sửa mã nhận diện, màu hay chuyển Trang tối. Sheet cảm ứng dịch/từ điển giữ nguyên.
+- Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; hai đoạn, sát đáy, cuộn ngoài màn hình, header lồng tầng; Trang tối bật/tắt trên vùng màu rực; PDF fixture và sheet cảm ứng. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
+- Tài liệu: kiến trúc v30, `pages/documents.html` tự vẽ thư viện và mở tệp; Dashboard hiển thị khung. Ghi chú tài liệu dùng annotations chung.
+- Giới hạn: chưa kiểm profile Chrome thật, nhiều trang web thật, tệp PDF/Office của người dùng, cảm giác dùng/tốc độ hay mọi cấu trúc stacking context; preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
-- **Lớp nổi theo chữ (3.5.580):** đo đạt trên extension unpacked ở 1512/390 sáng + tối và tệp PDF mẫu; chưa xác nhận trên profile Chrome thật, trang web thật có popup/iframe riêng. Lớp phủ bôi chọn `#lhn-selection-overlay` vẫn tầng `20` cố định (không phải lớp nổi bấm được).
 ### Tiếp theo (thứ tự đã chốt)
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
+- **Popup 3.5.583:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
 - Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
@@ -160,44 +160,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
-**2026-11-17 | v3.5.582 | Arena.ai Agent sửa:**
-- Base: tiếp trên v3.5.581 (`67a4b73`), dòng làm từ 3.5.576 (`a13d342`).
-- Nguyên nhân người dùng thấy note lệch: khối note rộng tới trần `max-width: min(512px, 100vw-24px)` trong khi vùng highlight chỉ 354,8 px ⇒ căn giữa thì mép trái ra `-4,4 px`, `position()` phải đẩy vào 10 px nên **lệch 20 px**; popup dịch ở cùng khối chỉ rộng 345 px nên không bị đẩy. Ngoài ra class `lhn-popup-anchor-wide` chỉ bật khi vùng chọn `> 400 px` nên nhiều ca note vẫn dùng trần 512 px.
-- Sửa: `positionPopupAtAnchor` gắn thêm `lhn-note-anchor-width` cho `#lhn-note-pop` ở mọi bề rộng vùng chọn; CSS `width: min(max(230px, var(--lhn-popup-anchor-width)), calc(100vw - 24px))` ⇒ note rộng **đúng bằng vùng highlight** (sàn 230 px cho ca chọn một từ ngắn) và tâm popup **trùng tâm vùng chọn**.
-- File: `css/content/content.css`, `js/content/content.js`, `PROJECT.md`, `manifest.json`
-- Kiểm tra (extension thật unpacked, Chromium 159): ảnh + số đo ca highlight **2 đoạn** sáng + tối — `noteCx 246` = `blockCx 246` (lệch 0 px), `noteTop 746` **dưới** `blockBottom 738`, ảnh 4× xác nhận note rộng bằng khối highlight, không đè chữ; ca **một từ ngắn** — note 230 px, `noteCx 141` = `wordCx 141` (lệch 0 px), nằm dưới từ. `qa/t578_visual.py` 1512/390 sáng + tối đạt cả 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng; `t578probe`/`t577translate`/`t576follow`/`t578-dict` rc=0 (note `307 → 107` khi cuộn 200; hàng tiện ích `31 → -119` khi cuộn 150; khung xem tệp `z:61`). Chưa kiểm: profile Chrome thật, trang web thật, highlight 3+ đoạn rất dài.
+**2026-11-17 | v3.5.583 | Arena.ai Agent sửa:**
 
-**2026-11-17 | v3.5.581 | Arena.ai Agent sửa:**
-- Base: tiếp ngay trên v3.5.580 (`a7776ae`), dòng làm từ 3.5.576 (`a13d342`).
-- Nguyên nhân: highlight trải nhiều đoạn bị tách thành **nhiều nút `.lhn-mark`** cùng `data-lhn-id` (`lhnParts`/`lhnPart`), nhưng note và hàng tiện ích neo vào **một** nút (`textRangeOf` dùng `selectNodeContents`). Với ảnh người dùng gửi: highlight 2 đoạn, note neo vào đoạn trên nên nằm **đè lên đoạn dưới**, lệch hẳn lên so với popup dịch (neo vào cả range chọn).
-- Sửa: `textRangeOf` gộp **mọi mảnh cùng `data-lhn-id`** (`setStartBefore(mảnh đầu)` → `setEndAfter(mảnh cuối)`) ⇒ note và hàng tiện ích dùng đúng **toàn bộ vùng highlight** như popup dịch: cùng một khối, cùng tâm ngang, nằm dưới khối khi còn chỗ, lật lên trên khi sát đáy, và đi theo chữ khi cuộn.
-- File: `js/content/content.js`, `PROJECT.md`, `manifest.json`
-- Kiểm tra (extension thật unpacked): highlight 2 đoạn (2 mảnh mark) → note `noteCx 246` = `blockCx 246` (lệch 0 px), `noteTop 746` nằm **dưới** `blockBottom 738`, không lật; ảnh 4× xác nhận note nằm dưới dòng highlight cuối, chữ highlight không bị che. Popup note 1 đoạn vẫn `dưới dòng` và đi theo cuộn (`307 → 107`); hàng tiện ích vẫn ngay trên dòng (`31 → -119` khi cuộn 150). Bộ `qa/t578_visual.py` 1512/390 sáng + tối: đạt, 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng cả 4 lượt; `t578probe`/`t577translate`/`t576follow`/`t578-dict` rc=0, console rỗng. Chưa kiểm: profile Chrome thật, trang web thật, highlight trải trên 3+ đoạn rất dài (chỉ đo tới 2 đoạn), cảm giác dùng.
-
-**2026-11-17 | v3.5.580 | Arena.ai Agent sửa:**
-- Base: tiếp ngay trên v3.5.579 (`698a2d3`, bản thân nó làm từ 3.5.576 `a13d342`).
-- Tóm tắt: tam giác trên của popup note/composer (`#lhn-panel .lhn-popup-arrow`) trước đặt cứng `left:24px` nên nằm lệch về trái, trong khi cả popup đã được **căn giữa theo vùng chọn**. Nay `left:50%` + `margin-left:-7,5px` ⇒ tam giác **đúng giữa popup** (đo: `panelCx 227,53` = `arrowCx 227,53`, lệch 0 px). Khi popup **lật lên trên dòng chữ** (sát đáy), `positionPopupAtAnchor` gắn `lhn-popup-above` ⇒ tam giác xuống dưới, vẫn giữa popup và trỏ đúng vùng chọn.
-- File: `css/content/content.css`, `js/content/content.js`, `PROJECT.md`, `manifest.json`
-- Kiểm tra (extension thật unpacked): popup giữa màn 1512 — lệch tâm 0 px, tam giác phía trên; ca sát đáy (dòng `[860,7;879,7]`) — popup lật lên, tam giác ở đáy popup `y≈847` chạm vùng chọn, lệch tâm 0 px; ảnh phóng 4× xác nhận tam giác nằm giữa. Bộ `qa/t578_visual.py` 1512/390 sáng + tối: đạt, 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng cả 4 lượt; `t578probe`/`t577translate`/`t576follow`/`t578-dict` đều rc=0, console rỗng. Chưa kiểm: profile Chrome thật, trang web thật, cảm giác dùng.
-
-**2026-11-17 | v3.5.579 | Arena.ai Agent sửa:**
-- Base: **bắt buộc từ v3.5.576 (`a13d342`)** theo yêu cầu người dùng — không dùng 3.5.574 hay 3.5.578 làm nền.
-- Tóm tắt: **đồng bộ tất cả lớp nổi theo đúng cơ chế popup dịch của 3.5.576**, ba việc:
-  (1) Bỏ hoàn toàn `FLOAT_Z` (`2147482900`): icon chọn chữ, popup dịch, Full Dictionary, popup note, composer và hàng tiện ích đều lấy **tầng của chữ** qua `contentZIndex()`; CSS mặc định 6 lớp hạ từ `2147483646/2147483647` về `20` để không lóe ở tầng cũ trước khi neo. Header/nav tầng cao của trang che được cả 6 lớp.
-  (2) **Neo vào chữ cho 3 lớp còn thiếu**: composer (`#lhn-panel`) và hàng tiện ích (`#lhn-highlight-actions`) nay đặt bằng `positionPopupAtAnchor`/`anchoredTop` như popup dịch — còn chỗ dưới thì ở dưới dòng, **sát đáy thì lật lên trên dòng chữ**, cuộn thì **đi theo chữ** (bỏ mốc kẹp `top:10`). Vị trí vốn có của hàng tiện ích (ngay **trên** dòng note, cách 7 px) giữ nguyên.
-  (3) Note và hàng tiện ích neo vào **range của dòng chữ trong highlight** (`textRangeOf`) thay vì nút `<mark>` ⇒ lấy đúng tầng của chữ (web `20`, khung xem tệp `61`); `contentZIndex` nhớ theo tổ tiên 3 cấp để hai lớp nổi cạnh nhau không lệch tầng. Thêm `liveAnchorRect`: khi lưu highlight làm vùng chọn trả 0×0, giữ rect lúc mở rồi trượt theo `scrollY` — composer không còn nhảy về góc màn hình.
-- Giữ nguyên: đường sheet cảm ứng (`placeTouchOverlaySheet` — Full Dictionary/popup dịch trên màn nhỏ vẫn là bottom sheet trên thanh Keepit), chiều cao popup, cách chọn chữ, không thêm listener chạm ở `#stage`.
-- File: `js/content/content.js`, `css/content/content.css`, `PROJECT.md`, `manifest.json`
-- Kiểm tra (extension thật unpacked): `qa/t578_visual.py` 1512×900 + 390×844, sáng + tối (dark bật bằng nút của app), 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng cả 4 lượt. Web: icon/note/action/dịch/Full Dictionary đều `z:20`; sát đáy dòng `[860,5;879,5]` → icon `top:823,5` (nằm **trên** dòng, không kẹp mép); composer `307 → 187` khi cuộn 120; note `307 → 107` khi cuộn 200; hàng tiện ích `31 → -119` khi cuộn 150, luôn cách đỉnh mark 49 px (ngay trên dòng). Khung xem tệp: icon/composer/note/action đều `z:61`, cuộn `#stage` 25 px → hàng tiện ích `110 → 85`. `t577translate` popup dịch `246 → 96`; `t578-dict` Full Dictionary `246 → 96`; `t576follow` khung xem tệp cuộn 900 → thanh đi theo chữ (`top:-205`), cuộn lại về `top:202`. Chưa kiểm: profile Chrome thật, trang web thật có popup/iframe riêng, cảm giác dùng và tốc độ.
-
-**2026-11-17 | v3.5.576 | Arena.ai Agent sửa:**
-- Base: **làm lại từ đúng v3.5.574** (`3ab24bf`, nhánh `fix-35571`, gốc v3.5.564 `ddffbaa`) — hướng "ẩn thanh khi neo ra khỏi màn hình" **bị bỏ hoàn toàn** theo yêu cầu (bản đóng gói 3.5.575 theo hướng đó không phát hành, số version được nâng lên 3.5.576 để Chrome nhận đúng là bản mới): lớp icon/tiện ích không được ẩn, cũng không được nằm trên các lớp khác của trang.
-- Tóm tắt: **thanh nổi (Tô sáng · logo · Hỏi AI) "kẹt" ở mép trên sau khi cuộn** — cả trang web lẫn khung xem tệp. Nguyên nhân: `position()` kẹp toạ độ vào khung nhìn (`Math.max(10, Math.min(y, innerHeight - cao - 10))`), nên khi đoạn đã chọn trôi ra khỏi màn hình, thanh bị **ghim ở `top:10`** thay vì đi theo chữ. Ngoài ra thanh đặt `z-index` gần cực đại (`2147482900` / CSS `2147483646`) nên luôn nổi trên **mọi** lớp: header/nav dính của trang, thanh công cụ của khung xem tệp — đúng ảnh người dùng gửi. Hai việc:
-  (1) **Đi theo chữ**: bỏ kẹp DỌC trong `position()` (giữ kẹp NGANG để pill không tràn mép phải); thêm `anchoredTop(el, rect, gap)` — đủ chỗ phía dưới thì đặt dưới dòng, sát đáy thì **lật lên trên dòng** (thay vì kẹp vào đáy); dòng chọn đã ra ngoài màn hình thì toạ độ âm / quá `innerHeight` ⇒ thanh trôi theo chữ và khuất tự nhiên, không ẩn/hiện, không mất trạng thái.
-  (2) **Nằm cùng tầng với chữ**: thêm `contentZIndex(node)` — lấy `z-index` lớn nhất trong các khối cha **có stacking context** của vùng chọn rồi +1, sàn 20, trần `2147482900` (vẫn dưới thanh Keepit 2147483000), nhớ theo nút neo để không đo lại mỗi lần cuộn. Trang thường → 20: header/nav (z-index ≥ 100) **che được** thanh, đúng kiểu một thành phần nằm trong nội dung. Trong khung xem tệp → 61 (trên `.viewer` 50) nên vẫn hiện đúng.
-  Áp cho cả thanh nổi và popup dịch/từ điển/tooltip (đều neo vào vùng chọn, cùng một quy tắc ở `positionPopupAtAnchor`).
-- File: `js/content/content.js`, `manifest.json`
-- Kiểm tra (trang thử có header dính `z-index:1000`): chọn giữa trang → thanh ở `top:331`, `z-index:20`; cuộn cho dòng chọn chui sau header → thanh ở `top:37..65` và `elementsFromPoint` trả **`hdr` trước** thanh (header che thanh ✔); cuộn cho dòng chọn ra khỏi màn hình phía trên → thanh `top:-563` (đi theo chữ ✔, không còn `top:10`); phía dưới → `top:872` (ngoài `innerHeight` 800 ✔); dòng sát đáy khung nhìn → thanh **lật lên trên** dòng (`bottom:754` < dòng `763`). Khung xem tệp: chọn → thanh `top:202` (`z-index:61`); cuộn 900 px → `top:-205` (theo chữ), cuộn lại → `202`. Không phá gì cũ: chọn chữ bằng chuột 0/24 bước sai, đầu mút luôn là chữ, popup vẫn **chỉ** hiện khi thả tay, 0 lỗi console.
+- Tóm tắt: làm mới từ **3.5.574 (`3ab24bf`)**, không lấy mã 3.5.575–3.5.582. Các lớp nổi bám tầng stacking context của chữ và bám chữ khi cuộn ra ngoài khung nhìn; sát đáy lật lên; popup tô sáng neo toàn vùng chọn, căn giữa tuyệt đối, không kẹp ngang, không thay chiều cao/cách chọn. Popup dịch giữ đẩy ngang. Composer neo qua dấu preview vì Range bị DOM thay thế; ResizeObserver tính lại vị trí khi ô thay đổi kích thước. Hàng tiện ích vẫn ở trên chữ và bám chữ. Popup mũi tên composer theo phía và nằm giữa.
+- Trang tối: giữ nguyên `page-dark.js` và các file Trang tối; chỉ khi lớp phủ thật đang hiện, các popup nổi ở trên lớp phủ (người dùng chấp nhận có thể đè header khi đó). Không dùng lọc bù màu. Touch sheet giữ nguyên tầng và cơ chế.
+- File: `js/content/content.js`, `css/content/content.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chromium 159, extension unpacked, 1512/390 sáng/tối, 72 ảnh + crop 4× (`qa/v583-visual.log`); highlight hai đoạn (`qa/v583-multi.log`), 1512 tâm 246=246 và 390 tâm 195=195, sát đáy lật lên và cuộn 1200 px theo chữ; popup dịch và composer sát đáy cùng theo cuộn 1200 (`qa/v583-bottom.log`); header z20 che thanh trong stacking context lồng (`qa/v583-stack.log`); Trang tối bật/tắt có popup z2147482001→0, vùng màu rực giữ màu tối (`qa/v583-toggle.log`); sheet dịch và từ điển 390/coarse z2147483647 sát đáy (`qa/v583-sheet.log`); đầu mút chọn PDF (`qa/v583-selection.log`), console.error/pageerror rỗng trong các bộ kiểm. Chưa kiểm profile Chrome thật, trang web thật đa dạng, PDF/Office người dùng, hiệu năng/cảm giác dùng và mọi stacking context.
 
 **2026-11-17 | v3.5.574 | Arena.ai Agent sửa:**
 - Base: vẫn từ **v3.5.564** (`ddffbaa`, nhánh `fix-35571`) + các bản vá 3.5.571–3.5.572. Bản này **gỡ công cụ chẩn đoán** của 3.5.573 và sửa đúng nguyên nhân tìm được từ log máy thật.
