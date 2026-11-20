@@ -241,6 +241,8 @@
     position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, anchoredTop(popup, rect, 8));
     popup.style.setProperty("left", popup.style.left, "important");
     popup.style.setProperty("top", popup.style.top, "important");
+    // v3.5.580: tam giác của popup note nằm giữa popup (CSS) và đổi hướng theo phía popup so với dòng chữ.
+    popup.classList.toggle("lhn-popup-above", (parseFloat(popup.style.top) || 0) < rect.top);
   }
   function positionTranslateIcon(range = selectedRange) {
     if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;

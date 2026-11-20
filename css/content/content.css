@@ -96,7 +96,9 @@
   background: rgba(255,255,255,.96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   box-shadow: 0 18px 38px rgba(15,23,42,.16), 0 4px 12px rgba(15,23,42,.06);
 }
-#lhn-panel .lhn-popup-arrow{ position:absolute; top:-8px; left:24px; width:15px; height:15px; transform:rotate(45deg); border-left:1px solid #e2e8f0; border-top:1px solid #e2e8f0; border-radius:3px 0 0 0; background:#fff; }
+#lhn-panel .lhn-popup-arrow{ position:absolute; top:-8px; left:50%; margin-left:-7.5px; width:15px; height:15px; transform:rotate(45deg); border-left:1px solid #e2e8f0; border-top:1px solid #e2e8f0; border-radius:3px 0 0 0; background:#fff; }
+/* v3.5.580: popup lật LÊN TRÊN dòng chữ (sát đáy) thì tam giác xuống dưới, vẫn ở giữa popup và trỏ đúng vùng chọn. */
+#lhn-panel.lhn-popup-above .lhn-popup-arrow{ top:auto; bottom:-8px; border-left:0; border-top:0; border-right:1px solid #e2e8f0; border-bottom:1px solid #e2e8f0; border-radius:0 0 3px 0; }
 #lhn-panel .lhn-heading{ position:relative; margin:2px 0 5px; color:#334155; font-size:13px; }
 #lhn-panel .lhn-quote{ position:relative; margin:0 0 10px; color:#64748b; font-size:12px; }
 #lhn-panel .lhn-composer-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 12px; padding:0 2px; }

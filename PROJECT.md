@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.579** — **bắt buộc làm từ 3.5.576 (`a13d342`)**; đồng bộ **toàn bộ lớp nổi** theo đúng popup dịch của 3.5.576: icon chọn chữ, popup dịch, Full Dictionary, popup note, composer và hàng tiện ích đều **lấy tầng của chữ** (`contentZIndex`) và **neo vào chữ** (`anchoredTop`, bỏ kẹp mép dọc): còn chỗ dưới thì ở dưới dòng, sát đáy thì lật lên trên dòng, cuộn thì đi theo chữ. Không đổi chiều cao popup, cách chọn chữ, đường sheet cảm ứng.
+- Version **3.5.580** — từ 3.5.576 (`a13d342`): toàn bộ lớp nổi dùng **tầng của chữ** + **neo vào chữ** như popup dịch (icon, popup dịch, Full Dictionary, popup note, composer, hàng tiện ích): còn chỗ dưới thì ở dưới dòng, sát đáy lật lên trên dòng, cuộn thì đi theo chữ; **tam giác của popup note nằm giữa popup** (trước là `left:24px`) và lật xuống dưới khi popup nằm trên dòng chữ. Không đổi chiều cao popup, cách chọn chữ, đường sheet cảm ứng.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -12,7 +12,7 @@
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
-- **Lớp nổi theo chữ (3.5.579):** đo đạt trên extension unpacked ở 1512/390 sáng + tối và tệp PDF mẫu; chưa xác nhận trên profile Chrome thật, trang web thật có popup/iframe riêng. Lớp phủ bôi chọn `#lhn-selection-overlay` vẫn tầng `20` cố định (không phải lớp nổi bấm được).
+- **Lớp nổi theo chữ (3.5.580):** đo đạt trên extension unpacked ở 1512/390 sáng + tối và tệp PDF mẫu; chưa xác nhận trên profile Chrome thật, trang web thật có popup/iframe riêng. Lớp phủ bôi chọn `#lhn-selection-overlay` vẫn tầng `20` cố định (không phải lớp nổi bấm được).
 ### Tiếp theo (thứ tự đã chốt)
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
@@ -159,6 +159,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.580 | Arena.ai Agent sửa:**
+- Base: tiếp ngay trên v3.5.579 (`698a2d3`, bản thân nó làm từ 3.5.576 `a13d342`).
+- Tóm tắt: tam giác trên của popup note/composer (`#lhn-panel .lhn-popup-arrow`) trước đặt cứng `left:24px` nên nằm lệch về trái, trong khi cả popup đã được **căn giữa theo vùng chọn**. Nay `left:50%` + `margin-left:-7,5px` ⇒ tam giác **đúng giữa popup** (đo: `panelCx 227,53` = `arrowCx 227,53`, lệch 0 px). Khi popup **lật lên trên dòng chữ** (sát đáy), `positionPopupAtAnchor` gắn `lhn-popup-above` ⇒ tam giác xuống dưới, vẫn giữa popup và trỏ đúng vùng chọn.
+- File: `css/content/content.css`, `js/content/content.js`, `PROJECT.md`, `manifest.json`
+- Kiểm tra (extension thật unpacked): popup giữa màn 1512 — lệch tâm 0 px, tam giác phía trên; ca sát đáy (dòng `[860,7;879,7]`) — popup lật lên, tam giác ở đáy popup `y≈847` chạm vùng chọn, lệch tâm 0 px; ảnh phóng 4× xác nhận tam giác nằm giữa. Bộ `qa/t578_visual.py` 1512/390 sáng + tối: đạt, 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng cả 4 lượt; `t578probe`/`t577translate`/`t576follow`/`t578-dict` đều rc=0, console rỗng. Chưa kiểm: profile Chrome thật, trang web thật, cảm giác dùng.
 
 **2026-11-17 | v3.5.579 | Arena.ai Agent sửa:**
 - Base: **bắt buộc từ v3.5.576 (`a13d342`)** theo yêu cầu người dùng — không dùng 3.5.574 hay 3.5.578 làm nền.
