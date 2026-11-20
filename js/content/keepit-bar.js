@@ -306,15 +306,20 @@
     if (DOCUMENTS_HOST) { $("bar").style.display="none"; $("hzone").style.display="none"; $("offdot").style.display="none"; }
     else fitLabels();
   }
-  // v6: long labels on a narrow screen — if two labels are < 4px apart or cut with "…", shrink to 10px; still tight → 5 buttons (v7)
+  // v3.5.547: nhãn dài quá trên thanh → hạ cỡ chữ của TOÀN BỘ nhãn cùng một cỡ, theo nấc 0,5px
+  // (12px màn rộng / 11px màn hẹp → đáy 8px), dừng ngay ở nấc đầu tiên vừa: không nhãn nào bị "…", khe ≥ 4px.
+  // Xuống hết nấc mà vẫn chật mới thu về 5 nút (như cũ). Icon và chiều cao thanh không đổi.
+  const LB_MIN = 8, LB_STEP = .5;
   function fitLabels() {
     if (DOCUMENTS_HOST) return;
     const bar = $("bar"), bin = $("bin");
-    bar.classList.remove("tight"); if (isWide()) return;
+    bar.classList.remove("tight"); bar.style.removeProperty("--lb");
     if (!bar.offsetWidth) { requestAnimationFrame(() => { if (mounted && $("bar").offsetWidth) fitLabels(); }); return; }   // not laid out yet: measure on the next frame
     const bad = () => { const nbs = [...bin.children]; return nbs.some((b, i) => { const l = b.querySelector(".lb"); if (!l) return false; if (l.scrollWidth > l.clientWidth + 0.5) return true; const n = nbs[i + 1]?.querySelector(".lb"); return n && n.getBoundingClientRect().left - l.getBoundingClientRect().right < 4; }); };
     if (!bad()) return; bar.classList.add("tight");
-    if (bad() && !isFive()) { S.autoFive = true; renderBar(); }
+    const base = (isWide() || isPland()) ? 12 : 11;
+    for (let s = base - LB_STEP; s >= LB_MIN - .001; s -= LB_STEP) { bar.style.setProperty("--lb", s + "px"); if (!bad()) return; }
+    if (!isFive()) { S.autoFive = true; renderBar(); }
   }
   function syncBarVis() {
     if (!root) return;

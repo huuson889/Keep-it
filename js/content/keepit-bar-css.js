@@ -302,12 +302,11 @@ button,input{font-family:inherit}
 .wide .coach{bottom:calc(92px + var(--sab))}
 .panel{padding-bottom:calc(16px + var(--sab))}
 .wide .panel{padding-bottom:14px}
-.nb{font-size:calc(11px * var(--ts,1))}
-.bbar.tight .nb{font-size:calc(10px * var(--ts,1))}
-.wide .nb{font-size:calc(12px * var(--ts,1))}
+.nb{font-size:calc(var(--lb,11px) * var(--ts,1))}
+.wide .nb{font-size:calc(var(--lb,12px) * var(--ts,1))}
 .pland .bbar{padding-top:3px;padding-bottom:calc(3px + var(--sab))}
 .pland .bin{max-width:760px}
-.pland .nb{flex-direction:row;justify-content:center;gap:2px;padding:1px 2px;font-size:calc(12px * var(--ts,1))}
+.pland .nb{flex-direction:row;justify-content:center;gap:2px;padding:1px 2px;font-size:calc(var(--lb,12px) * var(--ts,1))}
 .pland .nb .ico{width:34px;height:30px}
 .pland .nb .lb{margin:0;max-width:100%}
 .pland .sbtn{width:42px;height:42px}
