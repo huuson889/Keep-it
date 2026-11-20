@@ -182,14 +182,89 @@ function savePosition(){if(!V.doc)return;const id=V.doc.id,at=V.page;V.doc.at=at
 function setActivePage(page){if(!V.doc||page===V.page||page<1||page>V.doc.pages)return;V.page=page;applyTools();updatePaging();savePosition();scheduleWordClass();LHN_READER_API.refreshSource();if(V.panel==='translation')renderTranslation();}
 async function setPage(value,fromReader=false){if(!V.doc)return;const page=Math.max(1,Math.min(V.doc.pages,Math.round(+value)||1));if(!fromReader)ttsStop();hideSel();getSelection()?.removeAllRanges();V.page=page;if(V.flow==='single'&&V.mode!=='read')renderViewer();else{scrollToPage(page);updatePaging();void ensurePage(page);applyTools();if(V.panel==='translation')renderTranslation();}savePosition();await ensurePage(page);LHN_READER_API.refreshSource();void LHN_CONTENT_TOOLS.restore();}
 function setFlow(value){if(!['continuous','single'].includes(value))return;lastFlow=value;void savePanelPrefs();if(V.flow===value)return;ttsStop();hideSel();V.flow=value;renderViewer();}
-const ZOOM_STEPS=[50,75,100,125,150,175,200];
+/* v3.5.560: zoom tự do 10–400%. Chỉ khung tệp ở giữa đổi kích thước (--displayW/--source-scale);
+   thanh trên, dải trang, panel dịch và thanh .pager đứng yên. Ctrl/⌘+lăn chuột hoặc pinch trackpad
+   zoom quanh đúng điểm dưới con trỏ; phím Ctrl+= / Ctrl+- / Ctrl+0; nút − / + nhảy 10%. */
+const ZOOM_STEPS=[50,75,100,125,150,175,200],ZOOM_MIN=10,ZOOM_MAX=400,ZOOM_STEP=10,ZOOM_WHEEL=0.0012;
+const clampZoom=value=>Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,Number.isFinite(+value)?+value:100));
+const roundZoom=value=>Math.round(clampZoom(value)*10)/10;
 function zoomPercent(){if(V.zoom!=='fit')return +V.zoom;const surface=$('#stage .docSurface'),spec=activeEngine?.pages[V.page-1];return surface&&spec?surface.getBoundingClientRect().width/spec.width*100:100;}
-function updateZoomControls(){if(!V.doc)return;$('#vZoom').value=V.zoom;updateDocLabels();const p=zoomPercent();$('#zOut').disabled=p<=50.5;$('#zIn').disabled=p>=199.5;}
-function setZoom(value){if(value!=='fit'&&!ZOOM_STEPS.includes(+value))return;setMore(false,false);V.zoom=value;sizePages();scrollToPage(V.page);hideSel();updateZoomControls();wakePager();}
-function stepZoom(direction){const p=zoomPercent(),next=(direction>0?ZOOM_STEPS:[...ZOOM_STEPS].reverse()).find(x=>direction>0?x>p+.5:x<p-.5);if(next!=null)setZoom(String(next));}
+function zoomAnchorAt(clientX,clientY){
+  const frame=$$('#pageStack>.pageFrame').find(f=>{const r=f.getBoundingClientRect();return clientY>=r.top&&clientY<=r.bottom;});
+  if(!frame)return null;
+  const r=frame.getBoundingClientRect();
+  return{frame,x:clientX,y:clientY,relX:(clientX-r.left)/Math.max(1,r.width),relY:(clientY-r.top)/Math.max(1,r.height)};
+}
+function stageCenterAnchor(){const r=$('#stage').getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};}
+/* Giữ điểm đang nhìn đứng yên: đo vị trí tương đối trong trang trước khi đổi cỡ, bù cuộn sau khi đổi. */
+function applyZoom(next,anchor){
+  if(!V.doc||!activeEngine||$('#viewer').classList.contains('show')===false)return;
+  if(next!=='fit'){if(String(next).trim()===''||!Number.isFinite(+next))return;next=String(roundZoom(next));}
+  const st=$('#stage'),spot=anchor&&next!=='fit'?zoomAnchorAt(anchor.clientX??anchor.x,anchor.clientY??anchor.y):null;
+  V.zoom=next;
+  sizePages(false);
+  if(spot&&spot.frame?.isConnected){
+    const r=spot.frame.getBoundingClientRect();
+    st.scrollTop+=Math.round(r.top+spot.relY*r.height-spot.y);
+    st.scrollLeft+=Math.round(r.left+spot.relX*r.width-spot.x);
+  }
+  hideSel();updateZoomControls();wakePager();
+}
+function syncZoomSelect(){
+  const select=$('#vZoom');if(!select)return;
+  const p=Math.round(zoomPercent());
+  let live=select.querySelector('option[data-live="1"]');
+  if(!live){live=document.createElement('option');live.dataset.live='1';select.insertBefore(live,select.firstElementChild);}
+  live.value=String(p);live.dataset.full=p+'%';live.dataset.short=p+'%';live.textContent=p+'%';
+  select.value=V.zoom==='fit'?'fit':String(p);
+}
+function updateZoomControls(){if(!V.doc)return;syncZoomSelect();updateDocLabels();const p=zoomPercent();$('#zOut').disabled=p<=ZOOM_MIN+.5;$('#zIn').disabled=p>=ZOOM_MAX-.5;}
+function setZoom(value){
+  if(String(value).trim()==='')return;
+  if(value!=='fit'&&!Number.isFinite(+value))return;
+  setMore(false,false);applyZoom(value,null);scrollToPage(V.page);
+}
+function stepZoom(direction){const p=zoomPercent(),next=roundZoom(p+direction*ZOOM_STEP);if(Math.abs(next-p)<.4)return;setMore(false,false);applyZoom(next,{...stageCenterAnchor()});}
 async function closeViewer(){++viewCycle;const old=V.doc,engine=activeEngine;LHN_READER_API.reset();LHN_CONTENT_TOOLS.close();ttsStop();pageObserver?.disconnect();thumbnailObserver?.disconnect();translationView.observer?.disconnect();nativeCards.clear();V.tools.clear();V.panel=null;endPanelResize();setMore(false,false);hideSel();getSelection()?.removeAllRanges();finishPassword(null);clearTimeout(savePositionTimer);$('#viewer').dataset.nativeReady='false';$('#viewer').classList.remove('show');resetPagerFade();document.body.style.overflow='';notifyParent(false);$('#stage').replaceChildren();drawn.clear();activeEngine=null;document.documentElement.classList.add('documents-native-inactive');await LHN_DOCUMENT_CONTEXT.refresh();engine?.dispose();if(old)await Store.patch(old.id,{at:V.page,opened:Date.now()}).catch(()=>toast(t('storageFailed')));await refreshLibrary();/* v3.5.521: bấm ← về thư viện thì chạy lại hiệu ứng hiện dần y như lần đầu mở tab Tài liệu. */revealLibrary();}
 $('#vBack').onclick=()=>void closeViewer();$('#vFlow').onchange=e=>{setMore(false,false);setFlow(e.target.value);};$('#vZoom').onchange=e=>setZoom(e.target.value);$('#zOut').onclick=()=>stepZoom(-1);$('#zIn').onclick=()=>stepZoom(1);$('#pPrev').onclick=()=>setPage(V.page-1);$('#pNext').onclick=()=>setPage(V.page+1);$('#pNum').onchange=e=>{setPage(e.target.value);e.target.value=V.page;};$('#pNum').onfocus=e=>e.target.select();$('#pNum').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setPage(e.target.value);e.target.blur();}if(e.key==='Escape'){e.target.value=V.page;e.target.blur();e.stopPropagation();}};$('#rail').onclick=e=>{const b=e.target.closest('[data-p]');if(b)setPage(+b.dataset.p);};$('#vMode').onclick=e=>{const b=e.target.closest('[data-m]');if(!b||V.mode===b.dataset.m||!activeEngine?.pages.some((_,i)=>sourceEntries(i+1).length))return;ttsStop();setMore(false,false);hideSel();V.mode=b.dataset.m;if(V.panel==='translation')V.panel=null;paintPanels();renderViewer();void (async()=>{await ensurePage(V.page);await refreshNativeSource();if(V.mode==='read')await startNativeReader();})();};
 let scrollRAF=0;$('#stage').addEventListener('scroll',()=>{if(scrollRAF)return;scrollRAF=requestAnimationFrame(()=>{scrollRAF=0;if(!V.doc||!activeEngine||(V.flow!=='continuous'&&V.mode!=='read'))return;const st=$('#stage'),edge=st.getBoundingClientRect().top+Math.min(135,st.clientHeight*.22);let page=1;for(const f of $$('#pageStack>.pageFrame')){if(f.getBoundingClientRect().top<=edge)page=+f.dataset.page;else break;}if(st.scrollTop+st.clientHeight>=st.scrollHeight-4)page=V.doc.pages;setActivePage(page);if(V.doc.type==='pdf'){const box=st.getBoundingClientRect(),margin=st.clientHeight*2;for(const source of $$('#pageStack .docsSource')){const r=source.getBoundingClientRect();if((r.bottom<box.top-margin||r.top>box.bottom+margin)&&drawn.has(source)&&!source.querySelector('.docsReaderParagraphHighlight')){for(const c of source.querySelectorAll('canvas'))c.width=c.height=0;source.replaceChildren();drawn.delete(source);}}}runTranslate();});},{passive:true});new ResizeObserver(()=>{if($('#viewer').classList.contains('show')){sizePages();updateZoomControls();}}).observe($('#stage'));
+
+/* v3.5.560: cử chỉ zoom tự do — Ctrl/⌘ + lăn chuột & pinch trackpad (wheel kèm ctrlKey), pinch 2 ngón,
+   phím Ctrl+= / Ctrl+- / Ctrl+0. Không can thiệp khi đang ở chế độ Đọc hoặc khi có hộp thoại. */
+$('#stage').addEventListener('wheel', event => {
+  if(!(event.ctrlKey||event.metaKey)||event.altKey||!V.doc||V.mode!=='orig'||$('.modalWrap.show'))return;
+  event.preventDefault();
+  const base=zoomPercent(),next=roundZoom(base*Math.exp(-event.deltaY*ZOOM_WHEEL));
+  if(Math.abs(next-base)<.4)return;
+  setMore(false,false);
+  applyZoom(next,{clientX:event.clientX,clientY:event.clientY});
+},{passive:false});
+(() => {
+  let pinch=null;
+  const dist=touches=>Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+  const mid=touches=>({clientX:(touches[0].clientX+touches[1].clientX)/2,clientY:(touches[0].clientY+touches[1].clientY)/2});
+  $('#stage').addEventListener('touchstart', event => {
+    if(event.touches.length!==2||!V.doc||V.mode!=='orig'||$('.modalWrap.show')){pinch=null;return;}
+    pinch={base:zoomPercent(),distance:Math.max(1,dist(event.touches))};
+  },{passive:true});
+  $('#stage').addEventListener('touchmove', event => {
+    if(!pinch||event.touches.length!==2)return;
+    event.preventDefault();
+    applyZoom(pinch.base*dist(event.touches)/pinch.distance,mid(event.touches));
+  },{passive:false});
+  const end=event => { if(!event.touches||event.touches.length<2)pinch=null; };
+  $('#stage').addEventListener('touchend',end,{passive:true});
+  $('#stage').addEventListener('touchcancel',end,{passive:true});
+})();
+document.addEventListener('keydown', event => {
+  if(!(event.ctrlKey||event.metaKey)||event.altKey||event.shiftKey||event.isComposing)return;
+  if(!$('#viewer').classList.contains('show')||!V.doc||V.mode!=='orig'||$('.modalWrap.show'))return;
+  if(event.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[id^="lhn-"],[data-lhn-bilingual-ui]'))return;
+  const key=event.key;
+  if(key!=='='&&key!=='+'&&key!=='-'&&key!=='_'&&key!=='0')return;
+  event.preventDefault();
+  if(key==='0')setZoom('fit'); else stepZoom(key==='-'||key==='_'?-1:1);
+});
 
 const FLOW_ICONS = {
   continuous:'<rect x="6" y="1" width="12" height="9" rx="1.3"/><rect x="6" y="14" width="12" height="9" rx="1.3"/><path d="M9 5h6M9 18h6"/>',
