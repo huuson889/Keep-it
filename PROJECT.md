@@ -159,6 +159,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.568 | Arena.ai Agent sửa:**
+- Tóm tắt: Gỡ đoạn tự dựng vùng chọn cho cảm ứng vừa thêm ở 3.5.567 — nó chặn cử chỉ chọn mặc định của hệ điều hành (`preventDefault` ở `touchmove`), trên máy thật thành ra không nhấn giữ để chọn được nữa. Cảm ứng trả về cho hệ điều hành như trước 3.5.566; lỗi nháy khi kéo qua đoạn nay chỉ do phần lấp khe dòng `fillTextLayerGaps()` xử lý (thuần CSS, không bắt sự kiện chạm). Chuột vẫn giữ cách tự dựng vùng chọn của 3.5.566.
+- File: `js/dashboard/documents.js`, `manifest.json`
+- Kiểm tra: còn đúng 3 nhóm listener chạm cũ (pinch 2 ngón, thanh pager, header panel), không còn listener chạm 1 ngón nào của extension. Đường chọn mặc định của trình duyệt (cảm ứng dùng đường này) khi đã lấp khe: **0/24** bước sai (trước khi lấp khe: 5/24); chuột **0/24**; nháy đúp vẫn chọn từ ("fabrics"), Ctrl+A 1.920 ký tự, icon dịch hiện sau khi chọn, pinch zoom 135,6→162,4 %, không khung đoạn rác, đóng khung xem tệp bình thường, 0 lỗi console.
+
 **2026-11-17 | v3.5.567 | Arena.ai Agent sửa:**
 - Tóm tắt: Chọn bằng **cảm ứng** vẫn nháy khi kéo qua đoạn. Hai việc: (1) `fillTextLayerGaps()` lấp khe dọc giữa các hộp chữ của lớp chữ PDF/PPTX — hộp chữ chỉ cao bằng cỡ chữ còn nhịp dòng rộng hơn nhiều, phần khe không thuộc hộp nào nên con trỏ rơi vào đó thì trình duyệt neo vùng chọn vào ranh giới khối (cách pdf.js/smallpdf tránh: cho hộp chữ phủ kín nhịp dòng); đệm thêm phần khe phía dưới mỗi hộp, gọi sau khi vẽ trang và sau mỗi lần zoom. (2) Trên thiết bị cảm ứng: **nhấn giữ ~0,4 giây rồi kéo** thì extension tự dựng vùng chọn như với chuột (chọn từ dưới ngón tay trước, kéo thì đầu kia bám theo); chưa tới 0,4 giây mà ngón tay đã di chuyển hoặc trang đang cuộn thì bỏ, nhường cho cuộn/chọn mặc định. Ba chỗ đo hình học (khung "đoạn đang đọc", vùng hover loa đọc) nay đo theo hộp chữ thật `.en` vì `.para` đã được đệm thêm.
 - File: `js/dashboard/documents.js`, `manifest.json`

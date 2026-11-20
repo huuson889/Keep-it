@@ -756,55 +756,9 @@ document.addEventListener('mousemove',event=>{
 document.addEventListener('selectionchange',()=>{if(dragSelect)applyDragSelection();});
 document.addEventListener('mouseup',()=>{dragSelect=null;},true);
 document.addEventListener('pointercancel',()=>{dragSelect=null;},true);
-/* v3.5.567: chọn bằng cảm ứng — nhấn giữ rồi kéo. Bản 3.5.566 chỉ tự dựng vùng chọn cho chuột nên trên thiết bị
-   cảm ứng vẫn do trình duyệt làm, qua đoạn là vùng chọn nháy xuống dưới một lúc. Nay nhấn giữ ~0,4 giây rồi kéo:
-   từ dưới ngón tay được chọn trước, kéo thì đầu kia bám theo, cùng một cách kẹp toạ độ về chữ thật như chuột.
-   Chưa tới 0,4 giây mà ngón tay đã di chuyển thì bỏ (để trang cuộn bình thường). */
-const WORD_RE = /[\p{L}\p{N}\u2019'\-]/u;
-function wordRangeAt(point){
-  const text=point.node.nodeValue||'',offset=point.offset;
-  let start=offset,end=offset;
-  while(start>0&&WORD_RE.test(text[start-1]))start--;
-  while(end<text.length&&WORD_RE.test(text[end]))end++;
-  if(start===end)return {start:point,end:point};
-  return {start:{node:point.node,offset:start},end:{node:point.node,offset:end}};
-}
-let touchSelect=null,touchHoldTimer=0,touchHoldStart=null;
-function endTouchSelect(){clearTimeout(touchHoldTimer);touchHoldTimer=0;touchHoldStart=null;touchSelect=null;}
-$('#stage').addEventListener('touchstart',event=>{
-  endTouchSelect();
-  if(event.touches.length!==1||V.mode!=='orig'||!V.doc||$('.modalWrap.show'))return;
-  const touch=event.touches[0],target=event.target;
-  if(!target.closest?.('.docsSource')||target.closest('.lhnPdfHighlightGroup'))return;
-  const point=caretTextPoint(touch.clientX,touch.clientY);
-  if(!point)return;
-  const anchorPoint=point;
-  touchHoldStart={x:touch.clientX,y:touch.clientY};
-  touchHoldTimer=setTimeout(()=>{
-    touchHoldTimer=0;if(!touchHoldStart||!V.doc||V.mode!=='orig')return;
-    const word=wordRangeAt(anchorPoint);
-    touchSelect={x0:touchHoldStart.x,y0:touchHoldStart.y,x:touchHoldStart.x,y:touchHoldStart.y};
-    try{const selection=getSelection();selection.setBaseAndExtent(word.start.node,word.start.offset,word.end.node,word.end.offset);}catch{}
-  },420);
-},{passive:true});
-$('#stage').addEventListener('touchmove',event=>{
-  if(touchHoldStart&&!touchSelect&&event.touches.length===1){
-    const touch=event.touches[0];
-    if(Math.hypot(touch.clientX-touchHoldStart.x,touch.clientY-touchHoldStart.y)>12)endTouchSelect();   // cuộn trang, không phải chọn
-    return;
-  }
-  if(!touchSelect||event.touches.length!==1)return;
-  event.preventDefault();
-  const touch=event.touches[0];
-  touchSelect.x=touch.clientX;touchSelect.y=touch.clientY;
-  const start=caretTextPoint(touchSelect.x0,touchSelect.y0),end=caretTextPoint(touchSelect.x,touchSelect.y);
-  if(!start||!end)return;
-  const selection=getSelection();if(!selection)return;
-  try{selection.setBaseAndExtent(start.node,start.offset,end.node,end.offset);}catch{}
-},{passive:false});
-$('#stage').addEventListener('scroll',()=>{if(touchHoldTimer)endTouchSelect();},{passive:true});   // đang cuộn thì không phải nhấn giữ để chọn
-$('#stage').addEventListener('touchend',endTouchSelect,{passive:true});
-$('#stage').addEventListener('touchcancel',endTouchSelect,{passive:true});
+/* v3.5.568: bỏ đoạn tự dựng vùng chọn cho cảm ứng của 3.5.567 (nhấn giữ rồi kéo) — nó chặn mất cử chỉ chọn mặc định
+   của hệ điều hành nên trên máy thật lại không chọn được. Cảm ứng để hệ điều hành làm như cũ; lỗi nháy qua đoạn nay
+   do phần lấp khe dòng ở trên (fillTextLayerGaps) xử lý, đo trên đường chọn mặc định của trình duyệt: 5/24 → 0/24. */
 /* v3.5.565: dọn khung hình học rác trong khung xem tệp — khung xem trước highlight còn sót, group highlight co về <2px,
    khung "đoạn đang đọc" co về <8px. Không đụng khi đang mở hộp soạn ghi chú (đang chọn màu highlight). */
 let selectionSweepAt=0,selectionSweepRAF=0;
