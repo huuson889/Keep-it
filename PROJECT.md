@@ -159,6 +159,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.570 | Arena.ai Agent sửa:**
+- Tóm tắt: Zoom tài liệu bị **khựng** sau 3.5.569. Nguyên nhân: `fillTextLayerGaps()` (đệm dọc + chữ đệm cuối dòng) bị gọi trong `applyZoom()`, mà zoom bám tay gọi `applyZoom` mỗi bước ngón tay ⇒ mỗi khung hình phải đo lại toàn bộ hộp chữ của trang (2 lượt đo mỗi dòng). Nay: (1) **bỏ lời gọi trong `applyZoom`** — hình học trong lớp chữ tính theo đơn vị trang, `.docsSource` chỉ `transform: scale()` nên **không đổi khi zoom**, chỉ cần chạy một lần sau khi vẽ trang; (2) ghi dấu `data-lhn-gap-sig` (kích thước lớp chữ) để không tính lại khi không đổi; (3) đọc hết hình học một lượt rồi mới ghi, chữ đệm căn khít bằng 2 lượt đo nhưng chỉ một lần mỗi trang.
+- File: `js/dashboard/documents.js`, `manifest.json`
+- Kiểm tra (PDF 42 dòng, 30 bước pinch, đo `longtask` + khung hình xấu nhất): 3.5.568 **23 ms** · 3.5.569 **54–69 ms** (có long task 53 ms) · 3.5.570 **27–29 ms**, 0 long task. Độ chính xác chữ đệm giữ nguyên: kéo trôi từ chữ ra lề phải 5/24 bước sai (như 3.5.569), kéo trong vùng chữ 0/24, chuột 0/24, chữ không bị xô, Ctrl+A 1.920 ký tự, nháy đúp chọn từ, icon dịch sau khi chọn, pinch 135,6→162,4 %, đóng khung xem tệp bình thường, 0 lỗi console.
+
 **2026-11-17 | v3.5.569 | Arena.ai Agent sửa:**
 - Tóm tắt: Hai việc theo hướng A + B đã chốt.
   (A) Chỗ trống **bên phải chữ** trên mỗi dòng cũng làm vùng chọn nháy xuống dòng dưới khi ngón tay trôi ra đó. Thử nới rộng hộp `.para` cho phủ hết bề ngang trang: **đo không có tác dụng** (10/24 như cũ) và làm đổi bề rộng các span chữ ⇒ đã hoàn lại. Cách chạy được: mỗi dòng thêm một đoạn **chữ đệm** trong suốt (khoảng trắng cứng, `user-select:none`, nằm ngoài `.en`) phủ hết phần ngang còn lại — `fillLineEnds()`. Chữ đệm không được chọn, không vào bản dịch/đọc, không đổi vị trí chữ.

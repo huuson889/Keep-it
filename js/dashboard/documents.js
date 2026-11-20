@@ -210,7 +210,7 @@ function applyZoom(next,anchor){
     st.scrollTop+=Math.round(r.top+spot.relY*r.height-spot.y);
     st.scrollLeft+=Math.round(r.left+spot.relX*r.width-spot.x);
   }
-  hideSel();updateZoomControls();wakePager();requestSelectionSweep();fillTextLayerGaps();
+  hideSel();updateZoomControls();wakePager();requestSelectionSweep();
 }
 function syncZoomSelect(){
   const select=$('#vZoom');if(!select)return;
@@ -685,38 +685,51 @@ function fillTextLayerGaps(){
   for(const layer of $$('#pageStack .pdfTextLayer')){
     const paras=[...layer.querySelectorAll('.para')];
     if(!paras.length)continue;
-    for(const p of paras)p.style.paddingBottom='';
+    /* v3.5.570: kích thước trong lớp chữ tính theo đơn vị trang nên KHÔNG đổi khi zoom (chỉ transform scale).
+       Ghi dấu kích thước để zoom/pinch không phải đo lại — đây là chỗ làm zoom bị khựng ở 3.5.569. */
+    const signature=`${layer.clientWidth}x${layer.clientHeight}:${paras.length}`;
+    if(layer.dataset.lhnGapSig===signature)continue;
     const layerRect=layer.getBoundingClientRect();
-    const boxes=paras.map(p=>{const r=p.getBoundingClientRect();return {p,r,ratio:r.height/Math.max(1,p.offsetHeight)};}).filter(b=>b.r.height>0&&b.r.width>0).sort((a,b)=>a.r.top-b.r.top);
+    const boxes=paras.map(p=>{                                   // đọc một lượt, không xen ghi
+      const en=p.querySelector('.en'),r=p.getBoundingClientRect();
+      return {p,en,r,text:en?en.getBoundingClientRect():r,ratio:r.height/Math.max(1,p.offsetHeight)};
+    }).filter(b=>b.r.height>0&&b.r.width>0).sort((a,b)=>a.r.top-b.r.top);
     for(let i=0;i<boxes.length;i++){
       const box=boxes[i],ratio=Math.max(0.2,box.ratio);
       let next=null;
       for(let j=i+1;j<boxes.length;j++)if(boxes[j].r.top>=box.r.bottom-0.5){next=boxes[j].r;break;}
-      const gap=(next?next.top:box.r.bottom)-box.r.bottom;   // đệm dọc: khe giữa hai dòng không còn trống
-      if(gap>0.5)box.p.style.paddingBottom=(gap/ratio).toFixed(2)+'px';
+      const gap=(next?next.top:box.r.bottom)-box.r.bottom;       // đệm dọc: khe giữa hai dòng không còn trống
+      const pad=gap>0.5?(gap/ratio).toFixed(2)+'px':'';
+      if(box.p.style.paddingBottom!==pad)box.p.style.paddingBottom=pad;
+      fillLineEnd(box,layerRect,ratio);
     }
-    fillLineEnds(layer,boxes,layerRect);
+    layer.dataset.lhnGapSig=signature;
   }
 }
 /* v3.5.569: phần bên phải chữ trên mỗi dòng cũng là chỗ trống — ngón tay trôi ra đó thì trình duyệt nhảy vùng chọn
    xuống dòng dưới. Nay mỗi dòng có thêm một đoạn "chữ đệm" trong suốt (khoảng trắng cứng, user-select:none) phủ hết
    bề ngang còn lại, nên điểm nào trên dòng cũng là điểm trên chữ của chính dòng đó. Chữ đệm không vào vùng chọn,
-   không vào bản dịch/đọc (chỉ nằm ngoài .en, không copy được). */
-function fillLineEnds(layer,boxes,layerRect){
-  for(const box of boxes){
-    const ratio=Math.max(0.2,box.ratio),en=box.p.querySelector('.en'),textRect=en?en.getBoundingClientRect():box.r;
-    let filler=box.p.querySelector(':scope > .lhnLineFiller');
-    if(!filler){filler=document.createElement('span');filler.className='lhnLineFiller';filler.setAttribute('aria-hidden','true');box.p.append(filler);}
-    filler.style.cssText='color:transparent;-webkit-user-select:none;user-select:none;pointer-events:none;white-space:pre';
-    const remain=(layerRect.right-textRect.right)/ratio;
-    if(remain<8){filler.textContent='';continue;}
-    filler.textContent='\u00a0';
-    for(let pass=0;pass<2;pass++){
-      const width=filler.getBoundingClientRect().width/Math.max(1,filler.textContent.length);
-      const need=Math.ceil((layerRect.right-filler.getBoundingClientRect().right)/Math.max(0.5,width));
-      if(need<=0)break;
-      filler.textContent='\u00a0'.repeat(filler.textContent.length+need);
-    }
+   không vào bản dịch/đọc (nằm ngoài .en). v3.5.570: tính số ký tự theo bề rộng trung bình của chữ trong dòng thay vì
+   đo đi đo lại nhiều lượt. */
+function fillLineEnd(box,layerRect,ratio){
+  let filler=box.p.querySelector(':scope > .lhnLineFiller');
+  if(!filler){filler=document.createElement('span');filler.className='lhnLineFiller';filler.setAttribute('aria-hidden','true');
+    filler.style.cssText='color:transparent;-webkit-user-select:none;user-select:none;pointer-events:none;white-space:pre;position:static';
+    box.p.append(filler);}
+  const remain=(layerRect.right-box.text.right)/ratio;
+  if(remain<8){if(filler.textContent)filler.textContent='';return;}
+  const textLength=box.en?.textContent?.length||0, perChar=textLength?box.text.width/textLength:0;
+  if(!(perChar>0.5))return;
+  const count=Math.max(1,Math.ceil((layerRect.right-box.text.right)/perChar));
+  const next='\u00a0'.repeat(count);
+  if(filler.textContent===next)return;
+  filler.textContent=next;
+  for(let pass=0;pass<2;pass++){                    // căn lại cho khít mép phải (chạy 1 lần mỗi trang, không chạy khi zoom)
+    const width=filler.getBoundingClientRect().width/Math.max(1,filler.textContent.length);
+    const need=Math.ceil((layerRect.right-filler.getBoundingClientRect().right)/Math.max(0.5,width));
+    if(need===0)break;
+    if(need<0&&filler.textContent.length+need<1)break;
+    filler.textContent='\u00a0'.repeat(filler.textContent.length+need);
   }
 }
 /* v3.5.566: tự dựng vùng chọn khi kéo chuột trên lớp chữ của tệp.
