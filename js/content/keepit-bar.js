@@ -348,7 +348,6 @@
     if (anim) { bar.classList.add("snap"); b?.classList.add("snap"); clearTimeout(snapT); snapT = setTimeout(() => { bar.classList.remove("snap"); b?.classList.remove("snap"); }, 280); }
     bar.style.translate = o ? `0 ${o}px` : ""; bar.classList.toggle("shid", S.scrollHide);
     $("screen").classList.toggle("shid", S.scrollHide && !barOff() && !S.yieldBar && !S.kbd && !S.vfs);   // vuốt xuống ẩn hẳn thanh → vạch tím
-    if (S.scrollHide) wireBar.noteHide?.();   // v3.5.551: nhớ con trỏ có đang nằm ở dải đáy hay không
     if (b) b.style.translate = "";   // v3.5.240: nút về đầu trang luôn cách đáy 110px, không trượt theo thanh
   }
   // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
@@ -364,9 +363,10 @@
   }
   // v7: the page's own fixed bottom bar (cookie, cart, chat…) — Keepit yields: folds to its line (v3.5.161: at the bottom edge)
   let ovRaf = 0;
-  // v3.5.553: `closest()` đi ngược lên tới <html>. Dashboard gắn class "lhn-twemoji-country-flags" vào <html>
-  // (js/dashboard/flags.js) → MỌI phần tử trên dashboard bị coi là "UI của mình" → onScroll thoát ngay ở dòng 2 →
-  // thanh không bao giờ ẩn. Chỉ tính phần tử thật sự nằm trong UI, không tính <html>/<body>.
+  // v3.5.554: `closest()` đi ngược lên tới <html>. Dashboard gắn class "lhn-twemoji-country-flags" vào <html>
+  // (js/dashboard/flags.js, khi trình duyệt có emoji màu nhưng thiếu glyph cờ — Chrome/Windows có gắn) → MỌI phần tử
+  // trên dashboard bị coi là "UI của mình" → onScroll thoát ngay ("if (... || isOwnUi(target)) return") → thanh không
+  // bao giờ ẩn khi cuộn. Chỉ tính phần tử thật sự nằm trong UI của Keepit, không tính <html>/<body>.
   const isOwnUi = el => {
     if (!el) return false;
     if (el === host) return true;
@@ -422,37 +422,7 @@
   // v3.5.185: overlay / Reader closed, or ☰ hide → show: the bar is back even if scrolling had hidden it before; the page's own
   // scroll restore right after (overlay close) must not hide it again → 800ms hold
   let showHold = 0;
-  function barBack() { showHold = Date.now() + 800; S.scrollHide = false; S.sOff = 0; primeTop(); }
-  // v3.5.551: trên home/dashboard `html` không phải vùng cuộn (dashboard cuộn trong #dashboardScroller), nên khi lớp phủ
-  // của popup giới thiệu / ☰ / tìm kiếm nằm trên trang thì con lăn bị chặn và trang KHÔNG cuộn được → thanh không tự ẩn.
-  // Chuyển con lăn xuống đúng vùng cuộn thật, giống trang web.
-  const extScroller = () => {
-    if (DASHBOARD) { const s = document.getElementById("dashboardScroller"); if (s && s.scrollHeight > s.clientHeight + 4) return s; }
-    const de = document.scrollingElement;
-    return de && de.scrollHeight > de.clientHeight + 4 ? de : null;
-  };
-  function noteUserWheel() { if (showHold) showHold = 0; }
-  function wireScrimWheel() {
-    for (const id of ["iscrim", "scrim", "scrim2"]) {
-      const el = $(id); if (!el) continue;
-      el.addEventListener("wheel", e => {
-        if (!EXT || Math.abs(e.deltaY) < 1) return;
-        const t = extScroller(); if (!t) return;
-        t.scrollTop += e.deltaY;
-        e.preventDefault();
-      }, { passive:false });
-    }
-  }
-  // v3.5.551: dashboard — đang mở tệp trong tab Tài liệu thì ẩn hoàn toàn thanh (không trượt, không vạch tím, không nút về đầu trang)
-  function syncExtDocs() {
-    if (!DASHBOARD) return;
-    const sc = $("screen"); if (!sc || !document.body) return;
-    const on = document.body.classList.contains("documents-viewer-open");
-    if (sc.classList.contains("extdocs") === on) return;
-    sc.classList.toggle("extdocs", on);
-    if (on) { S.sOff = 0; S.peek = false; applyOff(false); }
-    syncBarVis();
-  }
+  function barBack() { showHold = Date.now() + 800; S.scrollHide = false; S.sOff = 0; }
   // ẩn / hiện tạm như Dock macOS: cả thanh trượt 0.5s ease-in-out (class dock trong lúc chạy)
   function setPeek(on) { if (on !== S.peek) dockAnim(); S.peek = on; syncBarVis(); }
   // the bar was hidden by the website list: "Show bar" takes this website (and the list entry that covers it) off the list
@@ -686,23 +656,13 @@
     const mouse = { x:-1, y:-1 };
     // chuột còn trong vùng thanh khi đã hiện hẳn (lúc thanh trượt lên dưới con trỏ đứng yên, :hover chưa cập nhật); rời vùng = ẩn
     const overBar = () => { const r = bar.getBoundingClientRect(); return mouse.y >= innerHeight - r.height - 8 && mouse.x >= r.left && mouse.x <= r.right; };
-    let leaveArmed = false, stripIdle = false, lastMX = -1, lastMY = -1;
-    wireBar.noteHide = () => { stripIdle = isDesk() && mouse.y >= innerHeight - 24; };
-    document.addEventListener("wheel", noteUserWheel, { capture:true, passive:true });
+    let leaveArmed = false;
     document.addEventListener("mousemove", e => {
-      const movedBy = (lastMX < 0 ? 0 : Math.abs(e.clientX - lastMX) + Math.abs(e.clientY - lastMY));
-      lastMX = e.clientX; lastMY = e.clientY;
       mouse.x = e.clientX; mouse.y = e.clientY;
-      // v3.5.551: thanh vừa ẩn mà con trỏ đang đứng sẵn ở dải đáy → KHÔNG tự bật thanh lên (giống trang web);
-      // chỉ bật lại khi người dùng thực sự rê chuột trong dải đáy.
-      if (stripIdle && isDesk() && S.scrollHide && mouse.y >= innerHeight - 40 && movedBy >= 3) {
-        stripIdle = false; clearTimeout(peekT);
-        peekT = setTimeout(() => { if (!anyOpen() && S.scrollHide) setPeek(true); }, 300);
-      }
       if (S.peek && isDesk() && !overBar() && !bar.matches(":hover")) { if (!leaveArmed) { leaveArmed = true; wireBar.peekLater(); } } else leaveArmed = false;
     }, { capture:true, passive:true });
     wireBar.peekLater = () => { clearTimeout(peekT); peekT = setTimeout(() => { leaveArmed = false; if (!anyOpen() && !bar.matches(":hover") && !overBar()) setPeek(false); }, 250); };
-    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(barOff() || S.yieldBar || S.scrollHide)) return; if (stripIdle) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
+    $("hzone").addEventListener("mouseenter", () => { if (!isDesk() || !(barOff() || S.yieldBar || S.scrollHide)) return; clearTimeout(peekT); peekT = setTimeout(() => setPeek(true), 300); });
     $("hzone").addEventListener("mouseleave", () => { if (!isDesk()) return; clearTimeout(peekT); if (S.peek) wireBar.peekLater(); });
     const hzAct = () => { if ((barOff() || S.yieldBar) && isTouch()) setPeek(true); else if (S.scrollHide) { S.sOff = 0; dockAnim(); applyOff(false); } };
     let hzY = null;
@@ -1287,7 +1247,6 @@
     $("coach").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (!b) return; coachDone(); if (b.dataset.c === "all") { openSheet(); S.sheetPane = "keys"; renderSheet(); anchorPanel(); } });
     $("intro").addEventListener("click", e => { if (e.target.closest("[data-i]")) introDone(); });
     $("iscrim").addEventListener("click", introDone);
-    wireScrimWheel();
     // keys typed into Keepit's own inputs (search, language) must not reach the page's shortcut handlers
     root.addEventListener("keydown", e => { if (e.target.closest?.("input")) e.stopPropagation(); });
   }
@@ -1389,13 +1348,6 @@
   }
   // scroll: the bar hides going down, shows going up — every device since v3.5.181 (was touch only) · back-to-top tracks the scroller · page bottom bars → yield
   const lastTop = new WeakMap();
-  // v3.5.552: sự kiện cuộn đầu tiên của mỗi vùng cuộn bị tính dy=0 (lấy mốc), nên nếu người dùng lăn MỘT phát
-  // là tới đáy trang ngắn (dashboard chỉ cuộn được ~400px) thì thanh không bao giờ ẩn. Lấy mốc sẵn từ lúc gắn.
-  function primeTop() {
-    for (const el of [document.scrollingElement, document.getElementById("dashboardScroller"), document.getElementById("stage")]) {
-      if (el) lastTop.set(el, scrollTopOf(el));
-    }
-  }
   function onScroll(event) {
     if (!mounted) return;
     const target = event.target === document ? document.scrollingElement : event.target;
@@ -1491,13 +1443,13 @@
     globalThis.LHN_SIDEBAR.attachTouchSheet(side,{close:()=>run("notes"),isTouch,viewportHeight:VH});
   }
 
-  let ticker = 0, bodyWatch = null, docsWatch = null, lastLayout = "";
+  let ticker = 0, bodyWatch = null, lastLayout = "";
   const layoutKey = () => [isTouch(), isWide(), isPland(), isSmall(), pageKind(), Object.keys(YT_NAV).find(ytOn) || "", langCode(), isDark()].join("|");
   function relayout(force) {
     if (!mounted) return;
     const key = layoutKey(); if (!force && key === lastLayout) { syncBarVis(); return; }
     if (key.split("|").slice(0, 4).join() !== lastLayout.split("|").slice(0, 4).join()) { S.autoFive = false; closePop(); if (!(DOCUMENTS_HOST && S.documentsSheet && $("sheet").classList.contains("open"))) closeSheet(); closeSearch(); S.peek = false; }
-    lastLayout = key; renderBar(); primeTop();
+    lastLayout = key; renderBar();
     if ($("sheet").classList.contains("open")) { renderSheet(); anchorPanel(); }
   }
   function mount() {
@@ -1518,10 +1470,8 @@
     document.addEventListener("focusout", onFocusOut, true);
     document.addEventListener("fullscreenchange", onFullscreen); document.addEventListener("webkitfullscreenchange", onFullscreen);
     bodyWatch = new MutationObserver(watchSidebar); bodyWatch.observe(document.documentElement, { childList:true }); watchSidebar();
-    if (DASHBOARD) { docsWatch = new MutationObserver(syncExtDocs); docsWatch.observe(document.body, { attributes:true, attributeFilter:["class"] }); syncExtDocs(); }
     watchExt();
-    primeTop();
-    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); watchExt(); syncState(); checkOverlap(); syncExtDocs(); }, 700);
+    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); watchExt(); syncState(); checkOverlap(); }, 700);
     requestAnimationFrame(checkOverlap);
     // mounted before the page's styles/content finished loading: re-read page colours, video layout and page bars then
     const settle = () => { if (!mounted) return; syncState(); relayout(false); checkOverlap(); };
