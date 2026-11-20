@@ -259,7 +259,7 @@
   const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu", dashOverview:"nav-overview", dashDictation:"nav-dictation", dashNotes:"nav-notes", dashDocs:"nav-docs", dashFlash:"nav-flashcards", dashTrash:"nav-trash", shorts:"shorts", subs:"subs", you:"user", fav:"heart", wc:"wc", wcblock:"wcpara" };
   const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation", subs:"sSubs" };
   const tipFor = id => ({
-    home:t("homeTip"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
+    home:t("home"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
     overlay:`${t("overlay")} (${shortcut("dualSubtitlesShortcut", "Alt+E")})`, dictation:`${t("dictation")} (${shortcut("dictationShortcut", "Alt+F")})`,
     notes:`${t("notes")} (${shortcut("sidebarShortcut", "Alt+Q")})`, ai:`${t("ai")} (Alt+X)`, more:t("more"), search:`${t("search")} (${SEARCH_KEY})`,
     shorts:t("shorts"), subs:t("subs"), you:t("you"), fav:t("favTip"), wc:`${t("wc")} (Alt+G)`, wcblock:`${t("wcBlock")} (Alt+J)`,
