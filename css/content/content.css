@@ -254,6 +254,9 @@ html.lhn-video-overlay-open body > *:not(#keepit-host){ visibility:hidden !impor
 /* Match the hover note popup to the direct-translation popup shell and speak control. */
 #lhn-note-pop{position:fixed!important;z-index:20!important;display:flex!important;align-items:flex-start!important;box-sizing:border-box!important;width:max-content!important;max-width:var(--lhn-popup-max-width)!important;min-width:0!important;margin:0!important;padding:var(--lhn-popup-padding)!important;border:var(--lhn-popup-border)!important;border-radius:var(--lhn-popup-radius)!important;background:var(--lhn-popup-background)!important;color:var(--lhn-popup-color)!important;box-shadow:var(--lhn-popup-shadow)!important;font:var(--lhn-popup-font)!important;white-space:normal!important;overflow-wrap:normal!important;}
 #lhn-direct-translation.lhn-popup-anchor-wide,#lhn-note-pop.lhn-popup-anchor-wide{max-width:min(var(--lhn-popup-anchor-width),calc(100vw - 24px))!important;}
+/* v3.5.582: popup note rộng ĐÚNG BẰNG vùng chọn (như popup dịch) để tâm popup trùng tâm vùng chọn, không bị
+   kẹp vào mép màn hình làm lệch; sàn 230px cho ca chọn một từ ngắn để hộp thoại còn dùng được. */
+#lhn-note-pop.lhn-note-anchor-width{width:min(max(230px,var(--lhn-popup-anchor-width)),calc(100vw - 24px))!important;}
 #lhn-note-pop.lhn-visible{opacity:1!important;transform:translateY(0)!important;}
 #lhn-note-pop.lhn-closing{opacity:0!important;transform:translateY(5px)!important;pointer-events:none!important;}
 #lhn-note-pop *{box-sizing:border-box!important;font:inherit!important;}

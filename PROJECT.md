@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.581** — từ 3.5.576 (`a13d342`): toàn bộ lớp nổi dùng **tầng của chữ** + **neo vào chữ** như popup dịch; **note neo vào toàn bộ vùng highlight** (gộp mọi mảnh `.lhn-mark` cùng `data-lhn-id`) nên nằm **dưới và chính giữa cả vùng chọn**, không còn neo vào mảnh đầu rồi đè lên các đoạn sau; tam giác giữa popup và lật theo phía. Không đổi chiều cao popup, cách chọn chữ, đường sheet cảm ứng.
+- Version **3.5.582** — từ 3.5.576 (`a13d342`): mọi lớp nổi dùng **tầng của chữ** + **neo vào chữ** như popup dịch; popup note **rộng đúng bằng vùng highlight** (gộp mọi mảnh `.lhn-mark` cùng `data-lhn-id`, sàn 230 px) nên **nằm dưới và chính giữa vùng chọn**, lệch 0 px kể cả khi chọn một từ ngắn; tam giác giữa popup, lật theo phía. Không đổi chiều cao/khung popup, cách chọn chữ, đường sheet cảm ứng.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -159,6 +159,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.582 | Arena.ai Agent sửa:**
+- Base: tiếp trên v3.5.581 (`67a4b73`), dòng làm từ 3.5.576 (`a13d342`).
+- Nguyên nhân người dùng thấy note lệch: khối note rộng tới trần `max-width: min(512px, 100vw-24px)` trong khi vùng highlight chỉ 354,8 px ⇒ căn giữa thì mép trái ra `-4,4 px`, `position()` phải đẩy vào 10 px nên **lệch 20 px**; popup dịch ở cùng khối chỉ rộng 345 px nên không bị đẩy. Ngoài ra class `lhn-popup-anchor-wide` chỉ bật khi vùng chọn `> 400 px` nên nhiều ca note vẫn dùng trần 512 px.
+- Sửa: `positionPopupAtAnchor` gắn thêm `lhn-note-anchor-width` cho `#lhn-note-pop` ở mọi bề rộng vùng chọn; CSS `width: min(max(230px, var(--lhn-popup-anchor-width)), calc(100vw - 24px))` ⇒ note rộng **đúng bằng vùng highlight** (sàn 230 px cho ca chọn một từ ngắn) và tâm popup **trùng tâm vùng chọn**.
+- File: `css/content/content.css`, `js/content/content.js`, `PROJECT.md`, `manifest.json`
+- Kiểm tra (extension thật unpacked, Chromium 159): ảnh + số đo ca highlight **2 đoạn** sáng + tối — `noteCx 246` = `blockCx 246` (lệch 0 px), `noteTop 746` **dưới** `blockBottom 738`, ảnh 4× xác nhận note rộng bằng khối highlight, không đè chữ; ca **một từ ngắn** — note 230 px, `noteCx 141` = `wordCx 141` (lệch 0 px), nằm dưới từ. `qa/t578_visual.py` 1512/390 sáng + tối đạt cả 72 ảnh + crop 4×, `console.error`/`pageerror` rỗng; `t578probe`/`t577translate`/`t576follow`/`t578-dict` rc=0 (note `307 → 107` khi cuộn 200; hàng tiện ích `31 → -119` khi cuộn 150; khung xem tệp `z:61`). Chưa kiểm: profile Chrome thật, trang web thật, highlight 3+ đoạn rất dài.
 
 **2026-11-17 | v3.5.581 | Arena.ai Agent sửa:**
 - Base: tiếp ngay trên v3.5.580 (`a7776ae`), dòng làm từ 3.5.576 (`a13d342`).

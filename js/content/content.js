@@ -236,6 +236,9 @@
     const rect = liveAnchorRect(anchor, fallback);
     if (!rect) return;
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
+    // v3.5.582: note lấy ĐÚNG bề rộng vùng chọn ở mọi cỡ (không chỉ >400px) để tâm popup trùng tâm vùng
+    // chọn như popup dịch — nếu không, popup rộng 512px sẽ bị đẩy vào mép màn hình và lệch ~20px.
+    if (popup.id === "lhn-note-pop") popup.classList.toggle("lhn-note-anchor-width", rect.width > 0);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
     popup.style.setProperty("z-index", String(contentZIndex(anchor.startContainer)), "important");
     position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, anchoredTop(popup, rect, 8));
