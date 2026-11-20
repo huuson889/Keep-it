@@ -1,9 +1,9 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.584**, tiếp từ **3.5.583** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển.
+- Version **3.5.585**, tiếp từ **3.5.584** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển; tam giác ô tô sáng dịch theo tâm chữ và tránh góc bo.
 - Khi lớp phủ Trang tối đang hiện, popup được phép nằm trên lớp phủ để giữ màu; không sửa mã nhận diện, màu hay chuyển Trang tối. Sheet cảm ứng dịch/từ điển giữ nguyên.
-- Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; popup tô sáng và note sát cả hai mép; hai đoạn, sát đáy và cuộn ngoài màn hình; Trang tối bật/tắt trên vùng màu rực; PDF fixture và sheet cảm ứng. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
+- Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; đo tam giác ở hai mép, chữ ngắn và khi popup lật lên; hồi quy cuộn và Trang tối bật/tắt trên vùng màu rực. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
 - Tài liệu: kiến trúc v30, `pages/documents.html` tự vẽ thư viện và mở tệp; Dashboard hiển thị khung. Ghi chú tài liệu dùng annotations chung.
 - Giới hạn: chưa kiểm profile Chrome thật, nhiều trang web thật, tệp PDF/Office của người dùng, cảm giác dùng/tốc độ hay mọi cấu trúc stacking context; preview Office hạn chế phông/đối tượng, chưa có OCR.
 
@@ -16,7 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- **Popup 3.5.584:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
+- **Popup 3.5.585:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
 - Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
@@ -159,6 +159,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.585 | Arena.ai Agent sửa:**
+
+- Tóm tắt: tam giác `#lhn-panel` dịch theo tâm vùng chữ sau khi hộp đã được đẩy ngang; giới hạn 20 px bên trong cạnh hộp để tránh góc bo. Khi lật lên, tam giác ở cạnh dưới và vẫn trỏ về chữ. Không đổi vị trí, kích thước, cách đẩy của hộp hoặc Trang tối.
+- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: extension unpacked Chromium 159, 1512/390 sáng/tối, hai mép, ảnh + crop 4× (`qa/v585-edges.log`): tâm chữ/tam giác 60,16/60,16 px bên trái và 1451,84/1451,84 px bên phải tại 1512; chữ ngắn sát mép dừng trước góc bo (`qa/v585-short.log`). Sát đáy lật lên, tâm chữ/tam giác khớp trong 0,02 px (`qa/v585-bottom.log`); bộ 4 kịch bản 72 ảnh + crop (`qa/v585-regression.log`); Trang tối bật/tắt vùng màu rực (`qa/v585-toggle.log`); console.error/pageerror rỗng. Chưa kiểm profile Chrome thật, Wikipedia trên máy người dùng, các website khác và cảm ứng trên thiết bị thật.
 
 **2026-11-17 | v3.5.584 | Arena.ai Agent sửa:**
 

@@ -244,6 +244,13 @@
     position(popup, x, y); // keep the translation popup's existing horizontal edge handling
     popup.style.setProperty("left", popup.style.left, "important");
     popup.style.setProperty("top", `${y}px`, "important");
+    if (popup === panel) {
+      const arrow = popup.querySelector(".lhn-popup-arrow");
+      if (arrow) {
+        const offset = rect.left + rect.width / 2 - Number.parseFloat(popup.style.left) - popup.clientLeft;
+        arrow.style.left = `${Math.max(20, Math.min(popup.clientWidth - 20, offset))}px`;
+      }
+    }
   }
   function positionTranslateIcon(range = selectedRange) {
     if (!translateIcon?.isConnected || !range?.startContainer?.isConnected) return;
