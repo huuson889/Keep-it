@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.545**, nhánh `Keepit-Optimize-Test`; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.546**, nhánh `Keepit-Optimize-Test`; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -157,6 +157,17 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.546 | Arena.ai Agent sửa (thanh Keepit — bỏ kiểu dáng riêng, dùng đúng thanh của web):**
+
+- Người dùng: thanh phải giống **100%** thanh trên trang web, chỉ có một thanh Keepit, không có kiểu dáng thứ hai; chốt v4 không cho tự thêm.
+- Đã bỏ toàn bộ CSS riêng mình tự thêm ở 3.5.542 (`js/content/keepit-bar-css.js`: khối `.screen.ext …` — cỡ chữ 10/9/8.5px, gap 0, media query 379px/339px, nhãn xuống 2 dòng) và bỏ dấu `screen.classList.toggle("ext", EXT)`.
+- Hành vi thu chữ/5 nút trả lại nguyên gốc của thanh (`fitLabels()` không còn điều kiện riêng).
+- Đo lại: 1512 — web và home/dashboard **giống hệt** (rộng 506, cao 72, bo 26px, đệm 6/10px, nút 66px, chữ 12px, gap 3px). 390 — khung giống hệt (370×72, bo 26px, đệm 6/4), chữ 10px do chính thanh tự thu (`tight`).
+- Hệ quả đã đo: ở 390 nhãn "Trang chủ" và "Tổng quan" chạm nhau (khe **−7px**, ảnh 4× `qa/shots/546-dashboard-390-light-4x.png`); ở 1512 khe **0px**; không nhãn nào bị cắt.
+- File: `js/content/keepit-bar-css.js`, `js/content/keepit-bar.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: ảnh thật 1512 + 390, sáng + tối, phóng 4×; `pageerror` + `console.error` = 0.
+- Không tạo CRX (sandbox không có khoá ký).
 
 **2026-11-17 | v3.5.545 | Arena.ai Agent sửa (thanh Keepit — chú thích nút Trang chủ ở trang web):**
 

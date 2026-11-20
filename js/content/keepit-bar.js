@@ -296,7 +296,6 @@
     const screen = $("screen");
     screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland()); screen.classList.toggle("tabp", isTouch() && !isWide() && !isPland() && !isSmall());
     screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
-    screen.classList.toggle("ext", EXT);
     const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
     const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "wc" && wcOn()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() && tipFor(id) ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
