@@ -159,7 +159,7 @@ function sourceEntries(page=V.page){return sourceTexts(page).map((text,index)=>(
 function updatePaging(keepRail=false){if(!V.doc)return;$('#pLbl').textContent=U();$('#pTotal').textContent='/ '+V.doc.pages;$('#pNum').max=V.doc.pages;if(document.activeElement!==$('#pNum'))$('#pNum').value=V.page;$('#pPrev').disabled=V.page<=1;$('#pNext').disabled=V.page>=V.doc.pages;for(const b of $$('#rail [data-p]'))b.classList.toggle('on',+b.dataset.p===V.page);if(!keepRail)$('#rail .on')?.scrollIntoView({block:'nearest'});wakePager();}
 function sizePages(preserve=true){if(!activeEngine||!V.doc)return;const st=$('#stage'),stack=$('#pageStack');if(!stack)return;const frame=stack.querySelector(`[data-page="${V.page}"]`),oldHeight=frame?.offsetHeight||1,relative=frame?(st.scrollTop-frame.offsetTop)/oldHeight:0;const available=Math.max(1,st.clientWidth-parseFloat(getComputedStyle(st).paddingLeft)-parseFloat(getComputedStyle(st).paddingRight));const first=activeEngine.pages[V.page-1];let width=V.mode==='read'?Math.min(700,available):V.zoom==='fit'?Math.min(V.doc.type==='pptx'?960:760,available):first.width*(+V.zoom/100);if(V.doc.image&&V.zoom==='fit'){const h=Math.max(40,st.clientHeight-parseFloat(getComputedStyle(st).paddingTop)-parseFloat(getComputedStyle(st).paddingBottom)-30);width=Math.max(1,Math.min(first.width,available,h*first.width/first.height));}stack.style.setProperty('--displayW',width+'px');for(const f of stack.children){const spec=activeEngine.pages[+f.dataset.page-1],surface=f.querySelector('.docSurface'),source=f.querySelector('.docsSource');if(surface)surface.style.aspectRatio=spec.width+'/'+spec.height;if(source){source.style.width=spec.width+'px';source.style.height=spec.height+'px';source.style.setProperty('--source-scale',width/spec.width);}}if(preserve&&frame)st.scrollTop=frame.offsetTop+relative*frame.offsetHeight;}
 function scrollToPage(page){const frame=$(`#pageStack>[data-page="${page}"]`);if(frame)$('#stage').scrollTop=Math.max(0,frame.offsetTop-parseFloat(getComputedStyle($('#stage')).paddingTop));}
-async function ensurePage(page){const target=$(`#pageStack>[data-page="${page}"] .docsSource`);if(!target||!activeEngine)return;if(drawn.has(target))return drawn.get(target);const engine=activeEngine,cycle=viewCycle;const work=engine.render(target,page).then(()=>{if(cycle!==viewCycle||!target.isConnected)return;restoreMarks(target,page);const sourceCanvas=target.querySelector('canvas'),thumb=$(`#rail [data-p="${page}"] .mini-pg`);if(sourceCanvas&&thumb&&!thumb.querySelector('img')){try{const c=document.createElement('canvas');c.width=100;c.height=Math.max(1,Math.round(100*sourceCanvas.height/sourceCanvas.width));c.getContext('2d').drawImage(sourceCanvas,0,0,c.width,c.height);const img=document.createElement('img');img.src=c.toDataURL('image/png');img.alt='';thumb.replaceChildren(img);}catch{}}requestTranslationSync();queueMicrotask(()=>{if(V.tools.has('wc'))scheduleWordClass();});}).catch(error=>{if(cycle===viewCycle&&target.isConnected&&!/cancel/i.test(error?.message||'')){const message=document.createElement('div');message.className='surfaceError';message.textContent=t('badFile');target.replaceChildren(message);}});drawn.set(target,work);return work;}
+async function ensurePage(page){const target=$(`#pageStack>[data-page="${page}"] .docsSource`);if(!target||!activeEngine)return;if(drawn.has(target))return drawn.get(target);const engine=activeEngine,cycle=viewCycle;const work=engine.render(target,page).then(()=>{if(cycle!==viewCycle||!target.isConnected)return;restoreMarks(target,page);const sourceCanvas=target.querySelector('canvas'),thumb=$(`#rail [data-p="${page}"] .mini-pg`);if(sourceCanvas&&thumb&&!thumb.querySelector('img')){try{const c=document.createElement('canvas');c.width=100;c.height=Math.max(1,Math.round(100*sourceCanvas.height/sourceCanvas.width));c.getContext('2d').drawImage(sourceCanvas,0,0,c.width,c.height);const img=document.createElement('img');img.src=c.toDataURL('image/png');img.alt='';thumb.replaceChildren(img);}catch{}}requestTranslationSync();queueMicrotask(()=>{if(V.tools.has('wc'))scheduleWordClass();});fillTextLayerGaps();}).catch(error=>{if(cycle===viewCycle&&target.isConnected&&!/cancel/i.test(error?.message||'')){const message=document.createElement('div');message.className='surfaceError';message.textContent=t('badFile');target.replaceChildren(message);}});drawn.set(target,work);return work;}
 function ensureThumbnail(page){
  const engine=activeEngine,cycle=viewCycle,docId=V.doc?.id,key=`${docId}:${cycle}:${page}`,slot=$(`#rail [data-p="${page}"] .mini-pg`);
  if(!engine||!slot||slot.querySelector('img')||typeof engine.thumbnail!=='function')return Promise.resolve();
@@ -210,7 +210,7 @@ function applyZoom(next,anchor){
     st.scrollTop+=Math.round(r.top+spot.relY*r.height-spot.y);
     st.scrollLeft+=Math.round(r.left+spot.relX*r.width-spot.x);
   }
-  hideSel();updateZoomControls();wakePager();requestSelectionSweep();
+  hideSel();updateZoomControls();wakePager();requestSelectionSweep();fillTextLayerGaps();
 }
 function syncZoomSelect(){
   const select=$('#vZoom');if(!select)return;
@@ -628,7 +628,7 @@ function pdfSpeakerKeyAtPoint(x,y,target){
  if(!frame)return'';
  let best='',bestArea=Infinity;
  for(const block of frame.querySelectorAll('.pdfTextLayer .para[data-paragraph-start="true"]')){
-  const index=block.dataset.paragraphIndex??block.dataset.i,spans=frame.querySelectorAll(`.pdfTextLayer .para[data-paragraph-index="${index}"]`),rects=[...spans].map(span=>span.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0);if(!rects.length)continue;
+  const index=block.dataset.paragraphIndex??block.dataset.i,spans=frame.querySelectorAll(`.pdfTextLayer .para[data-paragraph-index="${index}"]`),rects=[...spans].map(span=>textBoxRect(span)).filter(r=>r.width>0&&r.height>0);if(!rects.length)continue;
   const left=Math.min(...rects.map(r=>r.left)),top=Math.min(...rects.map(r=>r.top)),right=Math.max(...rects.map(r=>r.right)),bottom=Math.max(...rects.map(r=>r.bottom));
   if(x>=left&&x<=right&&y>=top&&y<=bottom){const area=(right-left)*(bottom-top);if(area<bestArea){bestArea=area;best=`${frame.dataset.page}:${index}`;}}
  }
@@ -658,7 +658,7 @@ function positionNativeSpeaker(block,speaker,geometry){
 }
 function nativeSpeakerGeometry(block){
  if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return null;
- const page=+block.dataset.page,index=paragraphIndex(block),spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),rects=spans.map(el=>el.getBoundingClientRect()).filter(rect=>rect.width>0&&rect.height>0);if(!rects.length)return null;
+ const page=+block.dataset.page,index=paragraphIndex(block),spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),rects=spans.map(el=>textBoxRect(el)).filter(rect=>rect.width>0&&rect.height>0);if(!rects.length)return null;
  let last=null;
  for(const span of spans){const root=span.querySelector('.en');if(!root)continue;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode()){const node=walker.currentNode,text=node.textContent||'';let end=text.length;while(end>0&&/\s/u.test(text[end-1]))end--;if(!end)continue;let start=end-1;if(start>0&&/[\uDC00-\uDFFF]/u.test(text[start])&&/[\uD800-\uDBFF]/u.test(text[start-1]))start--;const range=document.createRange();range.setStart(node,start);range.setEnd(node,end);const rect=range.getBoundingClientRect();if(rect.width||rect.height)last={rect,direction:getComputedStyle(node.parentElement||span).direction};}}
  if(!last)return null;
@@ -668,11 +668,34 @@ function nativeSpeakerGeometry(block){
 function showReaderParagraphHighlight(block){
  clearReaderParagraphHighlight();if(V.mode!=='orig'||V.doc?.type!=='pdf'||!block)return;
  const page=+block.dataset.page,index=paragraphIndex(block),source=block.closest('.docsSource');if(!page||!source)return;
- const spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),sourceRect=source.getBoundingClientRect(),scale=sourceRect.width/Math.max(1,source.offsetWidth),box=readerParagraphHighlightBox(spans.map(el=>el.getBoundingClientRect()),sourceRect,scale);if(!box)return;
+ const spans=$$(`#pageStack>[data-page="${page}"] .docsSource .para[data-paragraph-index="${index}"]`),sourceRect=source.getBoundingClientRect(),scale=sourceRect.width/Math.max(1,source.offsetWidth),box=readerParagraphHighlightBox(spans.map(el=>textBoxRect(el)),sourceRect,scale);if(!box)return;
  const highlight=document.createElement('div');highlight.className='docsReaderParagraphHighlight';highlight.setAttribute('aria-hidden','true');
  highlight.style.left=box.left+'px';highlight.style.top=box.top+'px';highlight.style.width=box.width+'px';highlight.style.height=box.height+'px';source.append(highlight);
  // v3.5.565: nếu sau khi trình duyệt dàn trang hộp co lại gần 0 thì bỏ ngay, đừng để lại vạch xanh ở mép trái
  requestAnimationFrame(()=>{if(!highlight.isConnected)return;const r=highlight.getBoundingClientRect();if(r.width<8||r.height<8)highlight.remove();});
+}
+/* v3.5.567: lấp khe dọc giữa các đoạn của lớp chữ. Trong PDF/PPTX, hộp chữ chỉ cao bằng cỡ chữ còn nhịp dòng rộng hơn
+   nhiều, nên phần khe giữa hai dòng không thuộc hộp chữ nào — con trỏ rơi vào đó thì trình duyệt neo vùng chọn vào
+   ranh giới khối và vùng chọn nháy (đây là cách pdf.js/smallpdf tránh bằng cách cho hộp chữ phủ kín nhịp dòng).
+   Nay mỗi hộp chữ được đệm thêm phần khe phía dưới cho tới hộp kế tiếp; đệm dưới nên không xô chữ hay highlight. */
+/* v3.5.567: đo theo hộp chữ thật (.en) — hộp .para nay được đệm thêm phần khe dòng nên cao hơn chữ. */
+const textBoxRect = el => (el?.querySelector?.('.en') || el).getBoundingClientRect();
+function fillTextLayerGaps(){
+  if(!V.doc||!$('#viewer').classList.contains('show')||V.mode!=='orig')return;
+  for(const layer of $$('#pageStack .pdfTextLayer')){
+    const paras=[...layer.querySelectorAll('.para')];
+    if(!paras.length)continue;
+    for(const p of paras)if(p.style.paddingBottom)p.style.paddingBottom='';
+    const boxes=paras.map(p=>{const r=p.getBoundingClientRect();return {p,r,ratio:r.height/Math.max(1,p.offsetHeight)};}).filter(b=>b.r.height>0).sort((a,b)=>a.r.top-b.r.top);
+    for(let i=0;i<boxes.length;i++){
+      const box=boxes[i];let next=null;
+      for(let j=i+1;j<boxes.length;j++)if(boxes[j].r.top>=box.r.bottom-0.5){next=boxes[j].r;break;}
+      if(!next)continue;
+      const gap=next.top-box.r.bottom;
+      if(gap<=0.5)continue;
+      box.p.style.paddingBottom=(gap/Math.max(0.2,box.ratio)).toFixed(2)+'px';
+    }
+  }
 }
 /* v3.5.566: tự dựng vùng chọn khi kéo chuột trên lớp chữ của tệp.
    Lý do: khi con trỏ nằm ở khe giữa hai dòng (lớp chữ PDF/PPTX có khe rất rộng), Chrome trả caret về mốc "chỉ số con"
@@ -733,6 +756,55 @@ document.addEventListener('mousemove',event=>{
 document.addEventListener('selectionchange',()=>{if(dragSelect)applyDragSelection();});
 document.addEventListener('mouseup',()=>{dragSelect=null;},true);
 document.addEventListener('pointercancel',()=>{dragSelect=null;},true);
+/* v3.5.567: chọn bằng cảm ứng — nhấn giữ rồi kéo. Bản 3.5.566 chỉ tự dựng vùng chọn cho chuột nên trên thiết bị
+   cảm ứng vẫn do trình duyệt làm, qua đoạn là vùng chọn nháy xuống dưới một lúc. Nay nhấn giữ ~0,4 giây rồi kéo:
+   từ dưới ngón tay được chọn trước, kéo thì đầu kia bám theo, cùng một cách kẹp toạ độ về chữ thật như chuột.
+   Chưa tới 0,4 giây mà ngón tay đã di chuyển thì bỏ (để trang cuộn bình thường). */
+const WORD_RE = /[\p{L}\p{N}\u2019'\-]/u;
+function wordRangeAt(point){
+  const text=point.node.nodeValue||'',offset=point.offset;
+  let start=offset,end=offset;
+  while(start>0&&WORD_RE.test(text[start-1]))start--;
+  while(end<text.length&&WORD_RE.test(text[end]))end++;
+  if(start===end)return {start:point,end:point};
+  return {start:{node:point.node,offset:start},end:{node:point.node,offset:end}};
+}
+let touchSelect=null,touchHoldTimer=0,touchHoldStart=null;
+function endTouchSelect(){clearTimeout(touchHoldTimer);touchHoldTimer=0;touchHoldStart=null;touchSelect=null;}
+$('#stage').addEventListener('touchstart',event=>{
+  endTouchSelect();
+  if(event.touches.length!==1||V.mode!=='orig'||!V.doc||$('.modalWrap.show'))return;
+  const touch=event.touches[0],target=event.target;
+  if(!target.closest?.('.docsSource')||target.closest('.lhnPdfHighlightGroup'))return;
+  const point=caretTextPoint(touch.clientX,touch.clientY);
+  if(!point)return;
+  const anchorPoint=point;
+  touchHoldStart={x:touch.clientX,y:touch.clientY};
+  touchHoldTimer=setTimeout(()=>{
+    touchHoldTimer=0;if(!touchHoldStart||!V.doc||V.mode!=='orig')return;
+    const word=wordRangeAt(anchorPoint);
+    touchSelect={x0:touchHoldStart.x,y0:touchHoldStart.y,x:touchHoldStart.x,y:touchHoldStart.y};
+    try{const selection=getSelection();selection.setBaseAndExtent(word.start.node,word.start.offset,word.end.node,word.end.offset);}catch{}
+  },420);
+},{passive:true});
+$('#stage').addEventListener('touchmove',event=>{
+  if(touchHoldStart&&!touchSelect&&event.touches.length===1){
+    const touch=event.touches[0];
+    if(Math.hypot(touch.clientX-touchHoldStart.x,touch.clientY-touchHoldStart.y)>12)endTouchSelect();   // cuộn trang, không phải chọn
+    return;
+  }
+  if(!touchSelect||event.touches.length!==1)return;
+  event.preventDefault();
+  const touch=event.touches[0];
+  touchSelect.x=touch.clientX;touchSelect.y=touch.clientY;
+  const start=caretTextPoint(touchSelect.x0,touchSelect.y0),end=caretTextPoint(touchSelect.x,touchSelect.y);
+  if(!start||!end)return;
+  const selection=getSelection();if(!selection)return;
+  try{selection.setBaseAndExtent(start.node,start.offset,end.node,end.offset);}catch{}
+},{passive:false});
+$('#stage').addEventListener('scroll',()=>{if(touchHoldTimer)endTouchSelect();},{passive:true});   // đang cuộn thì không phải nhấn giữ để chọn
+$('#stage').addEventListener('touchend',endTouchSelect,{passive:true});
+$('#stage').addEventListener('touchcancel',endTouchSelect,{passive:true});
 /* v3.5.565: dọn khung hình học rác trong khung xem tệp — khung xem trước highlight còn sót, group highlight co về <2px,
    khung "đoạn đang đọc" co về <8px. Không đụng khi đang mở hộp soạn ghi chú (đang chọn màu highlight). */
 let selectionSweepAt=0,selectionSweepRAF=0;

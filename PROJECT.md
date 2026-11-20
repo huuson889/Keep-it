@@ -159,6 +159,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.567 | Arena.ai Agent sửa:**
+- Tóm tắt: Chọn bằng **cảm ứng** vẫn nháy khi kéo qua đoạn. Hai việc: (1) `fillTextLayerGaps()` lấp khe dọc giữa các hộp chữ của lớp chữ PDF/PPTX — hộp chữ chỉ cao bằng cỡ chữ còn nhịp dòng rộng hơn nhiều, phần khe không thuộc hộp nào nên con trỏ rơi vào đó thì trình duyệt neo vùng chọn vào ranh giới khối (cách pdf.js/smallpdf tránh: cho hộp chữ phủ kín nhịp dòng); đệm thêm phần khe phía dưới mỗi hộp, gọi sau khi vẽ trang và sau mỗi lần zoom. (2) Trên thiết bị cảm ứng: **nhấn giữ ~0,4 giây rồi kéo** thì extension tự dựng vùng chọn như với chuột (chọn từ dưới ngón tay trước, kéo thì đầu kia bám theo); chưa tới 0,4 giây mà ngón tay đã di chuyển hoặc trang đang cuộn thì bỏ, nhường cho cuộn/chọn mặc định. Ba chỗ đo hình học (khung "đoạn đang đọc", vùng hover loa đọc) nay đo theo hộp chữ thật `.en` vì `.para` đã được đệm thêm.
+- File: `js/dashboard/documents.js`, `manifest.json`
+- Kiểm tra: PDF 9 dòng, kéo dòng 3→7 qua 24 bước — chuột **0/24** (bản 3.5.566 là 0/24, giữ nguyên); **không có JS chọn tay** (chỉ lấp khe) cũng **0/24** so với 5/24 trước đó, tức đường chọn mặc định của trình duyệt (cảm ứng dùng đường này) đã hết nháy; nhấn giữ rồi kéo bằng cảm ứng **0/24**, neo đứng ở dòng 3, đầu kia 3→4→…→7, nhấc tay vùng chọn là 278 ký tự dòng 3–7. Đo lại ở zoom 40 % và 172 %: không vượt quá con trỏ, sai lệch tối đa 1 dòng. Nháy đúp vẫn chọn từ ("fabrics"), Ctrl+A 1.920 ký tự, icon dịch hiện sau khi chọn, pinch zoom 135,6→162,4 %, không khung đoạn rác, đóng khung xem tệp bình thường, 0 lỗi console.
+
 **2026-11-17 | v3.5.566 | Arena.ai Agent sửa:**
 - Tóm tắt: Bỏ cách sửa 3.5.565 (đặt `pointer-events:none` cho `.pdfTextLayer`) vì nó chỉ đổi chiều lỗi — vùng chọn chuyển sang nháy LÊN TRÊN. Nay khi kéo chuột chọn chữ trong khung xem tệp, extension tự dựng vùng chọn: `mousedown` được `preventDefault()` rồi hai đầu vùng chọn đặt bằng `document.caretRangeFromPoint`, cả hai đầu đều kẹp về vị trí chữ thật (`caretTextPoint` xử lý cả trường hợp caret rơi vào phần tử khối dưới dạng "chỉ số con"). Kéo tới mép khung thì tự cuộn. Bỏ qua nháy đúp/3 lần (để trình duyệt chọn từ), có phím bổ trợ, và bấm vào highlight (để mở ghi chú).
 - File: `js/dashboard/documents.js`, `css/dashboard/documents.css`, `manifest.json`
