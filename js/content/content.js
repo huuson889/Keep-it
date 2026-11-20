@@ -158,6 +158,26 @@
     const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
     el.style.left = left + "px"; el.style.top = top + "px";
   }
+  /* v3.5.575: neo trôi khỏi màn hình thì ẩn thanh nổi đi, không được "ghim" ở mép.
+     position() kẹp toạ độ vào khung nhìn (Math.max(10, …)) nên khi cuộn cho đoạn đã chọn ra khỏi màn hình,
+     thanh logo + tiện ích bị ghim ở mép trên (top:10) và nằm đè lên trang — đúng lỗi "kẹt ở đỉnh".
+     Ở đây chỉ ẩn/hiện bằng class, giữ nguyên mọi trạng thái; cuộn trở lại thì thanh hiện lại như cũ. */
+  function anchorOffstage(rect) { return !rect || rect.bottom <= 0 || rect.top >= innerHeight; }
+  function setOffstage(el, off) {
+    if (!el || el.classList.contains("lhn-offstage") === off) return;
+    el.classList.toggle("lhn-offstage", off);
+    // Thanh nổi / popup mang sẵn style inline !important (display, visibility, pointer-events) nên luật CSS không thắng
+    // được — phải ghi đè bằng inline, và giữ lại giá trị cũ để trả về đúng như trước (popup dùng display:flex).
+    if (off) {
+      el.__lhnOffDisplay = { value: el.style.getPropertyValue("display"), priority: el.style.getPropertyPriority("display") };
+      el.style.setProperty("display", "none", "important");
+    } else if (el.__lhnOffDisplay) {
+      const { value, priority } = el.__lhnOffDisplay;
+      delete el.__lhnOffDisplay;
+      if (value) el.style.setProperty("display", value, priority);
+      else el.style.removeProperty("display");
+    }
+  }
   // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
   function placeTouchOverlaySheet(popup, anchor) {
     // a Range made with selectNode() starts at the parent — the selected node itself is childNodes[startOffset]
@@ -183,6 +203,8 @@
     if (!popup?.isConnected || !anchorNode?.isConnected || !anchor?.getBoundingClientRect) return;
     if (placeTouchOverlaySheet(popup, anchor)) return;
     const rect = anchor.getBoundingClientRect();
+    const off = anchorOffstage(rect); setOffstage(popup, off);
+    if (off) return;
     popup.classList.toggle("lhn-popup-anchor-wide", rect.width > 400);
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
     position(popup, rect.left + rect.width / 2 - popup.offsetWidth / 2, rect.bottom + 8);
@@ -195,6 +217,8 @@
     const lineRects = Array.from(range.getClientRects?.() || []).filter(item => item.width > 0 && item.height > 0);
     const rect = lineRects[lineRects.length - 1] || range.getBoundingClientRect();
     if (!rect.width && !rect.height) return;
+    const off = anchorOffstage(rect); setOffstage(translateIcon, off);
+    if (off) return;                                    // v3.5.575: neo đã ra khỏi màn hình → ẩn, không ghim ở mép
     const shell = translateIcon.querySelector(".lhn-translate-shell");
     // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
     const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
