@@ -1211,6 +1211,11 @@ html.dark body {
   --lhn-ui-brand:#a5a9ff; --lhn-ui-brand-hover:#c0c2ff; --lhn-ui-brand-soft:rgba(143,134,242,.16);
   background:#000!important; color:#c8c8cc!important;
 }
+/* v3.5.528: MỘT bộ biến dùng chung cho mọi tab — nền trang và lề hai bên.
+   Sáng: #f5f5ff (như tab Tổng quan vẫn dùng). Tối: --lhn-ui-page = #000.
+   Tab Tài liệu (vùng + khung bên trong) lấy đúng các giá trị này. */
+:root{--dash-page-bg:#f5f5ff;--dash-page-pad:clamp(16px,3vw,32px);--dash-page-pad-bottom:42px}
+html.dark{--dash-page-bg:var(--lhn-ui-page,#000)}
 html:not(.dark) #dashboardScroller { background:#e9edf4!important; color:#2b2b30!important; }
 html.dark #dashboardScroller { background:#000!important; color:#c8c8cc!important; }
 html:not(.dark) #dashboardSidebar.dashboard-reference-sidebar { background:#fff!important; border-right-color:#e6ebf3!important; color:#55555c!important; }
@@ -1450,3 +1455,6 @@ html.dark .kp-avatar-act:focus-visible, html.dark .kp-avatar-close:focus-visible
   flex:0 0 auto!important; width:auto!important; max-width:none!important; min-width:0!important;
   align-self:center!important; justify-content:flex-end;
 }
+/* v3.5.538: dòng footer chung cho mọi tab */
+.dash-footer{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-top:30px;padding:0 2px;color:#9da4b2;font-size:11px;line-height:14px}
+html.dark .dash-footer{color:#95959c}

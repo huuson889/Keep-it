@@ -748,9 +748,18 @@ body{overflow:auto}
 /* ---------- embedded in the dashboard shell ---------- */
 /* The dashboard owns the scroll root and the shared topbar, so this page renders
    as flat content that reports its height instead of scrolling on its own. */
-html.dash-embedded,html.dash-embedded body{height:auto;min-height:0;overflow:hidden;background:transparent}
+/* v3.5.525: nền tab Tài liệu phải ĐEN y như các tab khác.
+   Trước đây để background:transparent khi nhúng, nhưng khung (iframe) lại có color-scheme tối
+   nên Chrome tự tô nền canvas bằng màu nền mặc định của chế độ tối — đo trên ảnh người dùng:
+   vùng nội dung tab Tài liệu = #121212, còn các tab khác = #000. Giờ đặt nền tường minh bằng
+   đúng biến --page của trang (tối: #000, sáng: #f5f5ff) để khung không tự tô nữa. */
+html.dash-embedded,html.dash-embedded body{height:auto;min-height:0;overflow:hidden;background:var(--page,#fff)}
 html.dash-embedded .app{display:block;min-height:0}
-html.dash-embedded .main{padding:0 44px 40px}
+/* v3.5.526: khoảng trống 2 bên giống các tab khác — tab Tổng quan dùng
+   padding:0 clamp(16px,3vw,32px) 42px; trước đây trang tài liệu dùng 44px nên thụt vào nhiều hơn. */
+/* v3.5.528: khung tài liệu là một tài liệu riêng nên không đọc được biến --dash-page-* của Dashboard;
+   giữ đúng các giá trị tương ứng (lề hai bên clamp(16px,3vw,32px), đáy 42px — như tab Tổng quan). */
+html.dash-embedded .main{padding:0 clamp(16px,3vw,32px) 20px}
 @media(max-width:980px){html.dash-embedded .main{padding:0 22px 40px}}
 @media(max-width:760px){html.dash-embedded .main{padding:0 12px 24px}}
 html.dash-embedded .topbar{display:none!important}
@@ -790,3 +799,7 @@ html.dash-embedded .seg{overflow:visible;max-width:none}
   html.dash-embedded .tools .search{order:3;flex-basis:100%}
   html.dash-embedded .seg{overflow-x:auto;max-width:100%}
 }
+
+/* v3.5.538: dòng footer chung cho mọi tab */
+.dash-footer{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-top:30px;padding:0 2px;color:#9da4b2;font-size:11px;line-height:14px}
+html.dark .dash-footer{color:#95959c}

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.492**, nhánh `Keepit-Optimize-Test`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.542**, nhánh `Keepit-Optimize-Test`; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -9,13 +9,14 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
+- **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
 ### Tiếp theo (thứ tự đã chốt)
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- Chưa kiểm: ảnh/số đo 1512 và 390, sáng/tối (mục 3.4 AGENTS); profile Chrome thật; tệp PDF/Office thật.
+- Đã kiểm bằng ảnh 3.5.542: thanh ở 1512 và 390, sáng + tối, phóng 4×, `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
 - Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
 ### Chưa triển khai
 - Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: đã chốt phạm vi, chưa làm.
@@ -156,6 +157,242 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.542 | Arena.ai Agent sửa (thanh Keepit trên home + dashboard — làm lại từ 3.5.540):**
+
+- Người dùng yêu cầu: không cần CRX, **lấy đúng 3.5.540** rồi làm đúng bản chốt v4 (chỉ thêm thanh Keepit), mỗi lần làm đọc lại chốt.
+- Gốc: `git checkout d31a362 -- css js pages manifest.json` (3.5.540), bản 3.5.541 sai được bỏ; dọn `docs/chot/` + `docs/INDEX.md` về nguyên trạng; bản chốt chuyển vào `OPT-ARENA.md` (mục 2026-11-17 bản chốt v4).
+- Thanh trên `pages/home.html` + `pages/dashboard.html`: 6 nút + Tìm kiếm ở giữa — Trang chủ · Tổng quan · **Chép (tab Chép chính tả)** | Tìm kiếm | Ghi chú · Tài liệu · Thêm. Ở dashboard bấm là chuyển tab tại chỗ (`[data-dashboard-view]`), từ trang chủ mở dashboard đúng tab qua `keepitDashboardActiveViewV1`.
+- **Icon dùng chung một nguồn:** thêm `nav-overview`, `nav-dictation`, `nav-notes`, `nav-docs`, `nav-flashcards`, `nav-trash` vào `js/shared/icons.js`; menu trái dashboard đọc qua `data-icon` + `LHN_ICONS.applyIcons()` (gọi trong `dashboard.js`, không dùng inline script vì CSP MV3 chặn), thanh Keepit cũng đọc từ đó.
+- More: giữ nguyên, thêm Flashcards + Thùng rác ở đầu nhóm "Công cụ"; danh sách công cụ của 2 trang = đúng 10 công cụ như trang web.
+- Điện thoại: `html.keepit-bar-on` → ẩn `.rn-tabbar` (thanh Keepit đứng thay menu đáy dashboard). Nhãn tên tab đầy đủ, không cắt (font 10px, thu 9px/8.5px khi chật, ≤339px xuống 2 dòng).
+- File: `js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`, `js/shared/icons.js`, `js/core/languages.js`, `js/dashboard/dashboard.js`, `pages/dashboard.html`, `pages/home.html`, `css/dashboard/responsive.css`, `manifest.json`, `OPT-ARENA.md`, `PROJECT.md`.
+- Kiểm tra: ảnh thật extension unpacked — 1512 và 390, sáng + tối (dark bật bằng ☰ → Giao diện), phóng 4× thanh (`qa/shots/542-*`); nhãn không cắt (minGap 12.6px ở 1512, 2.1px ở 390); Chép → view `dictation`; Thùng rác → `trash`; Flashcards mở hộp thoại; `.rn-tabbar` = `none` ở 390; trang web thật giữ nguyên bộ nút cũ; `pageerror` + `console.error` = 0.
+- Không tạo CRX (sandbox không có khoá ký).
+
+**2026-11-17 | v3.5.541 | Arena.ai Agent sửa (thanh Keepit trên home + dashboard) — ĐÃ BỊ THAY THẾ:**
+
+- Bản đầu của thanh Keepit; sai 2 chỗ so với chốt: nút Chép chạy công cụ chép trên trang web (đúng ra là tab Chép chính tả) và More mất 9 công cụ; icon các nút không dùng nguồn chung.
+- Toàn bộ được làm lại từ 3.5.540 ở v3.5.542.
+
+**2026-11-19 | v3.5.532 | Arena.ai Agent sửa:**
+
+- Người dùng: phần sửa sai thì phải xoá hẳn.
+- Đã xoá nốt dòng còn sót của 3.5.530: `#dashboardDictationView.dashboard-dictation-view` đáy **14 → 34 px** (trả về nguyên trạng), bỏ ghi chú sai lý do.
+- Còn lại **đúng một thay đổi** cho tab Chép chính tả: `.dictation-root .footer{margin-top:38px}` (18 → 38) — sửa đúng selector ở 3.5.531.
+- File: `css/dashboard/dictation.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `git diff 3.5.529 -- css/` còn đúng 1 dòng đổi. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.531 | Arena.ai Agent sửa (tab Chép chính tả — dòng footer):**
+
+- Người dùng báo 3.5.530 không có tác dụng (đã xác nhận đang chạy đúng 3.5.530).
+- **Nguyên nhân: sai selector.** Footer trong DOM là `<footer class="footer">` thuộc `.dictation-root` (xem `pages/dashboard.html`), còn 3.5.530 sửa `#dashboardDictationView .dictation-footer` — class **không tồn tại** nên trình duyệt bỏ qua hoàn toàn.
+- Sửa đúng chỗ: `css/dashboard/dictation.css` → `.dictation-root .footer{…margin-top:18px…}` đổi thành **38px**. Footer hạ xuống 20 px, nên khoảng cách khung tab tới đáy cũng giảm đúng 20 px (nội dung chảy theo).
+- Bỏ dòng sửa sai trong `css/dashboard/overview.css` (trả `.dictation-footer` về 18px như cũ; đây là CSS chết, không dùng).
+- File: `css/dashboard/dictation.css`, `css/dashboard/overview.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: đã đối chiếu class thật trong `pages/dashboard.html`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.530 | Arena.ai Agent sửa (tab Chép chính tả — dòng footer):**
+
+- Người dùng yêu cầu: (1) dòng "Keepit · Dictation" cách khối phía trên thêm 20 px; (2) khung tab cách đáy giảm 20 px.
+- Sửa:
+  - `css/dashboard/overview.css`: `.dictation-footer` margin-top **18 → 38 px**.
+  - `css/dashboard/dictation.css`: `#dashboardDictationView.dashboard-dictation-view` đáy **34 → 14 px**.
+- Tổng chiều cao khối không đổi (footer hạ 20 px, đáy bớt 20 px).
+- File: `css/dashboard/overview.css`, `css/dashboard/dictation.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: **chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.540 | Arena.ai Agent — lời chào ở tab Tổng quan lấy tên tài khoản:**
+
+- Người dùng: lời chào đầu tab Tổng quan phải lấy **đúng tên tài khoản** thay cho chữ "bạn".
+- Sửa:
+  - `pages/dashboard.html`: thẻ lời chào có `id="overviewGreeting"`.
+  - `js/core/languages.js`: thêm `ovGreetingName` — en "Welcome back, {name}!", vi "Chào mừng {name} trở lại!", ko "{name}님, 다시 오신 것을 환영합니다!".
+  - `js/dashboard/dashboard.js`: hàm `renderOverviewGreeting()` (dùng `profileDisplayName`), gọi trong `applyTranslations()` và cuối `renderProfileMenu()` (đăng nhập / đổi tên / đăng xuất / đổi ngôn ngữ đều cập nhật).
+  - Chưa đăng nhập thì giữ nguyên câu mặc định `ovGreeting`.
+- **Đã xác minh trên extension thật** (Chromium headless + unpacked, seed profile `{username:'huson', displayName:'Huson'}`):
+  - vi: "Chào mừng Huson trở lại!" · ko: "Huson님, 다시 오신 것을 환영합니다!" · en: "Welcome back, Huson!"
+  - Không có tài khoản: "Welcome back!" (mặc định). `pageerror` = **0**.
+- File: `pages/dashboard.html`, `js/core/languages.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- **Chưa kiểm được:** tài khoản Google thật (harness chỉ seed profile cục bộ).
+
+**2026-11-19 | v3.5.539 | Arena.ai Agent sửa (dòng footer chung — cùng vị trí ở mọi tab):**
+
+- Người dùng: dòng footer ở tab Tài liệu nằm cao hơn Chép chính tả / Ghi chú → chưa "chung một cái".
+- Đo được trước khi sửa (extension thật): khoảng cách **footer → đáy khung** = Tổng quan **42px**, Chép chính tả **64,8px**, Ghi chú **20px**, Tài liệu **42px**.
+- Sửa:
+  - `overview.css`: `#dashboardScroller > #dashboardOverviewView` đáy 42 → **20px**.
+  - `overview.css`: ghim footer của Chép chính tả xuống đáy khung (`.app`/`.content` flex cột + `.footer{margin-top:auto;padding-top:30px}`) — bỏ khoảng dư 44,8px.
+  - `documents.css`: `html.dash-embedded .main` đáy 42 → **20px**.
+  - `.dash-footer` thêm `line-height:14px` (trước đây dòng trong iframe cao 15,9px, lệch 2px so với các tab).
+- **Đã xác minh trên extension thật** (Chromium headless + extension unpacked): sau sửa cả 4 tab đều **20px**, chiều cao dòng đều **14px**, ảnh 4 tab đã chụp, `console.error`/`pageerror` = 0.
+- File: `css/dashboard/overview.css`, `css/dashboard/documents.css`, `manifest.json`, `PROJECT.md`.
+- **Chưa kiểm được:** cửa sổ hẹp <390px; profile Chrome thật của người dùng.
+
+**2026-11-19 | v3.5.538 | Arena.ai Agent — dòng footer chung cho mọi tab:**
+
+- Người dùng: tab nào cũng có **một dòng giống nhau** — trái: tên app + tên tab **tiếng Anh**; phải: **slogan app**. Chốt: tên tab luôn tiếng Anh ở mọi ngôn ngữ, áp cho 5 tab chính (Flashcards là hộp thoại, không phải tab nên không có dòng này).
+- Thêm một class dùng chung `.dash-footer` (dashboard.css **và** documents.css vì trang Tài liệu là tài liệu riêng): `display:flex;justify-content:space-between;flex-wrap:wrap;margin-top:30px;color:#9da4b2;font-size:11px` + `html.dark` màu `#95959c`.
+- Áp cho 4 tab có vùng hiển thị: Tổng quan (`Keepit · Overview`), Chép chính tả (`Keepit · Dictation`), Ghi chú (`Keepit · Notes`), Tài liệu (`Keepit · Documents`); bên phải dùng khoá có sẵn `dashboardSubtitle` = "Keep Exploring Everything" (đã dịch đủ 3 ngôn ngữ).
+- `js/core/languages.js`: thêm 4 khoá `dashFooter*`, giá trị tiếng Anh cho cả en/vi/ko (đúng lựa chọn "luôn tiếng Anh").
+- Bỏ class `ov-footer` khỏi dòng của Tổng quan để không bị cỡ chữ 9px/margin 17px cũ đè.
+- **Đã xác minh trên extension thật** (harness `/home/user/qa/footer_tabs.py` + `footer_shots.py`, Chromium + Xvfb):
+  - Cả 4 tab đều có `.dash-footer`, nội dung đúng, cùng cỡ (cao 14px, rộng 1225px) — Tài liệu nằm trong iframe nên đo riêng (15,9px).
+  - Ảnh sáng + tối đã chụp; `console.error`/`pageerror` = **0**.
+- File: `pages/dashboard.html`, `pages/documents.html`, `js/core/languages.js`, `css/dashboard/dashboard.css`, `css/dashboard/documents.css`, `manifest.json`, `PROJECT.md`.
+- **Chưa kiểm được:** profile Chrome thật của người dùng; hành vi khi cửa sổ hẹp dưới 390px.
+
+**2026-11-19 | v3.5.537 | Arena.ai Agent sửa (theo yêu cầu trực tiếp của người dùng):**
+
+- Lấy lại **nguyên code 3.5.529** (`git checkout 3.5.529 -- css/ js/ pages/`), xác nhận `git diff` rỗng.
+- Sửa đúng 2 chỗ người dùng chỉ định:
+  - `css/dashboard/dictation.css`: `.dictation-root .footer` → `margin-top: 30px`.
+  - `css/dashboard/overview.css`: rule thắng `#dashboardScroller > #dashboardDictationView` → `padding-bottom: 20px` (trước là 34px).
+- Nguyên tắc "quay về bản gốc trước lần sửa sai" đã có trong `AGENTS.md` §3.1 (thêm từ 3.5.534, vẫn giữ).
+- File: `css/dashboard/dictation.css`, `css/dashboard/overview.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra bằng harness extension thật: xem mục kết quả đo bên dưới.
+
+**2026-11-19 | v3.5.536 | Arena.ai Agent sửa (tab Chép chính tả — khoảng cách dòng footer):**
+
+- Người dùng: footer phải cách khối phía trên thêm 20 px, khung tab cách đáy giảm 20 px.
+- **Đã xác minh bằng số đo trên extension thật** (harness `/home/user/qa/run.py`, Chromium thật + Xvfb, nạp unpacked từ repo):
+  - `gapAboveFooter` (footer ↔ khối trên): **18 → 38 px** (+20).
+  - `gapFooterToFrameBottom` (footer ↔ đáy khung): **90,8 → 70,8 px** (−20).
+  - Ảnh: 1512 sáng/tối + 390 sáng/tối, `console.error`/`pageerror` = **0**.
+  - 390 px: khoảng đáy không đổi (25 px, do media query riêng) — không hồi quy.
+- Sửa đúng **một dòng**: `css/dashboard/dictation.css` → `.dictation-root .footer{…margin-top:18px…}` → **38px**.
+- Vì sao 4 bản trước vô hiệu: rule thắng là `#dashboardScroller > #dashboardDictationView` (2 id) trong `overview.css`, đè mọi rule 1 id + 1 class của `dictation.css`; còn `margin-top` thì đúng rule `.dictation-root .footer` — sau khi có harness mới đo được.
+- File: `css/dashboard/dictation.css`, `manifest.json`, `PROJECT.md`. Code nền vẫn là 3.5.529 + đúng 1 dòng này.
+- **Chưa kiểm được:** profile Chrome thật của người dùng, dữ liệu phiên thật.
+
+**2026-11-19 | v3.5.535 | Arena.ai Agent sửa (tab Chép chính tả — đáy):**
+
+- Người dùng gửi DevTools: `main#dashboardDictationView` = `padding: 0px 32px **34px**` → đáy chưa giảm.
+- Nguyên nhân: footer của tab **bị neo xuống đáy khung**, nên `margin-top` (bản 3.5.533) không làm footer hạ; muốn giảm đáy phải giảm **padding-bottom**.
+- Làm lại từ bản gốc 3.5.529 (bỏ thay đổi của 533), sửa đúng một số: `#dashboardDictationView.dashboard-dictation-view` đáy **34 → 14 px**.
+- Kết quả: footer hạ 20 px + khoảng khung tới đáy giảm 20 px.
+- File: `css/dashboard/dictation.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `git diff 3.5.529 -- css/` chỉ còn 1 dòng. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.534 | Arena.ai Agent — ghi nguyên tắc vào AGENTS.md §3.1:**
+
+- Thêm 1 dòng vào §3.1: "Làm sai thì quay về bản gốc trước lần sửa sai rồi sửa lại từ đó — không vá chồng lên bản sai, không chỉ xoá dòng sai."
+- File: `AGENTS.md`, `manifest.json`, `PROJECT.md`. Không đổi code.
+
+**2026-11-19 | v3.5.533 | Arena.ai Agent sửa (làm lại từ bản gốc):**
+
+- Người dùng: sai thì phải **quay về bản gốc trước khi sửa sai** rồi sửa lại, không chỉ xoá dòng.
+- Đã làm: `git checkout 3.5.529 -- css/ js/ pages/` → code về **đúng nguyên bản 3.5.529** (bản trước khi sửa sai ở 530), xác nhận `git diff` rỗng.
+- Rồi sửa lại từ bản gốc, **đúng một dòng**: `css/dashboard/dictation.css` → `.dictation-root .footer{…margin-top:18px…}` thành **38px**.
+- Toàn bộ thay đổi CSS của 3.5.530 / 3.5.531 / 3.5.532 bị **loại bỏ** (vẫn còn trong lịch sử git để tra).
+- File: `css/dashboard/dictation.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `git diff 3.5.529 -- css/` chỉ còn 1 dòng đổi (18 → 38). **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.529 | Arena.ai Agent sửa (tab Chép chính tả):**
+
+- Người dùng: tab Chép chính tả có "khung giữa" mang màu nền sai; đáng lẽ không thêm màu như các tab khác.
+- Nguyên nhân: `.dictation-root` **tô thêm một lớp nền** `#f5f5ff` bên trong `#dashboardDictationView` (vùng này cũng đã tô #f5f5ff) → thành 2 lớp, nhìn như một khung màu.
+- Sửa:
+  - `css/dashboard/dictation.css`: `#dashboardDictationView .dictation-root` → `background:transparent` — chỉ còn vùng tab tô nền, đúng một lớp như các tab khác.
+  - `css/dashboard/overview.css`: trả `#dashboardDictationView` về **nguyên trạng** (padding `0 24px 24px!important`, `background:#f5f5ff`) như trước 3.5.528 — đó là chỗ mình làm hỏng khi gom biến ở 528.
+- 3.5.528 (gom biến chung) vẫn giữ nhưng **bỏ phần áp vào Chép chính tả**; Tổng quan và Tài liệu vẫn dùng `var(--dash-page-*)`.
+- File: `css/dashboard/dictation.css`, `css/dashboard/overview.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: **chưa kiểm bằng ảnh** (không chạy được Chrome).
+
+**2026-11-19 | v3.5.527 | Arena.ai Agent sửa (chỉ UI tab Tài liệu — nền theme SÁNG):**
+
+- Người dùng: theme sáng nền tab Tài liệu vẫn khác các tab khác; hỏi tối đã dùng chung biến chưa.
+- Trả lời (đúng): ở 3.5.525 bản tối **chưa dùng chung biến** — khung tài liệu dùng biến riêng `--page` của chính nó, chỉ **trùng giá trị** #000 với `var(--lhn-ui-page)` của Dashboard.
+- Nguyên nhân theme sáng: vùng `#dashboardDocumentsView` để `background:transparent` → khe trên/dưới khung lộ nền `#dashboardScroller` = **#e9edf4**, trong khi các tab khác dùng **#f5f5ff**.
+- Sửa trong `css/dashboard/documents-host.css`: `#dashboardDocumentsView` → `background:#f5f5ff!important` và `html.dark …{background:var(--lhn-ui-page,#000)!important}` — đúng hai giá trị của các tab khác; khung tài liệu vẫn tô `var(--page)` (sáng #f5f5ff, tối #000) nên hai lớp khớp nhau, không còn khe lệch màu.
+- Không đổi bố cục, không đụng bộ xem tệp; nền code vẫn đúng 3.5.522 (+ các dòng 525/526).
+- File: `css/dashboard/documents-host.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: **chưa kiểm bằng ảnh** (không chạy được Chrome).
+
+**2026-11-19 | v3.5.526 | Arena.ai Agent sửa (chỉ UI tab Tài liệu):**
+
+1. **Thanh trên cùng không hiện dần khi mở tab Tài liệu.** Nguyên nhân: `restoreDashboardViewAndReveal()` loại trừ thẳng tab này — `else if (view !== "documents") resetDashboardPanelEntranceEffects(view)`. Sửa: bỏ điều kiện loại trừ → tab Tài liệu cũng chạy nhịp hiện dần; `dashboardPanelRevealTargets("documents")` trả rỗng nên **chỉ thanh trên cùng** chạy, thư viện vẫn dùng hiệu ứng riêng đã có.
+2. **Khoảng trống 2 bên khác các tab khác.** Đo trên ảnh: lề trái tab Tài liệu ≈ 44 px, còn tab Tổng quan dùng `clamp(16px,3vw,32px)` (≈32 px ở 1568 px). Sửa: `html.dash-embedded .main` → `padding:0 clamp(16px,3vw,32px) 42px`, đúng bằng tab Tổng quan.
+- Nền code vẫn đúng 3.5.522 + 1 dòng nền của 3.5.525; không đụng bộ xem tệp.
+- File: `js/dashboard/dashboard.js`, `css/dashboard/documents.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.525 | Arena.ai Agent sửa:**
+
+- Người dùng: 523 và 524 làm hỏng; **lùi về 3.5.522**, chỉ sửa nền đen của tab Tài liệu.
+- Đã lùi: `git diff 3666b87` = trống (code y nguyên 3.5.522) trước khi sửa.
+- **Số đo trên ảnh người dùng gửi** (1920×1080): vùng nội dung tab Tài liệu = **#121212**, sidebar = #0d0d0f, khe nền Dashboard = #000. `#121212` chính là màu nền canvas mặc định của chế độ tối của Chrome.
+- Nguyên nhân: khi nhúng, `html.dash-embedded, html.dash-embedded body` được đặt `background:transparent` → khung không có nền tường minh nên Chrome tự tô canvas bằng màu mặc định #121212, đè lên nền #000 của Dashboard.
+- Sửa (đúng 1 dòng, trong `css/dashboard/documents.css`): `background:transparent` → `background:var(--page,#fff)` (tối: #000, sáng: #f5f5ff) — nền khung trùng đúng biến nền của trang/Dashboard.
+- Không đổi gì khác. File: `css/dashboard/documents.css`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: **chưa kiểm bằng ảnh** (không chạy được Chrome).
+
+**2026-11-19 | v3.5.522 | Arena.ai Agent sửa:**
+
+- Người dùng: đang ở tệp → reload → bấm ← thì **mất thanh trên cùng** của Dashboard; sửa như cách đã làm trước (3.5.510).
+- Sửa trong `js/dashboard/dashboard.js`, handler `KEEPIT_DOCUMENTS_VIEWER`: khi `open !== true` thì thêm `ov-revealed` và bỏ `ov-reveal` cho `#dashboardSharedTopbar` → đóng tệp là thanh chắc chắn hiện.
+- Chỉ đụng nhánh đóng tệp; hiệu ứng hiện dần của thanh ở các tab khác giữ nguyên; nền code vẫn đúng 3.5.503.
+- File: `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.521 | Arena.ai Agent sửa:**
+
+- Người dùng: khi từ màn hình tệp bấm ← về, tab Tài liệu phải hiện hiệu ứng như lần đầu mở tab.
+- Sửa đúng một chỗ trong `js/dashboard/documents.js`: cuối `closeViewer()` (sau `await refreshLibrary()`) gọi `revealLibrary()` — dùng lại đúng hiệu ứng chung ở `css/shared/dashboard-reveal.css`.
+- Không đổi gì khác: không đụng bộ xem tệp, không đụng cách đóng tệp, nền code vẫn đúng 3.5.503.
+- File: `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.520 | Arena.ai Agent sửa:**
+
+- Người dùng: 3.5.519 "không hiện hiệu ứng gì nữa".
+- Nguyên nhân: 519 dùng **transition** và gắn/gỡ class trong cùng một nhịp (dù có ép reflow) → trình duyệt thường bỏ qua, không chạy transition. Bản 518 dùng animation nên thấy được.
+- Sửa: giữ **một định nghĩa duy nhất** ở `css/shared/dashboard-reveal.css` nhưng viết bằng `@keyframes dashboardRevealIn` với đúng số đo của Dashboard (24 px + thu 98%, 0,8 s, `.16,1,.3,1`, trễ `--ov-reveal-delay`, khối đầu 100 ms, +80 ms mỗi khối). `revealLibrary()` gỡ class → ép reflow → gắn lại.
+- An toàn: không có class thì nội dung hiện bình thường (không thể ra tab trắng); `prefers-reduced-motion` thì tắt hiệu ứng.
+- Không đổi gì ở Dashboard, bộ xem tệp; nền code vẫn đúng 3.5.503.
+- File: `css/shared/dashboard-reveal.css`, `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.519 | Arena.ai Agent sửa:**
+
+- Người dùng: hiệu ứng tab Tài liệu phải **giống hẳn** các tab khác — "dùng 1 thứ đi".
+- Cách làm: **một định nghĩa duy nhất** — `css/shared/dashboard-reveal.css` chứa đúng bộ class/số đo của Dashboard (`.dashboard-reveal` → `.dashboard-revealed`: nhích 24 px + thu 98%, 0,8 s, `.16,1,.3,1`, trễ `--ov-reveal-delay` mặc định 100 ms); `pages/documents.html` nạp file này.
+- `js/dashboard/documents.js`: `revealLibrary()` gắn `.dashboard-reveal`, gỡ `.dashboard-revealed`, rồi gắn lại với nhịp **100 ms khối đầu, +80 ms mỗi khối** — đúng nhịp các tab khác.
+- Đã bỏ bản mô phỏng cũ: `.lib-rise` + `@keyframes vin` (3.5.518) và hệ transition tự dựng (3.5.516/517).
+- Nền code vẫn đúng 3.5.503; không đụng bộ xem tệp, không đụng tab khác.
+- File: `css/shared/dashboard-reveal.css` (mới), `pages/documents.html`, `css/dashboard/documents.css`, `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.518 | Arena.ai Agent sửa:**
+
+- Người dùng chỉ đạo: lấy đúng 3.5.503 và **chỉ cần gọi hiệu ứng** cho đúng, không tự dựng thêm.
+- Sửa: bỏ hệ transition tự dựng ở 3.5.516/3.5.517; thay bằng **gọi lại `@keyframes vin`** đã có sẵn trong `css/dashboard/documents.css` (đang dùng cho bộ xem tệp/modal) qua class `.lib-rise` — mờ dần + nhích lên 8 px trong 0,55 s, nhịp 80 ms mỗi khối do JS đặt.
+- JS: `revealLibrary()` giờ chỉ gỡ rồi gắn class `.lib-rise` + đặt `animation-delay`; nếu JS không chạy thì khối vẫn hiện bình thường (an toàn hơn cách cũ).
+- Vẫn chạy mỗi lần mở tab (Dashboard gửi `KEEPIT_DOCUMENTS_REVEAL` khi khung đã hiện thật) và lúc boot.
+- Nền code vẫn đúng 3.5.503; không đụng bộ xem tệp.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check`. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.517 | Arena.ai Agent sửa:**
+
+- Người dùng: 3.5.516 "không có hiệu ứng hiện dần giống các tab khác"; bản 515 thì đúng.
+- Nguyên nhân 1: selector sai — 3 khối nằm trong `main.main` nên **không phải** con trực tiếp của `.app`; CSS `html.library-reveal .app>.row…` không khớp gì. Đã sửa cả CSS và JS thành `.main>.row`, `.main>.panel.drop`, `.main>.lib`.
+- Nguyên nhân 2: hiệu ứng chạy lúc boot, khi khung còn `opacity:0` (chưa có `documents-frame-ready`) → chạy xong trước khi người dùng thấy. Đã thêm: Dashboard gửi `KEEPIT_DOCUMENTS_REVEAL` ngay sau khi khung hiện thật (chậm 60 ms), vẫn gửi mỗi lần mở tab.
+- Nền code vẫn là 3.5.503 như người dùng chỉ định; không đụng bộ xem tệp.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 2 file JS; đã đếm lại selector. **Chưa kiểm bằng ảnh.**
+
+**2026-11-19 | v3.5.516 | Arena.ai Agent sửa:**
+
+- Người dùng chỉ đạo: **lấy đúng 3.5.503 làm nền** (một lớp: thư viện nằm trong trang tài liệu), bỏ toàn bộ 504–515, rồi **thêm hiệu ứng hiện dần khi mở tab Tài liệu như các tab khác**. Đã xác nhận qua câu hỏi trước khi làm.
+- Code nền: `git diff c09f3f9` = trống (giống hệt 3.5.503); đã xoá `js/dashboard/documents-library.js` + `css/dashboard/documents-library.css`.
+- Thêm:
+  - `css/dashboard/documents.css`: `html.library-reveal` → 3 khối lớn (`.row`, `.panel.drop`, `.lib`) ẩn + nhích lên 18 px rồi hiện dần 0,7 s; nhịp 80 ms mỗi khối; tôn trọng `prefers-reduced-motion`.
+  - `js/dashboard/documents.js`: `revealLibrary()` — chạy lúc boot và khi nhận tin `KEEPIT_DOCUMENTS_REVEAL`.
+  - `js/dashboard/dashboard.js`: mỗi lần mở tab Tài liệu gửi `KEEPIT_DOCUMENTS_REVEAL` cho khung (lần mở đầu khung còn nạp → trang tự chạy lúc boot).
+- Không đụng bộ xem tệp, không đổi đường mở/đóng tệp.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/dashboard/dashboard.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check` 2 file JS. **Chưa kiểm bằng ảnh** (không có Chromium trong phiên này).
 
 **2026-11-18 | v3.5.503 | Arena.ai Agent sửa:**
 

@@ -1,6 +1,6 @@
 /* Cute Dashboard Overview prototype. Scoped so existing Library/Settings styles remain untouched. */
 #dashboardOverviewView[hidden],#dashboardDictationView[hidden]{display:none!important}
-body.dashboard-overview-active>main#dashboardOverviewView{display:block!important;width:auto!important;max-width:none!important;min-width:0!important;height:100vh!important;min-height:0!important;flex:1 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;margin:0!important;padding:0 clamp(16px,3vw,32px) 42px!important;background:#f5f5ff;color:#252640;font-family:var(--lhn-app-font-family);}
+body.dashboard-overview-active>main#dashboardOverviewView{display:block!important;width:auto!important;max-width:none!important;min-width:0!important;height:100vh!important;min-height:0!important;flex:1 1 auto!important;overflow-x:hidden!important;overflow-y:auto!important;margin:0!important;padding:0 var(--dash-page-pad,clamp(16px,3vw,32px)) var(--dash-page-pad-bottom,42px)!important;background:var(--dash-page-bg,#f5f5ff);color:#252640;font-family:var(--lhn-app-font-family);}
 body.dashboard-sidebar-pinned.dashboard-overview-active>main#dashboardOverviewView{margin-left:0!important}
 #dashboardOverviewView .ov-content,#dashboardDictationView .ov-content{width:100%;max-width:1320px;margin:0 auto}
 #dashboardOverviewView .ov-content{padding-top:22px}
@@ -155,7 +155,7 @@ body.dashboard-sidebar-pinned>#dashboardDictationView{margin-left:0!important}
 /* Match Overview surfaces and contrast to the shared Dashboard dark palette. */
 html.dark body.dashboard-overview-active>main#dashboardOverviewView {
   color-scheme:dark!important;
-  background:var(--lhn-ui-page,#000000)!important;
+  background:var(--dash-page-bg,#000)!important;
   color:var(--lhn-ui-text,#c8c8cc)!important;
 }
 html.dark #dashboardOverviewView .ov-topbar,
@@ -577,7 +577,7 @@ body { height:100vh!important;min-height:0!important;overflow:hidden!important; 
 #dashboardScroller {
   box-sizing:border-box;display:block;width:auto;height:100vh;min-width:0;min-height:0;flex:1 1 0;
   overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;
-  background:#f5f5ff;color:#252640;scrollbar-gutter:stable;
+  background:var(--dash-page-bg,#f5f5ff);color:#252640;scrollbar-gutter:stable;
 }
 html.dark #dashboardScroller { background:var(--lhn-ui-page,#000000);color:var(--lhn-ui-text,#c8c8cc); }
 #dashboardScroller > main {
@@ -586,13 +586,17 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#000000);color:var(-
 }
 #dashboardScroller > #dashboardOverviewView {
   height:auto!important;min-height:0!important;overflow:visible!important;
-  padding:0 clamp(16px,3vw,32px) 42px!important;background:transparent!important;color:inherit;
+  padding:0 var(--dash-page-pad,clamp(16px,3vw,32px)) 20px!important;background:transparent!important;color:inherit;
 }
 #dashboardOverviewView .ov-content { padding-top:0!important; }
 #dashboardScroller > #dashboardDictationView {
   height:auto!important;min-height:0!important;overflow:visible!important;
-  padding:0 clamp(16px,3vw,32px) 34px!important;background:transparent!important;color:inherit;
+  padding:0 clamp(16px,3vw,32px) 20px!important;background:transparent!important;color:inherit;
 }
+/* v3.5.539: dòng footer chung luôn sát đáy khung, cách đáy 20px ở mọi tab */
+#dashboardDictationView .dictation-root .app{display:flex;flex-direction:column;min-height:100%}
+#dashboardDictationView .dictation-root .content{flex:1 1 auto;display:flex;flex-direction:column}
+#dashboardDictationView .dictation-root .footer{margin-top:auto;padding-top:30px}
 #dashboardScroller > #dashboardDictationView::before { display:none!important;height:0!important; }
 #dashboardScroller > #dashboardHighlightsNotesView { background:transparent!important; }
 #dashboardScroller > main[hidden] { display:none!important; }

@@ -200,7 +200,7 @@
 .dictation-root .engine-icon .icon{width:13px;height:13px}
 .dictation-root .engine-arrow{margin-left:auto;color:#a4a6b5;font-size:14px}
 .dictation-root .tiny-warning{margin-top:9px;color:#a3a3af;font-size:11px;line-height:1.45}
-.dictation-root .footer{display:flex;justify-content:space-between;gap:12px;margin-top:18px;padding:0 2px;color:#9da4b2;font-size:11px}
+.dictation-root .footer{display:flex;justify-content:space-between;gap:12px;margin-top:30px;padding:0 2px;color:#9da4b2;font-size:11px}
 .dictation-root .toast{position:fixed;z-index:10;right:22px;bottom:20px;max-width:min(380px,calc(100vw - 30px));padding:11px 14px;border:1px solid #dfdbf5;border-radius:12px;background:#fff;color:#45445e;font-size:14px;line-height:1.45;box-shadow:0 10px 30px #2c244124;opacity:0;transform:translateY(9px);pointer-events:none;transition:opacity .2s,transform .2s}
 .dictation-root .toast.show{opacity:1;transform:translateY(0)}
 @media (max-width:1050px){.dictation-root .layout{grid-template-columns:minmax(0,1.4fr) minmax(270px,.8fr)}
@@ -272,7 +272,10 @@
 .dictation-root *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 /* The dictation lives inside the dashboard tab, not a separate page. */
 #dashboardDictationView.dashboard-dictation-view{padding:0 clamp(16px,3vw,32px) 34px!important;background:#f5f5ff!important;color:#252640!important}
-#dashboardDictationView .dictation-root{box-sizing:border-box;min-height:100%;background:#f5f5ff;color:#252640}
+/* v3.5.529: trong Dashboard, .dictation-root KHÔNG tô nền riêng nữa — chỉ để vùng tab
+   (#dashboardDictationView) tô nền, đúng một lớp như các tab khác. Trước đây root tô thêm
+   một lớp #f5f5ff nên thấy như có "khung" màu khác ở giữa. */
+#dashboardDictationView .dictation-root{box-sizing:border-box;min-height:100%;background:transparent;color:#252640}
 #dashboardDictationView .dictation-root,#dashboardDictationView .dictation-root *{box-sizing:border-box}
 .dictation-root [hidden]{display:none!important}
 @media(max-width:620px){#dashboardDictationView.dashboard-dictation-view{padding:0 16px 25px!important}}

@@ -28,6 +28,7 @@
 - Đổi module/cấu trúc file/luồng tương tác giữa module → cập nhật mục 4 `PROJECT.md`.
 - UI/label: theo thiết kế hiện có; nhãn mới ngắn gọn, phù hợp UI/UX, dịch đủ mọi ngôn ngữ app hỗ trợ.
 - Quy tắc code (tìm file, cây thư mục, nhãn i18n, màu theme, không khối vá, không `legacy`, cách tách file): `docs/code-rules.md`.
+- Làm sai thì quay về bản gốc trước lần sửa sai rồi sửa lại từ đó — không vá chồng lên bản sai, không chỉ xoá dòng sai.
 - Demo: cùng tên gốc thì tăng hậu tố version (`-demo-v14.html` → `-demo-v15.html`), không ghi đè hay tái dùng tên đã giao; chỉ giữ bản mới nhất, xoá bản trước.
 
 **3.2. Cách thức trả lời trên khung chat**

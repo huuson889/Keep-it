@@ -14,6 +14,14 @@ button,input{font-family:inherit}
 .nb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
 .bbar.tight .nb{letter-spacing:-.2px}
 .nb .lb{max-width:calc(100% + 14px);margin:0 -7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v3.5.542: Keepit home + Dashboard — thanh mang tên tab đầy đủ (Trang chủ, Tổng quan, Ghi chú, Tài liệu):
+   một dòng mỗi nhãn, không cắt, không chồng lên nhau */
+.screen.ext .bin{gap:0;padding:0 2px}
+.screen.ext .nb{padding:3px 0}
+.screen.ext .nb .lb{max-width:100%;margin:0;font-size:10px;letter-spacing:-.45px}
+.screen.ext .bbar.tight .nb .lb{font-size:9px;letter-spacing:-.5px}
+@media (max-width:379.98px){.screen.ext .nb .lb{font-size:9px;letter-spacing:-.5px}.screen.ext .bbar.tight .nb .lb{font-size:8.5px;letter-spacing:-.55px}}
+@media (max-width:339.98px){.screen.ext .nb .lb,.screen.ext .bbar.tight .nb .lb{max-width:100%;margin:0;font-size:8.5px;letter-spacing:-.4px;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05}}
 .nb:active .ico{background:rgba(148,163,184,.2);transform:scale(.94)}
 .desk .nb:hover .ico{background:rgba(148,163,184,.16)}
 .sbtn{position:relative;flex:none;width:52px;height:52px;margin:0 4px;border:0;color:#fff;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s,filter .12s}

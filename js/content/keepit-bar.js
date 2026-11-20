@@ -10,7 +10,10 @@
   // v3.5.180: also on the Keepit home page (pages/home.html, js/home/home-ui.js), where page commands wait for a web page
   const DOCUMENTS_HOST = !!document.documentElement?.hasAttribute("data-keepit-documents");
   const HOMEPAGE = /^(chrome|moz)-extension:$/.test(location.protocol) && /\/pages\/home\.html$/.test(location.pathname);
-  if (!document.documentElement || (window.top !== window && !DOCUMENTS_HOST) || (!HOMEPAGE && !DOCUMENTS_HOST && !/^https?:$/.test(location.protocol))) return;
+  // v3.5.542: thanh Keepit cũng là lối vào nhanh các tab của Dashboard
+  const DASHBOARD = /^(chrome|moz)-extension:$/.test(location.protocol) && /\/pages\/dashboard\.html$/.test(location.pathname);
+  const EXT = HOMEPAGE || DASHBOARD;
+  if (!document.documentElement || (window.top !== window && !DOCUMENTS_HOST) || (!HOMEPAGE && !DASHBOARD && !DOCUMENTS_HOST && !/^https?:$/.test(location.protocol))) return;
   // v3.5.221: Keepit's own bars, sheets and panels keep their size at every page zoom (Cỡ chữ trang, Ctrl +/-), like the
   // browser's own toolbar: <html> gets --keepit-uiz = 1 / zoom and the bar host, the Reader bar/sheets and the notes sidebar use
   // CSS zoom:var(--keepit-uiz). Inside them lengths are "UI px" = page px × zoom (innerWidth, clientX, getBoundingClientRect
@@ -119,7 +122,9 @@
 };
   const LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="kpLogoBar" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpLogoBar)" stroke="none"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg>'; // icon-v5 (assets/icons/icon.svg)
   const LEAF = '<svg viewBox="0 0 32 32" aria-hidden="true"><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg>';
-  const ic = n => n === "logo" ? LOGO : n === "leaf" ? LEAF : `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`;
+  // v3.5.542: icon tab Dashboard = nguồn chung js/shared/icons.js (menu trái dashboard cũng đọc từ đó)
+  const sharedIcon = n => /^nav-/.test(n) ? globalThis.LHN_ICONS?.render(n) : "";
+  const ic = n => n === "logo" ? LOGO : n === "leaf" ? LEAF : (sharedIcon(n) || `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`);
   const FLAG = {
   en:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#fff"/><g fill="#b22234">' + [0, 2, 4, 6, 8, 10, 12].map(i => `<rect y="${(i * 20 / 13).toFixed(2)}" width="30" height="1.54"/>`).join("") + '</g><rect width="12" height="10.77" fill="#3c3b6e"/><g fill="#fff">' + [[2, 2], [5, 2], [8, 2], [3.5, 4.5], [6.5, 4.5], [9.5, 4.5], [2, 7], [5, 7], [8, 7], [3.5, 9], [6.5, 9]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".6"/>`).join("") + '</g></svg>',
   vi:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#da251d"/><path fill="#ff0" d="M15 4.4L16.26 8.27H20.33L17.04 10.66L18.29 14.53L15 12.14L11.71 14.53L12.96 10.66L9.67 8.27H13.74Z"/></svg>',
@@ -250,8 +255,8 @@
   }
 
   // ---------- bar ----------
-  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more", shorts:"shorts", subs:"subs", you:"you", fav:"fav", wc:"wc", wcblock:"wcBlock" };
-  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu", shorts:"shorts", subs:"subs", you:"user", fav:"heart", wc:"wc", wcblock:"wcpara" };
+  const LABEL = { home:"home", page:"page", block:"block", reader:"reader", overlay:"overlay", dictation:"dictation", notes:"notes", ai:"ai", more:"more", dashOverview:"ovTab", dashDictation:"cap", dashNotes:"notesTab", dashDocs:"docsTab", dashFlash:"flashcards", dashTrash:"trash", shorts:"shorts", subs:"subs", you:"you", fav:"fav", wc:"wc", wcblock:"wcBlock" };
+  const ICON = { home:"home", page:"lang", block:"para", reader:"read", overlay:"overlay", dictation:"cap", notes:"npen", ai:"sparkles", more:"menu", dashOverview:"nav-overview", dashDictation:"nav-dictation", dashNotes:"nav-notes", dashDocs:"nav-docs", dashFlash:"nav-flashcards", dashTrash:"nav-trash", shorts:"shorts", subs:"subs", you:"user", fav:"heart", wc:"wc", wcblock:"wcpara" };
   const SHORT = { page:"sPage", overlay:"sOverlay", dictation:"sDictation", subs:"sSubs" };
   const tipFor = id => ({
     home:t("homeTip"), page:`${t("page")} (Alt+A)`, block:`${t("block")} (Alt+D)`, reader:`${t("reader")} (Alt+R)`,
@@ -263,15 +268,17 @@
   // Trang chủ luôn là trang chủ Keepit. Shorts / Kênh đăng ký / Bạn = đường dẫn tới trang của YouTube (không ẩn thanh của YouTube).
   // Yêu thích = Bảng quản lý → Highlights & Notes → Yêu thích. Công cụ không có trên thanh nằm trong ☰ (hiddenTools).
   const isYouTube = () => /^(www\.|m\.)?youtube\.com$/.test(location.hostname);
-  const pageKind = () => isVideoPage() ? "watch" : isYouTube() ? "yt" : "web";
+  const pageKind = () => EXT ? "ext" : isVideoPage() ? "watch" : isYouTube() ? "yt" : "web";
   const YT_NAV = { shorts:"/shorts", subs:"/feed/subscriptions", you:"/feed/you" };
   const ytOn = id => !!YT_NAV[id] && isYouTube() && location.pathname.startsWith(YT_NAV[id]);
   const BARS = {
     web:[[["home", "page", "reader"], ["dictation", "ai", "more"]], [["home", "page"], ["dictation", "more"]]],
     yt:[[["home", "shorts", "fav"], ["subs", "you", "more"]], [["home", "shorts"], ["you", "more"]]],
-    watch:[[["home", "shorts", "overlay"], ["dictation", "you", "more"]], [["home", "overlay"], ["dictation", "more"]]]
+    watch:[[["home", "shorts", "overlay"], ["dictation", "you", "more"]], [["home", "overlay"], ["dictation", "more"]]],
+    // v3.5.542: Keepit home + Dashboard — Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · More
+    ext:[[["home", "dashOverview", "dashDictation"], ["dashNotes", "dashDocs", "more"]], [["home", "dashOverview", "dashDictation"], ["dashNotes", "dashDocs", "more"]]]
   };
-  const TOOLS = { web:["page", "reader", "overlay", "dictation", "notes", "ai", "block", "wc", "wcblock", "wclegend"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
+  const TOOLS = { ext:["page", "reader", "overlay", "dictation", "notes", "ai", "block", "wc", "wcblock", "wclegend"], web:["page", "reader", "overlay", "dictation", "notes", "ai", "block", "wc", "wcblock", "wclegend"], yt:["overlay", "dictation", "page", "reader", "notes", "ai", "block"], watch:["overlay", "dictation", "page", "reader", "notes", "ai", "block"] };
   // Settings → Notes / Translate / Ask AI off = that tool is gone from the bar and ☰ (Translate = page + paragraph translation);
   // its place on the bar goes to the first ☰ tool (TOOLS order) that is on and not on the bar yet, so each side keeps its buttons
   const TOOL_FEATURE = { page:"translateEnabled", block:"translateEnabled", ai:"askAIEnabled", notes:"notesEnabled", wc:"wordClassEnabled", wcblock:"wordClassEnabled", wclegend:"wordClassEnabled" };
@@ -287,6 +294,7 @@
     const screen = $("screen");
     screen.classList.toggle("wide", isWide()); screen.classList.toggle("desk", isDesk()); screen.classList.toggle("pland", isPland()); screen.classList.toggle("tabp", isTouch() && !isWide() && !isPland() && !isSmall());
     screen.classList.toggle("apk", isApk()); screen.classList.toggle("dark", isDark());
+    screen.classList.toggle("ext", EXT);
     const [L, R] = navLayout(), sheetOpen = $("sheet").classList.contains("open");
     const b = id => `<button class="nb${(id === "home" && onHome()) || (id === "notes" && S.notesOn) || (id === "page" && pageTranslated()) || (id === "wc" && wcOn()) || (id === "more" && sheetOpen) || ytOn(id) ? " on" : ""}" type="button" data-nav="${id}" aria-label="${esc(t(LABEL[id]))}"${isDesk() ? ` data-tip="${esc(tipFor(id))}"` : ""}><span class="ico">${ic(ICON[id])}</span><span class="lb">${esc(((isSmall() || isWide()) && SHORT[id]) ? t(SHORT[id]) : t(LABEL[id]))}</span></button>`;
     $("bin").innerHTML = L.map(b).join("") + `<button class="sbtn" type="button" data-nav="search" aria-label="${esc(t("search"))}"${isDesk() ? ` data-tip="${esc(tipFor("search"))}"` : ""}>${ic("search")}</button>` + R.map(b).join("");
@@ -472,6 +480,24 @@
       setTimeout(() => { off(); if (!started && location.pathname === from) location.assign(path); }, 3000);
     });
   }
+  // v3.5.542: các tab Dashboard. Ở dashboard thì bấm thẳng link trong menu trái (chuyển tại chỗ, code của tab tự chạy);
+  // từ trang chủ thì ghi nhớ tab rồi mở dashboard đúng tab đó.
+  const DASH_TARGET = { dashOverview:"overview", dashDictation:"dictation", dashNotes:"highlights-notes", dashDocs:"documents", dashTrash:"trash", dashFlash:"!" };
+  function goDash(id) {
+    closeSheet();
+    const target = DASH_TARGET[id]; if (!target) return;
+    if (DASHBOARD) {
+      const el = document.querySelector(target === "!" ? '[data-dashboard-action="flashcards"]' : `[data-dashboard-view="${target}"]`);
+      if (el) { el.click(); return; }
+    }
+    try {
+      sessionStorage.setItem("keepitDashboardActiveViewV1", target === "!" ? "overview" : target);
+      if (target === "!") sessionStorage.setItem("keepitDashboardQuick", "flashcards");
+    } catch { /* session storage may be unavailable */ }
+    if (DASHBOARD) { location.reload(); return; }
+    const url = (globalThis.browser?.runtime || globalThis.chrome?.runtime)?.getURL?.("pages/dashboard.html");
+    if (url) location.assign(url);
+  }
   function doNav(id, b) {
     if (id === "search") return openSearch();
     if (id === "more") return $("sheet").classList.contains("open") ? closeSheet() : openSheet();
@@ -479,8 +505,9 @@
     if (id === "home") { closeSheet(); send("OPEN_HOME").then(r => { if (!r?.ok) toast(t("homeFailed")); }); return; }
     if (YT_NAV[id]) { closeSheet(); ytGo(YT_NAV[id]); return; }
     if (id === "fav") { closeSheet(); send("OPEN_DASHBOARD_FAVORITES"); return; }
+    if (DASH_TARGET[id]) return goDash(id);
     if (!toolOn(id)) return;
-    if (onHome() && id !== "notes" && id !== "ai") return toast(t("brNeed"));
+    if ((onHome() || DASHBOARD) && id !== "notes" && id !== "ai") return toast(t("brNeed"));
     if (id === "page") return togglePage();
     if (id === "block") { if (offlineBlock(() => doNav("block"))) return; setPicking(true); toast(t("pickHint")); return; }
     if (id === "wc") { void globalThis.LHN_WORD_CLASS?.togglePage(); return; }   // confirm / progress / toasts: js/word-class/page.js
@@ -661,7 +688,7 @@
   const colorHex = k => globalThis.LHN_CONFIG?.HIGHLIGHT_COLORS?.[k] || DEMO_COLORS[k];
   const curColor = () => globalThis.LHN_CONFIG?.normalizeColor?.(settings.defaultHighlightColor) || settings.defaultHighlightColor || "yellow";
   const KEYS = () => ({ overlay:shortcut("dualSubtitlesShortcut", "Alt+E"), ai:"Alt+X", dictation:shortcut("dictationShortcut", "Alt+F"), reader:"Alt+R", site:shortcut("toggleWebsiteShortcut", "Alt+Z"), wc:"Alt+G", wcblock:"Alt+J" });
-  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"], wclegend:["wclegend", "wcLegend"] };
+  const NAVTILE = { overlay:["overlay", "overlay"], ai:["sparkles", "ai"], dictation:["cap", "dictation"], reader:["read", "reader"], page:["lang", "page"], block:["para", "block"], notes:["npen", "notes"], wc:["wc", "wc"], wcblock:["wcpara", "wcBlock"], wclegend:["wclegend", "wcLegend"], dashFlash:["nav-flashcards", "flashcards"], dashTrash:["nav-trash", "trash"] };
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassOn?.() : wcOn())) || (id === "wclegend" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassLegendOn?.() : !!globalThis.LHN_WORD_CLASS?.legendShown?.())), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
@@ -735,7 +762,7 @@
   <div class="sbody">
     <div class="langrow"><label for="lsearch">${esc(t("language"))}</label><div class="lwrap"><span class="lflag">${FLAG[cur.code] || ""}</span><input id="lsearch" role="combobox" aria-expanded="false" aria-controls="lopts" autocomplete="off" placeholder="${esc(t("langSearch"))}" value="${esc(cur.native)}"><svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg><span class="lname">${esc(cur.name)}</span><div class="lopts" id="lopts" role="listbox"></div></div></div>
     <div class="divider"></div>
-    <div class="sec">${esc(t("tools"))}</div><div class="quick">${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
+    <div class="sec">${esc(t("tools"))}</div><div class="quick">${EXT ? navTile("dashFlash") + navTile("dashTrash") : ""}${S.documentsSheet ? "" : tile("dashboard", "dashboard", t("dashboard"))}${hiddenTools()}${tile("restore", "rotate", t("restore"), false, t("restoreTip"))}${isDesk() ? tile("keys", "keyboard", t("keys"), false, t("keysTip")) : tile("keys", "hand", t("gestures"), false, t("gesturesTip"))}${narrow ? tile("compact", "minimize", t("compact"), isFive(), compactTip) : ""}</div>
     <div class="divider"></div>
     <div class="sec">${esc(t("onSelect"))}</div><div class="quick">${TOG.map(([k, i, l, full]) => tile("t:" + k, i, t(l), togValue(k), t(full))).join("")}</div>
     ${readerRowHTML()}
@@ -843,7 +870,7 @@
     const l = e.target.closest("[data-lang]");
     if (l) { await saveSettings({ language:l.dataset.lang }); renderBar(); $("bin").querySelector('[data-nav="more"]')?.classList.add("on"); renderSheet(); anchorPanel(); toast(t("langSet") + l.querySelector(".ln").textContent); return; }
     const b = e.target.closest("[data-q]"); if (!b) return;
-    const a = b.dataset.q, home0 = onHome();
+    const a = b.dataset.q, home0 = onHome() || DASHBOARD;
     if (a === "keys" || a === "back") { S.sheetPane = a === "keys" ? "keys" : "main"; renderSheet(); anchorPanel(); return; }
     if (a === "zoom" && !AUI()) { S.sheetPane = "zoom"; renderSheet(); anchorPanel(); void readZoom(); return; }
     if (a === "zreset") { setZoom(100); zoomPaneSync(); return; }
@@ -1416,6 +1443,7 @@
     if (!host) build();
     document.documentElement.appendChild(host);
     mounted = true; resolveMounted?.(true); lastLayout = ""; relayout(true); syncState();
+    if (DASHBOARD) document.documentElement.classList.add("keepit-bar-on");
     const passive = { capture:true, passive:true };
     document.addEventListener("scroll", onScroll, passive);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshTabs(); });

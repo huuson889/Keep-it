@@ -7,6 +7,22 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-17 | Thanh Keepit trên Home + Dashboard (bản chốt v4)
+
+**Trạng thái:** Thiết kế đã chốt; làm ở v3.5.542.
+
+- **Nguyên tắc:** thanh giống hoàn toàn thanh Keepit hiện tại (hình thức, vị trí nổi ở đáy, bo góc, cỡ chữ, cách thu chữ, More, mọi hành vi) — chỉ khác danh sách nút. Vẫn 6 nút + 1 nút Tìm kiếm ở giữa.
+- **Phạm vi:** chỉ `pages/home.html` và `pages/dashboard.html`; trang web thật giữ nguyên hoàn toàn.
+- **Các nút:** Trang chủ (icon nhà sẵn có) · Tổng quan (`nav-overview`) · Chép (`nav-dictation`, mở **tab Chép chính tả**) | Tìm kiếm | Ghi chú (`nav-notes`) · Tài liệu (`nav-docs`) · Thêm (icon 3 gạch sẵn có).
+- **Chuyển tab:** đang ở dashboard thì chuyển tại chỗ; đang ở home thì mở dashboard đúng tab đó.
+- **Nguồn icon dùng chung:** `js/shared/icons.js` (`LHN_ICONS`) — 6 icon khai báo một lần (`nav-overview`, `nav-dictation`, `nav-notes`, `nav-docs`, `nav-flashcards`, `nav-trash`); menu trái dashboard và thanh Keepit cùng đọc từ đó, đổi một lần là cả hai đổi theo. Không copy SVG, không vẽ icon mới.
+- **More:** giữ nguyên y như hiện tại, không đổi nhãn, không bỏ mục nào; thêm Flashcards (`nav-flashcards`) và Thùng rác (`nav-trash`) ở **đầu nhóm "Công cụ"**; More hiện đủ 10 công cụ như trên web (Dịch trang · Trình đọc · Phụ đề · Chép chính tả · Ghi chú · Hỏi AI · Bôi đen khối · Loại từ cả trang · Loại từ đoạn · Chú thích).
+- **Màn hình:** desktop/tablet/điện thoại giữ nguyên thanh hiện tại; điện thoại có chữ, tự thu chữ, không cắt chữ; dashboard trên điện thoại thì thanh Keepit đứng thay menu đáy.
+- **Không đụng:** trang web thật, dòng footer, màu nền/kính sáng tối, menu trái dashboard trên desktop/tablet (chỉ đổi nguồn icon, hình thức menu giữ nguyên).
+- **Phương án đã loại:** (1) Chép = công cụ chép trên trang web — sai, Chép là tab của dashboard; (2) để danh sách công cụ của 2 trang rỗng — làm mất 9 mục trong More; (3) copy SVG icon từ dashboard sang thanh — sinh hai bản sao lệch nhau.
+
+---
+
 ## 2026-11-17 | PDF prompt và thẻ toolbar
 
 **Trạng thái:** Thiết kế đã chốt.

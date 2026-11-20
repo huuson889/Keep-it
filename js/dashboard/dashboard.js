@@ -580,6 +580,7 @@ function renderProfileMenu() {
     if (!demoProfile) accountHost.innerHTML = `<button id="profileMenuSignIn" class="profile-menu-item profile-menu-sign-in" type="button"><span class="profile-menu-item-label"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg><span>${escapeHtml(t("profileLogin"))}</span></span></button>`;
   }
   if (signOutButton) signOutButton.hidden = !demoProfile;
+  renderOverviewGreeting();
 
 }
 // lỗi từng ô: viền đỏ cho ô sai + aria-invalid + aria-describedby (như app hiện đại)
@@ -1284,12 +1285,20 @@ async function renderDictationErrorSummary() {
   }
 }
 
+/* v3.5.540: lời chào ở Tổng quan lấy tên tài khoản, chưa đăng nhập thì giữ câu mặc định */
+function renderOverviewGreeting() {
+  const el = $("overviewGreeting");
+  if (!el) return;
+  const name = demoProfile ? String(profileDisplayName(demoProfile) || "").trim() : "";
+  el.textContent = name ? t("ovGreetingName", { name }) : t("ovGreeting");
+}
 function applyTranslations() {
   document.documentElement.lang = currentLang;
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
   document.querySelectorAll("[data-i18n-placeholder]").forEach(el => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   document.querySelectorAll("[data-i18n-title]").forEach(el => { el.title = t(el.dataset.i18nTitle); });
   document.querySelectorAll("[data-i18n-aria-label]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel)); });
+  renderOverviewGreeting();
   // tiêu đề popup đăng nhập đổi theo chế độ đang mở (data-i18n chỉ biết "Đăng nhập")
   if ($("profileAuthTitle")) $("profileAuthTitle").textContent = t(profileAuthMode === "register" ? "profileRegister" : "profileLogin");
   populateStudyLanguageSelects();
@@ -3523,7 +3532,7 @@ function savedDashboardView() {
   try {
     const saved = sessionStorage.getItem(DASHBOARD_ACTIVE_VIEW_KEY);
     const migrated = saved === "listening" ? "dictation" : saved;
-    return ["overview", "dictation", "highlights-notes", "documents"].includes(migrated) ? migrated : "overview";
+    return ["overview", "dictation", "highlights-notes", "documents", "trash"].includes(migrated) ? migrated : "overview";
   } catch { return "overview"; }
 }
 let dashboardViewSwitchCycle = 0, dashboardRestoreCycle = 0;
@@ -3549,7 +3558,9 @@ function restoreDashboardViewAndReveal(view, switchCycle) {
       dashboardScrollRestoring = false;
       if (!overviewInitialDataReady) return;
       if (view === "overview") resetOverviewEntranceEffects();
-      else if (view !== "documents") resetDashboardPanelEntranceEffects(view);
+      /* v3.5.526: tab Tài liệu cũng chạy nhịp hiện dần cho thanh trên cùng như các tab khác.
+         `dashboardPanelRevealTargets("documents")` trả rỗng nên chỉ thanh trên cùng được chạy. */
+      else resetDashboardPanelEntranceEffects(view);
     });
   });
 }
@@ -3585,6 +3596,9 @@ function setDashboardView(view) {
       dashboardDocumentsFrame.src = dashboardDocumentsFrame.dataset.src;
     }
     watchDashboardDocumentsFrameAtParse();
+    /* v3.5.516: mỗi lần mở tab Tài liệu thì báo trang tài liệu chạy lại hiệu ứng hiện dần.
+       Lần mở đầu tiên khung còn đang nạp nên tin nhắn không tới — trang tự chạy hiệu ứng lúc boot. */
+    try { dashboardDocumentsFrame.contentWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_REVEAL" }, location.origin); } catch { /* frame chưa sẵn sàng */ }
     /* v3.5.431: thư viện Tài liệu do Dashboard vẽ (dùng chung thẻ/toast/token với các tab khác). */
     window.setTimeout(() => window.KeepitDocumentsLibrary?.mount?.(), 0);
     window.setTimeout(() => { if (readDashboardScrollPosition("documents") > 0) scheduleDashboardScrollRestore("documents"); }, 0);
@@ -3611,6 +3625,10 @@ function setDashboardView(view) {
     if (active) link.setAttribute("aria-current", "page"); else link.removeAttribute("aria-current");
   });
 }
+// v3.5.542: icon menu trái lấy từ nguồn chung js/shared/icons.js (nạp trước responsive-nav.js)
+globalThis.LHN_ICONS?.applyIcons?.();
+// v3.5.542: thanh Keepit (js/content/keepit-bar.js) mở tab qua đây
+globalThis.LHN_DASHBOARD_VIEW = setDashboardView;
 dashboardSidebar.querySelectorAll("[data-dashboard-view]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setDashboardView(link.dataset.dashboardView); }));
 document.querySelector('[data-dashboard-action="highlights-notes"]')?.addEventListener("click", event => { event.preventDefault(); setDashboardView("highlights-notes"); });
 dashboardSidebar.querySelector('[data-dashboard-action="flashcards"]')?.addEventListener("click", event => {
@@ -3638,6 +3656,13 @@ window.addEventListener("message", event => {
   if(event.data?.type!=="KEEPIT_DOCUMENTS_VIEWER")return;
   document.body.classList.toggle("documents-viewer-open", activeDashboardView === "documents" && event.data.open === true);
   window.clearTimeout(dashboardViewerReadyTimer); document.body.classList.remove("documents-viewer-ready");
+  /* v3.5.522: đóng tệp thì bảo đảm thanh trên cùng đã hiện (sửa đúng như 3.5.510). Nếu nhịp "hiện dần"
+     bị khung tệp phủ mất — hay gặp khi vừa reload — thì thanh kẹt ở class ov-reveal = ẩn, nên bấm ←
+     xong thanh trên cùng biến mất. */
+  if (event.data.open !== true && dashboardSharedTopbar) {
+    dashboardSharedTopbar.classList.add("ov-revealed");
+    dashboardSharedTopbar.classList.remove("ov-reveal");
+  }
   if(event.data.open === true) dashboardViewerReadyTimer = window.setTimeout(() => { if (dashboardDocumentsViewerOpen()) document.body.classList.add("documents-viewer-ready"); }, 10000);
   dashboardDocumentsFrameHeight = 0;
   window.setTimeout(resizeDashboardDocumentsFrame, 60);
@@ -3674,6 +3699,13 @@ function syncDashboardDocumentsTheme() {
   doc.documentElement.classList.toggle("dark", document.documentElement.classList.contains("dark"));
   resizeDashboardDocumentsFrame();
   document.body.classList.add("documents-frame-ready");
+  /* v3.5.517: khung đã hiện thật thì mới chạy hiệu ứng hiện dần — chạy lúc boot thì khung còn trong suốt,
+     người dùng không thấy gì. */
+  if (activeDashboardView === "documents") {
+    window.setTimeout(() => {
+      try { dashboardDocumentsFrame.contentWindow?.postMessage({ type:"KEEPIT_DOCUMENTS_REVEAL" }, location.origin); } catch { /* khung chưa sẵn sàng */ }
+    }, 60);
+  }
 }
 function watchDashboardDocumentsFrame() {
   syncDashboardDocumentsTheme();
@@ -3710,6 +3742,8 @@ function syncDashboardDocumentsViewport() {
 dashboardScroller?.addEventListener("scroll", syncDashboardDocumentsViewport, { passive:true });
 
 const dashboardParams=new URL(location.href).searchParams,requestedDocument=dashboardParams.get("document"),requestedView=dashboardParams.get("view"),requestedPdf=dashboardParams.get("openPdf"),requestedPdfHelp=dashboardParams.get("pdfHelp");
+// v3.5.542: Flashcards bấm từ thanh Keepit ở trang chủ = cờ một lần
+try { if (sessionStorage.getItem("keepitDashboardQuick") === "flashcards") { sessionStorage.removeItem("keepitDashboardQuick"); setTimeout(() => document.querySelector('[data-dashboard-action="flashcards"]')?.click(), 600); } } catch { /* session storage may be unavailable */ }
 if(/^[a-zA-Z0-9-]{16,80}$/.test(requestedDocument||"")){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("document",requestedDocument);const annotation=dashboardParams.get("highlight");if(annotation)uri.searchParams.set("highlight",annotation);dashboardDocumentsFrame.dataset.src=uri.href;setDashboardView("documents");}else if(requestedView==="documents"&&requestedPdf){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("openPdf",requestedPdf);if(requestedPdfHelp)uri.searchParams.set("pdfHelp",requestedPdfHelp);dashboardDocumentsFrame.dataset.src=uri.href;const address=new URL(location.href);address.searchParams.delete("view");address.searchParams.delete("openPdf");address.searchParams.delete("pdfHelp");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else if(requestedView==="documents"){const address=new URL(location.href);address.searchParams.delete("view");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else setDashboardView(savedDashboardView());
 $("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
 $("profileMenu").addEventListener("click", async event => {
