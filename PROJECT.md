@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.550** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.552** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -158,6 +158,43 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.552 | Arena.ai Agent sửa (nguyên nhân thật: sự kiện cuộn đầu tiên bị coi là dy=0):**
+
+- Người dùng báo: web ẩn/hiện bình thường, dashboard **không** ẩn; và **không còn popup "Đã hiểu"** ở dashboard → giả thuyết popup ở 3.5.551 không phải nguyên nhân của họ.
+- Tìm bằng bộ đếm gắn trong `onScroll`/`barBack` (bản debug ở `/tmp/dbg551`, không đưa vào repo). Trace khi lăn nhanh 2 phát 400px: chỉ **một** sự kiện cuộn `[scroll, dy=0, y=397]` → `dockAcc` không tăng → **không ẩn**.
+- Nguyên nhân: `onScroll` lấy mốc `lastTop` ở sự kiện cuộn **đầu tiên** của mỗi vùng cuộn nên sự kiện đó luôn có `dy = 0`. Trang web dài → còn nhiều sự kiện sau → ẩn bình thường. Dashboard ngắn (chỉ cuộn được **397px** ở 1568×900, **217px** ở 1920×1080) → lăn một phát là tới đáy, chỉ có đúng một sự kiện `dy=0` → thanh không bao giờ ẩn. Đây là lý do "web ẩn được, dashboard không".
+- Sửa (`js/content/keepit-bar.js`), base `5caf4c5` (3.5.551):
+  1. `primeTop()`: lấy mốc cuộn sẵn cho `scrollingElement`, `#dashboardScroller`, `#stage` ngay khi gắn, mỗi lần `relayout()` và mỗi lần `barBack()` → sự kiện cuộn đầu tiên của người dùng đã có `dy` thật.
+  2. `noteUserWheel()` trên `wheel` (capture): người dùng thật đang lăn thì bỏ chặn `showHold` (hold chỉ để chặn cuộn do trang tự khôi phục sau khi đóng overlay).
+- Đo lại (extension thật, 3 cỡ cửa sổ × 3 kiểu lăn):
+  - 1568×900 / 1920×1080 / 1254×720 (dpr 1,25): lăn nhanh 2 phát, **một phát 800px tới đáy**, lăn chậm 4 phát → **ẩn hết** (`translate 0 78px`, `shid=true`), vẫn ẩn sau 0,9 s; lăn lên → hiện.
+  - Web example.com: một phát 800px → ẩn; lăn lên → hiện (không đổi).
+  - Giữ nguyên từ 3.5.551: con trỏ đứng ở dải đáy vẫn ẩn (PageDown 4 lần), rê chuột trong dải đáy mới hiện; popup giới thiệu mở vẫn cuộn được và ẩn; cờ mở tệp → thanh `display:none`.
+  - `pageerror` + `console.error` = 0.
+- Harness: `qa/t552.py`, `qa/sweep551.py`, `qa/dbg1.py`.
+- Không tạo CRX.
+
+**2026-11-17 | v3.5.551 | Arena.ai Agent sửa (thanh Keepit ở dashboard — cuộn phải ẩn như web + ẩn hẳn khi mở tệp):**
+
+- Lệnh: dashboard cuộn xuống phải tự ẩn thanh **giống hoàn toàn trên web** (home bỏ, giữ nguyên); và chỉ ở dashboard: đang ở màn xem tệp trong tab Tài liệu thì ẩn hoàn toàn thanh.
+- Nguyên nhân đo được (3.5.550):
+  1. Popup giới thiệu "Đã hiểu" còn mở → lớp phủ `#iscrim` ăn con lăn; trên web `html` là vùng cuộn nên trang vẫn cuộn, còn dashboard cuộn trong `#dashboardScroller` với `body{overflow:hidden}` nên **trang không cuộn được** (đo: lăn 4 lần, `scrollTop` = 0) → thanh không có gì để ẩn.
+  2. Con trỏ đang đứng sẵn ở dải đáy 10px khi thanh vừa ẩn → dải `#hzone` hiện ra ngay dưới con trỏ, 300 ms sau nó tự cho thanh "peek" trượt lên → thanh bật lại và đứng hiện (đo: ẩn → 0,9 s sau `shid=false`).
+- Sửa (`js/content/keepit-bar.js`, `js/content/keepit-bar-css.js`), base `8f2b647` (3.5.550), +48/−5:
+  1. `wireScrimWheel()` + `extScroller()`: khi ở trang extension và có lớp phủ (`iscrim`/`scrim`/`scrim2`), con lăn được chuyển xuống đúng vùng cuộn thật (`#dashboardScroller` hoặc `scrollingElement`) → trang cuộn, thanh ẩn như web.
+  2. `wireBar.noteHide()` + `stripIdle`: thanh ẩn khi con trỏ đang ở dải đáy thì **không tự bật lại**; chỉ hiện khi con trỏ **thực sự di chuyển ≥3 px** trong dải (giữ nguyên tính năng rê chuột để hiện).
+  3. `syncExtDocs()` + CSS `.screen.extdocs …{display:none}`: dashboard đang mở tệp (`body.documents-viewer-open`) → ẩn hoàn toàn thanh, vạch tím, nút về đầu trang; theo dõi bằng MutationObserver trên class của `body` + ticker 700 ms. Đóng tệp → thanh trở lại.
+- Đo lại trên extension thật (1568×900, vi, sáng):
+  - Popup giới thiệu đang mở, lăn chuột 4 lần: `scrollTop` 0 → **397**, thanh **ẩn** (`translate 0 78px`, `shid=true`, vạch tím hiện).
+  - Con trỏ đứng ở dải đáy, PageDown 4 lần: thanh ẩn và **vẫn ẩn sau 1,2 s** (trước 3.5.551: tự bật lại).
+  - Rê chuột trong dải đáy: thanh hiện lại (giữ tính năng cũ). Lăn lên: thanh hiện.
+  - Bật cờ mở tệp: thanh `display:none`, `extdocs=true`; tắt cờ: thanh hiện, `extdocs=false` (không cần reload).
+  - Trang web thật (example.com): cuộn xuống → thanh ẩn (`shid=true`), cuộn lên → hiện; **không đổi hành vi cũ**.
+  - `pageerror` + `console.error` = 0.
+- Chưa kiểm được: tệp thật trong tab Tài liệu (thư viện trống, mới kiểm bằng cách bật/tắt đúng cờ `documents-viewer-open` mà `dashboard.js` gắn); trang cloudflare của người dùng không mở được từ sandbox (fetch thất bại).
+- Ảnh: `qa/shots/551-1-intro-open.png`, `551-2-strip-idle.png`, `551-2-crop.png`, `551-3-docs-open.png`. Harness: `qa/t551.py`, `qa/t551b.py`.
+- Không tạo CRX (sandbox không có khoá ký).
 
 **2026-11-17 | v3.5.550 | Arena.ai Agent sửa (thanh Keepit — LÀM LẠI TỪ ĐÚNG 3.5.546, cỡ nhãn theo cách 3.5.545, dùng chung một thanh):**
 

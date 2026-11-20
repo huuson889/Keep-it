@@ -422,6 +422,8 @@ button,input{font-family:inherit}
 .screen.dark .bbar.peek{box-shadow:0 14px 36px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06)}
 .screen.hidden .hzone i,.screen.shid .hzone i{background:rgba(139,92,246,.85)}
 .screen.shid:not(.siteoff,.extyield) .hzone{display:block}
+/* v3.5.551: dashboard — đang mở tệp trong tab Tài liệu thì ẩn hoàn toàn thanh, vạch tím và nút về đầu trang */
+.screen.extdocs .bbar,.screen.extdocs .hzone,.screen.extdocs .btop{display:none!important}
 .hzone{touch-action:none}
 .desk .hzone{width:var(--bw,560px);height:10px}.desk .hzone i{left:20%;right:20%}
 .screen .bbar.dock{transition:transform .5s cubic-bezier(.42,0,.58,1),translate .5s cubic-bezier(.42,0,.58,1),opacity .2s,box-shadow .3s}
