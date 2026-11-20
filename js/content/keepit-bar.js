@@ -423,6 +423,18 @@
   // scroll restore right after (overlay close) must not hide it again → 800ms hold
   let showHold = 0;
   function barBack() { showHold = Date.now() + 800; S.scrollHide = false; S.sOff = 0; }
+  // v3.5.555: dashboard — đang mở tệp trong tab Tài liệu (body.documents-viewer-open do dashboard.js gắn) thì ẩn
+  // HOÀN TOÀN thanh: không trượt, không vạch tím, không nút về đầu trang. Màn danh sách tệp vẫn hiện thanh.
+  // Đóng tệp → thanh trở lại như cũ.
+  function syncExtDocs() {
+    if (!DASHBOARD) return;
+    const sc = $("screen"); if (!sc || !document.body) return;
+    const on = document.body.classList.contains("documents-viewer-open");
+    if (sc.classList.contains("extdocs") === on) return;
+    sc.classList.toggle("extdocs", on);
+    if (on) { S.sOff = 0; S.peek = false; applyOff(false); }
+    syncBarVis();
+  }
   // ẩn / hiện tạm như Dock macOS: cả thanh trượt 0.5s ease-in-out (class dock trong lúc chạy)
   function setPeek(on) { if (on !== S.peek) dockAnim(); S.peek = on; syncBarVis(); }
   // the bar was hidden by the website list: "Show bar" takes this website (and the list entry that covers it) off the list
@@ -1443,7 +1455,7 @@
     globalThis.LHN_SIDEBAR.attachTouchSheet(side,{close:()=>run("notes"),isTouch,viewportHeight:VH});
   }
 
-  let ticker = 0, bodyWatch = null, lastLayout = "";
+  let ticker = 0, bodyWatch = null, docsWatch = null, lastLayout = "";
   const layoutKey = () => [isTouch(), isWide(), isPland(), isSmall(), pageKind(), Object.keys(YT_NAV).find(ytOn) || "", langCode(), isDark()].join("|");
   function relayout(force) {
     if (!mounted) return;
@@ -1470,8 +1482,9 @@
     document.addEventListener("focusout", onFocusOut, true);
     document.addEventListener("fullscreenchange", onFullscreen); document.addEventListener("webkitfullscreenchange", onFullscreen);
     bodyWatch = new MutationObserver(watchSidebar); bodyWatch.observe(document.documentElement, { childList:true }); watchSidebar();
+    if (DASHBOARD) { docsWatch = new MutationObserver(syncExtDocs); docsWatch.observe(document.body, { attributes:true, attributeFilter:["class"] }); syncExtDocs(); }
     watchExt();
-    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); watchExt(); syncState(); checkOverlap(); }, 700);
+    ticker = setInterval(() => { if (!host.isConnected) document.documentElement.appendChild(host); watchSidebar(); watchExt(); syncState(); checkOverlap(); syncExtDocs(); }, 700);
     requestAnimationFrame(checkOverlap);
     // mounted before the page's styles/content finished loading: re-read page colours, video layout and page bars then
     const settle = () => { if (!mounted) return; syncState(); relayout(false); checkOverlap(); };
