@@ -631,7 +631,8 @@ function fillTextLayerGaps(){
       const box=boxes[i],ratio=Math.max(0.2,box.ratio);
       let next=null;
       for(let j=i+1;j<boxes.length;j++)if(boxes[j].r.top>=box.r.bottom-0.5){next=boxes[j].r;break;}
-      const gap=(next?next.top:box.r.bottom)-box.r.bottom;
+      const bottom=i===boxes.length-1?layerRect.bottom:(next?next.top:box.r.bottom);   // dòng cuối: phủ tới đáy trang
+      const gap=bottom-box.r.bottom;
       const pad=gap>0.5?(gap/ratio).toFixed(2)+'px':'';
       if(box.p.style.paddingBottom!==pad)box.p.style.paddingBottom=pad;
       fillLineEnd(box,layerRect);

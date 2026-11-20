@@ -159,6 +159,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.572 | Arena.ai Agent sửa:**
+- Base: vẫn từ **v3.5.564** (`ddffbaa`, nhánh `fix-35571`), cộng tiếp một bản vá duy nhất cho lỗi cảm ứng còn nháy.
+- Tóm tắt: đo "vùng chết" của lớp chữ (lấy mẫu 19×29 điểm trên trang, xem `document.caretRangeFromPoint` trả về chữ hay phần tử): 3.5.571 có **296/418 điểm rơi vào phần tử chứa** — đó là các chỗ trình duyệt còn cớ neo vùng chọn vào ranh giới khối, nên khi bôi đen nhiều đoạn vẫn nháy (lúc có lúc không, tuỳ ngón tay rơi vào đâu). Phần lớn nằm ở **khoảng trống phía dưới dòng cuối** (slide có nhiều chỗ trống). Nay hộp chữ của dòng cuối được đệm tới **đáy trang**: vùng chết còn **88/418** (giảm 71 % → 21 %), 330 điểm rơi vào chữ.
+- File: `js/dashboard/documents.js`, `manifest.json`
+- Kiểm tra: chữ không xê dịch một ly (so toạ độ toàn bộ span với 3.5.571: **0/18 khác**). Kéo dòng 3→7 trong vùng chữ: **0/24** bước sai; kéo xuống hẳn vùng trống dưới dòng cuối: vùng chọn dừng đúng ở **dòng cuối** (3.5.571 dừng sớm ở dòng 7 khi vẫn còn dòng 8); kéo trôi ra lề phải 5/24. Nhảy đúp chọn từ, Ctrl+A 1.920 ký tự, icon dịch hiện sau khi chọn, đang chọn (dừng 2,2 s) popup **không** hiện, pinch 135,6→162,4 %, 30 bước pinch trên PDF 42 dòng: khung hình xấu nhất **25 ms**, 0 long task, đóng khung xem tệp bình thường, 0 lỗi console.
+
 **2026-11-17 | v3.5.571 | Arena.ai Agent sửa:**
 - Base: làm lại **từ đúng v3.5.564** (`ddffbaa`, manifest 3.5.564, nhánh `fix-35571`) theo yêu cầu; toàn bộ 3.5.565–3.5.570 bị bỏ khỏi bản này (vẫn nằm trong lịch sử git ở nhánh `fix-35560`, không dùng nữa).
 - Tóm tắt: hai việc đúng phạm vi đã chốt.
