@@ -261,9 +261,15 @@
     const shell = translateIcon.querySelector(".lhn-translate-shell");
     // The visible shell is vertically centred on the 28px launcher and is taller than it; push down so its top clears the line.
     const shellOverflow = Math.max(0, ((shell?.offsetHeight || 28) - translateIcon.offsetHeight) / 2);
+    // A radial action can extend below the logo, including when it is currently collapsed.
+    const bottomAction = shell?.dataset.layout === "radial" ? shell.querySelector('.lhn-translate-action[data-kp-slot="bottom"]') : null;
+    const radialBottom = bottomAction ? translateIcon.offsetHeight / 2 + (shell.dataset.labels === "true" ? 25 + bottomAction.offsetHeight : 44 + bottomAction.offsetHeight / 2) : 0;
+    const groupBottom = Math.max(translateIcon.offsetHeight + shellOverflow, radialBottom);
+    const firstLineTop = lineRects.length ? Math.min(...lineRects.map(line => line.top)) : rect.top;
+    const belowTop = rect.bottom + shellOverflow + 4;
     setSourceLayer(translateIcon, range);
-    if (rect.bottom >= 0 && rect.top <= innerHeight) translateIcon._lhnAbove = rect.bottom + shellOverflow + 4 + translateIcon.offsetHeight > innerHeight - 10;
-    const y = translateIcon._lhnAbove ? rect.top - shellOverflow - translateIcon.offsetHeight - 4 : rect.bottom + shellOverflow + 4;
+    if (rect.bottom >= 0 && firstLineTop <= innerHeight) translateIcon._lhnAbove = belowTop + groupBottom > innerHeight - 10;
+    const y = translateIcon._lhnAbove ? firstLineTop - groupBottom - 4 : belowTop;
     position(translateIcon, rect.right - 28, y);
     translateIcon.style.top = `${y}px`;
     if (shell?.dataset.layout === "radial") {
