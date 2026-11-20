@@ -149,10 +149,12 @@
   const siteInList = (list, host = websiteKey()) => (Array.isArray(list) ? list : []).some(d => { d = String(d || "").toLowerCase().replace(/^www\./, ""); return !!d && (host === d || host.endsWith("." + d)); });
   const barHiddenList = b => Array.isArray(b?.hiddenSites) ? b.hiddenSites : (globalThis.LHN_CONFIG?.DEFAULT_BAR_HIDDEN_WEBSITES || []);
   const barOff = () => S.hidden || S.siteHidden;
-  // v3.5.563: trong trình xem tệp (pages/documents.html) KHÔNG vuốt trái để dịch đoạn nữa — cử chỉ đó
-  // hiểu nhầm thao tác bôi đen thành vuốt và gọi getSelection().removeAllRanges() nên xoá mất vùng chọn.
-  // "2 ngón chạm = dịch cả trang" vẫn giữ (chỉ vuốt đoạn bị tắt). Trang web thường không đổi gì.
+  // v3.5.563/v3.5.564: trong trình xem tệp (pages/documents.html), vuốt trái để dịch đoạn bị tắt **chỉ ở chế độ Gốc**
+  // (ở đó cử chỉ hiểu nhầm thao tác bôi đen thành vuốt rồi gọi getSelection().removeAllRanges() nên xoá mất vùng chọn).
+  // Chế độ Đọc vẫn vuốt trái để dịch đoạn như cũ — kể cả khi thanh Đọc đang mở (extYield), chỉ mở đúng cử chỉ này.
+  // "2 ngón chạm = dịch cả trang" giữ nguyên. Trang web thường không đổi gì.
   const inDocsViewer = () => document.documentElement.hasAttribute("data-keepit-documents");
+  const docsOriginalMode = () => inDocsViewer() && !!document.querySelector("#viewer")?.classList.contains("original");
   const gestTranslate = () => S.gest.translate && settings.translateEnabled !== false;   // Settings → Translate off = no translate gestures
   const siteDisabled = () => Array.isArray(settings.disabledWebsites) && settings.disabledWebsites.includes(websiteKey());
   const langCode = () => { const code = globalThis.LHN_LANGUAGES?.languageFor?.(settings) || "en"; return ["en","vi","ko"].includes(code) ? code : "en"; };
@@ -986,7 +988,10 @@
   const paraOf = (t0, x, y) => {
     let p = t0.closest?.(PARA_SEL);
     if (!p && x !== undefined) { const b = globalThis.LHN_READER_BAR?.blockAt?.(x, y); if (b && !b.closest(INTERACTIVE) && b !== document.body) p = b; }
-    return p && !isOwnUi(p) && (p.textContent || "").trim().length >= 2 && !p.closest("nav,header,footer,[role=navigation],[role=menu]") ? p : null;
+    // v3.5.564: nội dung chế độ Đọc trong trình xem tệp mang lớp lhn-* (lhn-bilingual-reading) nên bị isOwnUi coi là UI
+    // của mình; riêng trong khung #pageStack của trình xem tệp thì đó là nội dung tệp, vẫn cho vuốt-dịch đoạn.
+    const ownUi = inDocsViewer() ? !p?.closest("#pageStack") : isOwnUi(p);
+    return p && !ownUi && (p.textContent || "").trim().length >= 2 && !p.closest("nav,header,footer,[role=navigation],[role=menu]") ? p : null;
   };
   const hasCard = p => !!p && (p.matches(".lhn-bilingual-card") || !!p.querySelector(":scope > .lhn-bilingual-card") || !!p.closest(".lhn-bilingual-card"));
   function translateAt(x, y) {
@@ -1014,7 +1019,10 @@
     p.style.transition = "translate .2s, background-color .2s"; p.style.translate = v.translate; p.style.backgroundColor = v.background; p.style.borderRadius = v.radius;
     setTimeout(() => { p.style.transition = v.transition; }, 220);
   }
-  function gestureAllowed() { return mounted && isTouch() && !S.siteOff && !S.extYield && !S.kbd && !S.vfs && !(visualViewport && visualViewport.scale > 1.05); }
+  const gestureBase = () => mounted && isTouch() && !S.siteOff && !S.kbd && !S.vfs && !(visualViewport && visualViewport.scale > 1.05);
+  function gestureAllowed() { return gestureBase() && !S.extYield; }
+  // vuốt-dịch đoạn: tắt ở chế độ Gốc của trình xem tệp; ở chế độ Đọc thì cho phép kể cả khi thanh Đọc đang mở
+  const paraGestureAllowed = () => gestureBase() && !docsOriginalMode() && (!S.extYield || inDocsViewer());
   function onPageTouchStart(e) {
     touching = true;
     if (e.composedPath().includes(host)) return;
@@ -1024,9 +1032,9 @@
     if (e.touches.length === 1) { tri = null; t1 = Date.now(); }
     else if (e.touches.length === 2 && !tri && Date.now() - t1 < 300 && gestureAllowed() && gestTranslate() && pageMobile() && !isOwnUi(e.target)) tri = { t:Date.now(), pts:new Map([...e.touches].map(o => [o.identifier, [o.clientX, o.clientY]])), moved:false };
     else tri = null;
-    if (!gestureAllowed() || e.touches.length !== 1) { pg = null; return; }
+    if (!paraGestureAllowed() || e.touches.length !== 1) { pg = null; return; }
     const p0 = e.touches[0], target = e.target instanceof Element ? e.target : e.target?.parentElement; if (!target) { pg = null; return; }
-    const para = gestTranslate() && !inDocsViewer() ? paraOf(target, p0.clientX, p0.clientY) : null;
+    const para = gestTranslate() && !docsOriginalMode() ? paraOf(target, p0.clientX, p0.clientY) : null;
     if (!para) { pg = null; return; }
     pg = { x:p0.clientX, y:p0.clientY, t:Date.now(), p:para, target, mode:null, dx:0, dead:false,
       edge:p0.clientX < EDGE || p0.clientX > innerWidth - EDGE || !getSelection().isCollapsed };
@@ -1056,7 +1064,7 @@
 
   // ---------- v6: gesture tips once on touch (after the v8 intro) ----------
   let coachT = 0;
-  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && gestTranslate()) { if (!inDocsViewer()) it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
+  const coachItems = () => { const art = !isVideoPage() && hasArticle(), it = []; if (art && gestTranslate()) { if (!docsOriginalMode()) it.push([t("cSwipePara"), t("kPara")]); if (pageMobile()) it.push([t("vTriple"), t("kAll")]); } if ($("bin").querySelector('[data-nav="page"],[data-nav="reader"]')) it.push([t("cHold"), t("kQuick")]); return it; };
   function showCoach() {
     const it = coachItems(); if (!it.length || !isTouch() || S.kbd || S.vfs || S.siteOff || S.extYield) return;
     $("coach").innerHTML = `<div class="ch1">${ic("hand")}<b>${esc(t(S.coachRe ? "coachTitle" : "coachNew"))}</b></div><ul>${it.map(([g, r]) => `<li><span>${esc(g)}</span><em>${esc(r)}</em></li>`).join("")}</ul><div class="cb"><button type="button" data-c="all">${esc(t("seeAll"))}</button><button type="button" class="pri" data-c="ok">${esc(t("gotIt"))}</button></div>`;

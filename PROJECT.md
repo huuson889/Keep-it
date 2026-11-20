@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.563** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.564** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -158,6 +158,24 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.564 | Arena.ai Agent sửa:**
+
+- Sửa lại phạm vi của 3.5.563: chỉ tắt vuốt-trái-dịch-đoạn ở **chế độ Gốc** của trình xem tệp; **chế độ Đọc vẫn vuốt trái để dịch đoạn** như người dùng yêu cầu.
+- Phát hiện thêm (đo được, không phải do 3.5.563): ở chế độ Đọc cử chỉ này **vốn đã không chạy** vì hai lớp chặn — (1) thanh Đọc mở (`#lhn-bilingual-reading-bar.lhn-show`) → `S.extYield = true` → `gestureAllowed()` false; (2) đoạn văn của chế độ Đọc mang lớp `lhn-bilingual-reading` nên `isOwnUi()` (khớp `[class*="lhn-"]`) coi là UI của mình → `paraOf()` trả `null`. Bản 3.5.562 cũng cho 0 thẻ dịch.
+- File: `js/content/keepit-bar.js`:
+  - thêm `docsOriginalMode()`; tách `gestureBase()` khỏi `gestureAllowed()`;
+  - `paraGestureAllowed()` = nền hợp lệ **và** không ở chế độ Gốc **và** (`!S.extYield` **hoặc** đang ở trình xem tệp) → mở đúng cử chỉ vuốt-dịch đoạn khi thanh Đọc đang mở, không mở cử chỉ khác;
+  - `paraOf()`: trong trình xem tệp chỉ cần đoạn nằm trong `#pageStack` là nội dung tệp (bỏ qua lớp `lhn-*`);
+  - `coachItems()` dùng `docsOriginalMode()`.
+  - `manifest.json` (3.5.563 → 3.5.564).
+- Kiểm tra: extension thật, 390×844, `has_touch`, PDF 3 trang.
+  - **GỐC**: vuốt trái → **0 thẻ dịch**; chọn chữ rồi vuốt → vùng chọn còn nguyên (`"Trang 1 - zoom tu "`), icon Keepit hiện.
+  - **ĐỌC** (`mode=read`, thanh Đọc `lhn-show`): vuốt trái → **1 thẻ dịch** (trước 3.5.564: 0).
+  - Quay lại GỐC: vuốt trái → **0 thẻ**.
+  - 2 ngón chạm ở chế độ Đọc: vẫn 0 thẻ (đã vậy từ trước vì thanh Đọc chặn `gestureAllowed()`) — chưa mở, chờ quyết định.
+  - `console.error` + `pageerror` = 0.
+  - Chưa kiểm được: vuốt/chạm thật trên máy cảm ứng của người dùng. CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.563 | Arena.ai Agent sửa:**
 
