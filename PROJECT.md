@@ -159,6 +159,11 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 ## 5. Nhật ký
 
+**2026-11-17 | v3.5.566 | Arena.ai Agent sửa:**
+- Tóm tắt: Bỏ cách sửa 3.5.565 (đặt `pointer-events:none` cho `.pdfTextLayer`) vì nó chỉ đổi chiều lỗi — vùng chọn chuyển sang nháy LÊN TRÊN. Nay khi kéo chuột chọn chữ trong khung xem tệp, extension tự dựng vùng chọn: `mousedown` được `preventDefault()` rồi hai đầu vùng chọn đặt bằng `document.caretRangeFromPoint`, cả hai đầu đều kẹp về vị trí chữ thật (`caretTextPoint` xử lý cả trường hợp caret rơi vào phần tử khối dưới dạng "chỉ số con"). Kéo tới mép khung thì tự cuộn. Bỏ qua nháy đúp/3 lần (để trình duyệt chọn từ), có phím bổ trợ, và bấm vào highlight (để mở ghi chú).
+- File: `js/dashboard/documents.js`, `css/dashboard/documents.css`, `manifest.json`
+- Kiểm tra: PDF 9 dòng, kéo dòng 3→7 qua 24 bước: số bước vùng chọn sai **8/24 (3.5.565, neo nhảy về dòng 0) → 0/24**; neo luôn ở dòng 3, đầu kia bám con trỏ đơn điệu 4→5. Nháy đúp vẫn chọn đúng từ ("fabrics"), Ctrl+A 1.920 ký tự, icon dịch hiện sau khi chọn (`reachedShowIcon`), pinch zoom 135,6→162,4 %, không còn khung đoạn rác, đóng khung xem tệp bình thường, 0 lỗi console.
+
 **2026-11-17 | v3.5.565 | Arena.ai Agent sửa:**
 
 - Tóm tắt: (1) hết cảnh **vùng chọn nháy xuống mấy hàng dưới rồi mới về đúng** khi bôi đen nhiều đoạn trong tệp PDF/PPTX; (2) dọn **khung hình học rác** sinh ra vạch xanh lạ ở mép trái khung xem tệp.

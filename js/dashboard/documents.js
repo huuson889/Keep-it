@@ -674,6 +674,65 @@ function showReaderParagraphHighlight(block){
  // v3.5.565: nếu sau khi trình duyệt dàn trang hộp co lại gần 0 thì bỏ ngay, đừng để lại vạch xanh ở mép trái
  requestAnimationFrame(()=>{if(!highlight.isConnected)return;const r=highlight.getBoundingClientRect();if(r.width<8||r.height<8)highlight.remove();});
 }
+/* v3.5.566: tự dựng vùng chọn khi kéo chuột trên lớp chữ của tệp.
+   Lý do: khi con trỏ nằm ở khe giữa hai dòng (lớp chữ PDF/PPTX có khe rất rộng), Chrome trả caret về mốc "chỉ số con"
+   của một phần tử khối — tức ranh giới đoạn — nên vùng chọn nháy xuống dưới (3.5.564) hoặc nháy lên trên (3.5.565).
+   Cách làm: chặn vùng chọn mặc định ở mousedown rồi tự đặt hai đầu bằng document.caretRangeFromPoint, cả hai đầu
+   đều được kẹp về vị trí chữ thật; cuộn tự động khi kéo tới mép khung.
+   Bỏ qua: nháy đúp/3 lần (để nguyên cho trình duyệt chọn từ), có phím bổ trợ, bấm vào highlight (để mở ghi chú). */
+const firstTextPoint = node => { if(!node) return null; if(node.nodeType===3) return {node,offset:0};
+  const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT), first=walker.nextNode(); return first?{node:first,offset:0}:null; };
+const lastTextPoint = node => { if(!node) return null; if(node.nodeType===3) return {node,offset:node.nodeValue.length};
+  const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT); let last=null,next=walker.nextNode();
+  while(next){last=next;next=walker.nextNode();}
+  return last?{node:last,offset:last.nodeValue.length}:null; };
+function caretTextPoint(x,y){
+  if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+  let range=null;try{range=document.caretRangeFromPoint?.(x,y);}catch{return null;}
+  if(!range)return null;
+  let node=range.startContainer,offset=range.startOffset;
+  if(!node)return null;
+  const host=node.nodeType===3?node.parentElement:node;
+  if(!host?.closest?.('.docsSource'))return null;
+  if(node.nodeType===1){
+    const after=node.childNodes[offset]||null,before=after?null:node.childNodes[offset-1]||null;
+    const point=after?firstTextPoint(after):(before?lastTextPoint(before):null);
+    if(!point)return null;
+    node=point.node;offset=point.offset;
+  }
+  if(node.nodeType!==3)return null;
+  return {node,offset:Math.max(0,Math.min(offset,node.nodeValue.length))};
+}
+let dragSelect=null;
+function applyDragSelection(){
+  if(!dragSelect)return;
+  const start=caretTextPoint(dragSelect.x0,dragSelect.y0),end=caretTextPoint(dragSelect.x,dragSelect.y);
+  if(!start||!end)return;
+  const selection=getSelection();if(!selection)return;
+  try{selection.setBaseAndExtent(start.node,start.offset,end.node,end.offset);}catch{}
+}
+$('#stage').addEventListener('mousedown',event=>{
+  dragSelect=null;
+  if(event.button!==0||event.detail>1||V.mode!=='orig')return;
+  if(event.shiftKey||event.ctrlKey||event.metaKey||event.altKey)return;
+  if(!event.target.closest?.('.docsSource')||event.target.closest('.lhnPdfHighlightGroup'))return;
+  const start=caretTextPoint(event.clientX,event.clientY);
+  if(!start)return;
+  event.preventDefault();
+  dragSelect={x0:event.clientX,y0:event.clientY,x:event.clientX,y:event.clientY};
+  try{const selection=getSelection(),range=document.createRange();range.setStart(start.node,start.offset);range.setEnd(start.node,start.offset);selection.removeAllRanges();selection.addRange(range);}catch{}
+},true);
+document.addEventListener('mousemove',event=>{
+  if(!dragSelect)return;
+  dragSelect.x=event.clientX;dragSelect.y=event.clientY;
+  const stage=$('#stage'),rect=stage.getBoundingClientRect();   // kéo tới mép thì tự cuộn, như vùng chọn mặc định
+  if(event.clientY<rect.top+40)stage.scrollTop-=18;
+  else if(event.clientY>rect.bottom-40)stage.scrollTop+=18;
+  applyDragSelection();
+},true);
+document.addEventListener('selectionchange',()=>{if(dragSelect)applyDragSelection();});
+document.addEventListener('mouseup',()=>{dragSelect=null;},true);
+document.addEventListener('pointercancel',()=>{dragSelect=null;},true);
 /* v3.5.565: dọn khung hình học rác trong khung xem tệp — khung xem trước highlight còn sót, group highlight co về <2px,
    khung "đoạn đang đọc" co về <8px. Không đụng khi đang mở hộp soạn ghi chú (đang chọn màu highlight). */
 let selectionSweepAt=0,selectionSweepRAF=0;
