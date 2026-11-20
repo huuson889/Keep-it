@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 '## 1. Trạng thái hiện tại
-- Version **3.5.564** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
+- Version **3.5.565** — **làm lại từ đúng 3.5.546 (`40b8f77`)**, nhánh `Keepit-Optimize-Test`; cỡ nhãn thanh Keepit dùng chung một thanh theo cách của 3.5.545: 10px ở màn hẹp, 9px khi chật, 8,5px ở ≤419,98px, màn rộng/tablet ngang luôn 12px; nhãn bị nhốt trong nút nên không bao giờ chồng lên nhau; chật quá thì xuống 2 dòng thay vì cắt "…"; thanh Keepit chạy cả `pages/home.html` và `pages/dashboard.html` (Trang chủ · Tổng quan · Chép | Tìm kiếm | Ghi chú · Tài liệu · Thêm), icon tab dùng chung `js/shared/icons.js`; 5 tab Dashboard dùng chung một đệm 2 bên 32/16px, nhớ vị trí cuộn 4 route, topbar dùng chung.
 - Tài liệu: **từ 3.5.503 quay về kiến trúc v30 (3.5.430)** — `pages/documents.html` tự vẽ thư viện, tự mở và tự nhập tệp trong trang; Dashboard chỉ hiển thị khung và chỉnh chiều cao. Đã xoá lớp "thư viện do Dashboard vẽ" (3.5.431–3.5.502), kèm popup/`?document=` reload của các bản đó.
 - Bộ xem tài liệu: từ **3.5.493** khung được giữ **ẩn + không nhận chuột** cho tới khi tài liệu dựng xong (`KEEPIT_DOCUMENTS_VIEWER_READY`), popup "Đang mở tệp" phủ trong lúc chờ — nên người dùng chỉ chạm vào trang đã hoàn chỉnh (đúng hành vi 3.5.430). **Chưa xác nhận trên Chrome.**
 - Ghi chú tài liệu dùng annotations chung (quote/anchor/ngày), không nhân bản; Reader và công cụ chọn chữ dùng module của app.
@@ -158,6 +158,24 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.565 | Arena.ai Agent sửa:**
+
+- Tóm tắt: (1) hết cảnh **vùng chọn nháy xuống mấy hàng dưới rồi mới về đúng** khi bôi đen nhiều đoạn trong tệp PDF/PPTX; (2) dọn **khung hình học rác** sinh ra vạch xanh lạ ở mép trái khung xem tệp.
+- Nguyên nhân (1) — đo được, không phải phỏng đoán: `document.caretRangeFromPoint` ở khe hở giữa hai dòng trả về chính `DIV.pdfTextLayer` dưới dạng **chỉ số con** (`{node: DIV, offset: 15}`) — một mốc ranh giới đoạn — nên trình duyệt vẽ vùng chọn tới ranh giới đoạn phía dưới rồi tự sửa. Tái hiện: PDF 9 dòng, kéo chuột 24 bước, **7/24 bước** vùng chọn vượt quá con trỏ (có bước nhảy tới dòng 7 và 11).
+- Cách sửa (1): `css/dashboard/documents.css` — `.pdfTextLayer{pointer-events:none}` + `.pdfTextLayer>span,.pdfTextLayer>br,.pdfTextLayer .en,.pdfTextLayer .en *{pointer-events:auto}`. Đo lại cùng phép kéo: **0/24 bước**.
+- Nguyên nhân (2): `showReaderParagraphHighlight()` dựng khung `.docsReaderParagraphHighlight` (`z-index:9`, `outline:2px` màu nhấn) từ các rect đo lúc trang đang đổi cỡ → hộp co về ~0 px, chỉ còn cạnh trái của outline = vạch xanh, và vì z-index 9 nên nằm **trên** cả highlight (5) lẫn vùng chọn.
+- Cách sửa (2) — `js/dashboard/documents.js`:
+  - `readerParagraphHighlightBox()` bỏ hộp nếu `width < 8px` hoặc `height < 8px`; `showReaderParagraphHighlight()` kiểm tra lại một lần ở `requestAnimationFrame` kế tiếp;
+  - thêm `sweepSelectionArtefacts()` + `requestSelectionSweep()` (giới hạn 200 ms/lần): xoá `.lhnPdfHighlightPreview` còn sót, group highlight co < 2 px, khung “đoạn đang đọc” co < 8 px; **không** đụng khi đang mở hộp soạn ghi chú/panel;
+  - gọi ở `applyZoom()`, ở handler cuộn `#stage`, ở `mouseup` toàn trang và khi bấm Escape.
+  - `manifest.json` (3.5.564 → 3.5.565).
+- Kiểm tra: extension thật 1512×900, PDF 9 dòng.
+  - Kéo 24 bước: vượt dòng **0/24** (trước 7/24).
+  - Tiêm rác: preview 3×120 px, group highlight 1,5×90 px, khung đoạn 0,4×150 px + một group hợp lệ 140×18 px → sau `mouseup`: preview **mất**, group < 2 px **mất**, khung đoạn **mất**, group 140×18 **còn**.
+  - Hồi quy: bôi đen bằng chuột vẫn chọn đúng (33–295 ký tự, icon Keepit hiện, `selectionDebug` = `reachedShowIcon`), Ctrl+A **1.920 ký tự**, bấm vào highlight nhận click (1 lần), pinch zoom 135,6 → 162,4 %, cuộn/đóng khung xem tệp bình thường.
+  - `console.error` + `pageerror` = 0.
+  - **Chưa tái hiện được** đúng vạch xanh trong tệp của người dùng (cần tệp PPTX thật); đã xử lý cả 3 nguồn có thể sinh ra nó. CRX không tạo vì sandbox thiếu khoá ký.
 
 **2026-11-17 | v3.5.564 | Arena.ai Agent sửa:**
 

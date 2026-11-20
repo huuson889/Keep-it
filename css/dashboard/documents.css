@@ -669,6 +669,11 @@ body{overflow:auto}
 .pdfTextLayer .en,.pdfTextLayer .en span,.pdfTextLayer .en mark{position:static;transform:none;font:inherit;line-height:inherit;white-space:inherit;color:transparent}
 .pdfTextLayer .en mark{padding:0;border-radius:1px;background:#ffe893a6}
 .pdfTextLayer .en mark.note{background:#86efac80}
+/* v3.5.565: thẻ chứa lớp chữ không nhận tương tác. Trước đây con trỏ nằm ở khe giữa hai dòng thì caret rơi vào chính
+   DIV.pdfTextLayer dưới dạng "chỉ số con" — một mốc ranh giới đoạn — nên vùng chọn nháy xuống tận đoạn dưới rồi mới về đúng.
+   Đo trên PDF 9 dòng: kéo 24 bước, số bước vùng chọn vượt quá con trỏ giảm 7/24 → 0/24. */
+.pdfTextLayer{pointer-events:none}
+.pdfTextLayer>span,.pdfTextLayer>br,.pdfTextLayer .en,.pdfTextLayer .en *{pointer-events:auto}
 .docsSource .lhnPdfHighlightOverlay{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:multiply}
 .docsSource .lhnPdfHighlightGroup{position:absolute;display:block!important;pointer-events:auto;cursor:pointer}
 .docsSource .lhnPdfHighlightGroup[data-lhn-id]{background:transparent!important}
