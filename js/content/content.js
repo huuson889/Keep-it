@@ -1789,8 +1789,12 @@
   // Lấy vùng chọn: nếu chữ nằm trong overlay phụ đề YouTube (shadow root #keepit-host) thì dùng selection của shadow root,
   // không thì dùng selection của document như trước. ShadowRoot.getSelection() chỉ có ở Chromium; Firefox rơi về document.
   function currentSelection() {
-    const shadowSel = document.getElementById("keepit-host")?.shadowRoot?.getSelection?.();
-    if (shadowSel && String(shadowSel).trim()) return shadowSel;
+    const root = document.getElementById("keepit-host")?.shadowRoot;
+    const shadowSel = root?.getSelection?.();
+    // Chromium may return document selection text from a shadow selection with
+    // a null anchor after the overlay has been mounted. Only use it when the
+    // selected node actually belongs to this shadow tree.
+    if (root && shadowSel?.anchorNode?.getRootNode?.() === root && String(shadowSel).trim()) return shadowSel;
     return getSelection();
   }
   const VIDEO_INTERFACE_SELECTOR = "#te-dictation-center, #te-dictation-notes, #te-dict-sentence-area, .yt-dual-item, .te-sub-container";
