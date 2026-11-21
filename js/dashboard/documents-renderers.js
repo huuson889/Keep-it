@@ -226,7 +226,7 @@
         hooks.progress?.(.25 + index / document.numPages * .7);
       }
     } catch (e) { await document.destroy(); throw e; }
-    const jobs = new Set(), rasterJobs = new WeakMap(); let disposed = false;
+    const jobs = new Set(), rasterJobs = new WeakMap(), detailJobs = new WeakMap(); let disposed = false;
     function rasterScale(target, spec) {
       const displayWidth = target.getBoundingClientRect().width || spec.width;
       const desired = displayWidth / spec.width * Math.min(2, Math.max(1, devicePixelRatio || 1));
@@ -241,24 +241,50 @@
     return { kind:'pdf', pages, passwordProtected,
       async refreshRaster(target, number) {
         if (disposed || !target.isConnected) return;
-        const old = target.querySelector(':scope > canvas'), spec = pages[number - 1];
+        const old = target.querySelector(':scope > canvas:not(.pdfDetail)'), spec = pages[number - 1];
         if (!old || !spec || !old.width) return;
         const scale = rasterScale(target, spec), desired = Math.ceil(spec.width * scale);
         rasterJobs.get(target)?.render?.cancel();
         const request = {}; rasterJobs.set(target, request);
         if (desired <= old.width * 1.15 && desired >= old.width * .65) { rasterJobs.delete(target); return; }
         const page = await document.getPage(number);
-        if (disposed || !target.isConnected || rasterJobs.get(target) !== request || target.querySelector(':scope > canvas') !== old) return;
+        if (disposed || !target.isConnected || rasterJobs.get(target) !== request || target.querySelector(':scope > canvas:not(.pdfDetail)') !== old) return;
         const canvas = makeCanvas(spec, scale), viewport = page.getViewport({ scale:1 });
         const render = page.render({ canvasContext:canvas.getContext('2d'), viewport, transform:[scale,0,0,scale,0,0] });
         request.render = render; jobs.add(render);
         try {
           await render.promise;
-          if (!disposed && target.isConnected && rasterJobs.get(target) === request && target.querySelector(':scope > canvas') === old) {
+          if (!disposed && target.isConnected && rasterJobs.get(target) === request && target.querySelector(':scope > canvas:not(.pdfDetail)') === old) {
             old.replaceWith(canvas); old.width = old.height = 0;
           }
         } catch (error) { if (error?.name !== 'RenderingCancelledException') throw error; }
         finally { jobs.delete(render); if (rasterJobs.get(target) === request) rasterJobs.delete(target); }
+      },
+      async refreshDetail(target, number, stage) {
+        if (disposed || !target.isConnected) return;
+        const base = target.querySelector(':scope > canvas:not(.pdfDetail)'), spec = pages[number - 1];
+        if (!base || !spec || !base.width) return;
+        detailJobs.get(target)?.render?.cancel();
+        const request = {}; detailJobs.set(target, request);
+        const rect = target.getBoundingClientRect(), view = stage.getBoundingClientRect(), cssScale = rect.width / spec.width;
+        const left = Math.max(rect.left, view.left), top = Math.max(rect.top, view.top);
+        const right = Math.min(rect.right, view.right), bottom = Math.min(rect.bottom, view.bottom);
+        const clear = () => { const old = target.querySelector(':scope > .pdfDetail'); if(old){old.remove();old.width=old.height=0;} };
+        if (right <= left || bottom <= top || !cssScale || cssScale * Math.min(2,Math.max(1,devicePixelRatio||1)) <= base.width / spec.width * 1.15) { clear(); return; }
+        const x=(left-rect.left)/cssScale, y=(top-rect.top)/cssScale, w=(right-left)/cssScale, h=(bottom-top)/cssScale;
+        const scale=Math.min(cssScale*Math.min(2,Math.max(1,devicePixelRatio||1)),4096/w,4096/h,Math.sqrt(3500000/(w*h)));
+        const page=await document.getPage(number);
+        if(disposed||!target.isConnected||detailJobs.get(target)!==request)return;
+        const canvas=window.document.createElement('canvas');canvas.className='pdfDetail';
+        canvas.width=Math.max(1,Math.ceil(w*scale));canvas.height=Math.max(1,Math.ceil(h*scale));
+        Object.assign(canvas.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px',pointerEvents:'none'});
+        const render=page.render({canvasContext:canvas.getContext('2d'),viewport:page.getViewport({scale:1}),transform:[scale,0,0,scale,-x*scale,-y*scale]});
+        request.render=render;jobs.add(render);
+        try {
+          await render.promise;
+          if(!disposed&&target.isConnected&&detailJobs.get(target)===request){clear();const layer=target.querySelector(':scope > .pdfTextLayer');target.insertBefore(canvas,layer);}
+        } catch(error){if(error?.name!=='RenderingCancelledException')throw error;}
+        finally{jobs.delete(render);if(detailJobs.get(target)===request)detailJobs.delete(target);}
       },
       async render(target, number) {
         if (disposed) return; const page = await document.getPage(number), spec = pages[number - 1], viewport = page.getViewport({ scale:1 });
