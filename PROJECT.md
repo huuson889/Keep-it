@@ -1,11 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.593**, tiếp từ 3.5.592, dòng làm lại từ 3.5.574 `3ab24bf`: sửa thanh chọn chữ không hiện sau khi mở rồi đóng Overlay.
+- Version **3.5.594**, tiếp từ 3.5.593: sửa PDF scan mờ bằng canvas theo cỡ hiển thị và vẽ lại sau zoom, giữ lớp chữ.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
-- Đã kiểm Chromium unpacked 1512/390 sáng/tối, thanh chọn chữ trước và sau hai lần mở/đóng Overlay; kiểm chọn phụ đề Overlay và chọn chữ bằng chuột ở 1512 sáng, console/pageerror rỗng trong fixture favicon giả lập.
-- Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, tệp PDF/Office của người dùng, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
+- Đã kiểm Chromium unpacked 1512/390 sáng/tối với PDF scan thật, số đo canvas, chọn lớp chữ PDF bằng Selection API và zoom tới 400%; console/pageerror rỗng. Đã kiểm thanh chọn chữ 3.5.593 trước/sau Overlay trong fixture favicon giả lập.
+- Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, toàn bộ PDF/Office, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
@@ -160,6 +160,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.594 | Arena:**
+
+- Tóm tắt: sửa PDF scan mờ do vẽ canvas theo kích thước trang PDF gốc nhỏ; vẽ theo cỡ hiển thị và DPR, cập nhật sau zoom/resize, giữ nguyên text layer; giới hạn khoảng 3,5 triệu pixel / cạnh 8192, chỉ vẽ lại trang gần vùng nhìn.
+- File: `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked, PDF scan người dùng và PDF 2 trang có text; ảnh sáng/tối 1512/390, canvas 760×1014 và 370×494 cho scan; zoom PDF text lên 200% và 400%, canvas giới hạn ~3,5 triệu pixel, chọn text bằng Selection API, console/pageerror rỗng. Chưa kiểm Windows/profile thật, Android/Firefox, thao tác chọn bằng chuột, hiệu năng tài liệu lớn.
 
 **2026-11-17 | v3.5.593 | Arena:**
 

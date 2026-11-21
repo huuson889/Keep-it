@@ -226,16 +226,46 @@
         hooks.progress?.(.25 + index / document.numPages * .7);
       }
     } catch (e) { await document.destroy(); throw e; }
-    const jobs = new Set(); let disposed = false;
+    const jobs = new Set(), rasterJobs = new WeakMap(); let disposed = false;
+    function rasterScale(target, spec) {
+      const displayWidth = target.getBoundingClientRect().width || spec.width;
+      const desired = displayWidth / spec.width * Math.min(2, Math.max(1, devicePixelRatio || 1));
+      return Math.min(desired, 8192 / spec.width, 8192 / spec.height, Math.sqrt(3500000 / (spec.width * spec.height)));
+    }
+    function makeCanvas(spec, scale) {
+      const canvas = window.document.createElement('canvas');
+      canvas.width = Math.max(1, Math.ceil(spec.width * scale)); canvas.height = Math.max(1, Math.ceil(spec.height * scale));
+      canvas.style.width = spec.width + 'px'; canvas.style.height = spec.height + 'px';
+      return canvas;
+    }
     return { kind:'pdf', pages, passwordProtected,
+      async refreshRaster(target, number) {
+        if (disposed || !target.isConnected) return;
+        const old = target.querySelector(':scope > canvas'), spec = pages[number - 1];
+        if (!old || !spec || !old.width) return;
+        const scale = rasterScale(target, spec), desired = Math.ceil(spec.width * scale);
+        rasterJobs.get(target)?.render?.cancel();
+        const request = {}; rasterJobs.set(target, request);
+        if (desired <= old.width * 1.15 && desired >= old.width * .65) { rasterJobs.delete(target); return; }
+        const page = await document.getPage(number);
+        if (disposed || !target.isConnected || rasterJobs.get(target) !== request || target.querySelector(':scope > canvas') !== old) return;
+        const canvas = makeCanvas(spec, scale), viewport = page.getViewport({ scale:1 });
+        const render = page.render({ canvasContext:canvas.getContext('2d'), viewport, transform:[scale,0,0,scale,0,0] });
+        request.render = render; jobs.add(render);
+        try {
+          await render.promise;
+          if (!disposed && target.isConnected && rasterJobs.get(target) === request && target.querySelector(':scope > canvas') === old) {
+            old.replaceWith(canvas); old.width = old.height = 0;
+          }
+        } catch (error) { if (error?.name !== 'RenderingCancelledException') throw error; }
+        finally { jobs.delete(render); if (rasterJobs.get(target) === request) rasterJobs.delete(target); }
+      },
       async render(target, number) {
         if (disposed) return; const page = await document.getPage(number), spec = pages[number - 1], viewport = page.getViewport({ scale:1 });
-        const canvas = window.document.createElement('canvas'), layer = window.document.createElement('div'); layer.className = 'textLayer pdfTextLayer';
+        const scale = rasterScale(target, spec), canvas = makeCanvas(spec, scale), layer = window.document.createElement('div'); layer.className = 'textLayer pdfTextLayer';
         layer.style.setProperty('--total-scale-factor', 1); layer.style.setProperty('--scale-factor', 1);
-        const dpr = Math.min(2, Math.max(1,devicePixelRatio||1)*2, 8192/spec.width, 8192/spec.height, Math.sqrt(3500000 / (spec.width * spec.height)));
-        canvas.width = Math.ceil(spec.width * dpr); canvas.height = Math.ceil(spec.height * dpr); canvas.style.width = spec.width + 'px'; canvas.style.height = spec.height + 'px';
         target.replaceChildren(canvas, layer);
-        const render = page.render({ canvasContext:canvas.getContext('2d'), viewport, transform:[dpr,0,0,dpr,0,0] }); jobs.add(render);
+        const render = page.render({ canvasContext:canvas.getContext('2d'), viewport, transform:[scale,0,0,scale,0,0] }); jobs.add(render);
         const textLayer = new lib.TextLayer({ textContentSource:spec.textContent, container:layer, viewport }); jobs.add(textLayer);
         try {
           await Promise.all([render.promise, textLayer.render()]);
