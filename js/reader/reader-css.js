@@ -231,4 +231,8 @@ globalThis.LHN_READER_CSS = flagFontUrl => `
     #lhn-bilingual-reading-bar.lhn-dark .lhn-br-range::-moz-range-track{background:rgba(255,255,255,.18)}
     #lhn-bilingual-reading-bar .lhn-br-range::-webkit-slider-runnable-track{background:var(--kp-line-l)}
     #lhn-bilingual-reading-bar .lhn-br-range::-moz-range-track{background:var(--kp-line-l)}
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-panel{background:linear-gradient(to bottom,var(--kp-sheet-head-l) 0 12px,transparent 42px),var(--kp-glass-l)}
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide).lhn-dark .lhn-br-panel{background:linear-gradient(to bottom,var(--kp-sheet-head-d) 0 12px,transparent 42px),var(--kp-glass-d)}
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-sbody{scrollbar-width:none}
+    #lhn-bilingual-reading-bar:not(.lhn-br-wide) .lhn-br-sbody::-webkit-scrollbar{display:none}
   `;

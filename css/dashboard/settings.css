@@ -1230,3 +1230,16 @@ html.dark #dashboardSettingsDialog .kp-dict-preview .lhn-dict-brand-name,html.da
   #dashboardSettingsDialog .kp-wc-legend b{font-weight:700;}
   html.dark #dashboardSettingsDialog :is(.kp-wc-sample, .kp-wc-t){color:#e2e2e5;}
   html.dark #dashboardSettingsDialog :is(.kp-wc-legend, .kp-wc-note){color:#95959c;}
+
+/* Sheet surfaces: keep the handle area opaque, fade to the existing glass,
+   and hide scrollbars without disabling the scrollports. */
+@media (orientation: portrait), (orientation: landscape) and (max-height: 499.98px) {
+  #dashboardSettingsDialog.dashboard-settings-dialog::before { background: linear-gradient(to bottom,#fff 0 12px,transparent 42px),var(--kp-glass); }
+  html.dark #dashboardSettingsDialog.dashboard-settings-dialog::before { background: linear-gradient(to bottom,#18181c 0 12px,transparent 42px),var(--kp-glass); }
+  #dashboardSettingsDialog :is(.settings-window-content,.settings-window-sidebar,.settings-window-nav) { scrollbar-width: none !important; }
+  #dashboardSettingsDialog :is(.settings-window-content,.settings-window-sidebar,.settings-window-nav)::-webkit-scrollbar { display:none !important; width:0 !important; height:0 !important; }
+}
+@media (orientation: portrait) and (max-width: 699px), (orientation: landscape) and (max-height: 499.98px) {
+  .profile-auth-dialog form { background:linear-gradient(to bottom,#fff 0 12px,transparent 42px),var(--au-glass); }
+  html.dark .profile-auth-dialog form { background:linear-gradient(to bottom,#18181c 0 12px,transparent 42px),var(--au-glass); }
+}

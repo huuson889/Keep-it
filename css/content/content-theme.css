@@ -4,6 +4,13 @@
   border:1px solid var(--lhn-ui-border)!important; border-radius:16px!important;
   box-shadow:var(--lhn-ui-shadow)!important;
 }
+#lhn-panel, #lhn-direct-translation, #lhn-full-english-dictionary{
+  background:var(--kp-glass-l)!important; -webkit-backdrop-filter:var(--kp-blur)!important; backdrop-filter:var(--kp-blur)!important;
+  border:1px solid var(--kp-line-l)!important; box-shadow:var(--kp-popup-shadow-l)!important;
+}
+#lhn-panel.lhn-ui-dark, #lhn-direct-translation.lhn-ui-dark, #lhn-full-english-dictionary.lhn-dict-dark{
+  background:var(--kp-glass-d)!important; border-color:var(--kp-popup-line-d)!important; box-shadow:var(--kp-popup-shadow-d)!important;
+}
 #lhn-panel { padding:14px!important; }
 #lhn-note-pop { padding:13px!important; }
 #lhn-panel .lhn-popup-arrow { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; }
@@ -44,4 +51,6 @@
   --lhn-ui-border:#e2e8f0; --lhn-ui-border-soft:#eef2f7; --lhn-ui-brand:#4f46e5; --lhn-ui-brand-hover:#4338ca;
   --lhn-ui-brand-soft:#f5f3ff; color-scheme:light!important;
 }
+#lhn-panel.lhn-ui-light{--lhn-ui-surface:var(--kp-glass-l);--lhn-ui-raised:var(--kp-tile-l);--lhn-ui-border:var(--kp-line-l)}
+#lhn-panel.lhn-ui-dark{--lhn-ui-surface:var(--kp-glass-d);--lhn-ui-raised:var(--kp-tile-d);--lhn-ui-border:var(--kp-line-d)}
 /* Sidebar edit dialog dark mode, matched to the dashboard editor. */

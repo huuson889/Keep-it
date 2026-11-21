@@ -156,18 +156,17 @@
     const top = Math.max(margin, Math.min(y, innerHeight - el.offsetHeight - margin));
     el.style.left = left + "px"; el.style.top = top + "px";
   }
-  // Touch overlay (phone): translation/dictionary for a subtitle word opens as a bottom sheet instead of floating.
-  function placeTouchOverlaySheet(popup, anchor) {
-    // a Range made with selectNode() starts at the parent — the selected node itself is childNodes[startOffset]
-    const anchorNode = anchor?.startContainer?.childNodes?.[anchor.startOffset]?.id === "lhn-bar-dict-anchor" ? anchor.startContainer.childNodes[anchor.startOffset] : anchor?.startContainer || anchor;
-    const barSheet = anchorNode?.id === "lhn-bar-dict-anchor" && matchMedia("(pointer: coarse)").matches;
-    if (!barSheet && (!document.documentElement.classList.contains("lhn-touch-overlay") || anchorNode?.getRootNode?.()?.host?.id !== "keepit-host")) return false;
-    if (popup.id !== "lhn-direct-translation" && popup.id !== "lhn-full-english-dictionary") return false;
-    popup.classList.add("lhn-touch-sheet"); popup.classList.toggle("lhn-bar-sheet", barSheet);
-    popup.style.setProperty("z-index", "2147483647", "important");   // a bottom sheet stays above the Keepit bar
+  // On touch, Full Dictionary uses the same drag controller as the other app sheets.
+  function placeTouchOverlaySheet(popup) {
+    if (popup.id !== "lhn-full-english-dictionary" || !matchMedia("(pointer: coarse)").matches) return false;
+    popup.classList.add("lhn-touch-sheet");
+    if (!popup.querySelector(":scope > .lhn-dict-sheet-head")) {
+      const head = document.createElement("div"), grip = document.createElement("span");
+      head.className = "lhn-dict-sheet-head"; grip.className = "lhn-dict-sheet-grip"; grip.setAttribute("aria-hidden", "true");
+      head.append(grip); popup.prepend(head);
+    }
+    popup.style.setProperty("z-index", "2147483647", "important");
     popup.style.removeProperty("left"); popup.style.removeProperty("top");
-    // v3.5.161: same sheet behaviour as every Keepit sheet (js/shared/sheet-kit.js) — drag down from anywhere (scrolled
-    // content back to its top first), the page behind does not scroll while it is open
     globalThis.LHN_SHEET?.attach(popup, { isOpen:() => popup.isConnected && popup.classList.contains("lhn-touch-sheet"), close:() => closeTouchSheetPopup(popup), watch:popup });
     return true;
   }
@@ -237,13 +236,25 @@
     popup.style.setProperty("--lhn-popup-anchor-width", `${Math.max(1, rect.width)}px`, "important");
     setSourceLayer(popup, node);
     // When the anchor leaves the viewport, retain its last side instead of clamping it.
-    if (rect.bottom >= 0 && rect.top <= innerHeight) popup._lhnAbove = rect.bottom + 8 + popup.offsetHeight > innerHeight - 10;
+    let lowerEdge = innerHeight - 10;
+    if (popup === panel) {
+      const bar = document.getElementById("lhn-touch-ui")?.shadowRoot?.getElementById("bar");
+      const br = bar?.getBoundingClientRect(), cs = bar && getComputedStyle(bar);
+      const center = rect.left + rect.width / 2;
+      if (br && br.width && br.height && cs.visibility !== "hidden" && +cs.opacity > 0 && center >= br.left && center <= br.right && br.top > rect.bottom) lowerEdge = Math.min(lowerEdge, br.top - 8);
+    }
+    if (rect.bottom >= 0 && rect.top <= innerHeight) popup._lhnAbove = rect.bottom + 8 + popup.offsetHeight > lowerEdge;
     popup.classList.toggle("lhn-popup-above", !!popup._lhnAbove);
     const y = popup._lhnAbove ? rect.top - popup.offsetHeight - 8 : rect.bottom + 8;
     const x = rect.left + rect.width / 2 - popup.offsetWidth / 2;
     position(popup, x, y); // keep the translation popup's existing horizontal edge handling
     popup.style.setProperty("left", popup.style.left, "important");
-    popup.style.setProperty("top", `${y}px`, "important");
+    // Keep a dictionary that fits within the viewport accessible when neither
+    // side of the selected text has enough room; off-screen anchors retain the
+    // existing scroll-following behaviour.
+    const dictTop = popup.id === "lhn-full-english-dictionary" && rect.bottom >= 0 && rect.top <= innerHeight && popup.offsetHeight <= innerHeight - 20
+      ? Math.max(10, Math.min(y, innerHeight - popup.offsetHeight - 10)) : y;
+    popup.style.setProperty("top", `${dictTop}px`, "important");
     if (popup === panel) {
       const arrow = popup.querySelector(".lhn-popup-arrow");
       if (arrow) {
@@ -317,12 +328,16 @@
     }
     positionPopupAtAnchor(popup, range);
   }
+  function applyPopupTokens(element) {
+    for (const [key, value] of Object.entries(globalThis.LHN_THEME?.TOKENS || {})) element.style.setProperty(`--kp-${key}`, value);
+  }
   function makeDictionaryPopup(range) {
     dictionaryPopup?.remove();
-    const popup = document.createElement("div"); popup.id = "lhn-full-english-dictionary";
+    const popup = document.createElement("div"); popup.id = "lhn-full-english-dictionary"; applyPopupTokens(popup);
     popup.classList.toggle("lhn-dict-dark", isDictionaryDark());
     popup.setAttribute("role", "dialog"); popup.setAttribute("aria-label", t("showFullEnglishDictionary"));
     popup.innerHTML = '<div class="lhn-dict-loading"><span></span><span></span><span></span></div>';
+    installDictionaryHeartUI(popup);
     popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
     popup.addEventListener("click", event => {
       const action = event.target.closest("[data-dict-action]"); if (!action) return;
@@ -391,6 +406,7 @@
     }
     dictionaryPopupAt(popup, popup._lhnAnchorRange);
     fitDictionaryBrand(popup); requestAnimationFrame(() => fitDictionaryBrand(popup));
+    popup._lhnStartHeartGuide?.();
   }
   function fillNoteFromDictionary(popup = dictionaryPopup) {
     const popupWord = popup?.dataset.word?.toLowerCase();
@@ -446,7 +462,7 @@
   function placeDictionaryBrand(popup) {
     const body = popup?.querySelector(".lhn-dict-body"), last = body?.lastElementChild;
     if (!body) return;
-    const brand = '<span class="lhn-dict-brand" role="img" aria-label="Keepit Dictionary"><span class="lhn-dict-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></span><span class="lhn-dict-brand-name" aria-hidden="true"><b></b><span></span></span></span>';
+    const brand = `<span class="lhn-dict-brand" role="img" aria-label="Keepit Dictionary"><span class="lhn-dict-brand-mark" aria-hidden="true"><img src="${browser.runtime.getURL('assets/icons/icon.svg')}" alt=""></span><span class="lhn-dict-brand-name" aria-hidden="true"><b></b><span></span></span></span>`;
     let host = body;
     if (last?.matches(".lhn-dict-related")) host = last;
     else if (last?.matches(".lhn-dict-pos-list")) host = last.querySelector(".lhn-dict-pos:last-child") || last;
@@ -475,25 +491,48 @@
       if (tops.size > 1 || words.scrollHeight > words.clientHeight + 1) posMark.closest(".lhn-dict-pos-list")?.append(posMark);
     }
   }
-  // Same heartbeat, two ripples and ten heart particles as the Dashboard favorite button.
-  function playDictionaryHeartEffect(button, event) {
-    if (!button || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches) return;
-    const rect = button.getBoundingClientRect(), color = "#f43f5e";
-    const hasPoint = Number.isFinite(event?.clientX) && (event.clientX || event.clientY);
-    const x = hasPoint ? event.clientX : rect.left + rect.width / 2, y = hasPoint ? event.clientY : rect.top + rect.height / 2;
+  function dictionaryHeartLayer() {
     let layer = document.getElementById("lhn-dict-effect-layer");
     if (!layer) { layer = document.createElement("div"); layer.id = "lhn-dict-effect-layer"; layer.setAttribute("aria-hidden", "true"); }
-    document.documentElement.append(layer); // keep it above a dict popup re-created later (same z-index), so the burst is never covered
-    button.classList.remove("lhn-dict-heart-pulse"); void button.offsetWidth; button.classList.add("lhn-dict-heart-pulse");
-    button.addEventListener("animationend", e => { if (e.animationName === "lhn-dict-heartbeat") button.classList.remove("lhn-dict-heart-pulse"); }, { once:true });
-    for (let i = 0; i < 2; i++) { const ring = document.createElement("span"); ring.className = "lhn-dict-ripple-ring"; ring.style.setProperty("--effect-color", color); ring.style.left = `${x}px`; ring.style.top = `${y}px`; ring.style.setProperty("--delay", `${i * 100}ms`); layer.append(ring); ring.addEventListener("animationend", () => ring.remove(), { once:true }); }
-    for (let i = 0; i < 10; i++) {
-      const particle = document.createElement("span"), angle = Math.PI * 2 * i / 10 + (Math.random() - .5) * .45, distance = 34 + Math.random() * 42;
-      particle.className = "lhn-dict-ripple-particle"; particle.style.left = `${x}px`; particle.style.top = `${y}px`; particle.style.setProperty("--effect-color", color);
-      particle.style.setProperty("--tx", `${Math.cos(angle) * distance}px`); particle.style.setProperty("--ty", `${Math.sin(angle) * distance}px`); particle.style.setProperty("--turn", `${Math.round((Math.random() - .5) * 70)}deg`);
-      particle.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/></svg>';
-      layer.append(particle); particle.addEventListener("animationend", () => particle.remove(), { once:true });
+    document.documentElement.append(layer);
+    return layer;
+  }
+  function installDictionaryHeartUI(popup) {
+    const fx = globalThis.LHN_HEART_EFFECTS;
+    if (!fx) return;
+    if (!document.getElementById("lhn-heart-effects-css")) {
+      const style = document.createElement("style"); style.id = "lhn-heart-effects-css"; style.textContent = fx.css;
+      (document.head || document.documentElement).append(style);
     }
+    let lastTap = -Infinity, timer = 0, stop = () => {}, moved = false, origin = null, observer = null;
+    const dismissGuide = () => { popup._lhnHeartGuideStarted = true; clearTimeout(timer); const end = stop; stop = () => {}; end(); observer?.disconnect(); observer = null; document.removeEventListener("pointerdown", dismissGuide, true); };
+    popup._lhnStartHeartGuide = () => {
+      if (popup._lhnHeartGuideStarted || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      popup._lhnHeartGuideStarted = true;
+      document.addEventListener("pointerdown", dismissGuide, true);
+      observer = new MutationObserver(() => { if (!popup.isConnected) dismissGuide(); });
+      observer.observe(document.documentElement, {childList:true,subtree:true});
+      timer = setTimeout(() => {
+        if (!popup.isConnected) return;
+        const r = popup.getBoundingClientRect(), hit = document.elementFromPoint(Math.max(1, Math.min(innerWidth - 1, r.left + r.width / 2)), Math.max(1, Math.min(innerHeight - 1, r.top + Math.min(r.height / 2, 80))));
+        if (!hit || !popup.contains(hit)) { dismissGuide(); return; }
+        const layer = dictionaryHeartLayer();
+        stop = fx.guide(layer, r.left + r.width * .75, r.top + r.height * .6, dismissGuide);
+      }, 900);
+    };
+    popup.addEventListener("pointerdown", e => { dismissGuide(); moved = false; origin = { x:e.clientX, y:e.clientY }; }, true);
+    popup.addEventListener("pointermove", e => { if (origin && Math.hypot(e.clientX-origin.x,e.clientY-origin.y)>6) moved = true; }, true);
+    popup.addEventListener("click", e => {
+      if (moved || e.target.closest("button,a,input,textarea,select,[contenteditable]")) { lastTap = -Infinity; return; }
+      const now = performance.now();
+      if (now - lastTap < 300) {
+        fx.big(dictionaryHeartLayer(), e.clientX, e.clientY);
+        const button = popup.querySelector(".lhn-dict-heart"), key = cleanText(popup._lhnView?.word).toLowerCase();
+        fx.beat(button);
+        if (button && key && !popup._lhnSaved?.has(key) && !popup._lhnHeartBusy) toggleDictionaryHeart(popup, button, e, true);
+      }
+      lastTap = now;
+    });
   }
   // Flashcard sentence for a word not on the page: the first example containing it (a phrase must appear as a whole).
   function dictionaryExampleSentence(view, word, isPhrase) {
@@ -511,13 +550,17 @@
     return cleanText(range.toString()).toLowerCase() === key;
   }
   // Heart: a page word is highlighted and saved; any other word or phrase is saved to flashcards only. A second click removes it.
-  async function toggleDictionaryHeart(popup, button, event) {
+  async function toggleDictionaryHeart(popup, button, event, silent = false) {
     if (popup._lhnHeartBusy) return;
-    playDictionaryHeartEffect(button, event);
     const view = popup._lhnView || {}, word = cleanText(view.word), key = word.toLowerCase();
     if (!key) return;
     popup._lhnSaved = popup._lhnSaved || new Map();
     const saved = popup._lhnSaved.get(key);
+    if (!saved && !silent) {
+      const rect = button.getBoundingClientRect();
+      globalThis.LHN_HEART_EFFECTS?.beat(button);
+      globalThis.LHN_HEART_EFFECTS?.burst(dictionaryHeartLayer(), rect.left + rect.width / 2, rect.top + rect.height / 2);
+    }
     const setHeart = hearted => popup.querySelectorAll(".lhn-dict-heart").forEach(heart => { heart.classList.toggle("is-favorite", hearted); heart.setAttribute("aria-pressed", String(hearted)); });
     setHeart(!saved);
     popup._lhnHeartBusy = true;
@@ -718,7 +761,7 @@
     showTranslateIcon(selectedRange);
   }
   function createTranslationPopup(range) {
-    const popup = document.createElement("div"); popup.id = "lhn-direct-translation"; popup.setAttribute("role", "status"); popup.setAttribute("aria-live", "polite");
+    const popup = document.createElement("div"); popup.id = "lhn-direct-translation"; applyPopupTokens(popup); popup.setAttribute("role", "status"); popup.setAttribute("aria-live", "polite");
     popup.classList.toggle("lhn-ui-dark", isSidebarDark()); popup.classList.toggle("lhn-ui-light", !isSidebarDark());
     const text = document.createElement("span"); text.className = "lhn-direct-translation-text"; text.setAttribute("aria-label", t("translationLoading"));
     const loading = document.createElement("span"); loading.className = "lhn-direct-translation-loading"; loading.setAttribute("aria-hidden", "true");
@@ -729,6 +772,7 @@
     const selectedText = cleanText(range.toString());
     const anchor = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement;
     speak.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); if (selectedText) speakHighlightedText(selectedText, speechLanguageForText(selectedText, anchor), null, anchor); });
+    installDictionaryHeartUI(popup);
     popup.addEventListener("mousedown", event => event.stopPropagation()); popup.addEventListener("click", event => event.stopPropagation());
     popup.append(speak, text); popup._lhnAnchorRange = range; document.documentElement.appendChild(popup); translationPopup = popup;
     // Keep host-page rules from hiding or restyling this extension-owned popup.
@@ -802,9 +846,9 @@
     const selectedContext = getContext(activeRange);
     const selectedSentence = settings.sentenceNoteEnabled !== false ? (pageContext?.sentenceContext?.(activeRange) || LHN_SENTENCE_NOTE.getContext(activeRange, cleanText)) : "";
     selectedColor = existing ? CONFIG.normalizeColor(existing.color) : CONFIG.normalizeColor(settings.defaultHighlightColor); activeAnnotationId = existing?.id || null; colorChosen = false; composerOriginalColor = selectedColor;
-    panel = document.createElement("div"); panel.id = "lhn-panel"; panel.dataset.lhnDictionaryWord = dictionaryWord.toLowerCase(); panel._lhnNoteEdited = !!existing; const composerPanel = panel; syncSidebarTheme();
+    panel = document.createElement("div"); panel.id = "lhn-panel"; applyPopupTokens(panel); panel.dataset.lhnDictionaryWord = dictionaryWord.toLowerCase(); panel._lhnNoteEdited = !!existing; const composerPanel = panel; syncSidebarTheme();
     const paletteWidth = Math.max(230, 66 + 34 * COLORS.length);
-    panel.style.width = `${Math.min(paletteWidth, 330, Math.max(200, innerWidth - 20))}px`;
+    panel.style.width = `${Math.min(paletteWidth * 1.5, 405, Math.max(200, innerWidth - 20))}px`;
     const arrow = document.createElement("div"); arrow.className = "lhn-popup-arrow"; arrow.setAttribute("aria-hidden", "true");
     const colors = document.createElement("div"); colors.className = "lhn-colors";
     COLORS.forEach(color => {
@@ -832,13 +876,12 @@
     const toolbar = document.createElement("div"); toolbar.className = "lhn-composer-toolbar";
     const closeButton = makeButton("×", "lhn-close-btn", removeComposer); closeButton.setAttribute("aria-label", t("cancel")); closeButton.title = t("cancel"); toolbar.append(colors, closeButton);
     const inputWrap = document.createElement("div"); inputWrap.className = "lhn-input-wrap";
-    const noteIcon = document.createElement("span"); noteIcon.className = "lhn-note-icon"; noteIcon.setAttribute("aria-hidden", "true"); noteIcon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 3h7l5 5v13H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M15 3v5h5M10 13h6M10 17h6"/></svg>';
     const textarea = document.createElement("textarea"); textarea.rows = 2; textarea.placeholder = t("notePlaceholder"); textarea.value = existing?.note || ""; textarea.setAttribute("aria-label", t("noteAria"));
     const tagField = document.createElement("label"); tagField.className = "lhn-composer-tags-field";
     const tagCaption = document.createElement("span"); tagCaption.dataset.lhnI18n = "tagsLabel"; tagCaption.textContent = t("tagsLabel");
     const tagEditor = globalThis.LHN_UI_COMPONENTS.createTagEditor(existing?.tags || [], "lhn-composer-tags", t); tagField.append(tagCaption, tagEditor.element);
     const resizeNote = () => { textarea.style.height = "54px"; textarea.style.height = Math.max(54, textarea.scrollHeight) + "px"; };
-    textarea.addEventListener("input", resizeNote); inputWrap.append(noteIcon, textarea);
+    textarea.addEventListener("input", resizeNote); inputWrap.append(textarea);
     let noteEdited = !!existing;
     textarea.addEventListener("input", () => { noteEdited = true; composerPanel._lhnNoteEdited = true; });
     panel.append(arrow, toolbar, inputWrap, tagField);

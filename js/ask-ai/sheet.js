@@ -14,6 +14,8 @@
   transform:translateY(105%); transition:transform .26s cubic-bezier(.2,.8,.2,1),translate .2s ease; -webkit-user-select:none; user-select:none; color-scheme:light; }
 .sheet.lhn-theme-dark{ --nt-g:rgba(36,36,42,.76); --nt-sheen:rgba(255,255,255,.06); --nt-hi:rgba(255,255,255,.1); --nt-edge:rgba(0,0,0,.55); --nt-tx2:#a1a1aa;
   box-shadow:inset 0 1px 0 var(--nt-hi),0 -10px 30px rgba(0,0,0,.45); color-scheme:dark; }
+ .sheet{background:linear-gradient(to bottom,#fff 0 12px,transparent 42px),linear-gradient(180deg,var(--nt-sheen) 0,transparent 34%),var(--nt-g)}
+.sheet.lhn-theme-dark{background:linear-gradient(to bottom,#18181c 0 12px,transparent 42px),linear-gradient(180deg,var(--nt-sheen) 0,transparent 34%),var(--nt-g)}
 .sheet.lhn-side-visible{ transform:none; }
 .sheet.lhn-sheet-full{ height:calc(96vh / var(--keepit-uiz,1)); height:calc(96dvh / var(--keepit-uiz,1)); }
 .sheet.lhn-sheet-growing{ transition:none; }

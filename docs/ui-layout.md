@@ -19,12 +19,12 @@
 |---|---|---|
 | Thanh Keepit | Thanh full dưới đáy | Đảo nổi giữa đáy |
 | Menu, cài đặt, ☰ | Trượt từ đáy (bottom sheet) | Menu nổi cạnh nút |
-| Popup dịch và từ điển đầy đủ | Trượt từ đáy, cao vừa nội dung (tối đa ~85%), cuộn bên trong | Nổi cạnh chữ được chọn, rộng tối đa 380px, luôn trong màn hình, cuộn bên trong |
+| Popup dịch và từ điển đầy đủ | Dịch giữ popup; từ điển là sheet khi cảm ứng, nội dung như desktop và hàng đầu scale 1,2 | Dịch và từ điển giữ popup cạnh chữ; từ điển chuột không tự thêm vùng cuộn |
 | Overlay | 1 cột; tab Xem · Nói · Chép | Nhiều cột — Xem: video \| danh sách; Học: danh sách \| thẻ \| ghi chú |
 | Reader | Thanh full | Đảo nổi |
 | Dashboard | Tab dưới đáy | Thanh bên |
 
-- Popup dịch và từ điển đầy đủ dùng chung một kiểu; từ điển chỉ nhiều nội dung hơn, không có khung lớn hay full màn riêng.
+- Ba popup Dịch, Tô sáng và Từ điển dùng nền kính, viền và shadow chung; ô Tô sáng rộng tối đa 405px, ghi chú dài cuộn riêng. Sheet không hiện scrollbar, vẫn cuộn; vùng tay kéo nền đặc mờ dần.
 - Quy tắc áp dụng trên mọi trang web, không chỉ trong Overlay/thanh Keepit.
 
 ## 4. Chạm / chuột chỉ đổi cách thao tác, không đổi giao diện

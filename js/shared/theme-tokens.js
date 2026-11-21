@@ -15,7 +15,12 @@
     "tile-l":"rgba(255,255,255,.55)",    // ô tính năng — sáng
     "line-l":"rgba(15,23,42,.12)",       // viền ô — sáng
     "tile-d":"rgba(255,255,255,.08)",    // ô tính năng, ô nhập — tối
-    "line-d":"rgba(255,255,255,.12)"     // viền ô — tối
+    "line-d":"rgba(255,255,255,.12)",
+    "popup-line-d":"rgba(255,255,255,.24)",
+    "sheet-head-l":"#fff",
+    "sheet-head-d":"#18181c",
+    "popup-shadow-l":"0 2px 14px rgba(15,23,42,.5)",
+    "popup-shadow-d":"0 8px 24px rgba(0,0,0,.48)"     // viền ô — tối
   });
   const css = selector => `${selector}{${Object.entries(TOKENS).map(([k, v]) => `--kp-${k}:${v}`).join(";")}}`;
   // v3.5.271: thanh cuộn 3px — QUY TẮC CHUNG CẢ APP. Mọi shadow root chèn chuỗi này (trang thường dùng css/content/content.css,

@@ -642,16 +642,13 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
 
     // ---------- favourites + TikTok hearts ----------
     function burst(btn) {
-      const b = document.createElement('span'); b.className = 'burst';
-      const o = ov.getBoundingClientRect(), r0 = btn.getBoundingClientRect();
-      b.style.left = `${(r0.left + r0.width / 2 - o.left) / S.scale}px`; b.style.top = `${(r0.top + r0.height / 2 - o.top) / S.scale}px`;
-      b.innerHTML = '<b></b><b></b>' + Array.from({ length: 10 }, (_, i) => { const a = i / 10 * Math.PI * 2, r = 34 + (i % 3) * 8; return `<i style="--x:${(Math.cos(a) * r).toFixed(1)}px;--y:${(Math.sin(a) * r).toFixed(1)}px"><svg viewBox="0 0 24 24"><path d="${HEART}"/></svg></i>`; }).join('');
-      ov.appendChild(b); setTimeout(() => b.remove(), 900);
+      const o = ov.getBoundingClientRect(), r = btn.getBoundingClientRect();
+      globalThis.LHN_HEART_EFFECTS.burst(ov, (r.left + r.width / 2 - o.left) / S.scale, (r.top + r.height / 2 - o.top) / S.scale);
     }
     function setFav(on, src) {
       if (src && !src.classList.contains('favb')) src = src.closest('.favb') || src;
       const was = S.fav; S.fav = on; syncFav();
-      if (on) $$('.favb').forEach((b) => { b.classList.remove('beat'); void b.offsetWidth; b.classList.add('beat'); if (b === src) burst(b); });
+      if (on) $$('.favb').forEach((b) => { globalThis.LHN_HEART_EFFECTS.beat(b); if (b === src) burst(b); });
       if (was !== on) { toast(on ? T('addedToFavorites') : T('removedFromFavorites')); B.setFavorite(on); }
     }
     // tim to: icon tim trên video đang ẩn (video đang chạy / rạp hát) → hiện tạm 1.6s để thấy tim đỏ + nhịp
@@ -675,38 +672,16 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
         const pl = $('#player'), o = ov.getBoundingClientRect(), sc = S.scale || 1, ref = (S.input === 'touch' ? pl.closest('.stage') || pl : pl).getBoundingClientRect();
         const x = (ref.left + ref.width * 0.75 - o.left) / sc, y = (ref.top + ref.height * 0.75 - o.top) / sc;
         hGuideStop?.(); // Thường → Rạp without a tap (keyboard): the old hand goes first, never two at once
-        const g = document.createElement('div'); g.className = 'hguide'; g.setAttribute('aria-hidden', 'true');
-        g.style.left = `${x}px`; g.style.top = `${y}px`; g.innerHTML = `<span class="hgh">${ic('tap')}</span>`;
-        ov.appendChild(g);
-        const TAPS = Array.from({ length: 10 }, (_, i) => 500 + i * 220), DUR = TAPS[9] + 1420, // v3.5.304: 10 taps in a row (2× the 5 before), same lead-in / fade
-           svg = g.querySelector('svg'), anims = [], timers = [], hearts = [];
-        anims.push(g.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none', offset: 0.1 }, { opacity: 1, transform: 'none', offset: 0.8 }, { opacity: 0, transform: 'none' }], { duration: DUR, easing: 'ease-out' }));
-        const kf = [{ transform: 'none', offset: 0 }];
-        TAPS.forEach((t) => kf.push({ transform: 'none', offset: (t - 60) / DUR }, { transform: 'scale(.8)', offset: t / DUR }, { transform: 'none', offset: (t + 80) / DUR }));
-        kf.push({ transform: 'none', offset: 1 });
-        anims.push(svg.animate(kf, { duration: DUR }));
-        TAPS.forEach((t, i) => {
-          const r = document.createElement('i'); r.className = 'hgr'; g.appendChild(r);
-          anims.push(r.animate([{ opacity: 0.75, transform: 'scale(.3)' }, { opacity: 0, transform: 'scale(1.35)' }], { duration: 420, delay: t, easing: 'ease-out', fill: 'backwards' }));
-          if (i) timers.push(setTimeout(() => { // từ cái chạm thứ 2: tim to như chạm 2 lần thật (xoay ngẫu nhiên)
-            const h = document.createElement('div'); h.className = 'hrt'; h.setAttribute('aria-hidden', 'true');
-            h.style.left = `${x + (Math.random() * 24 - 12)}px`; h.style.top = `${y - 20 + (Math.random() * 16 - 8)}px`; h.style.setProperty('--r', `${(Math.random() * 50 - 25).toFixed(1)}deg`);
-            h.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="url(#gheart)"/></svg>`;
-            ov.appendChild(h); hearts.push(h); setTimeout(() => h.remove(), 1000);
-          }, t));
-        });
-        const stop = () => { timers.forEach(clearTimeout); anims.forEach((a) => a.cancel()); g.remove(); hearts.forEach((h) => h.remove()); ov.removeEventListener('pointerdown', stop, true); if (hGuideStop === stop) hGuideStop = null; };
-        hGuideStop = stop;
-        anims[0].onfinish = stop; ov.addEventListener('pointerdown', stop, { once: true, capture: true });
+        let stopEffect = () => {};
+        const stop = () => { stopEffect(); ov.removeEventListener('pointerdown', stop, true); if (hGuideStop === stop) hGuideStop = null; };
+        stopEffect = globalThis.LHN_HEART_EFFECTS.guide(ov, x, y, () => { ov.removeEventListener('pointerdown', stop, true); if (hGuideStop === stop) hGuideStop = null; });
+        hGuideStop = stop; ov.addEventListener('pointerdown', stop, { once:true, capture:true });
       }, 900);
     }
     function heartAt(x, y) {
-      const h = document.createElement('div'); h.className = 'hrt';
-      h.style.left = `${x}px`; h.style.top = `${y}px`; h.style.setProperty('--r', `${(Math.random() * 50 - 25).toFixed(1)}deg`);
-      h.innerHTML = `<svg viewBox="0 0 24 24"><path d="${HEART}" fill="url(#gheart)"/></svg>`;
-      ov.appendChild(h); setTimeout(() => h.remove(), 1000);
+      globalThis.LHN_HEART_EFFECTS.big(ov, x, y);
       flashFav();
-      if (!S.fav) setFav(true); else { $$('.favb').forEach((b) => { b.classList.remove('beat'); void b.offsetWidth; b.classList.add('beat'); }); }
+      if (!S.fav) setFav(true); else { $$('.favb').forEach((b) => { globalThis.LHN_HEART_EFFECTS.beat(b); }); }
       vib(15);
     }
     const local = (e) => { const r = ov.getBoundingClientRect(); return { x: (e.clientX - r.left) / S.scale, y: (e.clientY - r.top) / S.scale }; };

@@ -1,13 +1,11 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.589**, tiếp từ **3.5.588** (dòng làm lại từ **3.5.574 `3ab24bf`**): popup nổi bám tầng chữ và vùng chọn, lật khi sát đáy; ô tô sáng và popup note neo toàn vùng chọn, căn giữa khi đủ chỗ và đẩy vào màn hình ở mép ngang như popup dịch/từ điển; tam giác ô tô sáng dịch theo tâm chữ và tránh góc bo.
-- Chọn cảm ứng: sau `touchcancel`, vùng chọn một từ không có khoảng trắng được chờ 900 ms; hủy nếu vùng chọn thay đổi hoặc có chạm mới. Đây là dự phòng, có thể hiện khi tay vẫn giữ bất động. Log thử và giao diện điều khiển đã được gỡ.
-- Khi cụm chọn chữ sát đáy phải lật lên, đặt toàn bộ cụm kể cả nút dưới logo phía trên dòng đầu của toàn vùng chọn; khi đủ chỗ vẫn đặt phía dưới như cũ.
-- Khi lớp phủ Trang tối đang hiện, popup được phép nằm trên lớp phủ để giữ màu; không sửa mã nhận diện, màu hay chuyển Trang tối. Sheet cảm ứng dịch/từ điển giữ nguyên.
-- Kiểm extension unpacked Chromium 159: 1512/390 sáng/tối, ảnh và crop 4×; đo tam giác ở hai mép, chữ ngắn và khi popup lật lên; hồi quy cuộn và Trang tối bật/tắt trên vùng màu rực. Không ghi nhận console.error/pageerror trong các bộ kiểm này.
-- Tài liệu: kiến trúc v30, `pages/documents.html` tự vẽ thư viện và mở tệp; Dashboard hiển thị khung. Ghi chú tài liệu dùng annotations chung.
-- Giới hạn: chưa kiểm profile Chrome thật, nhiều trang web thật, tệp PDF/Office của người dùng, cảm giác dùng/tốc độ hay mọi cấu trúc stacking context; preview Office hạn chế phông/đối tượng, chưa có OCR.
+- Version **3.5.590**, tiếp từ 3.5.589, dòng làm lại từ 3.5.574 `3ab24bf`: áp dụng UI demo popup v18, giữ cơ chế dịch và lưu dữ liệu của app.
+- Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
+- Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet được đồng bộ vùng tay kéo và thanh cuộn ẩn.
+- Đã kiểm Chromium unpacked 1512/390 sáng/tối với ảnh, crop 4×, số đo popup; chuột/chạm mô phỏng và kéo/cuộn sheet. Overlay dùng trang video fixture; AI dùng favicon fixture để tránh lỗi tài nguyên ngoài.
+- Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, tệp PDF/Office của người dùng, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
@@ -18,6 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
+- **UI 3.5.590:** cần thử Android và profile thật, Overlay video thực, thao tác sheet Cài đặt/Đăng nhập/Reader và AI thực; favicon provider ngoài có 404/bị chặn trong môi trường thử, bản kiểm UI dùng ảnh fixture.
 - **Popup 3.5.586:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
 - Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
@@ -77,7 +76,7 @@ Keepit - Test/
 │   │   ├── study/                 # study-score, learning-rules, session-index (chấm điểm, luật, chỉ mục cho Dashboard)
 │   │   ├── overlay-engine.js      # Cài đặt, chế độ xem/phụ đề, hàng đợi dịch phụ đề, yêu thích (từ view/ cũ, v3.5.195)
 │   ├── popup/                     # popup.js (entry)
-│   └── shared/                    # theme-tokens (màu kính sáng/tối --kp-…), custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), sheet-kit, selection-toolbar, site-icons, thumbnails
+│   └── shared/                    # theme-tokens (màu kính sáng/tối --kp-…), custom-font, icons, search (LHN_INDEX_SEARCH + LHN_SEARCH), heart-effects (tim Overlay/Từ điển), sheet-kit, selection-toolbar, site-icons, thumbnails
 ├── css/
 │   ├── content/                   # CSS của content script
 │   ├── dashboard/                 # CSS Dashboard; `overview.css` cho Overview, `dictation.css` cho route Dictation, `responsive.css` cho điện thoại/tablet (nạp cuối)
@@ -161,6 +160,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.590 | Arena:**
+
+- Tóm tắt: áp dụng demo v18 vào ba popup và các sheet; dùng logo app cho Từ điển, hiệu ứng tim và hướng dẫn chung với Overlay, bỏ gợn trắng của hướng dẫn; giữ luồng dữ liệu/lưu hiện hữu.
+- File: `css/content/content.css`, `css/content/content-theme.css`, `css/content/notes.css`, `css/dashboard/settings.css`, `js/content/content.js`, `js/content/keepit-bar-css.js`, `js/ask-ai/sheet.js`, `js/reader/reader-css.js`, `js/overlay/ui/overlay-css.js`, `js/overlay/ui/overlay-ui.js`, `js/shared/heart-effects.js`, `js/shared/theme-tokens.js`, `manifest.json`, `pages/documents.html`, `docs/ui-layout.md`, `docs/modules/shared.md`.
+- Kiểm tra: Chromium 159 unpacked 1512/390 sáng/tối, ảnh/crop 4× và số đo; kiểm popup, note dài, scrollbar, logo, tim Từ điển (ba lần và toggle), Overlay với video fixture, sheet menu/tìm kiếm/Ghi chú/Từ điển/Reader/Cài đặt/Đăng nhập/AI; kéo Ghi chú/menu/Từ điển/AI, ưu tiên cuộn Ghi chú; console/pageerror rỗng trong các ca UI (AI dùng favicon fixture vì các endpoint bên ngoài trả 404/bị chặn). Chưa kiểm thiết bị thật, provider AI thực, toàn bộ sheet và dữ liệu người dùng.
+
 
 **2026-11-17 | v3.5.589 | Arena:**
 

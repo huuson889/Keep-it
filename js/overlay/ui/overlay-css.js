@@ -1,7 +1,7 @@
 // Overlay — unified UI styles (demo keepit-overlay-unified-demo-v18.html, docs/ui-layout.md).
 // Injected into the overlay shadow root next to the legacy markup; every rule is scoped under .ov.
 // v3.5.200: LHN_THEME.css('.ov') = biến kính --kp-* dùng chung với thanh Keepit (js/shared/theme-tokens.js).
-const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THEME.scrollbar + String.raw`*{box-sizing:border-box}
+const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THEME.scrollbar + globalThis.LHN_HEART_EFFECTS.css + String.raw`*{box-sizing:border-box}
 .ov button{font:inherit;color:inherit}
 /* ======================================================================
    OVERLAY — one shell for every device: header · body · dock
@@ -23,8 +23,6 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .ib .bdg{position:absolute;right:3px;bottom:3px;min-width:14px;height:14px;padding:0 3px;border-radius:7px;background:var(--acc);color:#fff;font-size:9.5px;font-weight:800;line-height:14px;text-align:center}
 .favb.on{color:#ff2d55}
 .favb.on svg{fill:currentColor}
-.favb.beat{animation:hbeat .5s ease}
-@keyframes hbeat{0%{transform:scale(1)}30%{transform:scale(1.22)}55%{transform:scale(.94)}100%{transform:scale(1)}}
 
 /* header */
 .hd{flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--bd);background:var(--bg);z-index:6;transition:opacity .3s,transform .3s}
@@ -447,7 +445,6 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 /* v3.5.274: Nói — "Giọng bạn" đang phát: mic + "Câu tiếp" về kiểu nút không màu như "Nghe mẫu" */.ov .scard:is(.spvoice,.spmodel) .sctl :is(.mic,.pill.pri){background:var(--pn2);border:1px solid var(--bd);color:var(--tx);box-shadow:none}.ov.ambient .scard:is(.spvoice,.spmodel) .sctl :is(.mic,.pill.pri){background:color-mix(in srgb,var(--pn2) 45%,transparent);border-color:color-mix(in srgb,var(--tx) 10%,transparent)}
 /* v3.5.272: Nói — "Giọng bạn" đang phát = hiệu ứng như "Nghe lại" bên Chép; không phát = nút không màu *//* đang phát: nền xanh đặc như mic, icon giữ nhịp (tai / sóng), 2 vòng sóng ngoài nối nhau chạy liên tục */.ov .scard .pill:is(.vrec,.spml).on{position:relative;background:var(--play);border-color:var(--play);color:#fff;box-shadow:0 6px 18px color-mix(in srgb,var(--play) 40%,transparent)}.ov .scard .pill:is(.vrec,.spml).on svg{animation:pulse2 .9s infinite}.ov .scard .pill:is(.vrec,.spml).on::before,.ov .scard .pill:is(.vrec,.spml).on::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;animation:pring .9s linear infinite}.ov .scard .pill:is(.vrec,.spml).on::after{animation-delay:-.45s}@keyframes pring{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--play) 55%,transparent)}to{box-shadow:0 0 0 14px transparent}}.ov .scard .pill.vrec.on{background:var(--voice);border-color:var(--voice);box-shadow:0 6px 18px color-mix(in srgb,var(--voice) 40%,transparent)}.ov .scard .pill.vrec.on::before,.ov .scard .pill.vrec.on::after{animation-name:pringb}@keyframes pringb{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--voice) 55%,transparent)}to{box-shadow:0 0 0 14px transparent}}
 /* tim to (chạm 2 lần): icon tim trên video hiện tạm (chỉ tim, nút phóng to vẫn ẩn cả lúc mờ dần) */.ov .player.favshow:not(.card) .vcorner{display:flex!important;opacity:1!important;pointer-events:none!important}.ov .player.favshow:not(.card) .vcorner .vc:not(.favb){visibility:hidden;transition:none}.ov .player:not(.favshow) .vcorner .vc:not(.favb){transition:visibility 0s linear .25s}
-/* hướng dẫn tim (Xem): bàn tay to gấp đôi (136 / 64px); giữa góc phần tư phải dưới của cột video (cảm ứng) / video (chuột) */.hguide{position:absolute;width:136px;height:136px;margin:-68px 0 0 -68px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.38);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 8px 26px rgba(0,0,0,.3);color:#fff;pointer-events:none;z-index:31}.hguide .hgh{display:grid;place-items:center}.hguide svg{width:64px;height:64px;transform-origin:50% 75%}.hguide .hgr{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.85);opacity:0;pointer-events:none}
 .ov[data-w=c] .rpanel .diff{font-size:15px}
 .listen svg{width:20px;height:20px}
 .listen.on{animation:pulse2 1.2s infinite}
@@ -521,6 +518,11 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .pnl.pop.wide{width:min(400px,calc(100% - 16px))}
 .pnl.center{left:50%;top:50%;transform:translate(-50%,-50%);animation:cin .3s cubic-bezier(.2,.8,.2,1);width:min(420px,calc(100% - 24px));max-height:calc(100% - 24px)}
 .pnl.sheet{left:50%;bottom:0;width:min(560px,100%);max-height:88%;border-radius:22px 22px 0 0;padding:6px 14px 16px;border-bottom:0;animation:sup .26s cubic-bezier(.2,.8,.2,1);transform:translateX(-50%)}
+.ov.ambient.light .pnl.sheet{background:linear-gradient(to bottom,var(--kp-sheet-head-l) 0 12px,transparent 42px),var(--kp-glass-l)}
+.ov.ambient.dark .pnl.sheet{background:linear-gradient(to bottom,var(--kp-sheet-head-d) 0 12px,transparent 42px),var(--kp-glass-d)}
+.pnl.sheet *{scrollbar-width:none}
+.pnl.sheet *::-webkit-scrollbar{display:none}
+
 @keyframes pin{from{opacity:0;transform:translateY(6px)}}
 @keyframes cin{from{opacity:0;transform:translate(-50%,calc(-50% + 48px))}to{opacity:1;transform:translate(-50%,-50%)}}
 @keyframes sup{from{translate:0 100%}to{translate:0 0}}
@@ -673,17 +675,7 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 /* toast · hearts */
 .toast{position:absolute;left:50%;bottom:calc(var(--dockH,64px) + 14px);transform:translate(-50%,10px);background:rgba(24,24,27,.95);color:#fff;padding:9px 15px;border-radius:12px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.22s;z-index:60;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
-.hrt{position:absolute;width:144px;height:144px;margin:-72px 0 0 -72px;pointer-events:none;z-index:30;animation:hpop 1s ease-out forwards}
-.hrt svg{width:100%;height:100%;filter:drop-shadow(0 6px 14px rgba(255,45,85,.45))}
-@keyframes hpop{0%{transform:scale(.2) rotate(var(--r));opacity:0}15%{transform:scale(1.15) rotate(var(--r));opacity:1}30%{transform:scale(.95) rotate(var(--r))}70%{opacity:1}100%{transform:translateY(-110px) scale(1.25) rotate(var(--r));opacity:0}}
-.burst{position:absolute;width:0;height:0;pointer-events:none;z-index:70}
-.burst i{position:absolute;left:-5px;top:-5px;width:10px;height:10px;color:#f43f5e;animation:bfly .75s ease-out forwards}
-.burst i svg{display:block;width:10px;height:10px;fill:currentColor}
-.burst b{position:absolute;left:-24px;top:-24px;width:48px;height:48px;border:2px solid #f43f5e;border-radius:50%;animation:bring .6s ease-out forwards}
-.burst b+b{animation-delay:.12s;opacity:0}
-@keyframes bfly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--x),var(--y)) scale(1);opacity:0}}
-@keyframes bring{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.7);opacity:0}}
-@media (prefers-reduced-motion:reduce){.ov *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.hrt{animation:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.ov *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.kp-heart-big{animation:none;opacity:1}}
 
 /* ---------- real media in the player slot (YouTube <video> or the Web page thumbnail + visualizer) ---------- */
 .amb canvas{width:100%;height:100%;display:block}

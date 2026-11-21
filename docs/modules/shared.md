@@ -10,6 +10,7 @@ Shared giữ UI/helper dùng nhiều bề mặt: selection toolbar, touch select
 |---|---|---|
 | [`selection-toolbar.js`](../../js/shared/selection-toolbar.js) | `LHN_SELECTION_TOOLBAR.build/installTouchSelectionBridge` | Một định nghĩa actions/style/logo và bridge Android selection. |
 | [`selection-toolbar.css`](../../css/shared/selection-toolbar.css) | cờ layout/labels/collapsible | Kiểu toolbar dùng chung web, preview, Documents. |
+| [`heart-effects.js`](../../js/shared/heart-effects.js) | `LHN_HEART_EFFECTS` | Nhịp, tim bay, burst và hướng dẫn chung cho Overlay và Full Dictionary; consumer tự hủy khi đóng. |
 | [`sheet-kit.js`](../../js/shared/sheet-kit.js) | `LHN_SHEET.attach/sync/locked/detach` | Khóa scroll, drag/grow/snap và scroll chaining trong sheet. |
 | [`theme-tokens.js`](../../js/shared/theme-tokens.js) | `LHN_THEME` | Màu kính, scrollbar và CSS token chung. |
 | [`custom-font.js`](../../js/shared/custom-font.js), [`icons.js`](../../js/shared/icons.js) | font setting, `LHN_ICONS` | Font web và icon. Không viết lại font file gốc. |
