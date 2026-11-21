@@ -24,7 +24,7 @@
 | Reader | Thanh full | Đảo nổi |
 | Dashboard | Tab dưới đáy | Thanh bên |
 
-- Ba popup Dịch, Tô sáng và Từ điển dùng nền kính, viền và shadow chung; ô Tô sáng rộng tối đa 405px, ghi chú dài cuộn riêng. Sheet không hiện scrollbar, vẫn cuộn; vùng tay kéo nền đặc mờ dần.
+- Ba popup Dịch, Tô sáng và Từ điển dùng nền kính, viền và shadow chung; ô Tô sáng rộng tối đa 405px, ghi chú dài cuộn riêng. Sheet không hiện scrollbar nhưng vẫn cuộn; vùng tay kéo dùng nền sheet như trước.
 - Quy tắc áp dụng trên mọi trang web, không chỉ trong Overlay/thanh Keepit.
 
 ## 4. Chạm / chuột chỉ đổi cách thao tác, không đổi giao diện

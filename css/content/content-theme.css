@@ -13,7 +13,7 @@
 }
 #lhn-panel { padding:14px!important; }
 #lhn-note-pop { padding:13px!important; }
-#lhn-panel .lhn-popup-arrow { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; }
+#lhn-panel .lhn-popup-arrow { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; clip-path:polygon(0 0,100% 0,0 100%); }
 #lhn-panel .lhn-heading{ color:var(--lhn-ui-strong)!important; }
 #lhn-panel .lhn-quote{ color:var(--lhn-ui-muted)!important; }
 #lhn-panel textarea, #lhn-panel .lhn-tag-editor{

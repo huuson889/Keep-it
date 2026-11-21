@@ -518,8 +518,6 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .pnl.pop.wide{width:min(400px,calc(100% - 16px))}
 .pnl.center{left:50%;top:50%;transform:translate(-50%,-50%);animation:cin .3s cubic-bezier(.2,.8,.2,1);width:min(420px,calc(100% - 24px));max-height:calc(100% - 24px)}
 .pnl.sheet{left:50%;bottom:0;width:min(560px,100%);max-height:88%;border-radius:22px 22px 0 0;padding:6px 14px 16px;border-bottom:0;animation:sup .26s cubic-bezier(.2,.8,.2,1);transform:translateX(-50%)}
-.ov.ambient.light .pnl.sheet{background:linear-gradient(to bottom,var(--kp-sheet-head-l) 0 12px,transparent 42px),var(--kp-glass-l)}
-.ov.ambient.dark .pnl.sheet{background:linear-gradient(to bottom,var(--kp-sheet-head-d) 0 12px,transparent 42px),var(--kp-glass-d)}
 .pnl.sheet *{scrollbar-width:none}
 .pnl.sheet *::-webkit-scrollbar{display:none}
 

@@ -469,9 +469,7 @@ button,input{font-family:inherit}
 .lchip{border-color:rgba(15,23,42,.16)}
 .lchip svg{color:var(--kp-tx2-l)}
 .sx{color:var(--kp-tx2-l)}
-/* Touch sheets: opaque handle area fades into the existing glass. */
-.screen:not(.desk) .panel,.screen:not(.desk) .sbox{background:linear-gradient(to bottom,var(--kp-sheet-head-l) 0 12px,transparent 42px),var(--kp-glass-l)}
-.screen:not(.desk).dark .panel,.screen:not(.desk).dark .sbox{background:linear-gradient(to bottom,var(--kp-sheet-head-d) 0 12px,transparent 42px),var(--kp-glass-d)}
+/* Touch sheets keep scrollbars hidden while remaining scrollable. */
 .screen:not(.desk) .panel *{scrollbar-width:none}
 .screen:not(.desk) .panel *::-webkit-scrollbar{display:none}
 

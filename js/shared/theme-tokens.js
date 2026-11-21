@@ -17,8 +17,6 @@
     "tile-d":"rgba(255,255,255,.08)",    // ô tính năng, ô nhập — tối
     "line-d":"rgba(255,255,255,.12)",
     "popup-line-d":"rgba(255,255,255,.24)",
-    "sheet-head-l":"#fff",
-    "sheet-head-d":"#18181c",
     "popup-shadow-l":"0 2px 14px rgba(15,23,42,.5)",
     "popup-shadow-d":"0 8px 24px rgba(0,0,0,.48)"     // viền ô — tối
   });
