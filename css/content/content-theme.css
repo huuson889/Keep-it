@@ -11,7 +11,12 @@
 #lhn-panel.lhn-ui-dark, #lhn-direct-translation.lhn-ui-dark, #lhn-full-english-dictionary.lhn-dict-dark{
   background:var(--kp-glass-d)!important; border-color:var(--kp-popup-line-d)!important; box-shadow:var(--kp-popup-shadow-d)!important;
 }
-#lhn-panel { padding:14px!important; }
+/* Draw the border separately so it can stop at the arrow's base. */
+#lhn-panel { padding:14px!important; border-color:transparent!important; }
+#lhn-panel.lhn-ui-dark { border-color:transparent!important; }
+#lhn-panel::before { content:""; position:absolute; inset:-1px; border:1px solid var(--kp-line-l); border-radius:inherit; pointer-events:none; z-index:1; clip-path:polygon(0 0,calc(var(--lhn-arrow-x,50%) - 11px) 0,calc(var(--lhn-arrow-x,50%) - 11px) 2px,calc(var(--lhn-arrow-x,50%) + 11px) 2px,calc(var(--lhn-arrow-x,50%) + 11px) 0,100% 0,100% 100%,0 100%); }
+#lhn-panel.lhn-ui-dark::before { border-color:var(--kp-popup-line-d); }
+#lhn-panel.lhn-popup-above::before { clip-path:polygon(0 0,100% 0,100% 100%,calc(var(--lhn-arrow-x,50%) + 11px) 100%,calc(var(--lhn-arrow-x,50%) + 11px) calc(100% - 2px),calc(var(--lhn-arrow-x,50%) - 11px) calc(100% - 2px),calc(var(--lhn-arrow-x,50%) - 11px) 100%,0 100%); }
 #lhn-note-pop { padding:13px!important; }
 #lhn-panel .lhn-popup-arrow { background:var(--lhn-ui-surface)!important; border-color:var(--lhn-ui-border)!important; clip-path:polygon(0 0,100% 0,0 100%); }
 #lhn-panel .lhn-heading{ color:var(--lhn-ui-strong)!important; }

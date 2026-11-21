@@ -259,7 +259,9 @@
       const arrow = popup.querySelector(".lhn-popup-arrow");
       if (arrow) {
         const offset = rect.left + rect.width / 2 - Number.parseFloat(popup.style.left) - popup.clientLeft;
-        arrow.style.left = `${Math.max(20, Math.min(popup.clientWidth - 20, offset))}px`;
+        const arrowX = Math.max(20, Math.min(popup.clientWidth - 20, offset));
+        arrow.style.left = `${arrowX}px`;
+        popup.style.setProperty("--lhn-arrow-x", `${arrowX}px`);
       }
     }
   }
