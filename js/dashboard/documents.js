@@ -174,7 +174,7 @@ function schedulePdfRaster() {
     }
   }, 250);
 }
-function sizePages(preserve=true){if(!activeEngine||!V.doc)return;const st=$('#stage'),stack=$('#pageStack');if(!stack)return;const frame=stack.querySelector(`[data-page="${V.page}"]`),oldHeight=frame?.offsetHeight||1,relative=frame?(st.scrollTop-frame.offsetTop)/oldHeight:0;const available=Math.max(1,st.clientWidth-parseFloat(getComputedStyle(st).paddingLeft)-parseFloat(getComputedStyle(st).paddingRight));const first=activeEngine.pages[V.page-1];let width=V.mode==='read'?Math.min(700,available):V.zoom==='fit'?Math.min(V.doc.type==='pptx'?960:760,available):first.width*(+V.zoom/100);if(V.doc.image&&V.zoom==='fit'){const h=Math.max(40,st.clientHeight-parseFloat(getComputedStyle(st).paddingTop)-parseFloat(getComputedStyle(st).paddingBottom)-30);width=Math.max(1,Math.min(first.width,available,h*first.width/first.height));}stack.style.setProperty('--displayW',width+'px');for(const f of stack.children){const spec=activeEngine.pages[+f.dataset.page-1],surface=f.querySelector('.docSurface'),source=f.querySelector('.docsSource');if(surface)surface.style.aspectRatio=spec.width+'/'+spec.height;if(source){source.style.width=spec.width+'px';source.style.height=spec.height+'px';source.style.setProperty('--source-scale',width/spec.width);}}if(preserve&&frame)st.scrollTop=frame.offsetTop+relative*frame.offsetHeight;schedulePdfRaster();}
+function sizePages(preserve=true){if(!activeEngine||!V.doc)return;const st=$('#stage'),stack=$('#pageStack');if(!stack)return;const frame=stack.querySelector(`[data-page="${V.page}"]`),oldHeight=frame?.offsetHeight||1,relative=frame?(st.scrollTop-frame.offsetTop)/oldHeight:0;const available=Math.max(1,st.clientWidth-parseFloat(getComputedStyle(st).paddingLeft)-parseFloat(getComputedStyle(st).paddingRight));const first=activeEngine.pages[V.page-1];let width=V.mode==='read'?Math.min(700,available):V.zoom==='fit'?Math.min(V.doc.type==='pptx'?960:760,available):first.width*(+V.zoom/100);if(V.doc.image&&V.zoom==='fitImage'){const h=Math.max(40,st.clientHeight-parseFloat(getComputedStyle(st).paddingTop)-parseFloat(getComputedStyle(st).paddingBottom)-30);width=Math.max(1,Math.min(first.width,available,h*first.width/first.height));}stack.style.setProperty('--displayW',width+'px');for(const f of stack.children){const spec=activeEngine.pages[+f.dataset.page-1],surface=f.querySelector('.docSurface'),source=f.querySelector('.docsSource');if(surface)surface.style.aspectRatio=spec.width+'/'+spec.height;if(source){source.style.width=spec.width+'px';source.style.height=spec.height+'px';source.style.setProperty('--source-scale',width/spec.width);}}if(preserve&&frame)st.scrollTop=frame.offsetTop+relative*frame.offsetHeight;schedulePdfRaster();}
 function scrollToPage(page){const frame=$(`#pageStack>[data-page="${page}"]`);if(frame)$('#stage').scrollTop=Math.max(0,frame.offsetTop-parseFloat(getComputedStyle($('#stage')).paddingTop));}
 async function ensurePage(page){const target=$(`#pageStack>[data-page="${page}"] .docsSource`);if(!target||!activeEngine)return;if(drawn.has(target))return drawn.get(target);const engine=activeEngine,cycle=viewCycle;const work=engine.render(target,page).then(()=>{if(cycle!==viewCycle||!target.isConnected)return;restoreMarks(target,page);const sourceCanvas=target.querySelector('canvas'),thumb=$(`#rail [data-p="${page}"] .mini-pg`);if(sourceCanvas&&thumb&&!thumb.querySelector('img')){try{const c=document.createElement('canvas');c.width=100;c.height=Math.max(1,Math.round(100*sourceCanvas.height/sourceCanvas.width));c.getContext('2d').drawImage(sourceCanvas,0,0,c.width,c.height);const img=document.createElement('img');img.src=c.toDataURL('image/png');img.alt='';thumb.replaceChildren(img);}catch{}}requestTranslationSync();queueMicrotask(()=>{if(V.tools.has('wc'))scheduleWordClass();});fillTextLayerGaps();schedulePdfRaster();}).catch(error=>{if(cycle===viewCycle&&target.isConnected&&!/cancel/i.test(error?.message||'')){const message=document.createElement('div');message.className='surfaceError';message.textContent=t('badFile');target.replaceChildren(message);}});drawn.set(target,work);return work;}
 function ensureThumbnail(page){
@@ -199,23 +199,22 @@ function savePosition(){if(!V.doc)return;const id=V.doc.id,at=V.page;V.doc.at=at
 function setActivePage(page){if(!V.doc||page===V.page||page<1||page>V.doc.pages)return;V.page=page;applyTools();updatePaging();savePosition();scheduleWordClass();LHN_READER_API.refreshSource();if(V.panel==='translation')renderTranslation();}
 async function setPage(value,fromReader=false){if(!V.doc)return;const page=Math.max(1,Math.min(V.doc.pages,Math.round(+value)||1));if(!fromReader)ttsStop();hideSel();getSelection()?.removeAllRanges();V.page=page;if(V.flow==='single'&&V.mode!=='read')renderViewer();else{scrollToPage(page);updatePaging();void ensurePage(page);applyTools();if(V.panel==='translation')renderTranslation();}savePosition();await ensurePage(page);LHN_READER_API.refreshSource();void LHN_CONTENT_TOOLS.restore();}
 function setFlow(value){if(!['continuous','single'].includes(value))return;lastFlow=value;void savePanelPrefs();if(V.flow===value)return;ttsStop();hideSel();V.flow=value;renderViewer();}
-/* Zoom tự do 10–400% (PDF đến ít nhất 6400%). Chỉ khung tệp ở giữa đổi kích thước (--displayW/--source-scale);
+/* Zoom tự do đến ít nhất 6400%. Chỉ khung tệp ở giữa đổi kích thước (--displayW/--source-scale);
    thanh trên, dải trang, panel dịch và thanh .pager đứng yên.
    v3.5.562: bỏ lưới 10% cho con lăn — zoom LIÊN TỤC bám tay: mỗi pixel lăn/pinch đổi đúng 1% (1:1 với
    khoảng cách 2 ngón), mỗi event kẹp tối đa ±15% để nấc chuột thô không nhảy cóc, và mọi event trong
-   cùng một khung hình được gộp lại (rAF) nên không phụ thuộc số trang. Nút − / + và phím nhảy 10 điểm %, riêng PDF trên 400% dùng bước khoảng 10% tương đối. */
-const ZOOM_STEPS=[50,75,100,125,150,175,200],ZOOM_MIN=10,ZOOM_MAX=400,PDF_ZOOM_MAX=6400,ZOOM_STEP=10,ZOOM_GAIN=0.01,ZOOM_NOTCH_PX=40,ZOOM_NOTCH_STEP=0.15,ZOOM_EVENT_CAP=0.6;
+   cùng một khung hình được gộp lại (rAF) nên không phụ thuộc số trang. Nút − / + và phím nhảy 10 điểm %, trên 400% dùng bước khoảng 10% tương đối. */
+const ZOOM_STEPS=[50,75,100,125,150,175,200],ZOOM_MIN=10,ZOOM_MAX=6400,ZOOM_STEP=10,ZOOM_GAIN=0.01,ZOOM_NOTCH_PX=40,ZOOM_NOTCH_STEP=0.15,ZOOM_EVENT_CAP=0.6;
 function maxZoom(){
-  if(V.doc?.type!=='pdf')return ZOOM_MAX;
   const spec=activeEngine?.pages[V.page-1],st=$('#stage');
-  if(!spec||!st)return PDF_ZOOM_MAX;
+  if(!spec||!st)return ZOOM_MAX;
   const style=getComputedStyle(st),available=Math.max(1,st.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight));
-  const fit=Math.min(760,available)/spec.width*100;
-  return Math.max(PDF_ZOOM_MAX,fit*2);
+  const fit=Math.min(V.doc?.type==='pptx'?960:760,available)/spec.width*100;
+  return Math.max(ZOOM_MAX,fit*2);
 }
 const clampZoom=value=>Math.max(ZOOM_MIN,Math.min(maxZoom(),Number.isFinite(+value)?+value:100));
 const roundZoom=value=>Math.round(clampZoom(value)*10)/10;
-function zoomPercent(){if(V.zoom!=='fit')return +V.zoom;const surface=$('#stage .docSurface'),spec=activeEngine?.pages[V.page-1];return surface&&spec?surface.getBoundingClientRect().width/spec.width*100:100;}
+function zoomPercent(){if(V.zoom!=='fit'&&V.zoom!=='fitImage')return +V.zoom;const surface=$('#stage .docSurface'),spec=activeEngine?.pages[V.page-1];return surface&&spec?surface.getBoundingClientRect().width/spec.width*100:100;}
 function zoomAnchorAt(clientX,clientY){
   const frame=$$('#pageStack>.pageFrame').find(f=>{const r=f.getBoundingClientRect();return clientY>=r.top&&clientY<=r.bottom;});
   if(!frame)return null;
@@ -226,8 +225,8 @@ function stageCenterAnchor(){const r=$('#stage').getBoundingClientRect();return{
 /* Giữ điểm đang nhìn đứng yên: đo vị trí tương đối trong trang trước khi đổi cỡ, bù cuộn sau khi đổi. */
 function applyZoom(next,anchor){
   if(!V.doc||!activeEngine||$('#viewer').classList.contains('show')===false)return;
-  if(next!=='fit'){if(String(next).trim()===''||!Number.isFinite(+next))return;next=String(roundZoom(next));}
-  const st=$('#stage'),spot=anchor&&next!=='fit'?zoomAnchorAt(anchor.clientX??anchor.x,anchor.clientY??anchor.y):null;
+  if(next!=='fit'&&next!=='fitImage'){if(String(next).trim()===''||!Number.isFinite(+next))return;next=String(roundZoom(next));}
+  const st=$('#stage'),spot=anchor&&next!=='fit'&&next!=='fitImage'?zoomAnchorAt(anchor.clientX??anchor.x,anchor.clientY??anchor.y):null;
   V.zoom=next;
   sizePages(false);
   if(spot&&spot.frame?.isConnected){
@@ -243,15 +242,15 @@ function syncZoomSelect(){
   let live=select.querySelector('option[data-live="1"]');
   if(!live){live=document.createElement('option');live.dataset.live='1';select.insertBefore(live,select.firstElementChild);}
   live.value=String(p);live.dataset.full=p+'%';live.dataset.short=p+'%';live.textContent=p+'%';
-  select.value=V.zoom==='fit'?'fit':String(p);
+  select.value=V.zoom==='fit'||V.zoom==='fitImage'?V.zoom:String(p);
 }
-function updateZoomControls(){if(!V.doc)return;syncZoomSelect();updateDocLabels();const p=zoomPercent();$('#zOut').disabled=p<=ZOOM_MIN+.5;$('#zIn').disabled=p>=maxZoom()-.5;for(const option of $$('#vZoom option[data-pdf-zoom]'))option.hidden=V.doc.type!=='pdf';}
+function updateZoomControls(){if(!V.doc)return;syncZoomSelect();updateDocLabels();const p=zoomPercent();$('#zOut').disabled=p<=ZOOM_MIN+.5;$('#zIn').disabled=p>=maxZoom()-.5;$('#vZoom option[value="fitImage"]').hidden=!V.doc.image;}
 function setZoom(value){
   if(String(value).trim()==='')return;
-  if(value!=='fit'&&!Number.isFinite(+value))return;
+  if(value!=='fit'&&!(value==='fitImage'&&V.doc?.image)&&!Number.isFinite(+value))return;
   setMore(false,false);applyZoom(value,null);scrollToPage(V.page);
 }
-function stepZoom(direction){const p=zoomPercent(),step=V.doc?.type==='pdf'&&p>400?Math.max(ZOOM_STEP,Math.round(p*.1/10)*10):ZOOM_STEP,next=roundZoom(p+direction*step);if(Math.abs(next-p)<.4)return;setMore(false,false);applyZoom(next,{...stageCenterAnchor()});}
+function stepZoom(direction){const p=zoomPercent(),step=p>400?Math.max(ZOOM_STEP,Math.round(p*.1/10)*10):ZOOM_STEP,next=roundZoom(p+direction*step);if(Math.abs(next-p)<.4)return;setMore(false,false);applyZoom(next,{...stageCenterAnchor()});}
 async function closeViewer(){++viewCycle;const old=V.doc,engine=activeEngine;LHN_READER_API.reset();LHN_CONTENT_TOOLS.close();ttsStop();pageObserver?.disconnect();thumbnailObserver?.disconnect();translationView.observer?.disconnect();nativeCards.clear();V.tools.clear();V.panel=null;endPanelResize();setMore(false,false);hideSel();getSelection()?.removeAllRanges();finishPassword(null);clearTimeout(savePositionTimer);$('#viewer').dataset.nativeReady='false';$('#viewer').classList.remove('show');resetPagerFade();document.body.style.overflow='';notifyParent(false);$('#stage').replaceChildren();drawn.clear();activeEngine=null;document.documentElement.classList.add('documents-native-inactive');await LHN_DOCUMENT_CONTEXT.refresh();engine?.dispose();if(old)await Store.patch(old.id,{at:V.page,opened:Date.now()}).catch(()=>toast(t('storageFailed')));await refreshLibrary();/* v3.5.521: bấm ← về thư viện thì chạy lại hiệu ứng hiện dần y như lần đầu mở tab Tài liệu. */revealLibrary();}
 $('#vBack').onclick=()=>void closeViewer();$('#vFlow').onchange=e=>{setMore(false,false);setFlow(e.target.value);};$('#vZoom').onchange=e=>setZoom(e.target.value);$('#zOut').onclick=()=>stepZoom(-1);$('#zIn').onclick=()=>stepZoom(1);$('#pPrev').onclick=()=>setPage(V.page-1);$('#pNext').onclick=()=>setPage(V.page+1);$('#pNum').onchange=e=>{setPage(e.target.value);e.target.value=V.page;};$('#pNum').onfocus=e=>e.target.select();$('#pNum').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setPage(e.target.value);e.target.blur();}if(e.key==='Escape'){e.target.value=V.page;e.target.blur();e.stopPropagation();}};$('#rail').onclick=e=>{const b=e.target.closest('[data-p]');if(b)setPage(+b.dataset.p);};$('#vMode').onclick=e=>{const b=e.target.closest('[data-m]');if(!b||V.mode===b.dataset.m||!activeEngine?.pages.some((_,i)=>sourceEntries(i+1).length))return;ttsStop();setMore(false,false);hideSel();V.mode=b.dataset.m;if(V.panel==='translation')V.panel=null;paintPanels();renderViewer();void (async()=>{await ensurePage(V.page);await refreshNativeSource();if(V.mode==='read')await startNativeReader();})();};
 let scrollRAF=0;$('#stage').addEventListener('scroll',()=>{if(scrollRAF)return;scrollRAF=requestAnimationFrame(()=>{scrollRAF=0;if(!V.doc||!activeEngine)return;if(V.doc.type==='pdf')schedulePdfRaster();if(V.flow!=='continuous'&&V.mode!=='read')return;const st=$('#stage'),edge=st.getBoundingClientRect().top+Math.min(135,st.clientHeight*.22);let page=1;for(const f of $$('#pageStack>.pageFrame')){if(f.getBoundingClientRect().top<=edge)page=+f.dataset.page;else break;}if(st.scrollTop+st.clientHeight>=st.scrollHeight-4)page=V.doc.pages;setActivePage(page);if(V.doc.type==='pdf'){const box=st.getBoundingClientRect(),margin=st.clientHeight*2;for(const source of $$('#pageStack .docsSource')){const r=source.getBoundingClientRect();if((r.bottom<box.top-margin||r.top>box.bottom+margin)&&drawn.has(source)&&!source.querySelector('.docsReaderParagraphHighlight')){for(const c of source.querySelectorAll('canvas'))c.width=c.height=0;source.replaceChildren();drawn.delete(source);}}schedulePdfRaster();}runTranslate();});},{passive:true});new ResizeObserver(()=>{if($('#viewer').classList.contains('show')){sizePages();updateZoomControls();}}).observe($('#stage'));
@@ -459,7 +458,7 @@ function setMore(open, focus = true) {
 function updateDocLabels() {
   const flow=$('#vFlow'); flow.value=V.flow;
   for(const option of flow.options){option.dataset.full=t(option.value==='single'?'single':'continuous');option.dataset.short=t(option.value==='single'?'single':'continuousShort');}
-  const fit=$('#vZoom option[value="fit"]');fit.dataset.full=t(V.doc?.image?'fitImage':'fitWidth');fit.dataset.short=t(V.doc?.image?'fitImage':'fitShort');
+  const fit=$('#vZoom option[value="fit"]');fit.dataset.full=t('fitWidth');fit.dataset.short=t('fitShort');const fitImage=$('#vZoom option[value="fitImage"]');fitImage.dataset.full=fitImage.dataset.short=t('fitImage');
   $('#vFlowIcon').innerHTML=FLOW_ICONS[flow.value]||FLOW_ICONS.continuous;
   for(const select of[flow,$('#vZoom')]){const compact=!!select.closest('.pager');for(const option of select.options)option.textContent=compact&&option.dataset.short?option.dataset.short:option.dataset.full||option.textContent;select.title=select.selectedOptions[0]?.dataset.full||select.getAttribute('aria-label');}
 }

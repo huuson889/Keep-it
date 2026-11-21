@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.595**, tiếp từ 3.5.594: sửa zoom PDF từ Vừa rộng không tụt về 400%, hỗ trợ tới 6400% và vẽ nét vùng đang nhìn.
+- Version **3.5.596**, tiếp từ 3.5.595: ảnh mặc định Vừa rộng, giữ lựa chọn Vừa ảnh; Word, PowerPoint, ảnh zoom tới 6400% như PDF.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
-- Đã kiểm Chromium unpacked 1512/390 sáng/tối, PDF scan thật: Vừa rộng → +, 6400%, cuộn, về Vừa rộng; PDF lớp chữ thật chọn bằng chuột và còn text khi zoom. Console/pageerror rỗng. Đã kiểm thanh chọn chữ 3.5.593 trước/sau Overlay trong fixture favicon giả lập.
+- Đã kiểm Chromium unpacked 1512/390 sáng/tối: ảnh thật và ảnh nhỏ Vừa rộng/Vừa ảnh, Word/PowerPoint mẫu tới 6400%, PDF scan thật zoom/cuộn 6400%, chọn chuột text Office và PDF; console/pageerror rỗng. Đã kiểm thanh chọn chữ 3.5.593 trước/sau Overlay trong fixture favicon giả lập.
 - Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, toàn bộ PDF/Office, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
@@ -160,6 +160,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.596 | Arena:**
+
+- Tóm tắt: mở ảnh mặc định Vừa rộng, giữ Vừa ảnh riêng với cách giới hạn theo chiều cao và kích thước ảnh cũ; hỗ trợ các mức zoom đến 6400% cho ảnh, DOCX, PPTX như PDF, nút + không nhảy nhỏ khi từ Vừa rộng. Dùng nhãn vi/en/ko đã có; không đổi khởi tạo Vừa rộng của định dạng tài liệu khác.
+- File: `js/dashboard/documents.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked 1512/390 sáng/tối và ảnh chi tiết phóng 4×; ảnh người dùng, PNG dọc 120×400, DOCX/PPTX mẫu, PDF scan thật; Vừa rộng/Vừa ảnh, +, 6400%, về Vừa rộng; chọn chuột text Office, PDF zoom/cuộn; nhãn vi/en/ko; console/pageerror rỗng. Chưa kiểm Windows/profile thật, Android/Firefox, Office phức tạp và hiệu năng ảnh/tài liệu lớn ở zoom tối đa. Phóng ảnh không tăng chi tiết gốc; zoom lớn có thể chậm.
 
 **2026-11-17 | v3.5.595 | Arena:**
 
