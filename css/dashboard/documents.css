@@ -159,7 +159,7 @@ html.dark .how .ic{background:#25264a}
 .viewer{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:var(--page)}
 .viewer.show{display:flex;animation:vin .22s ease}
 @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.vbar{display:flex;align-items:center;gap:8px;height:56px;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line);flex:none;flex-wrap:nowrap;position:relative;z-index:6}
+.vbar{display:flex;align-items:center;gap:8px;height:46px;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line);flex:none;flex-wrap:nowrap;position:relative;z-index:6}
 .vbar.size-compact{zoom:.8}
 .vbar [hidden],.morePanel[hidden],.moreScrim[hidden]{display:none!important}
 .vbar>*:not(.vtitle){flex-shrink:0}
@@ -616,7 +616,7 @@ html.dark .tour button{background:#0000000f}
 .legend{left:auto;right:10px;top:10px}
 .tour{top:8px;bottom:auto;left:8px;right:8px;width:auto}
 .tour.show~.toast{top:150px}}
-@media  (pointer:coarse){.vbar{height:60px}
+@media  (pointer:coarse){.vbar{height:52px}
 .viewSelect select,.vbtn{height:44px;min-height:44px}
 .vbtn{min-width:44px}
 .vseg{height:44px}
