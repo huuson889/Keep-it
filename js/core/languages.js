@@ -797,6 +797,7 @@
   MESSAGES.en.ov_enterNextSentenceEsc = "(Enter/→) Next sentence · (Esc) Retry · (Ctrl) Replay/Stop"; MESSAGES.vi.ov_enterNextSentenceEsc = "(Enter/→) Câu tiếp · (Esc) Làm lại · (Ctrl) Nghe lại/Dừng"; MESSAGES.ko.ov_enterNextSentenceEsc = "(Enter/→) 다음 문장 · (Esc) 다시 하기 · (Ctrl) 다시 듣기/정지";
   MESSAGES.en.ov_errorAnalysis = "Error analysis:"; MESSAGES.vi.ov_errorAnalysis = "Phân tích lỗi sai:"; MESSAGES.ko.ov_errorAnalysis = "오류 분석:";
   MESSAGES.en.ov_excellent = "Excellent!"; MESSAGES.vi.ov_excellent = "Xuất sắc!"; MESSAGES.ko.ov_excellent = "훌륭해요!";
+  MESSAGES.en.docs_fullscreenUnavailable = "Fullscreen is unavailable"; MESSAGES.vi.docs_fullscreenUnavailable = "Không thể mở toàn màn hình"; MESSAGES.ko.docs_fullscreenUnavailable = "전체 화면을 사용할 수 없습니다";
   MESSAGES.en.ov_exitFullscreen = "Exit fullscreen"; MESSAGES.vi.ov_exitFullscreen = "Thoát toàn màn hình"; MESSAGES.ko.ov_exitFullscreen = "전체 화면 종료";
   MESSAGES.en.ov_exitLandscapeTheater = "Exit landscape theater"; MESSAGES.vi.ov_exitLandscapeTheater = "Thoát Rạp ngang"; MESSAGES.ko.ov_exitLandscapeTheater = "가로 극장 종료";
   MESSAGES.en.ov_exitedFullScreenStill = "Exited full screen · still in Theater (rotate to portrait to study)"; MESSAGES.vi.ov_exitedFullScreenStill = "Thoát toàn màn hình · vẫn ở Rạp (xoay dọc để học)"; MESSAGES.ko.ov_exitedFullScreenStill = "전체 화면 종료 · 극장 유지(세로로 돌려 학습)";

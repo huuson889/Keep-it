@@ -44,4 +44,6 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 
 - File chỉ có một trang hiển thị Từng trang, khóa các kiểu khác trong viewer và khi mở Cài đặt từ file; không ghi đè lựa chọn đã nhớ cho file nhiều trang. Nút Cài đặt ở thanh trên và menu tài liệu đều mở thẳng tab Tài liệu.
 
-- Danh sách kiểu trang trong viewer dùng bốn icon theo hình mẫu, cùng chữ và trạng thái khóa; điều khiển vẫn đồng bộ với select Cài đặt. Danh sách rộng bằng nút, có bo góc giống danh sách zoom; menu zoom cuộn trong vùng thấy. Thanh không mờ/ẩn khi danh sách đang mở. Hỗ trợ chọn bằng chuột/chạm và phím mũi tên, Enter, Escape.
+- Danh sách kiểu trang trong viewer dùng bốn icon theo hình mẫu, cùng chữ và trạng thái khóa; điều khiển vẫn đồng bộ với select Cài đặt. Danh sách và nút tự rộng theo mục dài nhất, có bo góc giống danh sách zoom; menu zoom cuộn trong vùng thấy. Thanh không mờ/ẩn khi danh sách đang mở. Hỗ trợ chọn bằng chuột/chạm và phím mũi tên, Enter, Escape.
+
+- Nút cạnh trái menu trên thanh dưới bật/tắt toàn màn hình của viewer; Escape thoát toàn màn hình trước khi đóng tài liệu. Dashboard cho phép iframe Documents vào toàn màn hình; khi đóng tài liệu hoặc mở Cài đặt sẽ thoát toàn màn hình trước.

@@ -35,10 +35,12 @@
     const trigger = document.createElement('button'); trigger.type = 'button'; trigger.className = 'flow-select-trigger'; trigger.setAttribute('role', 'combobox'); trigger.setAttribute('aria-haspopup', 'listbox'); trigger.setAttribute('aria-expanded', 'false');
     const list = document.createElement('div'); list.className = 'flow-select-list'; list.setAttribute('role','listbox'); list.id = select.id + '-options'; trigger.setAttribute('aria-controls', list.id); list.hidden = true;
     select.before(wrapper); wrapper.append(select, trigger, list); select.hidden = true;
+    const measure = document.createElement('canvas').getContext('2d');
     const refresh = () => {
       const chosen = select.selectedOptions[0]; if (!chosen) return;
       trigger.innerHTML = (icons ? render('flow-'+chosen.value) : '') + '<span></span><svg class="flow-select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
       trigger.querySelector('span').textContent = chosen.textContent; trigger.setAttribute('aria-label', (select.getAttribute('aria-label') || '') + ': ' + chosen.textContent);
+      const style=getComputedStyle(trigger);measure.font=style.font;const max=Math.max(0,...[...select.options].filter(option=>!option.hidden).map(option=>measure.measureText(option.dataset.full||option.textContent).width));wrapper.style.width=Math.ceil(max+(icons?56:36))+'px';
       list.replaceChildren();
       for (const option of select.options) {
         if (option.hidden) continue;

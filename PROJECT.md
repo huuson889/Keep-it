@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.600**, tiếp từ 3.5.599: danh sách kiểu trang rộng bằng nút; thanh không mờ/ẩn lúc danh sách mở; danh sách zoom cùng kiểu bo cong và cuộn trong vùng thấy.
+- Version **3.5.601**, tiếp từ 3.5.600: danh sách kiểu trang và zoom tự đủ rộng theo mục dài nhất; có nút toàn màn hình cạnh menu trên thanh dưới.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
-- Đã kiểm Chromium unpacked 1512/390 sáng/tối: độ rộng danh sách, hover và tự ẩn, zoom, bàn phím, chạm giả lập; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
+- Đã kiểm Chromium unpacked 1512/390 sáng/tối: kích thước danh sách, văn bản vi/en/ko, toàn màn hình trong iframe, Escape và chạm giả lập; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
 - Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, toàn bộ PDF/Office, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
@@ -16,7 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- **Tài liệu 3.5.597–600:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
+- **Tài liệu 3.5.597–601:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
 - **UI 3.5.593:** cần thử Android và profile thật, Overlay video thực, thao tác sheet Cài đặt/Đăng nhập/Reader và AI thực; favicon provider ngoài có 404/bị chặn trong môi trường thử, bản kiểm UI dùng ảnh fixture.
 - **Popup 3.5.586:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
@@ -105,7 +105,7 @@ Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser 
 ### Tài liệu cục bộ
 
 - `pages/documents.html`/`documents.css` chỉ giữ thư viện và original-file surfaces; không còn `#player`, `#sel`, `#dict`, Notes/AI pane riêng.
-- Danh sách bố cục và zoom viewer dùng `LHN_ICONS.createFlowSelect` trên select gốc, menu tự giới hạn theo vùng hiển thị; phím mũi tên trong điều khiển không kích hoạt phím tắt đọc. Cài đặt Tài liệu ở dashboard và viewer đồng bộ qua `lhnDocumentsFlow`/`lhnDocumentsPager`; viewer giữ grid trang gốc riêng với chế độ Đọc. Viewer gửi ngữ cảnh một trang khi mở cài đặt, không đổi giá trị flow đã lưu; icon Cài đặt dùng `LHN_ICONS`.
+- Danh sách bố cục và zoom viewer dùng `LHN_ICONS.createFlowSelect` trên select gốc, menu tự giới hạn theo vùng hiển thị và rộng theo nội dung; iframe Dashboard cho phép viewer toàn màn hình; phím mũi tên trong điều khiển không kích hoạt phím tắt đọc. Cài đặt Tài liệu ở dashboard và viewer đồng bộ qua `lhnDocumentsFlow`/`lhnDocumentsPager`; viewer giữ grid trang gốc riêng với chế độ Đọc. Viewer gửi ngữ cảnh một trang khi mở cài đặt, không đổi giá trị flow đã lưu; icon Cài đặt dùng `LHN_ICONS`.
 - `documents.js` + `documents-context.js` cung cấp source identity/blocks/page anchors/layout cho `content.js` và `bilingual-reader.js` gốc; adapter lấy queue block theo target double-click, đặt speaker trên overlay không scale theo cuối paragraph và ánh xạ hover PDF spans về icon tương ứng. Web không có host phải giữ đường cũ; Source URL chỉ owned Dashboard document UUID.
 - Blob/metadata/progress ở `keepit-documents`. Notes/Flashcards mới ở annotations chung; legacy v314 migration giữ nội dung/ngày/anchor, idempotent và không tái tạo note đã xóa. JSON backup có Notes nhưng không blob; import rewrite đúng owned extension origin.
 - `LHN_SELECTION_TOOLBAR.installTouchSelectionBridge` là bridge touch duy nhất. `LHN_SIDEBAR.attachTouchSheet` dùng chung setup grow/scroll/drag. `js/ask-ai/sheet.js` là AI sheet đã chuyển nguyên component từ web bar, dùng cho web và Documents; parent Dashboard chuyển message top-frame cho source active.
@@ -162,6 +162,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.601 | Arena:**
+
+- Tóm tắt: hai danh sách và nút chọn tự tính độ rộng theo mục dài nhất; thêm nút vào/thoát toàn màn hình bên trái menu. Cho phép iframe Documents toàn màn hình; Escape thoát toàn màn hình, đóng tài liệu/mở Cài đặt sẽ thoát trước.
+- File: `js/shared/icons.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `pages/documents.html`, `pages/dashboard.html`, `css/dashboard/documents.css`, `manifest.json`, tài liệu.
+- Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối và ảnh nút phóng 4×; không cắt mục vi/en/ko, danh sách và nút lần lượt 154/154px và 125/125px ở 1512 tiếng Việt, màn hình hẹp 169/169px và 137/137px; fullscreen iframe bật/tắt, Escape không đóng tài liệu, chạm giả lập 390 nút 44×44; console/pageerror rỗng. Chưa kiểm profile Windows, màn hình/thiết bị cảm ứng thật, Android/Firefox và Office thực.
 
 **2026-11-17 | v3.5.600 | Arena:**
 
