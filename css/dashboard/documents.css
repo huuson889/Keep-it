@@ -162,6 +162,9 @@ html.dark .how .ic{background:#25264a}
 .vbar{display:flex;align-items:center;gap:8px;height:46px;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line);flex:none;flex-wrap:nowrap;position:relative;z-index:6}
 .vbar.size-compact,.pager.size-compact{zoom:.8}
 html[data-keepit-documents] #lhn-bilingual-reading-bar .lhn-br-rbar{zoom:var(--docs-reader-zoom,1)!important;left:var(--docs-reader-left,0px)!important;right:auto!important;width:var(--docs-reader-width,560px)!important;margin-left:0!important}
+html[data-keepit-documents] #lhn-bilingual-reading-bar .lhn-br-kbd{left:var(--docs-reader-center,50%);max-width:var(--docs-reader-area,calc(100% - 16px))}
+html[data-keepit-documents] #lhn-bilingual-reading-bar .lhn-br-kbd [data-banner-text]{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis}
+html[data-keepit-documents] #lhn-bilingual-reading-bar .lhn-br-kbd .lhn-br-sep{margin:0 6px}
 .pager.size-compact .flow-select-list{zoom:1.25;width:max-content;min-width:100%}
 .vbar [hidden],.morePanel[hidden],.moreScrim[hidden]{display:none!important}
 .vbar>*:not(.vtitle){flex-shrink:0}

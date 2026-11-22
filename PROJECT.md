@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.610**: sửa độ rộng ô chuyển trang và thu phóng trong menu Thêm Tài liệu về bố cục rộng như 3.5.595; giữ lựa chọn và icon mới.
+- Version **3.5.611**: căn thanh phím tắt theo Reader tài liệu; giữ thanh dưới hiện khi menu Thêm hoặc sheet menu chính mở, tôn trọng chế độ Ẩn.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
-- Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và cảm ứng giả lập: kích thước ô chọn, nhãn dài vi/en/ko, chọn trang/zoom, fullscreen; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
+- Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
 - Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, toàn bộ PDF/Office, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
@@ -16,7 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- **Tài liệu 3.5.597–610:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
+- **Tài liệu 3.5.597–611:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
 - **UI 3.5.593:** cần thử Android và profile thật, Overlay video thực, thao tác sheet Cài đặt/Đăng nhập/Reader và AI thực; favicon provider ngoài có 404/bị chặn trong môi trường thử, bản kiểm UI dùng ảnh fixture.
 - **Popup 3.5.586:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
@@ -162,6 +162,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.611 | Arena:**
+
+- Tóm tắt: Căn thanh phím tắt cùng tâm Reader trong vùng xem, giới hạn theo vùng và giữ nút đóng ở màn hẹp; giữ pager hiện khi menu Thêm hoặc sheet menu chính mở, sau đóng tiếp tục mờ/ẩn theo cài đặt; chế độ Ẩn hẳn vẫn giữ.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked dashboard 1512/390 sáng/tối, ảnh và crop 4×, chạm giả lập; tâm khớp khi hiện/ẩn dải trang và mở dịch; Tự làm mờ/Tự ẩn sáng khi menu mở và trở về sau đóng, Ẩn vẫn ẩn; console/pageerror rỗng. Chưa kiểm profile Windows, thiết bị cảm ứng thật, Android/Firefox và tệp người dùng.
 
 **2026-11-17 | v3.5.610 | Arena:**
 

@@ -318,7 +318,7 @@ function positionDocumentReader(){
  const stage=$('.stageWrap'),bar=$('#lhn-bilingual-reading-bar');if(!stage||!bar)return;
  const r=stage.getBoundingClientRect();if(r.width<1)return;
  const ui=globalThis.LHN_UI_ZOOM?.get?.()||1,wide=bar.classList.contains('lhn-br-wide'),design=wide?560:392,available=Math.max(1,r.width*ui-20),fit=Math.min(1,available/design),compact=$('#vBar').classList.contains('size-compact')?.8:1,z=fit*compact,physical=Math.min(wide?560:available,available)*compact,center=(r.left+r.width/2)*ui;
- const root=document.documentElement.style;root.setProperty('--docs-reader-zoom',String(z));root.setProperty('--docs-reader-left',((center-physical/2)/z)+'px');root.setProperty('--docs-reader-width',(physical/z)+'px');
+ const root=document.documentElement.style;root.setProperty('--docs-reader-zoom',String(z));root.setProperty('--docs-reader-left',((center-physical/2)/z)+'px');root.setProperty('--docs-reader-width',(physical/z)+'px');root.setProperty('--docs-reader-center',center+'px');root.setProperty('--docs-reader-area',Math.max(0,r.width*ui-16)+'px');
 }
 new ResizeObserver(positionDocumentReader).observe($('.stageWrap'));
 new MutationObserver(positionDocumentReader).observe($('#lhn-bilingual-reading-bar'),{attributes:true,attributeFilter:['class']});
@@ -329,12 +329,12 @@ const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up'), zoomControl=LHN_
 const pageBar = $('.pager');
 const PAGER_IDLE_MS = 1000;
 let pagerTimer = 0, pagerNear = false;
-function pagerHeld() { return pagerNear || pageBar.matches(':hover') || !!pageBar.querySelector('.flow-select-list:not([hidden]),input:focus,select:focus,:focus-visible'); }
+function pagerHeld() { return pagerNear || !$('#vMorePanel').hidden || $('#pageMenu').getAttribute('aria-expanded')==='true' || pageBar.matches(':hover') || !!pageBar.querySelector('.flow-select-list:not([hidden]),input:focus,select:focus,:focus-visible'); }
 function applyPagerMode(){
   clearTimeout(pagerTimer);pagerNear=false;pageBar.classList.remove('dimmed','pager-auto-hidden');
   pageBar.classList.toggle('pager-off',pagerMode==='hide');pageBar.inert=pagerMode==='hide';
   const settingsButton=$('#vDocumentsSettings');settingsButton.hidden=pagerMode!=='hide';
-  if(pagerMode==='auto'&&$('#viewer').classList.contains('show')){pageBar.classList.add('pager-auto-hidden');pageBar.inert=true;}
+  if(pagerMode==='auto'&&$('#viewer').classList.contains('show')&&!pagerHeld()){pageBar.classList.add('pager-auto-hidden');pageBar.inert=true;}
   requestToolbarFit();if(pagerMode==='dim')armPagerFade();
 }
 function armPagerFade() {
@@ -493,8 +493,8 @@ function setMore(open, focus = true) {
   if (open && $('#vMore').hidden) return;
   $('#vMorePanel').hidden = !open; $('#moreScrim').hidden = !open;
   $('#vMore').setAttribute('aria-expanded', String(open)); $('#vMore').classList.toggle('on', open);
-  if (open) { hideSel(); if (focus) moreFocusables()[0]?.focus({ preventScroll:true }); }
-  else if (focus && $('#viewer').classList.contains('show') && !$('#vMore').hidden) $('#vMore').focus({ preventScroll:true });
+  if (open) { hideSel(); wakePager(); if (focus) moreFocusables()[0]?.focus({ preventScroll:true }); }
+  else { armPagerFade(); if (focus && $('#viewer').classList.contains('show') && !$('#vMore').hidden) $('#vMore').focus({ preventScroll:true }); }
 }
 function updateDocLabels() {
   const flow=$('#vFlow'); flow.value=V.flow;for(const option of flow.options)option.disabled=!!V.doc&&V.doc.pages===1&&option.value!=='single';
@@ -561,7 +561,7 @@ async function requestMainSheet(toggle=false,focusReader=false){
  toast(t('mainSheetUnavailable'));return{ok:false};
 }
 $('#pageMenu').onclick=()=>void requestMainSheet(true,false);
-document.addEventListener('lhn-main-sheet',event=>{const open=!!event.detail?.open;$('#pageMenu').setAttribute('aria-expanded',String(open));$('#pageMenu').classList.toggle('on',open);});
+document.addEventListener('lhn-main-sheet',event=>{const open=!!event.detail?.open;$('#pageMenu').setAttribute('aria-expanded',String(open));$('#pageMenu').classList.toggle('on',open);if(open)wakePager();else armPagerFade();});
 $('#moreClose').onclick = () => setMore(false);
 $('#moreScrim').onclick = () => setMore(false);
 let moreStartY = 0;
