@@ -4,6 +4,8 @@
 
 ## 1. Mục đích và phạm vi
 
+- Hai cột danh sách và ghi chú của Nói/Chép màn ngang trượt ẩn/hiện 260ms cùng đường cong thanh Ghi chú; vùng giữa đổi rộng đồng bộ, nút mở lại giữ nguyên. Tôn trọng giảm chuyển động.
+
 Overlay hiển thị Video (YouTube) và Web. `overlay-controller.js` điều phối source/activity; `source/`, `study/` và `overlay-engine.js` lần lượt xử lý cues/media, hoạt động học và layout/caption. Reader, TTS, translation và cache vẫn thuộc module riêng.
 
 ## 2. File chính và điểm vào

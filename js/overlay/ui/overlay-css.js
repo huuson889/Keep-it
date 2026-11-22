@@ -275,20 +275,26 @@ const UNIFIED_OVERLAY_CSS = globalThis.LHN_THEME.css('.ov') + globalThis.LHN_THE
 .ov:not([data-tab=view]) .player:not(.card) .vid{border-radius:16px}
 .ov:not([data-tab=view]) .side-hd{display:flex}
 .ov:not([data-tab=view])[data-w=c] .side{display:none}
-.ov:not([data-tab=view])[data-w=e] .bd{flex-direction:row}
-.ov:not([data-tab=view])[data-w=e] .side{order:0;width:var(--colL,290px);flex:none;border-right:1px solid var(--bd)}
+.ov:not([data-tab=view])[data-w=e] .bd{flex-direction:row;overflow:hidden}
+.ov:not([data-tab=view])[data-w=e] .side{order:0;width:var(--colL,290px);flex:none;border-right:1px solid var(--bd);overflow:hidden;transition:width .26s cubic-bezier(.2,.8,.2,1)}
+.ov:not([data-tab=view])[data-w=e] .side>*{min-width:var(--colL,290px);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
 .ov:not([data-tab=view])[data-w=e] .stage{order:2}
-.ov:not([data-tab=view])[data-w=e] .notes{display:flex;order:4;width:var(--colR,300px);flex:none}
+.ov:not([data-tab=view])[data-w=e] .notes{display:flex;order:4;width:var(--colR,300px);flex:none;overflow:hidden;transition:width .26s cubic-bezier(.2,.8,.2,1)}
+.ov:not([data-tab=view])[data-w=e] .notes>*{min-width:var(--colR,300px);transition:transform .26s cubic-bezier(.2,.8,.2,1)}
 .csplit{display:none;flex:none;width:16px;margin:0 -8px;z-index:4;cursor:col-resize;position:relative;touch-action:none}
 .csplit::before{content:"";position:absolute;left:50%;top:50%;width:6px;height:40px;margin:-20px 0 0 -3px;border-radius:3px;background:var(--bd);transition:background .15s}
 .csplit:hover::before,.csplit.drag::before{background:var(--acc)}
 .ov:not([data-tab=view])[data-w=e]:not(.col-list-off) #csL{display:block;order:1}
 .ov:not([data-tab=view])[data-w=e]:not(.col-notes-off) #csR{display:block;order:3}
-.ov.col-list-off:not([data-tab=view])[data-w=e] .side,.ov.col-notes-off:not([data-tab=view])[data-w=e] .notes{display:none}
-.ov.col-list-off:not([data-tab=view])[data-w=e] .colrail.l,.ov.col-notes-off:not([data-tab=view])[data-w=e] .colrail.r{display:flex}
+.ov.col-list-off:not([data-tab=view])[data-w=e] .side,.ov.col-notes-off:not([data-tab=view])[data-w=e] .notes{width:0;border-width:0}
+.ov.col-list-off:not([data-tab=view])[data-w=e] .side>*{transform:translateX(-100%)}
+.ov.col-notes-off:not([data-tab=view])[data-w=e] .notes>*{transform:translateX(100%)}
+.ov:not([data-tab=view])[data-w=e] .colrail{display:flex;width:0;overflow:hidden;border-width:0;transition:width .26s cubic-bezier(.2,.8,.2,1)}
+.ov.col-list-off:not([data-tab=view])[data-w=e] .colrail.l,.ov.col-notes-off:not([data-tab=view])[data-w=e] .colrail.r{width:44px;border-width:1px}
 .colrail{flex:none;width:44px;flex-direction:column;align-items:center;padding-top:8px;gap:6px;border-right:1px solid var(--bd)}
 .colrail.r{order:5;border-right:0;border-left:1px solid var(--bd)}
 .colrail.l{order:0}
+@media (prefers-reduced-motion:reduce){.ov:not([data-tab=view])[data-w=e] :is(.side,.notes,.colrail,.side>*,.notes>*){transition:none}}
 .amb{position:absolute;z-index:0;pointer-events:none;opacity:0;transition:opacity .6s,left .3s,top .3s,width .3s,height .3s;filter:blur(48px) saturate(2);transform:scale(1.45)}
 .amb svg{width:100%;height:100%;display:block}
 .ov.ambient .amb:not(.gone){opacity:.85}

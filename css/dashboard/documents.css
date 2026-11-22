@@ -191,12 +191,12 @@ html.dark .vbtn.on{background:#25264a;color:#c0c2ff;border-color:#3a3a6a}
 .vseg button{height:28px;padding:0 12px;border:0;border-radius:7px;background:none;color:var(--muted);font-size:12.5px;font-weight:700}
 .vseg button.on{background:var(--surface);color:var(--brand);box-shadow:0 2px 6px #2b245a14}
 html.dark .vseg button.on{background:#1a1a1d;color:#c0c2ff}
-.vbody{flex:1;min-height:0;display:flex}
+.vbody{flex:1;min-height:0;display:flex;overflow:hidden}
 .rail{width:var(--rail-w,112px);flex:none;overflow:auto;padding:14px 12px;border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:12px}
 .rail[hidden],.railResize[hidden]{display:none!important}
 .railResize{width:10px;margin-left:-5px;margin-right:-5px;flex:none;z-index:7;cursor:col-resize;touch-action:none;position:relative;outline:none}
-.rail.rail-animate{transition:width .25s ease,padding .25s ease,opacity .25s ease;overflow:hidden}
-.rail.rail-collapsed{width:0!important;padding-left:0!important;padding-right:0!important;border-right-width:0;opacity:0;overflow:hidden}
+.rail.rail-animate{transition:margin-left .26s cubic-bezier(.2,.8,.2,1)}
+.rail.rail-collapsed{margin-left:calc(-1 * var(--rail-w,112px))}
 .rail button{border:2px solid transparent;border-radius:9px;padding:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px}
 .rail button .mini-pg{width:100%;aspect-ratio:3/4;border-radius:6px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
 .rail.slides button .mini-pg{aspect-ratio:16/9}
@@ -592,7 +592,8 @@ html.dark .tour button{background:#0000000f}
 .pager .pageJump{display:flex;align-items:center;gap:3px;color:var(--ink2);padding:0 2px;font-variant-numeric:tabular-nums}
 .pageJump input{flex:none;width:32px;height:28px;text-align:center;background:var(--soft);border:1px solid var(--line2);border-radius:6px;font-size:12px;font-weight:700;padding:0 2px;-moz-appearance:textfield}
 .pageJump input::-webkit-inner-spin-button,.pageJump input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.transOpen .translation{display:flex}
+.translation{display:flex;visibility:hidden;pointer-events:none;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s}
+.transOpen .translation{visibility:visible;pointer-events:auto;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s}
 .transList{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
 .transSource{font-size:11.5px;font-weight:700;color:var(--brand);padding:0 2px}
 .transItem{padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);font-size:12px;line-height:1.65}
@@ -662,12 +663,15 @@ html.dark .tour button{background:#0000000f}
 .transPage.on .transPageNo{color:var(--brand)}
 .transPage .transSource{font-size:12px;line-height:1.5}
 .transItem{overflow-wrap:anywhere}
-@media  (orientation:landscape){.side2.resizablePanel{position:relative;width:var(--panel-w,var(--panel-base,320px))}}
+@media  (orientation:landscape){.side2.resizablePanel{position:relative;width:var(--panel-w,var(--panel-base,320px))}
+.translation{margin-right:calc(-1 * var(--panel-w,var(--panel-base,320px)));transition:margin-right .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s}
+.transOpen .translation{margin-right:0;transition:margin-right .26s cubic-bezier(.2,.8,.2,1),visibility 0s}}
+@media (orientation:portrait){.translation{transform:translateY(calc(100% + 12px))}.transOpen .translation{transform:none}}
 @media  (orientation:portrait){.panelResize{display:none}}
 @media  (pointer:coarse){.panelResize{left:-8px;width:16px}
 .railResize{width:16px;margin-left:-8px;margin-right:-8px}
 .panelResize:before,.panelResize:after,.railResize:before,.railResize:after{left:7px}}
-@media  (prefers-reduced-motion:reduce){.panelResize:before,.railResize:before,.rail.rail-animate{transition:none}}
+@media  (prefers-reduced-motion:reduce){.panelResize:before,.railResize:before,.rail.rail-animate,.translation,.transOpen .translation{transition:none}}
 /* Raster previews retain their aspect ratio and original colours in either theme. */
 .thumb.image{padding-top:0;background:var(--soft)}
 .thumb.image .pg{width:100%;height:100%;border-radius:0;background:none;box-shadow:none;margin:0}

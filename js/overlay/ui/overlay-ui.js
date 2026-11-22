@@ -414,6 +414,7 @@ globalThis.LHN_UNIFIED_OVERLAY = (() => {
       ov.classList.toggle('playing', S.playing);
       ov.classList.toggle('ambient', S.ambient); ov.classList.toggle('ahd', S.autoHideDock);
       ov.classList.toggle('col-list-off', !listOn()); ov.classList.toggle('col-notes-off', !notesOn());
+      $('#side').inert = isStudy() && !listOn(); $('#notesCol').inert = !notesOn(); $('#railL').inert = listOn(); $('#railR').inert = notesOn();
       ov.classList.toggle('kb-open', S.kb);
       setSplitVar();
       const mini = S.tab === 'view' && curView() !== 'theater' && !!S.mini[k];
