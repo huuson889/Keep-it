@@ -313,7 +313,16 @@ document.addEventListener('keydown', event => {
   if(key==='0')setZoom('fit'); else stepZoom(key==='-'||key==='_'?-1:1);
 });
 
-function applyTopCompact(value){$('#vBar').classList.toggle('size-compact',value===true);$('.pager').classList.toggle('size-compact',value===true);requestToolbarFit();}
+function applyTopCompact(value){$('#vBar').classList.toggle('size-compact',value===true);$('.pager').classList.toggle('size-compact',value===true);document.documentElement.style.setProperty('--docs-compact-scale',value===true?'.8':'1');positionDocumentReader();requestToolbarFit();}
+function positionDocumentReader(){
+ const stage=$('.stageWrap'),bar=$('#lhn-bilingual-reading-bar');if(!stage||!bar)return;
+ const r=stage.getBoundingClientRect();if(r.width<1)return;
+ const ui=globalThis.LHN_UI_ZOOM?.get?.()||1,wide=bar.classList.contains('lhn-br-wide'),design=wide?560:392,available=Math.max(1,r.width*ui-20),fit=Math.min(1,available/design),compact=$('#vBar').classList.contains('size-compact')?.8:1,z=fit*compact,physical=Math.min(wide?560:available,available)*compact,center=(r.left+r.width/2)*ui;
+ const root=document.documentElement.style;root.setProperty('--docs-reader-zoom',String(z));root.setProperty('--docs-reader-left',((center-physical/2)/z)+'px');root.setProperty('--docs-reader-width',(physical/z)+'px');
+}
+new ResizeObserver(positionDocumentReader).observe($('.stageWrap'));
+new MutationObserver(positionDocumentReader).observe($('#lhn-bilingual-reading-bar'),{attributes:true,attributeFilter:['class']});
+addEventListener('resize',positionDocumentReader);
 const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up'), zoomControl=LHN_ICONS.createFlowSelect($('#vZoom'),'up',false);
 
 /* The page bar stays discoverable; fading never blocks its controls. */

@@ -49,7 +49,7 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 - Nút cạnh trái menu trên thanh dưới bật/tắt toàn màn hình của viewer; Escape thoát toàn màn hình trước khi đóng tài liệu. Dashboard cho phép iframe Documents vào toàn màn hình; khi đóng tài liệu hoặc mở Cài đặt sẽ thoát toàn màn hình trước.
 
 - Thanh trên cao 46px với chuột, 52px khi cảm ứng; giữ kích thước nút.
-- Cài đặt Tài liệu → Thu gọn thanh điều khiển (`lhnDocumentsCompactTop`) mặc định tắt; khi bật, thanh trên và thanh dưới thu còn 80%, đồng bộ live qua storage và giữ sau reload. Menu vẫn giữ cỡ thường; thao tác chạm trên thanh có đích nhỏ theo tỉ lệ.
+- Cài đặt Tài liệu → Thu gọn thanh điều khiển (`lhnDocumentsCompactTop`) mặc định tắt; khi bật, thanh trên, thanh dưới, Reader và nút về đầu trang thu còn 80%, đồng bộ live qua storage và giữ sau reload. Reader căn giữa vùng xem tài liệu, tự vừa vùng hẹp và theo thay đổi hai bên. Menu vẫn giữ cỡ thường; thao tác chạm trên thanh có đích nhỏ theo tỉ lệ.
 - Dải trang bên trái và bảng dịch ẩn/hiện trượt 260ms cùng đường cong thanh Ghi chú (tắt chuyển động khi hệ thống yêu cầu), có nút trên thanh trên và tay kéo mép phải đồng kiểu panel dịch (hỗ trợ phím mũi tên, Home/End); `lhnDocumentsRail` lưu trạng thái và chiều rộng. Mặc định hiện màn ngang, ẩn màn dọc; bề rộng bị giới hạn để chừa chỗ xem tài liệu, không áp dụng cho ảnh.
 
 - Chuyển chế độ Gốc/Đọc hoặc mở thẳng chế độ Đọc chỉ đổi cách xem, không tự khởi động giọng; muốn đọc to dùng nút Đọc to riêng.
