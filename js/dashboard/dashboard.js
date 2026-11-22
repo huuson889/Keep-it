@@ -10,7 +10,7 @@ let annotations = [], favorites = [], favoriteVideos = [], favoriteNoteIds = new
 const DEMO_PROFILE_KEY = LHN_ACCOUNT.KEY;
 const BILINGUAL_READER_SETTINGS_KEY = "lhnBilingualReaderSettings";
 const LAST_DASHBOARD_SETTINGS_TAB_KEY = "lhnDashboardLastSettingsTab";
-const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "notes", "translate", "dictionary", "wordClass", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
+const DASHBOARD_SETTINGS_TAB_NAMES = new Set(["account", "documents", "notes", "translate", "dictionary", "wordClass", "iconDisplay", "askAI", "speech", "bilingualReader", "disableWeb", "appearance", "keepitBar", "shortcuts", "notifications", "backup", "upgrade", "reset", "about"]);
 let lastDashboardSettingsTab = "account";
 const DEFAULT_BILINGUAL_READER_SETTINGS = globalThis.LHN_DEFAULTS.reader;
 let bilingualReaderSettings = { ...DEFAULT_BILINGUAL_READER_SETTINGS };
@@ -3642,7 +3642,7 @@ LHN_MESSAGING.onMessage.addListener(message=>{
 });
 window.addEventListener("message", event => {
   if (event.origin !== location.origin || event.source !== dashboardDocumentsFrame.contentWindow) return;
-  if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){openDashboardSettings("bilingualReader");return;}
+  if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){const tab=event.data.tab==="documents"?"documents":"bilingualReader";openDashboardSettings(tab);if(tab==="documents"&&matchMedia("(orientation: portrait)").matches)requestAnimationFrame(()=>document.querySelector('[data-settings-tab="documents"]')?.click());return;}
   if(event.data?.type==="KEEPIT_DOCUMENTS_TOAST"){
     const message=String(event.data.message||"");
     if(!message)return;
@@ -3859,6 +3859,16 @@ $("dashboardSettingsDialog").addEventListener("close", () => {
   dashboardSettingsChangedWhileOpen = false;
   toast(t(shouldNotify ? "settingsSaved" : "settingsNoChanges"));
 });
+const DOCUMENT_FLOW_KEY="lhnDocumentsFlow", DOCUMENT_PAGER_KEY="lhnDocumentsPager", DOCUMENT_FLOWS=["single","continuous","facing","facingContinuous"], DOCUMENT_PAGER_MODES=["show","dim","auto","hide"];
+async function syncDocumentPreferences(){
+  const data=await browser.storage.local.get([DOCUMENT_FLOW_KEY,DOCUMENT_PAGER_KEY,"lhnDocumentsPrefs"]);
+  const flow=data[DOCUMENT_FLOW_KEY]||data.lhnDocumentsPrefs?.flow;
+  $("settingsDocumentsFlow").value=DOCUMENT_FLOWS.includes(flow)?flow:"continuous";
+  $("settingsDocumentsPager").value=DOCUMENT_PAGER_MODES.includes(data[DOCUMENT_PAGER_KEY])?data[DOCUMENT_PAGER_KEY]:"dim";
+}
+for(const [id,key] of [["settingsDocumentsFlow",DOCUMENT_FLOW_KEY],["settingsDocumentsPager",DOCUMENT_PAGER_KEY]])$(id).addEventListener("change",async event=>{try{await browser.storage.local.set({[key]:event.target.value});if($("dashboardSettingsDialog")?.open)dashboardSettingsChangedWhileOpen=true;}catch(error){console.warn("Could not save document preferences",error);await syncDocumentPreferences();}});
+void syncDocumentPreferences();
+browser.storage.onChanged.addListener((changes,area)=>{if(area==="local"&&(changes[DOCUMENT_FLOW_KEY]||changes[DOCUMENT_PAGER_KEY]))void syncDocumentPreferences();});
 document.querySelectorAll("[data-settings-tab]").forEach(button => button.addEventListener("click", () => {
   showDashboardSettingsPanel(button.dataset.settingsTab);
   if (button.dataset.settingsTab === "upgrade") refreshUsageLimitSettings();

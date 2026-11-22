@@ -36,3 +36,8 @@ Tài liệu dùng bố cục demo v13 nhưng phải gọi module app có sẵn c
 ## Xác minh
 
 Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, notes/anchor/reopen/migration/deep link/backup, Reader native/thay trang/card, touch selection/sheet/AI và regression web/home. AI chưa đăng nhập có thể báo lỗi nhúng; UI không chứng minh phiên AI thật. Firefox, Edge Android và giọng đọc thực cần xác nhận riêng.
+
+## Bố cục và thanh điều khiển (v3.5.597)
+
+- Cài đặt → Tài liệu và lựa chọn trên thanh dưới dùng chung `lhnDocumentsFlow`: một trang, liên tục (mặc định), hai trang, hai trang liên tục. Hai trang ghép 1–2, 3–4; trang lẻ cuối đứng riêng; màn hình hẹp vẫn giữ hai cột và cho phép zoom/cuộn ngang. Ảnh đơn không có lựa chọn ghép trang.
+- `lhnDocumentsPager` lưu luôn hiện, tự làm mờ (mặc định), tự ẩn hoặc ẩn. Tự ẩn hiện lại khi chuột/chạm gần mép dưới; khi ẩn có nút Cài đặt trên thanh trên. Dashboard và viewer đồng bộ qua storage; cấu hình flow cũ được chuyển đổi. Không áp dụng bố cục trang gốc cho chế độ Đọc.
