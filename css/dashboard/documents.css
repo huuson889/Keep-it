@@ -194,8 +194,9 @@ html.dark .vseg button.on{background:#1a1a1d;color:#c0c2ff}
 .vbody{flex:1;min-height:0;display:flex}
 .rail{width:var(--rail-w,112px);flex:none;overflow:auto;padding:14px 12px;border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:12px}
 .rail[hidden],.railResize[hidden]{display:none!important}
-.railResize{width:8px;margin-left:-4px;margin-right:-4px;flex:none;z-index:2;cursor:col-resize;touch-action:none;position:relative}
-.railResize:hover,.railResize:focus-visible{background:var(--brandSoft);outline:1px solid var(--brand)}
+.railResize{width:10px;margin-left:-5px;margin-right:-5px;flex:none;z-index:7;cursor:col-resize;touch-action:none;position:relative;outline:none}
+.rail.rail-animate{transition:width .25s ease,padding .25s ease,opacity .25s ease;overflow:hidden}
+.rail.rail-collapsed{width:0!important;padding-left:0!important;padding-right:0!important;border-right-width:0;opacity:0;overflow:hidden}
 .rail button{border:2px solid transparent;border-radius:9px;padding:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px}
 .rail button .mini-pg{width:100%;aspect-ratio:3/4;border-radius:6px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
 .rail.slides button .mini-pg{aspect-ratio:16/9}
@@ -628,7 +629,7 @@ html.dark .tour button{background:#0000000f}
 .moreTools .vbtn{height:44px}
 .pager button{width:36px;height:36px}.pager .pageMenu,.pager .pageFullscreen{width:44px;height:44px}}
 @media  (pointer:coarse) and (orientation:portrait){.morePanel{top:auto;max-height:85dvh}}
-@media  (orientation:landscape) and (max-width:1050px){.rail{width:88px;padding:10px 8px}
+@media  (orientation:landscape) and (max-width:1050px){.rail{padding:10px 8px}
 .side2{--panel-base:420px;width:420px}}
 @media  (max-height:500px) and (orientation:landscape){.vbar{padding:0 8px;gap:5px}
 .stage{padding-top:10px}
@@ -639,10 +640,10 @@ html.dark .tour button{background:#0000000f}
 .side2 header>div{min-width:0}
 .side2 header>.vbtn{flex:none}
 .panelResize{position:absolute;inset:0 auto 0 -5px;width:10px;z-index:7;cursor:col-resize;touch-action:none;outline:none}
-.panelResize:before{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;border-radius:3px;background:var(--brand2);opacity:0;transition:opacity .12s}
-.panelResize:after{content:"";position:absolute;top:50%;left:4px;width:2px;height:32px;border-radius:3px;background:var(--muted);opacity:.45;transform:translateY(-50%)}
-.panelResize:hover:before,.panelResize:focus-visible:before,.panelSizing .panelResize:before{opacity:1}
-.panelResize:focus-visible{box-shadow:inset 0 0 0 2px var(--brand2)}
+.panelResize:before,.railResize:before{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;border-radius:3px;background:var(--brand2);opacity:0;transition:opacity .12s}
+.panelResize:after,.railResize:after{content:"";position:absolute;top:50%;left:4px;width:2px;height:32px;border-radius:3px;background:var(--muted);opacity:.45;transform:translateY(-50%)}
+.panelResize:hover:before,.panelResize:focus-visible:before,.panelSizing .panelResize:before,.railResize:hover:before,.railResize:focus-visible:before,.panelSizing .railResize:before{opacity:1}
+.panelResize:focus-visible,.railResize:focus-visible{box-shadow:inset 0 0 0 2px var(--brand2)}
 .panelSizing,.panelSizing *{cursor:col-resize!important;user-select:none!important}
 .translation>header{height:50px;min-height:50px;padding:6px 2px 6px 6px;gap:1px;flex:none;flex-wrap:nowrap;white-space:nowrap}
 .transTitle{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;font-size:13px;font-weight:700;line-height:20px}
@@ -664,8 +665,9 @@ html.dark .tour button{background:#0000000f}
 @media  (orientation:landscape){.side2.resizablePanel{position:relative;width:var(--panel-w,var(--panel-base,320px))}}
 @media  (orientation:portrait){.panelResize{display:none}}
 @media  (pointer:coarse){.panelResize{left:-8px;width:16px}
-.panelResize:before,.panelResize:after{left:7px}}
-@media  (prefers-reduced-motion:reduce){.panelResize:before{transition:none}}
+.railResize{width:16px;margin-left:-8px;margin-right:-8px}
+.panelResize:before,.panelResize:after,.railResize:before,.railResize:after{left:7px}}
+@media  (prefers-reduced-motion:reduce){.panelResize:before,.railResize:before,.rail.rail-animate{transition:none}}
 /* Raster previews retain their aspect ratio and original colours in either theme. */
 .thumb.image{padding-top:0;background:var(--soft)}
 .thumb.image .pg{width:100%;height:100%;border-radius:0;background:none;box-shadow:none;margin:0}

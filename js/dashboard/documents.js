@@ -358,18 +358,20 @@ addEventListener('resize', () => { pagerNear = false; wakePager(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pagerTimer); else wakePager(); });
 
 
-let railPrefs={width:112,visible:null}, railDrag=null;
+let railPrefs={width:112,visible:null}, railDrag=null, railTimer=0, railVisible=null;
 function railLimits(){const w=$('.vbody').clientWidth,max=Math.max(1,Math.min(360,Math.floor(w*.45),w-270));return {min:Math.min(80,max),max};}
 function applyRail(){
  const rail=$('#rail'),handle=$('#railResize'),button=$('#vRailToggle'),image=!!V.doc?.image;
  const visible=!image&&(railPrefs.visible===null?!matchMedia('(orientation:portrait)').matches:railPrefs.visible);
  const {min,max}=railLimits(),width=Math.max(min,Math.min(max,railPrefs.width));
- rail.hidden=handle.hidden=!visible;button.hidden=image;button.setAttribute('aria-expanded',String(visible));button.classList.toggle('on',visible);
+ const changed=railVisible!==visible,animate=changed&&railVisible!==null&&!image&&$('#viewer').classList.contains('show')&&!matchMedia('(prefers-reduced-motion:reduce)').matches;
+ railVisible=visible;button.hidden=image;button.setAttribute('aria-expanded',String(visible));button.classList.toggle('on',visible);handle.hidden=!visible;rail.inert=!visible;
+ if(changed){clearTimeout(railTimer);rail.classList.remove('rail-animate');if(animate){if(visible&&rail.hidden){rail.hidden=false;rail.classList.add('rail-collapsed');void rail.offsetWidth;}rail.classList.add('rail-animate');rail.classList.toggle('rail-collapsed',!visible);railTimer=setTimeout(()=>{rail.hidden=!railVisible;rail.classList.remove('rail-animate');if(V.doc)layoutPanelWidths();},260);}else{rail.hidden=!visible;rail.classList.toggle('rail-collapsed',!visible);}}
  rail.style.setProperty('--rail-w',width+'px');handle.setAttribute('aria-valuemin',min);handle.setAttribute('aria-valuemax',max);handle.setAttribute('aria-valuenow',Math.round(width));handle.setAttribute('aria-valuetext',Math.round(width)+' px');
  if(V.doc)layoutPanelWidths();requestToolbarFit();
 }
 function saveRail(){void api.storage.local.set({[RAIL_KEY]:railPrefs}).catch(()=>toast(t('storageFailed')));}
-$('#vRailToggle').onclick=()=>{railPrefs.visible=$('#rail').hidden;applyRail();saveRail();};
+$('#vRailToggle').onclick=()=>{railPrefs.visible=!railVisible;applyRail();saveRail();};
 const railHandle=$('#railResize');
 railHandle.addEventListener('pointerdown',e=>{if(e.button!==0)return;railDrag={id:e.pointerId,x:e.clientX,width:$('#rail').getBoundingClientRect().width};railHandle.setPointerCapture(e.pointerId);document.documentElement.classList.add('panelSizing');e.preventDefault();});
 railHandle.addEventListener('pointermove',e=>{if(!railDrag||railDrag.id!==e.pointerId)return;const {min,max}=railLimits();railPrefs.width=Math.round(Math.max(min,Math.min(max,railDrag.width+e.clientX-railDrag.x)));applyRail();});
