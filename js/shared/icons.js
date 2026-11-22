@@ -30,24 +30,34 @@
   // <svg data-icon="nav-overview"> … </svg> anywhere in a page gets its paths from here (one source, two places)
   function applyIcons(root = document) { root.querySelectorAll?.("[data-icon]").forEach(el => { const name = el.dataset.icon, path = ICON_PATHS[name]; if (path && el.innerHTML.trim() === "") el.innerHTML = path; }); }
 
-  function createFlowSelect(select, direction = 'down') {
-    const wrapper = document.createElement('div'); wrapper.className = 'flow-select'; wrapper.dataset.direction = direction;
+  function createFlowSelect(select, direction = 'down', icons = true) {
+    const wrapper = document.createElement('div'); wrapper.className = 'flow-select'; wrapper.dataset.direction = direction; wrapper.classList.toggle('flow-select-zoom', !icons);
     const trigger = document.createElement('button'); trigger.type = 'button'; trigger.className = 'flow-select-trigger'; trigger.setAttribute('role', 'combobox'); trigger.setAttribute('aria-haspopup', 'listbox'); trigger.setAttribute('aria-expanded', 'false');
     const list = document.createElement('div'); list.className = 'flow-select-list'; list.setAttribute('role','listbox'); list.id = select.id + '-options'; trigger.setAttribute('aria-controls', list.id); list.hidden = true;
     select.before(wrapper); wrapper.append(select, trigger, list); select.hidden = true;
     const refresh = () => {
       const chosen = select.selectedOptions[0]; if (!chosen) return;
-      trigger.innerHTML = render('flow-'+chosen.value) + '<span></span><svg class="flow-select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
+      trigger.innerHTML = (icons ? render('flow-'+chosen.value) : '') + '<span></span><svg class="flow-select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
       trigger.querySelector('span').textContent = chosen.textContent; trigger.setAttribute('aria-label', (select.getAttribute('aria-label') || '') + ': ' + chosen.textContent);
       list.replaceChildren();
       for (const option of select.options) {
-        const item = document.createElement('button'); item.type='button'; item.className='flow-select-option'; item.setAttribute('role','option'); item.setAttribute('aria-selected',String(option.selected)); item.disabled=option.disabled; item.dataset.value=option.value; item.innerHTML=render('flow-'+option.value)+'<span></span>'; item.querySelector('span').textContent=option.dataset.full||option.textContent;
+        if (option.hidden) continue;
+        const item = document.createElement('button'); item.type='button'; item.className='flow-select-option'; item.setAttribute('role','option'); item.setAttribute('aria-selected',String(option.selected)); item.disabled=option.disabled; item.dataset.value=option.value; item.innerHTML=(icons ? render('flow-'+option.value) : '')+'<span></span>'; item.querySelector('span').textContent=option.dataset.full||option.textContent;
         item.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true})); close();trigger.focus();}); list.append(item);
       }
     };
-    const close = () => { list.hidden=true; trigger.setAttribute('aria-expanded','false'); };
-    trigger.addEventListener('click',()=>{if(!list.hidden){close();return;} refresh(); list.hidden=false;trigger.setAttribute('aria-expanded','true');});
-    wrapper.addEventListener('keydown',event=>{ if(event.key==='Escape'&&!list.hidden){event.preventDefault();event.stopPropagation();close();trigger.focus();} else if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();if(list.hidden){refresh();list.hidden=false;trigger.setAttribute('aria-expanded','true');}const choices=[...list.querySelectorAll('button:not(:disabled)')];const index=choices.indexOf(document.activeElement);choices[(index+(event.key==='ArrowDown'?1:-1)+choices.length)%choices.length]?.focus();} });
+    const setOpen = open => {
+      if (open) {
+        const box=trigger.getBoundingClientRect(), clip=wrapper.closest('.moreBody')?.getBoundingClientRect();
+        const top=clip?.top ?? 0, bottom=clip?.bottom ?? innerHeight, above=box.top-top-6, below=bottom-box.bottom-6;
+        wrapper.dataset.direction = above > below ? 'up' : 'down';
+        list.style.maxHeight = Math.max(60,Math.min(460,wrapper.dataset.direction==='up'?above:below))+'px';
+      }
+      list.hidden=!open; trigger.setAttribute('aria-expanded',String(open)); wrapper.dispatchEvent(new CustomEvent('document-select-visibility',{bubbles:true,detail:{open}}));
+    };
+    const close = () => { if(!list.hidden)setOpen(false); };
+    trigger.addEventListener('click',()=>{if(!list.hidden){close();return;} refresh(); setOpen(true);});
+    wrapper.addEventListener('keydown',event=>{ if(event.key==='Escape'&&!list.hidden){event.preventDefault();event.stopPropagation();close();trigger.focus();} else if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();if(list.hidden){refresh();setOpen(true);}const choices=[...list.querySelectorAll('button:not(:disabled)')];const index=choices.indexOf(document.activeElement);choices[(index+(event.key==='ArrowDown'?1:-1)+choices.length)%choices.length]?.focus();} });
     document.addEventListener('pointerdown',event=>{if(!wrapper.contains(event.target))close();});
     select.addEventListener('change', refresh); refresh();
     return Object.freeze({refresh,close,element:wrapper});

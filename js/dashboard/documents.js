@@ -247,7 +247,7 @@ function syncZoomSelect(){
   live.value=String(p);live.dataset.full=p+'%';live.dataset.short=p+'%';live.textContent=p+'%';
   select.value=V.zoom==='fit'||V.zoom==='fitImage'?V.zoom:String(p);
 }
-function updateZoomControls(){if(!V.doc)return;syncZoomSelect();updateDocLabels();const p=zoomPercent();$('#zOut').disabled=p<=ZOOM_MIN+.5;$('#zIn').disabled=p>=maxZoom()-.5;$('#vZoom option[value="fitImage"]').hidden=!V.doc.image;}
+function updateZoomControls(){if(!V.doc)return;syncZoomSelect();$('#vZoom option[value="fitImage"]').hidden=!V.doc.image;updateDocLabels();const p=zoomPercent();$('#zOut').disabled=p<=ZOOM_MIN+.5;$('#zIn').disabled=p>=maxZoom()-.5;}
 function setZoom(value){
   if(String(value).trim()==='')return;
   if(value!=='fit'&&!(value==='fitImage'&&V.doc?.image)&&!Number.isFinite(+value))return;
@@ -313,13 +313,13 @@ document.addEventListener('keydown', event => {
   if(key==='0')setZoom('fit'); else stepZoom(key==='-'||key==='_'?-1:1);
 });
 
-const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up');
+const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up'), zoomControl=LHN_ICONS.createFlowSelect($('#vZoom'),'up',false);
 
 /* The page bar stays discoverable; fading never blocks its controls. */
 const pageBar = $('.pager');
 const PAGER_IDLE_MS = 1000;
 let pagerTimer = 0, pagerNear = false;
-function pagerHeld() { return pagerNear || !!pageBar.querySelector('input:focus,select:focus,:focus-visible'); }
+function pagerHeld() { return pagerNear || pageBar.matches(':hover') || !!pageBar.querySelector('.flow-select-list:not([hidden]),input:focus,select:focus,:focus-visible'); }
 function applyPagerMode(){
   clearTimeout(pagerTimer);pagerNear=false;pageBar.classList.remove('dimmed','pager-auto-hidden');
   pageBar.classList.toggle('pager-off',pagerMode==='hide');pageBar.inert=pagerMode==='hide';
@@ -334,7 +334,7 @@ function armPagerFade() {
 }
 function wakePager() {
   if (!$('#viewer').classList.contains('show') || $('#viewer').classList.contains('ttsOn') || pagerMode==='hide') return;
-  if(pagerMode==='auto'&&!pagerNear)return;
+  if(pagerMode==='auto'&&!pagerHeld())return;
   pageBar.inert=false;pageBar.classList.remove('dimmed','pager-auto-hidden'); armPagerFade();
 }
 function resetPagerFade() { clearTimeout(pagerTimer); pagerNear = false; pageBar.classList.remove('dimmed','pager-auto-hidden');pageBar.inert=false; }
@@ -342,6 +342,7 @@ pageBar.addEventListener('pointerdown', wakePager, { passive:true });
 pageBar.addEventListener('focusin', wakePager);
 pageBar.addEventListener('focusout', () => requestAnimationFrame(wakePager));
 pageBar.addEventListener('keydown', wakePager);
+pageBar.addEventListener('document-select-visibility', event => { if(event.detail.open)wakePager();else armPagerFade(); });
 $('.stageWrap').addEventListener('pointermove', e => {
   if (e.pointerType !== 'mouse' || $('#viewer').classList.contains('ttsOn')) return;
   const r = pageBar.getBoundingClientRect(), stage = $('.stageWrap').getBoundingClientRect();
@@ -468,13 +469,13 @@ function updateDocLabels() {
   for(const option of flow.options){const key={single:'single',continuous:'continuous',facing:'facing',facingContinuous:'facingContinuous'}[option.value];option.dataset.full=t(key);option.dataset.short=t(option.value==='continuous'?'continuousShort':key);}
   const fit=$('#vZoom option[value="fit"]');fit.dataset.full=t('fitWidth');fit.dataset.short=t('fitShort');const fitImage=$('#vZoom option[value="fitImage"]');fitImage.dataset.full=fitImage.dataset.short=t('fitImage');
   for(const select of[flow,$('#vZoom')]){const compact=!!select.closest('.pager');for(const option of select.options)option.textContent=compact&&option.dataset.short?option.dataset.short:option.dataset.full||option.textContent;select.title=select.selectedOptions[0]?.dataset.full||select.getAttribute('aria-label');}
-  flowControl.element.dataset.direction=flowControl.element.closest('.pager')?'up':'down';flowControl.refresh();
+  for(const control of [flowControl,zoomControl]){control.element.dataset.direction=control.element.closest('.pager')?'up':'down';control.refresh();}
 }
 function fitToolbar() {
   if (!$('#viewer').classList.contains('show')) return;
   const focused = document.activeElement;
   // Reparenting a focused native select dismisses its open option list.
-  if (flowControl.element.contains(focused) || focused === $('#vZoom')) return;
+  if (flowControl.element.contains(focused) || zoomControl.element.contains(focused)) return;
   const bar = $('#vBar'), title = $('.vtitle'), more = $('#vMore'), dock = $('#docControls');
   toolbarItems.forEach(el => toolbarHomes.get(el).before(el));
   dock.hidden = false; pageBar.classList.remove('simple');
