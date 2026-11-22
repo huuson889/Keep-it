@@ -160,7 +160,8 @@ html.dark .how .ic{background:#25264a}
 .viewer.show{display:flex;animation:vin .22s ease}
 @keyframes vin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .vbar{display:flex;align-items:center;gap:8px;height:46px;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line);flex:none;flex-wrap:nowrap;position:relative;z-index:6}
-.vbar.size-compact{zoom:.8}
+.vbar.size-compact,.pager.size-compact{zoom:.8}
+.pager.size-compact .flow-select-list{zoom:1.25;width:max-content;min-width:100%}
 .vbar [hidden],.morePanel[hidden],.moreScrim[hidden]{display:none!important}
 .vbar>*:not(.vtitle){flex-shrink:0}
 .vbar.compact .vbtn .lbl{display:none}
@@ -191,7 +192,10 @@ html.dark .vbtn.on{background:#25264a;color:#c0c2ff;border-color:#3a3a6a}
 .vseg button.on{background:var(--surface);color:var(--brand);box-shadow:0 2px 6px #2b245a14}
 html.dark .vseg button.on{background:#1a1a1d;color:#c0c2ff}
 .vbody{flex:1;min-height:0;display:flex}
-.rail{width:132px;flex:none;overflow:auto;padding:14px 12px;border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:12px}
+.rail{width:var(--rail-w,112px);flex:none;overflow:auto;padding:14px 12px;border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:12px}
+.rail[hidden],.railResize[hidden]{display:none!important}
+.railResize{width:8px;margin-left:-4px;margin-right:-4px;flex:none;z-index:2;cursor:col-resize;touch-action:none;position:relative}
+.railResize:hover,.railResize:focus-visible{background:var(--brandSoft);outline:1px solid var(--brand)}
 .rail button{border:2px solid transparent;border-radius:9px;padding:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:11px}
 .rail button .mini-pg{width:100%;aspect-ratio:3/4;border-radius:6px;background:var(--paper);border:1px solid var(--line);overflow:hidden}
 .rail.slides button .mini-pg{aspect-ratio:16/9}
@@ -299,7 +303,6 @@ html.dark .bnav button.on svg{background:#25264a}
 .sheet button{width:100%;display:flex;align-items:center;gap:12px;height:48px;padding:0 12px;border:0;border-radius:12px;background:none;font-size:15px;font-weight:500;color:var(--ink)}
 .sheet button.on{background:var(--brandSoft);color:var(--brand)}
 html.dark .sheet button.on{background:#25264a;color:#c0c2ff}
-.rail{display:none}
 .vbar{padding:0 8px;gap:5px}
 .stage{padding:14px 10px 90px}
 .paper{padding:26px 20px;font-size:14.5px}
@@ -576,7 +579,7 @@ html.dark .tour button{background:#0000000f}
 .readFrame{padding-bottom:15px;border-bottom:1px solid var(--line);margin-bottom:30px}
 .readFrame:last-child{border:0}
 .readFrame h2{font-size:26px;margin-top:0}
-.rail{width:112px;padding:14px 10px}
+.rail{padding:14px 10px}
 .rail button .mini-pg{background:#fff;border-radius:3px;aspect-ratio:720/1018}
 .rail button{flex:none}
 .rail.slides button .mini-pg{aspect-ratio:16/9}
@@ -605,7 +608,6 @@ html.dark .tour button{background:#0000000f}
 .stage{padding:12px 10px 95px}
 .pageCap{font-size:10px;gap:5px}
 .pageCap .flowtip{font-size:10px}
-.rail{display:none}
 .side2{position:fixed;left:8px;right:8px;bottom:8px;top:auto;width:auto;max-height:66dvh;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadowH);z-index:55}
 .side2 header{touch-action:none}
 .transList{max-height:48dvh}
@@ -630,7 +632,6 @@ html.dark .tour button{background:#0000000f}
 .side2{--panel-base:420px;width:420px}}
 @media  (max-height:500px) and (orientation:landscape){.vbar{padding:0 8px;gap:5px}
 .stage{padding-top:10px}
-.rail{width:75px}
 .side2{--panel-base:390px;position:relative;left:auto;right:auto;bottom:auto;top:auto;border-radius:0;max-height:none;width:390px}
 .legend{font-size:11px}
 .tour{top:auto;bottom:8px;left:8px;right:auto;width:300px}}

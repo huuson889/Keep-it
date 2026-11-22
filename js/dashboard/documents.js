@@ -5,7 +5,7 @@ if(EMBEDDED){document.documentElement.classList.add('dash-embedded','dash-embedd
 (() => {
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], api=globalThis.browser, Store=KeepitDocumentsStore;
-const PREF_KEY='lhnDocumentsPrefs', FLOW_KEY='lhnDocumentsFlow', PAGER_KEY='lhnDocumentsPager', TOP_COMPACT_KEY='lhnDocumentsCompactTop', FLOWS=['continuous','single','facing','facingContinuous'], PAGER_MODES=['dim','show','auto','hide'], MB=1048576;
+const PREF_KEY='lhnDocumentsPrefs', FLOW_KEY='lhnDocumentsFlow', PAGER_KEY='lhnDocumentsPager', TOP_COMPACT_KEY='lhnDocumentsCompactTop', RAIL_KEY='lhnDocumentsRail', FLOWS=['continuous','single','facing','facingContinuous'], PAGER_MODES=['dim','show','auto','hide'], MB=1048576;
 let settings={},lang='en',docs=[],filter='all',q='',sort='recent',activeEngine=null,viewCycle=0,importCycle=0,loading=false;
 const panelPrefs={widths:{},follow:true,language:'vi'};
 let lastFlow='continuous',pagerMode='dim',V={doc:null,page:1,mode:'orig',flow:'continuous',zoom:'fit',tools:new Set(),panel:null};
@@ -126,7 +126,7 @@ async function openViewer(id,mode='orig',prepared=null){
   $('#viewer').dataset.nativeReady='false';$('#viewer').setAttribute('aria-busy','true');$('#viewer').classList.add('show');
   try{lockSelectionUntilQuiet(cycle);}catch{ /* không được làm hỏng việc mở tệp */ }$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
   const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;V.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);V.flow=V.doc.pages===1?'single':lastFlow;if(cycle!==viewCycle)return;
-  for(const el of[$('#rail'),$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
+  for(const el of[$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';applyRail();document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
  }catch(error){prepared?.dispose();if(cycle===viewCycle){$('#viewer').classList.remove('show');notifyParent(false);showError(error);}}
 }
 /* v3.5.491: khoá chọn chữ cho tới khi #stage không còn đổi DOM trong 500 ms (tối đa 8 giây).
@@ -313,7 +313,7 @@ document.addEventListener('keydown', event => {
   if(key==='0')setZoom('fit'); else stepZoom(key==='-'||key==='_'?-1:1);
 });
 
-function applyTopCompact(value){$('#vBar').classList.toggle('size-compact',value===true);requestToolbarFit();}
+function applyTopCompact(value){$('#vBar').classList.toggle('size-compact',value===true);$('.pager').classList.toggle('size-compact',value===true);requestToolbarFit();}
 const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up'), zoomControl=LHN_ICONS.createFlowSelect($('#vZoom'),'up',false);
 
 /* The page bar stays discoverable; fading never blocks its controls. */
@@ -357,6 +357,26 @@ $('.stageWrap').addEventListener('pointerdown', e => { if(e.pointerType!=='touch
 addEventListener('resize', () => { pagerNear = false; wakePager(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) clearTimeout(pagerTimer); else wakePager(); });
 
+
+let railPrefs={width:112,visible:null}, railDrag=null;
+function railLimits(){const w=$('.vbody').clientWidth,max=Math.max(1,Math.min(360,Math.floor(w*.45),w-270));return {min:Math.min(80,max),max};}
+function applyRail(){
+ const rail=$('#rail'),handle=$('#railResize'),button=$('#vRailToggle'),image=!!V.doc?.image;
+ const visible=!image&&(railPrefs.visible===null?!matchMedia('(orientation:portrait)').matches:railPrefs.visible);
+ const {min,max}=railLimits(),width=Math.max(min,Math.min(max,railPrefs.width));
+ rail.hidden=handle.hidden=!visible;button.hidden=image;button.setAttribute('aria-expanded',String(visible));button.classList.toggle('on',visible);
+ rail.style.setProperty('--rail-w',width+'px');handle.setAttribute('aria-valuemin',min);handle.setAttribute('aria-valuemax',max);handle.setAttribute('aria-valuenow',Math.round(width));handle.setAttribute('aria-valuetext',Math.round(width)+' px');
+ if(V.doc)layoutPanelWidths();requestToolbarFit();
+}
+function saveRail(){void api.storage.local.set({[RAIL_KEY]:railPrefs}).catch(()=>toast(t('storageFailed')));}
+$('#vRailToggle').onclick=()=>{railPrefs.visible=$('#rail').hidden;applyRail();saveRail();};
+const railHandle=$('#railResize');
+railHandle.addEventListener('pointerdown',e=>{if(e.button!==0)return;railDrag={id:e.pointerId,x:e.clientX,width:$('#rail').getBoundingClientRect().width};railHandle.setPointerCapture(e.pointerId);document.documentElement.classList.add('panelSizing');e.preventDefault();});
+railHandle.addEventListener('pointermove',e=>{if(!railDrag||railDrag.id!==e.pointerId)return;const {min,max}=railLimits();railPrefs.width=Math.round(Math.max(min,Math.min(max,railDrag.width+e.clientX-railDrag.x)));applyRail();});
+function endRailDrag(){if(!railDrag)return;const id=railDrag.id;railDrag=null;document.documentElement.classList.remove('panelSizing');if(railHandle.hasPointerCapture(id))railHandle.releasePointerCapture(id);saveRail();}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])railHandle.addEventListener(type,endRailDrag);
+railHandle.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();e.stopPropagation();const {min,max}=railLimits(),step=e.shiftKey?48:16,cur=$('#rail').getBoundingClientRect().width;railPrefs.width=Math.round(Math.max(min,Math.min(max,e.key==='Home'?min:e.key==='End'?max:cur+(e.key==='ArrowRight'?step:-step))));applyRail();saveRail();});
+addEventListener('resize',()=>{endRailDrag();applyRail();});
 
 let panelDrag = null;
 function panelLimits(name) {
@@ -857,14 +877,14 @@ function revealLibrary(){
 }
 
 async function boot(){
- try{const data=await api.storage.local.get([PREF_KEY,FLOW_KEY,PAGER_KEY,TOP_COMPACT_KEY,'lhnSettings']),pref=data[PREF_KEY]||{};if(FLOWS.includes(data[FLOW_KEY]||pref.flow))lastFlow=data[FLOW_KEY]||pref.flow;if(PAGER_MODES.includes(data[PAGER_KEY]))pagerMode=data[PAGER_KEY];applyPagerMode();applyTopCompact(data[TOP_COMPACT_KEY]);if(typeof pref.follow==='boolean')panelPrefs.follow=pref.follow;if(typeof pref.language==='string'&&/^[a-z]{2,3}(?:-[a-zA-Z]{2,4})?$/.test(pref.language))panelPrefs.language=pref.language;else panelPrefs.language=LHN_LANGUAGES.languageFor(data.lhnSettings||{});for(const key of['translation','notes'])if(Number.isFinite(pref.widths?.[key])&&pref.widths[key]>=100&&pref.widths[key]<=640)panelPrefs.widths[key]=pref.widths[key];await syncSettings();await Store.open();await Store.clearObsoleteTranslationCache();await refreshLibrary();revealLibrary();
+ try{const data=await api.storage.local.get([PREF_KEY,FLOW_KEY,PAGER_KEY,TOP_COMPACT_KEY,RAIL_KEY,'lhnSettings']),pref=data[PREF_KEY]||{};const savedRail=data[RAIL_KEY];if(savedRail&&typeof savedRail.visible==='boolean')railPrefs.visible=savedRail.visible;if(Number.isFinite(savedRail?.width))railPrefs.width=Math.max(1,Math.min(360,savedRail.width));applyRail();if(FLOWS.includes(data[FLOW_KEY]||pref.flow))lastFlow=data[FLOW_KEY]||pref.flow;if(PAGER_MODES.includes(data[PAGER_KEY]))pagerMode=data[PAGER_KEY];applyPagerMode();applyTopCompact(data[TOP_COMPACT_KEY]);if(typeof pref.follow==='boolean')panelPrefs.follow=pref.follow;if(typeof pref.language==='string'&&/^[a-z]{2,3}(?:-[a-zA-Z]{2,4})?$/.test(pref.language))panelPrefs.language=pref.language;else panelPrefs.language=LHN_LANGUAGES.languageFor(data.lhnSettings||{});for(const key of['translation','notes'])if(Number.isFinite(pref.widths?.[key])&&pref.widths[key]>=100&&pref.widths[key]<=640)panelPrefs.widths[key]=pref.widths[key];await syncSettings();await Store.open();await Store.clearObsoleteTranslationCache();await refreshLibrary();revealLibrary();
  /* Bộ công cụ chọn chữ (content.js) có thể gắn sau boot: đợi nó có mặt rồi mới cho mở tệp. */
  if(globalThis.LHN_CONTENT_TOOLS)requestAnimationFrame(()=>requestAnimationFrame(bootResolve));
  else{const t0=Date.now();const waitTools=()=>{if(globalThis.LHN_CONTENT_TOOLS||Date.now()-t0>1500)requestAnimationFrame(()=>requestAnimationFrame(bootResolve));else setTimeout(waitTools,20);};waitTools();}
  const params=new URL(location.href).searchParams,key=params.get('document'),pdfUrl=params.get('openPdf'),pdfHelp=params.get('pdfHelp');if(pdfUrl||pdfHelp){const clean=new URL(location.href);clean.searchParams.delete('openPdf');clean.searchParams.delete('pdfHelp');history.replaceState(history.state,'',clean.href);if(pdfHelp==='file-access')showPdfFallback(true);else await openPdfFromUrl(pdfUrl||'',false);}else if(validDocumentKey(key)){const file=docs.find(d=>d.sourceKey===key||d.id===key);if(file){await openViewer(file.id);const note=params.get('highlight');if(note){const item=await LHN_MESSAGING.sendMessage({type:'GET_ONE',id:note});await LHN_PAGE_CONTEXT.revealAnnotation(item);await LHN_CONTENT_TOOLS.restore();}}}}catch(error){showError(error);}finally{document.documentElement.classList.remove('documents-loading');bootResolve();}
 }
 LHN_MESSAGING.onMessage.addListener(message=>{if(message?.type==='ANNOTATIONS_CHANGED'&&!$('#viewer').classList.contains('show'))void refreshLibrary();});
-api.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.lhnSettings)void syncSettings();if(area==='local'&&changes[FLOW_KEY]&&FLOWS.includes(changes[FLOW_KEY].newValue))setFlow(changes[FLOW_KEY].newValue,false);if(area==='local'&&changes[TOP_COMPACT_KEY])applyTopCompact(changes[TOP_COMPACT_KEY].newValue);if(area==='local'&&changes[PAGER_KEY]){pagerMode=PAGER_MODES.includes(changes[PAGER_KEY].newValue)?changes[PAGER_KEY].newValue:'dim';applyPagerMode();}});matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>void syncSettings());Store.changes?.addEventListener('message',()=>{if(!$('#viewer').classList.contains('show'))void refreshLibrary();});
+api.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.lhnSettings)void syncSettings();if(area==='local'&&changes[FLOW_KEY]&&FLOWS.includes(changes[FLOW_KEY].newValue))setFlow(changes[FLOW_KEY].newValue,false);if(area==='local'&&changes[RAIL_KEY]){const r=changes[RAIL_KEY].newValue;railPrefs={width:Number.isFinite(r?.width)?Math.max(1,Math.min(360,r.width)):112,visible:typeof r?.visible==='boolean'?r.visible:null};applyRail();}if(area==='local'&&changes[TOP_COMPACT_KEY])applyTopCompact(changes[TOP_COMPACT_KEY].newValue);if(area==='local'&&changes[PAGER_KEY]){pagerMode=PAGER_MODES.includes(changes[PAGER_KEY].newValue)?changes[PAGER_KEY].newValue:'dim';applyPagerMode();}});matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>void syncSettings());Store.changes?.addEventListener('message',()=>{if(!$('#viewer').classList.contains('show'))void refreshLibrary();});
 addEventListener('message',event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='KEEPIT_DOCUMENTS_SUSPEND'){ttsStop();if($('#viewer').classList.contains('show'))void closeViewer();}});
 addEventListener('pagehide',()=>{ttsStop();clearTimeout(savePositionTimer);if(V.doc)void Store.patch(V.doc.id,{at:V.page,opened:Date.now()});activeEngine?.dispose();});
 globalThis.KeepitDocuments=Object.freeze({importFiles,open:openViewer,close:closeViewer,get state(){return {documentId:V.doc?.id,page:V.page,mode:V.mode,flow:V.flow,zoom:V.zoom,panel:V.panel,files:docs.length};}});

@@ -58,6 +58,7 @@
 <div class="viewer" id="viewer">
 <div class="vbar" id="vBar">
 <button aria-label="Về thư viện Keepit" class="vbtn" data-doc-title="back" id="vBack" title="Về thư viện"><svg aria-hidden="true" class="i" viewbox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg><span class="viewerBrand"><img alt="" aria-hidden="true" height="26" src="../assets/icons/icon.svg" width="26"/><span>Keepit</span></span></button>
+<button type="button" class="vbtn" id="vRailToggle" aria-controls="rail" aria-expanded="true" data-doc-aria="pageSidebar" data-doc-title="pageSidebar"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg></button>
 <div class="vtitle"><span class="type" id="vType" style="position:static"></span><b id="vName"></b></div>
 <div class="vcontrols" id="vControls">
 <div class="vseg" data-dock="mode" id="vMode"><button class="on" data-m="orig"><span data-doc-label="original">Gốc</span></button><button data-m="read"><span data-doc-label="reading">Đọc</span></button></div>
@@ -84,7 +85,7 @@
 </section>
 <div class="vbanner" id="vBanner"></div>
 <div class="vbody">
-<div class="rail" id="rail"></div>
+<div class="rail" id="rail"></div><div class="railResize" id="railResize" role="separator" aria-controls="rail" aria-orientation="vertical" tabindex="0" data-doc-aria="resize" data-doc-title="resize"></div>
 <div class="stageWrap">
 <div class="stage" id="stage"></div>
 <div class="pager"><div class="pageNav"><button aria-keyshortcuts="ArrowLeft" data-doc-title="previous" id="pPrev" title="Trang trước (←)"><svg class="i" viewbox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button><span class="pageJump"><label data-doc-label="page" for="pNum" id="pLbl"><span data-doc-label="page">Trang</span></label><input aria-label="Đi đến trang" data-doc-aria="goPage" id="pNum" min="1" type="number" value="1"/><span id="pTotal"></span></span><button aria-keyshortcuts="ArrowRight" data-doc-title="next" id="pNext" title="Trang sau (→)"><svg class="i" viewbox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></svg></button></div><div class="docControls" id="docControls">
