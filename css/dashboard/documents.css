@@ -427,6 +427,27 @@ html.dark .tour button{background:#0000000f}
 .pager .viewSelect select{height:44px;min-height:44px}
 .pager .pageJump input{width:44px;height:44px}
 .zoomGroup .vbtn{width:44px}}
+
+/* Document page-layout selector; the hidden select remains the preference model. */
+.flow-select{position:relative;display:inline-flex;min-width:0;flex:none;font:inherit;color:inherit}
+.flow-select-trigger,.flow-select-option{font:inherit;color:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;text-align:left}
+.flow-select-trigger{min-height:36px;padding:0 10px;border:1px solid var(--line2,var(--kp-line));border-radius:9px;background:var(--soft,var(--kp-tile));white-space:nowrap}
+.flow-select-trigger svg,.flow-select-option svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.flow-select-trigger .flow-select-chevron{width:14px;height:14px;margin-left:auto}
+.flow-select-list{position:absolute;z-index:100;top:calc(100% + 4px);right:0;min-width:200px;padding:4px;border:1px solid var(--line2,var(--kp-line));border-radius:10px;background:var(--surface);box-shadow:var(--shadowH);white-space:nowrap}
+.flow-select-list[hidden]{display:none}
+.flow-select[data-direction="up"] .flow-select-list{top:auto;bottom:calc(100% + 4px)}
+.flow-select-option{width:100%;min-height:36px;padding:6px 9px;border:0;border-radius:7px;background:transparent}
+.flow-select-option:hover,.flow-select-option:focus-visible,.flow-select-option[aria-selected="true"]{background:var(--soft,var(--kp-tile))}
+.flow-select-option:disabled{opacity:.35;cursor:default}
+.flow-select-trigger:focus-visible,.flow-select-option:focus-visible{outline:2px solid var(--brand,var(--kp-accent));outline-offset:-2px}
+@media(pointer:coarse){.flow-select-trigger,.flow-select-option{min-height:44px}.pager .flow-select-trigger{height:44px}}
+
+.pager .flow-select-trigger{width:144px;height:36px;display:flex;justify-content:flex-start;border:0;border-radius:8px;background:transparent;font-size:12px;gap:5px;padding:0 6px}
+.pager .flow-select-trigger svg{width:16px;height:16px}.pager .flow-select-trigger .flow-select-chevron{width:12px;height:12px}
+.pager .flow-select-option{width:100%;height:auto;border-radius:7px;display:flex;justify-content:flex-start}
+.moreSlot .flow-select{width:100%}.moreSlot .flow-select-trigger{width:100%}
+
 .viewSelect{display:flex;align-items:center;position:relative;flex:none}
 .viewSelect>svg{position:absolute;left:10px;width:16px;height:16px;pointer-events:none;color:var(--brand)}
 .viewSelect select{height:36px;border:1px solid var(--line2);border-radius:10px;background:var(--soft);font-size:12.5px;font-weight:600;padding:0 24px 0 33px;color:var(--ink2);cursor:pointer;max-width:100%}

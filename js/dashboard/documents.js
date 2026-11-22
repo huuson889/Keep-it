@@ -313,12 +313,7 @@ document.addEventListener('keydown', event => {
   if(key==='0')setZoom('fit'); else stepZoom(key==='-'||key==='_'?-1:1);
 });
 
-const FLOW_ICONS = {
-  continuous:'<rect x="6" y="1" width="12" height="9" rx="1.3"/><rect x="6" y="14" width="12" height="9" rx="1.3"/><path d="M9 5h6M9 18h6"/>',
-  single:'<path d="M6 2h8l4 4v16H6Z"/><path d="M14 2v5h4M9 12h6M9 16h6"/>',
-  facing:'<rect x="2" y="4" width="9" height="16" rx="1"/><rect x="13" y="4" width="9" height="16" rx="1"/>',
-  facingContinuous:'<rect x="2" y="2" width="9" height="8" rx="1"/><rect x="13" y="2" width="9" height="8" rx="1"/><rect x="2" y="14" width="9" height="8" rx="1"/><rect x="13" y="14" width="9" height="8" rx="1"/>'
-};
+const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up');
 
 /* The page bar stays discoverable; fading never blocks its controls. */
 const pageBar = $('.pager');
@@ -472,14 +467,14 @@ function updateDocLabels() {
   const flow=$('#vFlow'); flow.value=V.flow;for(const option of flow.options)option.disabled=!!V.doc&&V.doc.pages===1&&option.value!=='single';
   for(const option of flow.options){const key={single:'single',continuous:'continuous',facing:'facing',facingContinuous:'facingContinuous'}[option.value];option.dataset.full=t(key);option.dataset.short=t(option.value==='continuous'?'continuousShort':key);}
   const fit=$('#vZoom option[value="fit"]');fit.dataset.full=t('fitWidth');fit.dataset.short=t('fitShort');const fitImage=$('#vZoom option[value="fitImage"]');fitImage.dataset.full=fitImage.dataset.short=t('fitImage');
-  $('#vFlowIcon').innerHTML=FLOW_ICONS[flow.value]||FLOW_ICONS.continuous;
   for(const select of[flow,$('#vZoom')]){const compact=!!select.closest('.pager');for(const option of select.options)option.textContent=compact&&option.dataset.short?option.dataset.short:option.dataset.full||option.textContent;select.title=select.selectedOptions[0]?.dataset.full||select.getAttribute('aria-label');}
+  flowControl.element.dataset.direction=flowControl.element.closest('.pager')?'up':'down';flowControl.refresh();
 }
 function fitToolbar() {
   if (!$('#viewer').classList.contains('show')) return;
   const focused = document.activeElement;
   // Reparenting a focused native select dismisses its open option list.
-  if (focused === $('#vFlow') || focused === $('#vZoom')) return;
+  if (flowControl.element.contains(focused) || focused === $('#vZoom')) return;
   const bar = $('#vBar'), title = $('.vtitle'), more = $('#vMore'), dock = $('#docControls');
   toolbarItems.forEach(el => toolbarHomes.get(el).before(el));
   dock.hidden = false; pageBar.classList.remove('simple');

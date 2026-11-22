@@ -14,6 +14,10 @@
   cursor: '<path d="m5 3 14 9-7 1-3 7L5 3Z"/><path d="m12 13 5 6"/>',
   "square-text": '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h8M7 12h10M7 16h6"',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  "flow-single": '<rect x="4" y="2" width="16" height="20" rx="1"/><path d="M8 7h8M8 11h8M8 15h8"/>',
+  "flow-continuous": '<path d="M4 2h16v11H4zM4 22v-6h16v6M8 6h8M8 9h8M8 20h8"/>',
+  "flow-facing": '<rect x="2" y="2" width="9" height="20" rx="1"/><rect x="13" y="2" width="9" height="20" rx="1"/><path d="M5 7h3M5 11h3M5 15h3M16 7h3M16 11h3M16 15h3"/>',
+  "flow-facingContinuous": '<path d="M2 2h9v11H2zM13 2h9v11h-9zM2 22v-6h9v6M13 22v-6h9v6M5 6h3M5 9h3M16 6h3M16 9h3M5 20h3M16 20h3"/>',
   // v3.5.542: icon của 5 tab Dashboard + Thùng rác — MỘT nguồn cho cả menu trái dashboard và thanh Keepit
   "nav-overview": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
   "nav-dictation": '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
@@ -25,5 +29,28 @@
   function render(name, cls = '') { const path = globalThis.LHN_CONFIG.ACTION_ICON_PATHS[name] || ICON_PATHS[name] || ICON_PATHS.sparkles; return `<svg class="lucide ${cls}" viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`; }
   // <svg data-icon="nav-overview"> … </svg> anywhere in a page gets its paths from here (one source, two places)
   function applyIcons(root = document) { root.querySelectorAll?.("[data-icon]").forEach(el => { const name = el.dataset.icon, path = ICON_PATHS[name]; if (path && el.innerHTML.trim() === "") el.innerHTML = path; }); }
-  globalThis.LHN_ICONS = Object.freeze({ render, applyIcons });
+
+  function createFlowSelect(select, direction = 'down') {
+    const wrapper = document.createElement('div'); wrapper.className = 'flow-select'; wrapper.dataset.direction = direction;
+    const trigger = document.createElement('button'); trigger.type = 'button'; trigger.className = 'flow-select-trigger'; trigger.setAttribute('role', 'combobox'); trigger.setAttribute('aria-haspopup', 'listbox'); trigger.setAttribute('aria-expanded', 'false');
+    const list = document.createElement('div'); list.className = 'flow-select-list'; list.setAttribute('role','listbox'); list.id = select.id + '-options'; trigger.setAttribute('aria-controls', list.id); list.hidden = true;
+    select.before(wrapper); wrapper.append(select, trigger, list); select.hidden = true;
+    const refresh = () => {
+      const chosen = select.selectedOptions[0]; if (!chosen) return;
+      trigger.innerHTML = render('flow-'+chosen.value) + '<span></span><svg class="flow-select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>';
+      trigger.querySelector('span').textContent = chosen.textContent; trigger.setAttribute('aria-label', (select.getAttribute('aria-label') || '') + ': ' + chosen.textContent);
+      list.replaceChildren();
+      for (const option of select.options) {
+        const item = document.createElement('button'); item.type='button'; item.className='flow-select-option'; item.setAttribute('role','option'); item.setAttribute('aria-selected',String(option.selected)); item.disabled=option.disabled; item.dataset.value=option.value; item.innerHTML=render('flow-'+option.value)+'<span></span>'; item.querySelector('span').textContent=option.dataset.full||option.textContent;
+        item.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true})); close();trigger.focus();}); list.append(item);
+      }
+    };
+    const close = () => { list.hidden=true; trigger.setAttribute('aria-expanded','false'); };
+    trigger.addEventListener('click',()=>{if(!list.hidden){close();return;} refresh(); list.hidden=false;trigger.setAttribute('aria-expanded','true');});
+    wrapper.addEventListener('keydown',event=>{ if(event.key==='Escape'&&!list.hidden){event.preventDefault();event.stopPropagation();close();trigger.focus();} else if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();if(list.hidden){refresh();list.hidden=false;trigger.setAttribute('aria-expanded','true');}const choices=[...list.querySelectorAll('button:not(:disabled)')];const index=choices.indexOf(document.activeElement);choices[(index+(event.key==='ArrowDown'?1:-1)+choices.length)%choices.length]?.focus();} });
+    document.addEventListener('pointerdown',event=>{if(!wrapper.contains(event.target))close();});
+    select.addEventListener('change', refresh); refresh();
+    return Object.freeze({refresh,close,element:wrapper});
+  }
+  globalThis.LHN_ICONS = Object.freeze({ render, applyIcons, createFlowSelect });
 })();

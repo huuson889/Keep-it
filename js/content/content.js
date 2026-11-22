@@ -1139,7 +1139,7 @@
   const eatKey = e => { e.preventDefault(); e.stopImmediatePropagation(); eatenKeyUps.add(e.code); };
   addEventListener("keyup", e => { if (eatenKeyUps.delete(e.code)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
   document.addEventListener("keydown", e => {
-    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
+    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(node => isEditable(node) || node?.closest?.('.flow-select'));
     if (!websiteSettingsReady || websiteDisabled || isEditable(e.target) || arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
     const pauseShortcut = String(settings.speechPauseShortcut ?? "Space").toLowerCase();
@@ -1992,7 +1992,7 @@
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") { removeComposer(); removeTooltip(true); removeTranslationUI(); return; }
     if(pageContext && !pageContext.active())return;
-    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(isEditable);
+    const arrowInEditablePath = (e.key === "ArrowUp" || e.key === "ArrowDown") && (e.composedPath?.() || []).some(node => isEditable(node) || node?.closest?.('.flow-select'));
     if (arrowInEditablePath) return;
     const pressed = shortcutForEvent(e).toLowerCase();
     const sidebarShortcut = String(settings.sidebarShortcut ?? "Alt+Q").toLowerCase();
