@@ -47,3 +47,5 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 - Danh sách kiểu trang trong viewer dùng bốn icon theo hình mẫu, cùng chữ và trạng thái khóa; điều khiển vẫn đồng bộ với select Cài đặt. Danh sách và nút tự rộng theo mục dài nhất, có bo góc giống danh sách zoom; menu zoom cuộn trong vùng thấy. Thanh không mờ/ẩn khi danh sách đang mở. Hỗ trợ chọn bằng chuột/chạm và phím mũi tên, Enter, Escape.
 
 - Nút cạnh trái menu trên thanh dưới bật/tắt toàn màn hình của viewer; Escape thoát toàn màn hình trước khi đóng tài liệu. Dashboard cho phép iframe Documents vào toàn màn hình; khi đóng tài liệu hoặc mở Cài đặt sẽ thoát toàn màn hình trước.
+
+- Cài đặt Tài liệu → Thu gọn thanh trên (`lhnDocumentsCompactTop`) mặc định tắt; khi bật, chỉ thanh trên thu còn 60%, đồng bộ live qua storage và giữ sau reload. Thanh dưới và menu không bị thu; thao tác chạm trên thanh trên có đích nhỏ theo tỉ lệ.

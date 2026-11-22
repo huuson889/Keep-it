@@ -3862,18 +3862,20 @@ $("dashboardSettingsDialog").addEventListener("close", () => {
   dashboardSettingsChangedWhileOpen = false;
   toast(t(shouldNotify ? "settingsSaved" : "settingsNoChanges"));
 });
-const DOCUMENT_FLOW_KEY="lhnDocumentsFlow", DOCUMENT_PAGER_KEY="lhnDocumentsPager", DOCUMENT_FLOWS=["single","continuous","facing","facingContinuous"], DOCUMENT_PAGER_MODES=["show","dim","auto","hide"];
+const DOCUMENT_FLOW_KEY="lhnDocumentsFlow", DOCUMENT_PAGER_KEY="lhnDocumentsPager", DOCUMENT_TOP_COMPACT_KEY="lhnDocumentsCompactTop", DOCUMENT_FLOWS=["single","continuous","facing","facingContinuous"], DOCUMENT_PAGER_MODES=["show","dim","auto","hide"];
 async function syncDocumentPreferences(){
-  const data=await browser.storage.local.get([DOCUMENT_FLOW_KEY,DOCUMENT_PAGER_KEY,"lhnDocumentsPrefs"]);
+  const data=await browser.storage.local.get([DOCUMENT_FLOW_KEY,DOCUMENT_PAGER_KEY,DOCUMENT_TOP_COMPACT_KEY,"lhnDocumentsPrefs"]);
   const flow=data[DOCUMENT_FLOW_KEY]||data.lhnDocumentsPrefs?.flow;
   const flowSelect=$("settingsDocumentsFlow");
   for(const option of flowSelect.options)option.disabled=documentSettingsSinglePage&&option.value!=="single";
   flowSelect.value=documentSettingsSinglePage?"single":DOCUMENT_FLOWS.includes(flow)?flow:"continuous";
   $("settingsDocumentsPager").value=DOCUMENT_PAGER_MODES.includes(data[DOCUMENT_PAGER_KEY])?data[DOCUMENT_PAGER_KEY]:"dim";
+  $("settingsDocumentsCompactTop").checked=data[DOCUMENT_TOP_COMPACT_KEY]===true;
 }
 for(const [id,key] of [["settingsDocumentsFlow",DOCUMENT_FLOW_KEY],["settingsDocumentsPager",DOCUMENT_PAGER_KEY]])$(id).addEventListener("change",async event=>{try{await browser.storage.local.set({[key]:event.target.value});if($("dashboardSettingsDialog")?.open)dashboardSettingsChangedWhileOpen=true;}catch(error){console.warn("Could not save document preferences",error);await syncDocumentPreferences();}});
+$("settingsDocumentsCompactTop").addEventListener("change",async event=>{try{await browser.storage.local.set({[DOCUMENT_TOP_COMPACT_KEY]:event.target.checked});if($("dashboardSettingsDialog")?.open)dashboardSettingsChangedWhileOpen=true;}catch(error){console.warn("Could not save document preferences",error);await syncDocumentPreferences();}});
 void syncDocumentPreferences();
-browser.storage.onChanged.addListener((changes,area)=>{if(area==="local"&&(changes[DOCUMENT_FLOW_KEY]||changes[DOCUMENT_PAGER_KEY]))void syncDocumentPreferences();});
+browser.storage.onChanged.addListener((changes,area)=>{if(area==="local"&&(changes[DOCUMENT_FLOW_KEY]||changes[DOCUMENT_PAGER_KEY]||changes[DOCUMENT_TOP_COMPACT_KEY]))void syncDocumentPreferences();});
 document.querySelectorAll("[data-settings-tab]").forEach(button => button.addEventListener("click", () => {
   showDashboardSettingsPanel(button.dataset.settingsTab);
   if (button.dataset.settingsTab === "upgrade") refreshUsageLimitSettings();

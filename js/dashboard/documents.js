@@ -5,7 +5,7 @@ if(EMBEDDED){document.documentElement.classList.add('dash-embedded','dash-embedd
 (() => {
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], api=globalThis.browser, Store=KeepitDocumentsStore;
-const PREF_KEY='lhnDocumentsPrefs', FLOW_KEY='lhnDocumentsFlow', PAGER_KEY='lhnDocumentsPager', FLOWS=['continuous','single','facing','facingContinuous'], PAGER_MODES=['dim','show','auto','hide'], MB=1048576;
+const PREF_KEY='lhnDocumentsPrefs', FLOW_KEY='lhnDocumentsFlow', PAGER_KEY='lhnDocumentsPager', TOP_COMPACT_KEY='lhnDocumentsCompactTop', FLOWS=['continuous','single','facing','facingContinuous'], PAGER_MODES=['dim','show','auto','hide'], MB=1048576;
 let settings={},lang='en',docs=[],filter='all',q='',sort='recent',activeEngine=null,viewCycle=0,importCycle=0,loading=false;
 const panelPrefs={widths:{},follow:true,language:'vi'};
 let lastFlow='continuous',pagerMode='dim',V={doc:null,page:1,mode:'orig',flow:'continuous',zoom:'fit',tools:new Set(),panel:null};
@@ -313,6 +313,7 @@ document.addEventListener('keydown', event => {
   if(key==='0')setZoom('fit'); else stepZoom(key==='-'||key==='_'?-1:1);
 });
 
+function applyTopCompact(value){$('#vBar').classList.toggle('size-compact',value===true);requestToolbarFit();}
 const flowControl=LHN_ICONS.createFlowSelect($('#vFlow'),'up'), zoomControl=LHN_ICONS.createFlowSelect($('#vZoom'),'up',false);
 
 /* The page bar stays discoverable; fading never blocks its controls. */
@@ -856,14 +857,14 @@ function revealLibrary(){
 }
 
 async function boot(){
- try{const data=await api.storage.local.get([PREF_KEY,FLOW_KEY,PAGER_KEY,'lhnSettings']),pref=data[PREF_KEY]||{};if(FLOWS.includes(data[FLOW_KEY]||pref.flow))lastFlow=data[FLOW_KEY]||pref.flow;if(PAGER_MODES.includes(data[PAGER_KEY]))pagerMode=data[PAGER_KEY];applyPagerMode();if(typeof pref.follow==='boolean')panelPrefs.follow=pref.follow;if(typeof pref.language==='string'&&/^[a-z]{2,3}(?:-[a-zA-Z]{2,4})?$/.test(pref.language))panelPrefs.language=pref.language;else panelPrefs.language=LHN_LANGUAGES.languageFor(data.lhnSettings||{});for(const key of['translation','notes'])if(Number.isFinite(pref.widths?.[key])&&pref.widths[key]>=100&&pref.widths[key]<=640)panelPrefs.widths[key]=pref.widths[key];await syncSettings();await Store.open();await Store.clearObsoleteTranslationCache();await refreshLibrary();revealLibrary();
+ try{const data=await api.storage.local.get([PREF_KEY,FLOW_KEY,PAGER_KEY,TOP_COMPACT_KEY,'lhnSettings']),pref=data[PREF_KEY]||{};if(FLOWS.includes(data[FLOW_KEY]||pref.flow))lastFlow=data[FLOW_KEY]||pref.flow;if(PAGER_MODES.includes(data[PAGER_KEY]))pagerMode=data[PAGER_KEY];applyPagerMode();applyTopCompact(data[TOP_COMPACT_KEY]);if(typeof pref.follow==='boolean')panelPrefs.follow=pref.follow;if(typeof pref.language==='string'&&/^[a-z]{2,3}(?:-[a-zA-Z]{2,4})?$/.test(pref.language))panelPrefs.language=pref.language;else panelPrefs.language=LHN_LANGUAGES.languageFor(data.lhnSettings||{});for(const key of['translation','notes'])if(Number.isFinite(pref.widths?.[key])&&pref.widths[key]>=100&&pref.widths[key]<=640)panelPrefs.widths[key]=pref.widths[key];await syncSettings();await Store.open();await Store.clearObsoleteTranslationCache();await refreshLibrary();revealLibrary();
  /* Bộ công cụ chọn chữ (content.js) có thể gắn sau boot: đợi nó có mặt rồi mới cho mở tệp. */
  if(globalThis.LHN_CONTENT_TOOLS)requestAnimationFrame(()=>requestAnimationFrame(bootResolve));
  else{const t0=Date.now();const waitTools=()=>{if(globalThis.LHN_CONTENT_TOOLS||Date.now()-t0>1500)requestAnimationFrame(()=>requestAnimationFrame(bootResolve));else setTimeout(waitTools,20);};waitTools();}
  const params=new URL(location.href).searchParams,key=params.get('document'),pdfUrl=params.get('openPdf'),pdfHelp=params.get('pdfHelp');if(pdfUrl||pdfHelp){const clean=new URL(location.href);clean.searchParams.delete('openPdf');clean.searchParams.delete('pdfHelp');history.replaceState(history.state,'',clean.href);if(pdfHelp==='file-access')showPdfFallback(true);else await openPdfFromUrl(pdfUrl||'',false);}else if(validDocumentKey(key)){const file=docs.find(d=>d.sourceKey===key||d.id===key);if(file){await openViewer(file.id);const note=params.get('highlight');if(note){const item=await LHN_MESSAGING.sendMessage({type:'GET_ONE',id:note});await LHN_PAGE_CONTEXT.revealAnnotation(item);await LHN_CONTENT_TOOLS.restore();}}}}catch(error){showError(error);}finally{document.documentElement.classList.remove('documents-loading');bootResolve();}
 }
 LHN_MESSAGING.onMessage.addListener(message=>{if(message?.type==='ANNOTATIONS_CHANGED'&&!$('#viewer').classList.contains('show'))void refreshLibrary();});
-api.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.lhnSettings)void syncSettings();if(area==='local'&&changes[FLOW_KEY]&&FLOWS.includes(changes[FLOW_KEY].newValue))setFlow(changes[FLOW_KEY].newValue,false);if(area==='local'&&changes[PAGER_KEY]){pagerMode=PAGER_MODES.includes(changes[PAGER_KEY].newValue)?changes[PAGER_KEY].newValue:'dim';applyPagerMode();}});matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>void syncSettings());Store.changes?.addEventListener('message',()=>{if(!$('#viewer').classList.contains('show'))void refreshLibrary();});
+api.storage.onChanged.addListener((changes,area)=>{if(area==='local'&&changes.lhnSettings)void syncSettings();if(area==='local'&&changes[FLOW_KEY]&&FLOWS.includes(changes[FLOW_KEY].newValue))setFlow(changes[FLOW_KEY].newValue,false);if(area==='local'&&changes[TOP_COMPACT_KEY])applyTopCompact(changes[TOP_COMPACT_KEY].newValue);if(area==='local'&&changes[PAGER_KEY]){pagerMode=PAGER_MODES.includes(changes[PAGER_KEY].newValue)?changes[PAGER_KEY].newValue:'dim';applyPagerMode();}});matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>void syncSettings());Store.changes?.addEventListener('message',()=>{if(!$('#viewer').classList.contains('show'))void refreshLibrary();});
 addEventListener('message',event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='KEEPIT_DOCUMENTS_SUSPEND'){ttsStop();if($('#viewer').classList.contains('show'))void closeViewer();}});
 addEventListener('pagehide',()=>{ttsStop();clearTimeout(savePositionTimer);if(V.doc)void Store.patch(V.doc.id,{at:V.page,opened:Date.now()});activeEngine?.dispose();});
 globalThis.KeepitDocuments=Object.freeze({importFiles,open:openViewer,close:closeViewer,get state(){return {documentId:V.doc?.id,page:V.page,mode:V.mode,flow:V.flow,zoom:V.zoom,panel:V.panel,files:docs.length};}});
