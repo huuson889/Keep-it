@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo PP-OCR trên trình duyệt</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.5 system-ui, sans-serif; margin: 0; background: #f6f6f4; color: #1b1b1b; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  h2 { font-size: 17px; margin: 0 0 8px; }
+  section { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px 16px; margin: 14px 0; }
+  .note { color: #555; margin: 0 0 8px; }
+  .warn { background: #fff6e0; border: 1px solid #e9c46a; border-radius: 6px; padding: 8px 10px; }
+  label { margin-right: 14px; white-space: nowrap; }
+  select, input[type=file] { margin-left: 4px; max-width: 100%; }
+  button { padding: 6px 12px; margin-right: 6px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  progress { width: 100%; height: 14px; margin: 8px 0; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 4px; }
+  .stage { overflow: auto; border: 1px solid #ccc; background: #eee; max-height: 640px; }
+  #view { display: block; max-width: 100%; height: auto; margin: 0 auto; background: #fff; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid #e4e4e4; padding: 4px 6px; text-align: left; vertical-align: top; }
+  td.conf { width: 70px; color: #555; white-space: nowrap; }
+  pre { background: #fafafa; border: 1px solid #e4e4e4; padding: 8px; max-height: 180px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
+  #timing { color: #333; margin-bottom: 6px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #161616; color: #e6e6e6; }
+    section { background: #1f1f1f; border-color: #333; }
+    .note { color: #aaa; }
+    .warn { background: #3a3117; border-color: #7a6320; }
+    .stage { background: #2a2a2a; border-color: #444; }
+    #view { background: #fff; }
+    th, td { border-color: #333; }
+    td.conf { color: #aaa; }
+    pre { background: #181818; border-color: #333; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Demo PP-OCR trên trình duyệt (PP-OCRv6 det + rec)</h1>
+  <p class="note">OCR chạy hoàn toàn trên máy bạn bằng ONNX Runtime Web. Ảnh và PDF không được gửi đi đâu.</p>
+  <div class="warn">
+    <b>Giới hạn đã biết:</b> từ điển của model không có một số chữ có dấu tiếng Việt (ví dụ ệ, ộ, ế, ễ).
+    Các chữ này sẽ bị bỏ hoặc thay bằng chữ gần giống. Model Latin đầy đủ hơn nằm trên ModelScope và cần tải thủ công; xem README.
+  </div>
+
+  <section>
+    <h2>1 · Model</h2>
+    <div id="modelStatus">Đang tải model…</div>
+    <div id="runtime" class="note"></div>
+  </section>
+
+  <section>
+    <h2>2 · Tài liệu</h2>
+    <div class="row">
+      <label>Ảnh hoặc PDF <input type="file" id="file" accept="image/*,application/pdf"></label>
+      <label>Cạnh dài phát hiện
+        <select id="detLimit">
+          <option value="960" selected>960 (nhanh)</option>
+          <option value="1280">1280</option>
+          <option value="1600">1600 (chữ nhỏ, chậm hơn)</option>
+        </select>
+      </label>
+      <label>Độ phân giải khi render PDF
+        <select id="scale">
+          <option value="1.5">~108 DPI</option>
+          <option value="2" selected>~144 DPI</option>
+          <option value="3">~216 DPI</option>
+        </select>
+      </label>
+    </div>
+    <p>
+      <button id="run" disabled>Chạy OCR</button>
+      <button id="txt" disabled>Tải TXT</button>
+      <button id="pdf" disabled>Tải PDF có lớp chữ</button>
+    </p>
+    <progress id="progress" value="0" max="1"></progress>
+    <div id="status" class="note"></div>
+  </section>
+
+  <section>
+    <h2>3 · Xem trang</h2>
+    <div class="row">
+      <button id="prev" disabled>‹ Trang trước</button>
+      <span id="pageInfo"></span>
+      <button id="next" disabled>Trang sau ›</button>
+      <label><input type="checkbox" id="showBoxes" checked> Hiện khung</label>
+    </div>
+    <div class="stage"><canvas id="view"></canvas></div>
+  </section>
+
+  <section>
+    <h2>4 · Kết quả trang <span id="pageNo"></span></h2>
+    <div id="timing"></div>
+    <table>
+      <thead><tr><th>#</th><th>Độ tin</th><th>Chữ nhận dạng</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Nhật ký</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
