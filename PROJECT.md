@@ -1,10 +1,10 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.601**, tiếp từ 3.5.600: danh sách kiểu trang và zoom tự đủ rộng theo mục dài nhất; có nút toàn màn hình cạnh menu trên thanh dưới.
+- Version **3.5.602**, tiếp từ 3.5.601: thống nhất nhãn Vừa rộng giữa danh sách zoom và nút chọn ở tiếng Việt/Anh/Hàn.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
-- Đã kiểm Chromium unpacked 1512/390 sáng/tối: kích thước danh sách, văn bản vi/en/ko, toàn màn hình trong iframe, Escape và chạm giả lập; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
+- Đã kiểm Chromium unpacked 1512/390 sáng/tối: nhãn Vừa rộng trong danh sách/nút chọn khớp nhau vi/en/ko; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
 - Chưa kiểm profile Chrome thật, Android/Firefox/Edge thật, nội dung AI bên thứ ba, toàn bộ PDF/Office, cảm giác dùng/tốc độ và mọi cấu trúc trang. Preview Office hạn chế phông/đối tượng, chưa có OCR.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
@@ -16,7 +16,7 @@
 - **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
 - **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
 ### Chưa kiểm
-- **Tài liệu 3.5.597–601:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
+- **Tài liệu 3.5.597–602:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
 - **UI 3.5.593:** cần thử Android và profile thật, Overlay video thực, thao tác sheet Cài đặt/Đăng nhập/Reader và AI thực; favicon provider ngoài có 404/bị chặn trong môi trường thử, bản kiểm UI dùng ảnh fixture.
 - **Popup 3.5.586:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
 - Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
@@ -162,6 +162,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-17 | v3.5.602 | Arena:**
+
+- Tóm tắt: thống nhất tên đầy đủ và rút gọn của Vừa rộng trong danh sách zoom và nút chọn: vi “Vừa rộng”, en “Fit width”, ko “너비 맞춤”; không thay logic zoom.
+- File: `js/core/languages.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chromium extension unpacked PDF mẫu, 1512/390 sáng/tối, ảnh chi tiết 4×; cả hai chỗ khớp vi/en/ko, nút/danh sách tiếng Việt 90/90px desktop và 97/97px mobile; chọn Vừa rộng, console/pageerror rỗng. Chưa kiểm thiết bị thật, Windows/profile thật và Android/Firefox.
 
 **2026-11-17 | v3.5.601 | Arena:**
 
