@@ -456,7 +456,10 @@ async function saveDashboardSettings(nextValues) {
   try { await LHN_SETTINGS.save(dashboardSettings); return true; }
   catch (error) { dashboardSettings = previous; dashboardSettingsChangedWhileOpen = previousToastState; syncDashboardTheme(); refreshDashboardSettings(); console.warn("Could not save dashboard settings", error); return false; }
 }
-function openDashboardSettings(panel = "account") {
+let documentSettingsSinglePage = false;
+function openDashboardSettings(panel = "account", singlePage = false) {
+  documentSettingsSinglePage = singlePage;
+  void syncDocumentPreferences();
   closeMenus();
   dashboardSettingsChangedWhileOpen = false;
   if (!settingsDefaultsCaptured) captureSettingsDefaults();
@@ -3642,7 +3645,7 @@ LHN_MESSAGING.onMessage.addListener(message=>{
 });
 window.addEventListener("message", event => {
   if (event.origin !== location.origin || event.source !== dashboardDocumentsFrame.contentWindow) return;
-  if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){const tab=event.data.tab==="documents"?"documents":"bilingualReader";openDashboardSettings(tab);if(tab==="documents"&&matchMedia("(orientation: portrait)").matches)requestAnimationFrame(()=>document.querySelector('[data-settings-tab="documents"]')?.click());return;}
+  if(event.data?.type==="KEEPIT_DOCUMENTS_SETTINGS"&&activeDashboardView==="documents"){const tab=event.data.tab==="documents"?"documents":"bilingualReader";openDashboardSettings(tab,event.data.singlePage===true);if(tab==="documents"&&matchMedia("(orientation: portrait)").matches)requestAnimationFrame(()=>document.querySelector('[data-settings-tab="documents"]')?.click());return;}
   if(event.data?.type==="KEEPIT_DOCUMENTS_TOAST"){
     const message=String(event.data.message||"");
     if(!message)return;
@@ -3863,7 +3866,9 @@ const DOCUMENT_FLOW_KEY="lhnDocumentsFlow", DOCUMENT_PAGER_KEY="lhnDocumentsPage
 async function syncDocumentPreferences(){
   const data=await browser.storage.local.get([DOCUMENT_FLOW_KEY,DOCUMENT_PAGER_KEY,"lhnDocumentsPrefs"]);
   const flow=data[DOCUMENT_FLOW_KEY]||data.lhnDocumentsPrefs?.flow;
-  $("settingsDocumentsFlow").value=DOCUMENT_FLOWS.includes(flow)?flow:"continuous";
+  const flowSelect=$("settingsDocumentsFlow");
+  for(const option of flowSelect.options)option.disabled=documentSettingsSinglePage&&option.value!=="single";
+  flowSelect.value=documentSettingsSinglePage?"single":DOCUMENT_FLOWS.includes(flow)?flow:"continuous";
   $("settingsDocumentsPager").value=DOCUMENT_PAGER_MODES.includes(data[DOCUMENT_PAGER_KEY])?data[DOCUMENT_PAGER_KEY]:"dim";
 }
 for(const [id,key] of [["settingsDocumentsFlow",DOCUMENT_FLOW_KEY],["settingsDocumentsPager",DOCUMENT_PAGER_KEY]])$(id).addEventListener("change",async event=>{try{await browser.storage.local.set({[key]:event.target.value});if($("dashboardSettingsDialog")?.open)dashboardSettingsChangedWhileOpen=true;}catch(error){console.warn("Could not save document preferences",error);await syncDocumentPreferences();}});
@@ -4422,6 +4427,6 @@ load().then(() => {
     } catch { /* khung chưa sẵn sàng */ }
   }, 500);
   if (new URLSearchParams(location.search).get("openFavorites") === "1") openFavoriteVideos(0, false);
-  if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account"); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
+  if (new URLSearchParams(location.search).get("openSettings") === "1") { const params = new URLSearchParams(location.search); openDashboardSettings(params.get("openSettingsTab") || "account",params.get("singlePage")==="1"); if(params.get("openSettingsTab")==="documents"&&matchMedia("(orientation: portrait)").matches)requestAnimationFrame(()=>document.querySelector('[data-settings-tab="documents"]')?.click()); if (params.get("openAccount") === "1" && !demoProfile) openProfileAuth(); }
 });
 

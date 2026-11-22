@@ -125,7 +125,7 @@ async function openViewer(id,mode='orig',prepared=null){
   activeEngine?.dispose();activeEngine=null;V={doc:meta,page:Math.max(1,Math.min(meta.pages,meta.at||1)),mode:meta.image?'orig':mode,flow:lastFlow,zoom:'fit',tools:new Set(),panel:null};
   $('#viewer').dataset.nativeReady='false';$('#viewer').setAttribute('aria-busy','true');$('#viewer').classList.add('show');
   try{lockSelectionUntilQuiet(cycle);}catch{ /* không được làm hỏng việc mở tệp */ }$('#viewer').classList.remove('notesOpen','aiOpen','transOpen','translate','ttsOn');$('#viewer').classList.toggle('imageMode',!!meta.image);notifyParent(true);$('#stage').innerHTML=`<div class="docsViewerBusy">${t('loading')}</div>`;$('#vName').textContent=meta.name;$('#vName').title=meta.name;$('#vType').innerHTML=`<i style="background:${TYPE[meta.type].color}"></i>${esc(TYPE[meta.type].label)}`;
-  const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;V.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);if(cycle!==viewCycle)return;
+  const engine=prepared||await KeepitDocumentRenderers.prepare(file.blob,meta.type,{password:reason=>askPassword(reason,meta.name,true),check:()=>{if(cycle!==viewCycle)throw new Error('cancelled');}});if(cycle!==viewCycle){engine.dispose();return;}activeEngine=engine;V.doc.pages=engine.pages.length;V.page=Math.min(V.page,engine.pages.length);V.flow=V.doc.pages===1?'single':lastFlow;if(cycle!==viewCycle)return;
   for(const el of[$('#rail'),$('.pageNav'),$('#flowGroup')])el.style.display=meta.image?'none':'';document.body.style.overflow='hidden';$('#legend').classList.remove('on');$('#toast').classList.remove('show');nativeCards.clear();translationView.doc=null;applyTools();renderViewer();layoutPanelWidths();await ensurePage(V.page);await migrateDocumentNotes();await refreshNativeSource();$('#viewer').dataset.nativeReady='true';$('#viewer').setAttribute('aria-busy','false');if(EMBEDDED){try{parent.postMessage({type:'KEEPIT_DOCUMENTS_VIEWER_READY'},location.origin);}catch{}}if(V.mode==='read')await startNativeReader();$('#stage').setAttribute('tabindex','-1');$('#stage').setAttribute('aria-label',meta.name);$('#stage').focus({preventScroll:true});await Store.patch(id,{opened:Date.now()});
  }catch(error){prepared?.dispose();if(cycle===viewCycle){$('#viewer').classList.remove('show');notifyParent(false);showError(error);}}
 }
@@ -201,7 +201,7 @@ function renderViewer(){
 function savePosition(){if(!V.doc)return;const id=V.doc.id,at=V.page;V.doc.at=at;clearTimeout(savePositionTimer);savePositionTimer=setTimeout(()=>void Store.patch(id,{at,opened:Date.now()}).catch(()=>toast(t('storageFailed'))),250);}
 function setActivePage(page){if(!V.doc||page===V.page||page<1||page>V.doc.pages)return;V.page=page;applyTools();updatePaging();savePosition();scheduleWordClass();LHN_READER_API.refreshSource();if(V.panel==='translation')renderTranslation();}
 async function setPage(value,fromReader=false){if(!V.doc)return;const page=Math.max(1,Math.min(V.doc.pages,Math.round(+value)||1));if(!fromReader)ttsStop();hideSel();getSelection()?.removeAllRanges();V.page=page;if(V.mode!=='read'&&(V.flow==='single'||(V.flow==='facing'&&!$(`#pageStack>[data-page="${page}"]`))))renderViewer();else{scrollToPage(page);updatePaging();void ensurePage(page);applyTools();if(V.panel==='translation')renderTranslation();}savePosition();await ensurePage(page);LHN_READER_API.refreshSource();void LHN_CONTENT_TOOLS.restore();}
-function setFlow(value,persist=true){if(!FLOWS.includes(value))return;lastFlow=value;if(persist){void api.storage.local.set({[FLOW_KEY]:value});void savePanelPrefs();}if(V.flow===value)return;V.flow=value;if(V.mode==='read'){updateDocLabels();return;}ttsStop();hideSel();if(V.doc)renderViewer();}
+function setFlow(value,persist=true){if(!FLOWS.includes(value))return;if(persist&&V.doc?.pages===1)return;lastFlow=value;if(persist){void api.storage.local.set({[FLOW_KEY]:value});void savePanelPrefs();}if(V.doc?.pages===1)value='single';if(V.flow===value)return;V.flow=value;if(V.mode==='read'){updateDocLabels();return;}ttsStop();hideSel();if(V.doc)renderViewer();}
 /* Zoom tự do đến ít nhất 6400%. Chỉ khung tệp ở giữa đổi kích thước (--displayW/--source-scale);
    thanh trên, dải trang, panel dịch và thanh .pager đứng yên.
    v3.5.562: bỏ lưới 10% cho con lăn — zoom LIÊN TỤC bám tay: mỗi pixel lăn/pinch đổi đúng 1% (1:1 với
@@ -469,7 +469,7 @@ function setMore(open, focus = true) {
   else if (focus && $('#viewer').classList.contains('show') && !$('#vMore').hidden) $('#vMore').focus({ preventScroll:true });
 }
 function updateDocLabels() {
-  const flow=$('#vFlow'); flow.value=V.flow;
+  const flow=$('#vFlow'); flow.value=V.flow;for(const option of flow.options)option.disabled=!!V.doc&&V.doc.pages===1&&option.value!=='single';
   for(const option of flow.options){const key={single:'single',continuous:'continuous',facing:'facing',facingContinuous:'facingContinuous'}[option.value];option.dataset.full=t(key);option.dataset.short=t(option.value==='continuous'?'continuousShort':key);}
   const fit=$('#vZoom option[value="fit"]');fit.dataset.full=t('fitWidth');fit.dataset.short=t('fitShort');const fitImage=$('#vZoom option[value="fitImage"]');fitImage.dataset.full=fitImage.dataset.short=t('fitImage');
   $('#vFlowIcon').innerHTML=FLOW_ICONS[flow.value]||FLOW_ICONS.continuous;
@@ -518,7 +518,8 @@ new ResizeObserver(requestToolbarFit).observe($('#vBar'));
 new ResizeObserver(() => { requestToolbarFit(); wakePager(); }).observe($('.stageWrap'));
 matchMedia('(pointer:coarse)').addEventListener('change', requestToolbarFit);
 addEventListener('resize', requestToolbarFit);
-$('#vDocumentsSettings').onclick=()=>{if(EMBEDDED)parent.postMessage({type:'KEEPIT_DOCUMENTS_SETTINGS',tab:'documents'},location.origin);else api.tabs.create({url:api.runtime.getURL('pages/dashboard.html?openSettings=1&openSettingsTab=documents')});};
+function openDocumentSettings(){const single=V.doc?.pages===1;if(EMBEDDED)parent.postMessage({type:'KEEPIT_DOCUMENTS_SETTINGS',tab:'documents',singlePage:single},location.origin);else api.tabs.create({url:api.runtime.getURL('pages/dashboard.html?openSettings=1&openSettingsTab=documents'+(single?'&singlePage=1':''))});}
+LHN_ICONS.applyIcons();$('#vDocumentsSettings').onclick=openDocumentSettings;
 $('#vMore').onclick = () => setMore($('#vMorePanel').hidden);
 async function requestMainSheet(toggle=false,focusReader=false){
  setMore(false,false);
@@ -582,6 +583,7 @@ async function paintWordClass(page){
 }
 async function toggleWordClass(){if(!isText())return;if(V.tools.has('wc')){V.tools.delete('wc');++wcToken;clearTimeout(wcTimer);for(const el of $$('#stage .docsWcOverlay'))el.remove();$('#legend').classList.remove('on');applyTools();return;}const status=await LHN_MESSAGING.sendMessage({type:'WORD_CLASS_STATUS'});if(!status?.downloaded){toast(t('modelNeeded'));return;}V.tools.add('wc');++wcToken;applyTools();toast(t('wcBusy'));try{await paintWordClass(V.page);}catch{V.tools.delete('wc');applyTools();toast(t('wcError'));}}
 globalThis.LHN_DOCUMENTS_MAIN_ACTIONS=Object.freeze({
+ openSettings:openDocumentSettings,
  scrollToTop(){if(!V.doc)return false;if(['single','facing'].includes(V.flow)&&V.mode!=='read')void setPage(1);else $('#stage').scrollTo({top:0,behavior:'smooth'});return true;},
  translate:()=>runViewerAction('translate'),read:()=>runViewerAction('read'),
  translateLabel:()=>t('translate'),readLabel:()=>t('readAloud'),

@@ -2,6 +2,7 @@ const $ = id => document.getElementById(id);
 const LANGUAGES = globalThis.LHN_LANGUAGES;
 const CONFIG = globalThis.LHN_CONFIG;
 CONFIG.applyHighlightColors();
+LHN_ICONS.applyIcons();
 const DEFAULTS = CONFIG.DEFAULT_SETTINGS;
 let settings = { ...DEFAULTS }, capturing = false, currentLang = "en", langOpen = false, currentWebsite = "", currentPdfUrl = "", activePdfTabId = null;
 const langLabel = item => `${item.flag} ${item.name} - ${item.native}`;

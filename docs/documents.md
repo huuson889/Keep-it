@@ -41,3 +41,5 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 
 - Cài đặt → Tài liệu và lựa chọn trên thanh dưới dùng chung `lhnDocumentsFlow`: một trang, liên tục (mặc định), hai trang, hai trang liên tục. Hai trang ghép 1–2, 3–4; trang lẻ cuối đứng riêng; màn hình hẹp vẫn giữ hai cột và cho phép zoom/cuộn ngang. Ảnh đơn không có lựa chọn ghép trang.
 - `lhnDocumentsPager` lưu luôn hiện, tự làm mờ (mặc định), tự ẩn hoặc ẩn. Tự ẩn hiện lại khi chuột/chạm gần mép dưới; khi ẩn có nút Cài đặt trên thanh trên. Dashboard và viewer đồng bộ qua storage; cấu hình flow cũ được chuyển đổi. Không áp dụng bố cục trang gốc cho chế độ Đọc.
+
+- File chỉ có một trang hiển thị Từng trang, khóa các kiểu khác trong viewer và khi mở Cài đặt từ file; không ghi đè lựa chọn đã nhớ cho file nhiều trang. Nút Cài đặt ở thanh trên và menu tài liệu đều mở thẳng tab Tài liệu.

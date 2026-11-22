@@ -36,7 +36,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 - H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
 - Thống kê lỗi giữ ngưỡng/lọc/critical và per-view state hiện có; metadata không được ghi đè bằng videoId hoặc mã nguồn web.
 - Tệp/tiến độ có DB riêng; Notes/Flashcards và backup dùng annotations chung. Chỉ owned references được mở/jump, blob không backup. PDF adapter gom hàng bảng thẳng cột vào một block và giữ queue/TTS chung.
-- Tab Cài đặt → Tài liệu đồng bộ kiểu trang và trạng thái thanh dưới với viewer; nút Cài đặt trên viewer mở đúng tab, kể cả sheet mobile.
+- Tab Cài đặt → Tài liệu đồng bộ kiểu trang và trạng thái thanh dưới với viewer; nút Cài đặt trên viewer mở đúng tab, kể cả sheet mobile. Với file một trang, danh sách kiểu trang hiển thị Từng trang và khóa các lựa chọn khác mà không thay đổi sở thích đã lưu.
 - Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks dùng chung `setPanel('translation')`/`startNativeReader()` với toolbar top. Điều khiển Ẩn/Hiện thanh không hiện trong sheet Documents.
 - `OPEN_DASHBOARD_DOCUMENTS` chuyển view hiện tại sang Tài liệu; route mới `?view=documents` là fallback. PDF local bị chặn quyền hiển thị hướng dẫn ngắn; CTA mở trang Tiện ích Chrome tới Keepit nhưng giữ modal mở, polling quyền đến khi được cấp mới đóng. Nút chọn PDF là lựa chọn phụ; lỗi mở PDF thông thường vẫn giữ picker chính.
 
