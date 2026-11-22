@@ -113,11 +113,21 @@ async function migrateSelectionToolbarStyle() {
   const { selectionToolbarStyle, translateIconStyle, ...rest } = saved;
   await storage.set({ [key]:rest });
 }
+async function seedArenaDisabledWebsite() {
+  const storage=browser.storage.local, key=CONFIG.STORAGE_KEYS.SETTINGS, marker="lhnArenaDisabledSeeded";
+  const data=await storage.get([key,marker]);
+  if(data[marker]===true)return;
+  const saved=data[key]&&typeof data[key]==="object"&&!Array.isArray(data[key])?data[key]:{};
+  const sites=Array.isArray(saved.disabledWebsites)?saved.disabledWebsites:[];
+  await storage.set({[key]:{...saved,disabledWebsites:[...new Set([...sites,"arena.ai"])]},[marker]:true});
+}
 browser.runtime.onInstalled.addListener(async details => {
   if (details?.reason === "update") {
     try { await migrateSelectionToolbarStyle(); }
     catch (error) { console.warn("Could not migrate the selection toolbar style", error); }
   }
+  try { await seedArenaDisabledWebsite(); }
+  catch (error) { console.warn("Could not initialize disabled website", error); }
   try {
     await cleanupAskAIStorage();
   } catch (error) { console.warn("Could not clean expired or legacy Ask AI data", error); }

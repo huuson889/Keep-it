@@ -24,6 +24,8 @@ Background điều phối runtime messages cho annotation, usage, TTS, cache, Yo
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- `onInstalled` thêm `arena.ai` một lần vào `lhnSettings.disabledWebsites` và đặt `lhnArenaDisabledSeeded`; giữ mục đã có, người dùng xóa sau đó không bị thêm lại.
+
 - Event listener phải đăng ký đồng bộ khi worker nạp; `service.js` nạp trước `background.js` và chỉ dùng `CONFIG` lúc được gọi.
 - Message AI không thêm `await` trước nhánh xử lý, để `sidePanel.open()` vẫn nằm trong user gesture.
 - Không đọc page body/title, clipboard hay credentials; không thêm quyền hoặc DNR scope.
