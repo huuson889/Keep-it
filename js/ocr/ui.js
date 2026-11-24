@@ -497,6 +497,13 @@ function localize() {
     const modal = $('kpOcrOcrModal'), scrim = $('kpOcrOcrScrim');
     if (!modal || !scrim) return null;
     dialogOpen = true;
+    /* hiện popup NGAY — mọi phần còn lại chạy trong try/catch để một lỗi nhỏ không làm mất popup */
+    try {
+      scrim.classList.add('show');
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    } catch (error) { console.warn('[Keepit] OCR dialog', error); }
+    try {
     collapseNotice();
     $('kpOcrTrPanel')?.classList.add('open');
     syncLayerBoxes();
@@ -621,8 +628,9 @@ function localize() {
       closeDialog();
       onRun?.(options);
     };
-    scrim.classList.add('show');
-    modal.classList.add('show');
+    } catch (error) {
+      console.warn('[Keepit] OCR dialog setup', error);
+    }
     return modal;
   }
   function closeDialog() {
@@ -899,7 +907,15 @@ function localize() {
     syncLayerBoxes();
     paintHover([]);
   }
+  let pushTimer = 0;
+  function setPanelPushed(open) {
+    document.documentElement.classList.toggle('kpOcrPanelOpen', !!open);
+    /* khung xem tự tính lại bề rộng trang theo .stage còn lại (giống sidebar Dịch) */
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => { try { window.dispatchEvent(new Event('resize')); } catch { /* ignore */ } }, 300);
+  }
   function syncLayerBoxes() {
+    setPanelPushed(!!$('kpOcrTrPanel')?.classList.contains('open'));
     const layer = boxesLayer();
     if (!layer) return;
     const open = !!$('kpOcrTrPanel')?.classList.contains('open');
