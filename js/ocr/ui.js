@@ -822,7 +822,18 @@ function localize() {
       } catch { toast(t('ocrTextApplyFail')); }
     };
     const savePdf = $('kpOcrSavePdf');
-    if (savePdf) savePdf.onclick = () => toast(t('ocrPdfPending'));
+    if (savePdf) savePdf.onclick = async () => {
+      if (savePdf.disabled) return;
+      try {
+        const exporter = globalThis.LHN_OCR_EXPORT;
+        if (!exporter?.pdf) throw new Error('ocrPdfFail');
+        const done = await exporter.pdf();
+        toast(t('ocrPdfDone', { count: done.count, pages: done.pages }));
+      } catch (error) {
+        const key = String(error?.message || '');
+        toast(/^ocr[A-Z]/.test(key) ? t(key) : t('ocrPdfFail'));
+      }
+    };
   }
   const panelText = () => $('kpOcrText')?.value || '';
   const closePanel = () => { $('kpOcrTrPanel')?.classList.remove('kpOpen'); syncLayerBoxes(); };

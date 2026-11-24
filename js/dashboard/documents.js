@@ -1021,6 +1021,14 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
     return paragraphs.length;
   },
   refresh() { try { applyTools(); } catch { /* ignore */ } },
+  /* Mục 9: xuất PDF có lớp chữ cần đúng tệp gốc người dùng đã mở. */
+  async sourceBytes() {
+    if (!V.doc?.id) return null;
+    const record = await Store.get('files', V.doc.id);
+    const blob = record?.blob;
+    if (!blob) return null;
+    return new Uint8Array(await blob.arrayBuffer());
+  },
   /* Cầu nối demo: nhảy trang + QĐ-1 chế độ quét 1 trang, không zoom. */
   goTo(page) {
     const n = Math.max(1, Math.min(V.doc?.pages || 1, Math.round(Number(page) || 1)));
