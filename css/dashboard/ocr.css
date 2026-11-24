@@ -82,15 +82,15 @@
 
 .kpOcrUi .zoomGroup .kpVbtn{width:36px;min-width:36px;height:36px;border-radius:9px}
 
-.kpOcrUi .kpTranslation{width:0;flex:none;overflow:hidden;border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;transition:width .26s cubic-bezier(.2,.8,.2,1)}
+.kpOcrUi .kpOcrPanel{width:0;flex:none;overflow:hidden;border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;transition:width .26s cubic-bezier(.2,.8,.2,1)}
 
-.kpOcrUi .kpTranslation.open{width:var(--trW,min(380px,42vw))}
+.kpOcrUi .kpOcrPanel.kpOpen{width:var(--trW,min(380px,42vw))}
 
-.kpOcrUi .kpTranslation>header{height:50px;min-height:50px;padding:6px 8px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.kpOcrUi .kpOcrPanel>header{height:50px;min-height:50px;padding:6px 8px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line);white-space:nowrap}
 
-.kpOcrUi .kpTranslation>header b{font-size:13px;margin-right:auto}
+.kpOcrUi .kpOcrPanel>header b{font-size:13px;margin-right:auto}
 
-.kpOcrUi .kpTranslation>header select{height:30px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);font-size:12px}
+.kpOcrUi .kpOcrPanel>header select{height:30px;border:1px solid var(--line2);border-radius:8px;background:var(--surface);font-size:12px}
 
 .kpOcrUi .kpOcrScrim{position:fixed;inset:0;z-index:77;display:none;background:#1b18301f;backdrop-filter:blur(2px)}
 
@@ -321,7 +321,7 @@ html.dark .kpOcrUi .kpLangSearch{border-color:#41414d}
   .kpOcrUi .kpOcrFoot .kpFootNote{display:none}
   .kpOcrUi .kpOcrProg{left:8px;right:8px;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
   .kpOcrUi .kpRegionEditor{left:8px;right:8px;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
-  .kpOcrUi .kpTranslation.open{position:absolute;inset:0;width:100%;z-index:70;border-left:0}
+  .kpOcrUi .kpOcrPanel.kpOpen{position:absolute;inset:0;width:100%;z-index:70;border-left:0}
 }
 
 @media (orientation:landscape) and (max-width:1080px){
@@ -341,11 +341,11 @@ html.dark .kpOcrUi .kpLangSearch{border-color:#41414d}
 
 .kpOcrUi .kpOcrProg #kpOcrStatus{display:none}
 
-.kpOcrUi .kpTranslation .kpTrBody{flex:1;min-height:0;padding:10px;display:flex;position:relative}
+.kpOcrUi .kpOcrPanel .kpOcrPanelBody{flex:1;min-height:0;padding:10px;display:flex;position:relative}
 
-.kpOcrUi .kpTranslation .kpTrBody textarea{flex:1;min-height:0;width:100%;resize:none;border:1px solid var(--line2);border-radius:10px;padding:10px;font:12.5px/1.55 system-ui,-apple-system,sans-serif;color:var(--ink2);background:var(--surface)}
+.kpOcrUi .kpOcrPanel .kpOcrPanelBody textarea{flex:1;min-height:0;width:100%;resize:none;border:1px solid var(--line2);border-radius:10px;padding:10px;font:12.5px/1.55 system-ui,-apple-system,sans-serif;color:var(--ink2);background:var(--surface)}
 
-.kpOcrUi .kpTranslation>header button:disabled{opacity:.4}
+.kpOcrUi .kpOcrPanel>header button:disabled{opacity:.4}
 
 .kpOcrUi .kpRegionEditor{position:fixed;right:12px;left:auto;transform:none;bottom:8px;z-index:79;width:min(380px,calc(100vw - 24px));max-height:min(64vh,540px);overflow:auto;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);padding:12px}
 
@@ -383,9 +383,9 @@ html.dark .kpOcrUi .kpRegionEditor{border-color:#3b3b46}
 
 .kpOcrUi .kpRegionEditor .kpRow button.kpPrimary:hover:not(:disabled){background:var(--brand2)}
 
-.kpOcrUi .kpTrHover{position:absolute;border:1.5px solid var(--brand);background:#7262df1a;border-radius:6px;pointer-events:none;z-index:2}
+.kpOcrUi .kpOcrLineHover{position:absolute;border:1.5px solid var(--brand);background:#7262df1a;border-radius:6px;pointer-events:none;z-index:2}
 
-.kpOcrUi .kpTrHover[hidden]{display:none}
+.kpOcrUi .kpOcrLineHover[hidden]{display:none}
 
 .kpOcrUi .kpRegionEditor:has(#kpOcrRegionText:placeholder-shown) #kpOcrOcrRegion{background:var(--brand);border-color:transparent;color:#fff}
 
@@ -395,35 +395,35 @@ html.dark .kpOcrUi .kpRegionEditor{border-color:#3b3b46}
 
 .kpOcrUi .kpRegionEditor:not(:has(#kpOcrRegionText:placeholder-shown)) #kpOcrOcrRegion:not(.kpPrimary){background:var(--surface);border-color:var(--line2);color:var(--ink2)}
 
-.kpOcrUi .kpTranslation{position:relative}
+.kpOcrUi .kpOcrPanel{position:relative}
 
-.kpOcrUi .kpTranslation.resizing{transition:none}
+.kpOcrUi .kpOcrPanel.resizing{transition:none}
 
-.kpOcrUi .kpTrResize{position:absolute;left:0;top:0;bottom:0;width:7px;cursor:col-resize;z-index:6;background:transparent}
+.kpOcrUi .kpOcrGrip{position:absolute;left:0;top:0;bottom:0;width:7px;cursor:col-resize;z-index:6;background:transparent}
 
-.kpOcrUi .kpTrResize::after{content:"";position:absolute;left:2px;top:50%;transform:translateY(-50%);width:3px;height:40px;border-radius:3px;background:var(--line2);opacity:0;transition:opacity .15s}
+.kpOcrUi .kpOcrGrip::after{content:"";position:absolute;left:2px;top:50%;transform:translateY(-50%);width:3px;height:40px;border-radius:3px;background:var(--line2);opacity:0;transition:opacity .15s}
 
-.kpOcrUi .kpTranslation:hover .kpTrResize::after,.kpOcrUi .kpTrResize:hover::after,.kpOcrUi .kpTrResize.drag::after{opacity:1;background:var(--brand)}
+.kpOcrUi .kpOcrPanel:hover .kpOcrGrip::after,.kpOcrUi .kpOcrGrip:hover::after,.kpOcrUi .kpOcrGrip.drag::after{opacity:1;background:var(--brand)}
 
-.kpOcrUi .kpTranslation>header b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpOcrUi .kpOcrPanel>header b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.kpOcrUi .kpTranslation>header .kpIbtn{flex:none;width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:8px;background:none;color:var(--ink2);cursor:pointer}
+.kpOcrUi .kpOcrPanel>header .kpIbtn{flex:none;width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:8px;background:none;color:var(--ink2);cursor:pointer}
 
-.kpOcrUi .kpTranslation>header .kpIbtn:hover:not(:disabled){background:var(--soft);color:var(--brand)}
+.kpOcrUi .kpOcrPanel>header .kpIbtn:hover:not(:disabled){background:var(--soft);color:var(--brand)}
 
-.kpOcrUi .kpTranslation>header .kpIbtn:disabled{opacity:.38;cursor:default}
+.kpOcrUi .kpOcrPanel>header .kpIbtn:disabled{opacity:.38;cursor:default}
 
-.kpOcrUi .kpTranslation>header .kpIbtn.kpPrimary{background:var(--brand);color:#fff;border-color:transparent}
+.kpOcrUi .kpOcrPanel>header .kpIbtn.kpPrimary{background:var(--brand);color:#fff;border-color:transparent}
 
-.kpOcrUi .kpTranslation>header .kpIbtn.kpPrimary:hover:not(:disabled){background:var(--brand2);color:#fff}
+.kpOcrUi .kpOcrPanel>header .kpIbtn.kpPrimary:hover:not(:disabled){background:var(--brand2);color:#fff}
 
-.kpOcrUi .kpTranslation>header .kpIbtn.kpPrimary:disabled{background:var(--line);color:var(--muted);opacity:.6}
+.kpOcrUi .kpOcrPanel>header .kpIbtn.kpPrimary:disabled{background:var(--line);color:var(--muted);opacity:.6}
 
 .kpOcrUi .kpOcrProg{bottom:calc(var(--sideBottom,0px) + 8px)}
 
 .kpOcrUi .kpRegionEditor{bottom:calc(var(--sideBottom,0px) + 8px)}
 
-.kpOcrUi .kpTranslation textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brandSoft)}
+.kpOcrUi .kpOcrPanel textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brandSoft)}
 
 .kpOcrUi .ocrCard textarea:focus,.kpOcrUi .ocrCard input:focus,.kpOcrUi .ocrCard select:focus,.kpOcrUi .kpRegionEditor textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brandSoft)}
 
@@ -501,7 +501,7 @@ html.dark .kpOcrUi{--page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4
 
 /* ===== Sidebar OCR nằm trong .stageWrap như demo: chiếm chỗ thật, đẩy trang vào giữa ===== */
 .stageWrap > .kpOcrUi{display:flex;flex:none;min-width:0;height:100%}
-.kpOcrUi .kpTranslation{height:100%}
+.kpOcrUi .kpOcrPanel{height:100%}
 
 /* ===== Chẩn đoán: nếu một bước cấu hình popup lỗi thì in thẳng lý do trong popup ===== */
 .kpOcrUi .kpOcrErr{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:#fdecec;color:#b4282d;font-size:12px;font-weight:600;line-height:1.4}
@@ -509,3 +509,9 @@ html.dark .kpOcrUi .kpOcrErr{background:#3a1719;color:#ff9aa0}
 
 /* Thẻ gợi ý chỉ được vẽ khi có .show — không bao giờ để lại một khối trắng lạc trên trang */
 .kpOcrUi .kpVbanner:not(.show){display:none}
+
+/* ===== QĐ-1: chế độ quét — 1 trang, không zoom, đúng điều kiện demo 2.9.7.26 =====
+   Trong lúc chạy OCR, khung xem khoá về một trang và giấu ô thu phóng/cách xem;
+   kết thúc lượt, run.js gọi scanMode(false) để trả lại đúng trạng thái người dùng. */
+html.kpOcrScan #zoomWrap{visibility:hidden;pointer-events:none}
+html.kpOcrScan #vFlow{pointer-events:none;opacity:.55}

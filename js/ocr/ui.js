@@ -542,7 +542,7 @@ function localize() {
     } catch (error) { console.warn('[Keepit] OCR dialog', error); }
     step('localize', () => localize());
     step('languages', () => buildLangs());
-    step('panel', () => { $('kpOcrTrPanel')?.classList.add('open'); syncLayerBoxes(); });
+    step('panel', () => { $('kpOcrTrPanel')?.classList.add('kpOpen'); syncLayerBoxes(); });
     try {
     step('notice', () => collapseNotice());
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
@@ -725,12 +725,18 @@ function localize() {
     card = null;
   }
   const current = () => card;
-  function setPage(text) { if (card && text != null) card.pageLabel.textContent = text; }
+  /* QĐ-3: mọi trạng thái đều ghi thêm vào kênh demo (#kpOcrProgPage/#kpOcrStatus/#kpOcrProgress). */
+  const bridge = () => globalThis.KEEPIT_OCR_BRIDGE;
+  function setPage(text) {
+    if (card && text != null) card.pageLabel.textContent = text;
+    try { bridge()?.setPageLabel?.(text); } catch { /* ignore */ }
+  }
   const LOG_SKIP = /đang nhận dạng[^\n]*\d+%|recognis\w*[^\n]*\d+%|인식[^\n]*\d+%/i;
   function setState(main) {
     if (!card || !main) return;
     card.state.textContent = main;
     const status = $('kpOcrStatus'); if (status) status.textContent = main;
+    try { bridge()?.setStatus?.(main); } catch { /* ignore */ }
     /* dòng “đang nhận dạng: N%” chỉ giữ 1 dòng, cập nhật tại chỗ — không đẻ 3 dòng như trước */
     const top = card.logBox.firstElementChild;
     if (LOG_SKIP.test(main) && top && LOG_SKIP.test(top.textContent)) { top.textContent = String(main).trim(); return; }
@@ -745,7 +751,10 @@ function localize() {
     card.logBox.prepend(node);
     while (card.logBox.children.length > 3) card.logBox.lastElementChild.remove();
   }
-  function progress(value) { if (card) card.bar.value = Math.max(0, Math.min(1, Number(value) || 0)); }
+  function progress(value) {
+    if (card) card.bar.value = Math.max(0, Math.min(1, Number(value) || 0));
+    try { bridge()?.setProgress?.(value); } catch { /* ignore */ }
+  }
   function finish({ kind = 'done', summary = '', warning = '' } = {}) {
     if (!card) return;
     card.busy = false;
@@ -763,7 +772,10 @@ function localize() {
     card.actions.region.hidden = false;
     card.actions.close.disabled = false;
   }
-  function busy(value) { if (card) card.busy = !!value; }
+  function busy(value) {
+    if (card) card.busy = !!value;
+    try { bridge()?.setBusy?.(!!value); } catch { /* ignore */ }
+  }
 
   /* ---------- panel phải “Văn bản nhận dạng” ---------- */
   function panel({
@@ -777,7 +789,7 @@ function localize() {
     const value = String(text || '').trim();
     if (value) area.value = (append && area.value ? `${area.value}\n\n` : '') + (page ? `— ${t('ocrPageLabel', { page })} —\n${value}` : value);
     if (area.value.trim()) {
-      root.classList.add('open');
+      root.classList.add('kpOpen');
       syncLayerBoxes();
       for (const id of ['kpOcrCopy', 'kpOcrSave', 'kpOcrSavePdf', 'kpOcrTextApply']) { const button = $(id); if (button) button.disabled = false; }
     }
@@ -795,7 +807,7 @@ function localize() {
       setTimeout(() => URL.revokeObjectURL(link.href), 4000);
     });
     const close = $('kpOcrTrClose');
-    if (close) close.onclick = () => { root.classList.remove('open'); syncLayerBoxes(); };
+    if (close) close.onclick = () => { root.classList.remove('kpOpen'); syncLayerBoxes(); };
     const addRegion = $('kpOcrTrRegion');
     if (addRegion) addRegion.onclick = () => openRegionEditor({ label: t('ocrUiRegionBadge') });
     const applyText = $('kpOcrTextApply');
@@ -813,7 +825,7 @@ function localize() {
     if (savePdf) savePdf.onclick = () => toast(t('ocrPdfPending'));
   }
   const panelText = () => $('kpOcrText')?.value || '';
-  const closePanel = () => { $('kpOcrTrPanel')?.classList.remove('open'); syncLayerBoxes(); };
+  const closePanel = () => { $('kpOcrTrPanel')?.classList.remove('kpOpen'); syncLayerBoxes(); };
 
   /* ---------- thẻ gợi ý ảnh quét + bóng đèn ---------- */
   function setNoticeFileKey(key) {
@@ -953,10 +965,10 @@ function localize() {
     document.documentElement.classList.toggle('kpOcrPanelOpen', !!open);
   }
   function syncLayerBoxes() {
-    setPanelPushed(!!$('kpOcrTrPanel')?.classList.contains('open'));
+    setPanelPushed(!!$('kpOcrTrPanel')?.classList.contains('kpOpen'));
     const layer = boxesLayer();
     if (!layer) return;
-    const open = !!$('kpOcrTrPanel')?.classList.contains('open');
+    const open = !!$('kpOcrTrPanel')?.classList.contains('kpOpen');
     const show = !!($('kpOcrOptBoxes')?.checked ?? true);
     layer.classList.toggle('kpBoxes', open && show);
     if (!open) paintHover([]);
@@ -1039,7 +1051,7 @@ function localize() {
     if (!area || area.dataset.kpHover === '1') return;
     area.dataset.kpHover = '1';
     area.addEventListener('mousemove', event => {
-      if (!$('kpOcrTrPanel')?.classList.contains('open') || !lastBoxes.length) return;
+      if (!$('kpOcrTrPanel')?.classList.contains('kpOpen') || !lastBoxes.length) return;
       const lineIdx = lineIndexAt(area, event.clientY);
       const picked = boxesForLine(lineIdx);
       paintHover(picked);

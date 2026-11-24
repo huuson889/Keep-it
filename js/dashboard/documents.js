@@ -1020,7 +1020,28 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
     applyTools();
     return paragraphs.length;
   },
-  refresh() { try { applyTools(); } catch { /* ignore */ } }
+  refresh() { try { applyTools(); } catch { /* ignore */ } },
+  /* Cầu nối demo: nhảy trang + QĐ-1 chế độ quét 1 trang, không zoom. */
+  goTo(page) {
+    const n = Math.max(1, Math.min(V.doc?.pages || 1, Math.round(Number(page) || 1)));
+    if (!V.doc || n === V.page) return;
+    void setPage(n, true);
+  },
+  scanMode(on) {
+    if (!V.doc || !activeEngine) return () => {};
+    if (!on) return () => {};
+    const prev = { flow: V.flow, zoom: V.zoom };
+    document.documentElement.classList.add('kpOcrScan');
+    V.flow = 'single';
+    V.zoom = 'fit';
+    try { renderViewer(); } catch (error) { console.warn('[Keepit] OCR scanMode:', error); }
+    return () => {
+      document.documentElement.classList.remove('kpOcrScan');
+      V.flow = prev.flow;
+      V.zoom = prev.zoom;
+      try { renderViewer(); } catch (error) { console.warn('[Keepit] OCR scanMode thoát:', error); }
+    };
+  }
 });
 
 void boot();

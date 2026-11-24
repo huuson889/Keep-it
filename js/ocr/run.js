@@ -5,6 +5,7 @@
   'use strict';
   if (globalThis.LHN_OCR) return;
   const ui = () => globalThis.LHN_OCR_UI, engine = () => globalThis.LHN_OCR_ENGINE, docs = () => globalThis.LHN_DOCUMENTS_OCR;
+  const bridge = () => globalThis.KEEPIT_OCR_BRIDGE;
   const t = (key, params) => globalThis.LHN_LANGUAGES?.t?.(key, params, document.documentElement.lang) ?? key;
   const known = /^ocr[A-Z]/;
   const say = (key, params) => { const text = t(key, params); return known.test(key) ? text : key; };
@@ -57,6 +58,12 @@
     const info = docs()?.info?.();
     if (!info) { ui()?.toast(t('ocrNoDocument')); return; }
     running = true; stopRequested = false; applied = 0; started = Date.now();
+    /* QĐ-1: khung xem về 1 trang, không zoom (đúng điều kiện demo); trả lại ở finally. */
+    const restoreScan = bridge()?.scanMode?.(true) || (() => {});
+    bridge()?.clear?.();
+    bridge()?.setBusy?.(true);
+    bridge()?.setMode?.(options.mode);
+    bridge()?.setLangs?.(options.langs || 'eng+vie+kor');
     const card = openCard();
     ui().panel({ reset: true });
     card.actions.close.disabled = true;
@@ -92,9 +99,18 @@
         }
         if (stopRequested) { canvas.width = canvas.height = 1; break; }
         if (error) { failures.push({ page, error: errorText(error) }); ui().log(t('ocrPageFailed', { page, reason: errorText(error) })); continue; }
-        docs().apply(page, result);
-        ui().panel({ text: result.text, page, append: options.scope === 'all' && applied > 0 });
-        ui().drawBoxes?.(result.boxes || []);
+        /* Mỗi việc bọc riêng: một chỗ lỗi không được biến cả trang thành "không đọc được". */
+        let wrote = 0;
+        try { wrote = docs().apply(page, result) ?? 0; }
+        catch (caught) { ui().log(`apply: ${caught?.message || caught}`); console.warn('[Keepit] OCR apply:', caught); }
+        try { ui().panel({ text: result.text, page, append: options.scope === 'all' && applied > 0 }); }
+        catch (caught) { ui().log(`panel: ${caught?.message || caught}`); console.warn('[Keepit] OCR panel:', caught); }
+        const pageBoxes = result.boxes || [];
+        try { ui().drawBoxes?.(pageBoxes); ui().setBoxesVisible?.(true); }
+        catch (caught) { ui().log(`boxes: ${caught?.message || caught}`); console.warn('[Keepit] OCR boxes:', caught); }
+        if (!pageBoxes.length) ui().log(`boxes: 0 khung (${wrote} đoạn)`);
+        /* QĐ-3: bản sao `results` đúng kiểu demo — mọi thứ đọc chung một nguồn. */
+        try { bridge()?.publish?.(page, result); } catch (caught) { console.warn('[Keepit] OCR publish:', caught); }
         applied++;
         ui().log(t('ocrPageDone', { page }));
         ui().progress((index + 1) / pages.length);
@@ -112,6 +128,8 @@
       ui().finish({ kind: 'error', summary: t('ocrSumLineError', { count: applied, pages: pages.length, failed: pages.length - applied }), warning: errorText(error) });
     } finally {
       running = false;
+      bridge()?.setBusy?.(false);
+      try { restoreScan(); } catch (caught) { console.warn('[Keepit] OCR thoát chế độ quét:', caught); }
       const current = ui().current();
       if (current) current.actions.close.disabled = false;
       docs()?.refresh?.();
