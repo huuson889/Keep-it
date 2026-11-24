@@ -506,3 +506,6 @@ html.kpOcrPanelOpen .kpOcrUi .kpRegionEditor{right:calc(var(--trW,380px) + 12px)
 /* ===== Chẩn đoán: nếu một bước cấu hình popup lỗi thì in thẳng lý do trong popup ===== */
 .kpOcrUi .kpOcrErr{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:#fdecec;color:#b4282d;font-size:12px;font-weight:600;line-height:1.4}
 html.dark .kpOcrUi .kpOcrErr{background:#3a1719;color:#ff9aa0}
+
+/* Thẻ gợi ý chỉ được vẽ khi có .show — không bao giờ để lại một khối trắng lạc trên trang */
+.kpOcrUi .kpVbanner:not(.show){display:none}

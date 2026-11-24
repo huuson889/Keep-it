@@ -68,7 +68,11 @@
         if (stopRequested) break;
         ui().setPage(t('ocrPageOf', { page, total: pages.length > 1 ? pages.length : info.pages }));
         ui().progress(index / pages.length);
-        const canvas = await docs().raster(page, options.longSide || 2000);
+        /* raster có thể treo nếu khung xem dựng lại giữa chừng ⇒ chặn bằng hạn giờ */
+        const canvas = await Promise.race([
+          docs().raster(page, options.longSide || 2000),
+          new Promise(resolve => setTimeout(() => resolve(null), 20000))
+        ]);
         if (!canvas) { failures.push({ page, error: t('ocrNoRaster') }); continue; }
         let result = null, error = null;
         try { result = await recognize(canvas, page); }

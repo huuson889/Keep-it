@@ -947,12 +947,10 @@ function localize() {
     syncLayerBoxes();
     paintHover([]);
   }
-  let pushTimer = 0;
   function setPanelPushed(open) {
+    /* chỉ đánh dấu để CSS nép 2 hộp nổi; KHÔNG phát resize toàn cục:
+       documents.js sẽ dựng lại #pageStack và huỷ trang đang raster ⇒ OCR kẹt ở “Đang chuẩn bị…” */
     document.documentElement.classList.toggle('kpOcrPanelOpen', !!open);
-    /* khung xem tự tính lại bề rộng trang theo .stage còn lại (giống sidebar Dịch) */
-    clearTimeout(pushTimer);
-    pushTimer = setTimeout(() => { try { window.dispatchEvent(new Event('resize')); } catch { /* ignore */ } }, 300);
   }
   function syncLayerBoxes() {
     setPanelPushed(!!$('kpOcrTrPanel')?.classList.contains('open'));
