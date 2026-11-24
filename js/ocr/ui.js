@@ -254,8 +254,8 @@ const DEMO_TEXT = [
   ["Recognised text for the page shows here. You can edit it directly.", 'ocrUiPanelEmpty'],
   ["페이지의 인식된 텍스트가 여기에 표시되며 직접 수정할 수 있습니다.", 'ocrUiPanelEmpty'],
   ["Đã chọn thư mục model", 'ocrModelReady'],
-  ["Nhanh: đọc theo từng dòng trong worker, giao diện không đơ.", 'ocrHintPP'],
-  ["Viết tay: model Fusor đọc cả trang; cần tải model một lần.", 'ocrHintFusor'],
+  ["Nhanh: PP-OCR đọc cả trang một lượt, chạy trong worker nền nên giao diện vẫn bấm được và Dừng ăn ngay. Lần đầu phải nạp model ~32 MB (10–30 giây); thiếu nhiều dấu tiếng Việt.", 'ocrHintPP'],
+  ["Viết tay: dùng Fusor — phải bấm “Chọn thư mục model” (~831 MB) xong mới bấm được Nhận dạng chữ; chạy chậm hơn hẳn.", 'ocrHintFusor'],
 
 ];
 const DEMO_MAP = new Map(DEMO_TEXT);
@@ -281,11 +281,11 @@ function localize() {
     if (box && box.children.length) {
       for (const input of box.querySelectorAll('input')) {
         const span = input.parentElement.querySelector('span');
-        if (span) span.textContent = tr(LANG_KEY[input.value]);
+        if (!span) continue;
+        const small = span.querySelector('small');
+        if (small && span.firstChild) span.firstChild.nodeValue = tr(LANG_KEY[input.value]);
+        else span.textContent = tr(LANG_KEY[input.value]);
       }
-      const summary = doc.getElementById('kpOcrLangSummary');
-      const names = [...box.querySelectorAll('input:checked')].map(input => tr(LANG_KEY[input.value]));
-      if (summary && names.length) summary.textContent = names.join(' + ');
     }
     for (const el of host.querySelectorAll('[placeholder],[title],[aria-label]')) {
       for (const attr of ['placeholder', 'title', 'aria-label']) {
@@ -295,6 +295,17 @@ function localize() {
         if (key) el.setAttribute(attr, tr(key));
       }
     }
+  }
+  const hint = doc.getElementById('kpOcrMethodHint');
+  if (hint) {
+    const picked = doc.querySelector('#kpOcrOcrModes input:checked')?.value || 'tess';
+    hint.textContent = tr({ tess: 'ocrHintTess', pp: 'ocrHintPP', fusor: 'ocrHintFusor' }[picked] || 'ocrHintTess');
+  }
+  const lbox = doc.getElementById('kpOcrLangBox');
+  const lsum = doc.getElementById('kpOcrLangSummary');
+  if (lbox && lsum) {
+    const names = [...lbox.querySelectorAll('input:checked')].map(input => tr(LANG_KEY[input.value]));
+    lsum.textContent = names.length ? names.join(' + ') : tr('ocrUiLangNone');
   }
 }
 
@@ -358,35 +369,61 @@ function localize() {
   }
 
   /* ---------- chọn ngôn ngữ trong popup (dựng một lần) ---------- */
-  function buildLangs(selected = null) {
+  const LANG_META = [
+    { c: 'eng', key: 'ocrLangEng', native: 'English' },
+    { c: 'vie', key: 'ocrLangVie', native: 'Tiếng Việt' },
+    { c: 'kor', key: 'ocrLangKor', native: '한국어' }
+  ];
+  const langOn = { eng: true, vie: true, kor: false };
+  function renderLangs(filter = '') {
     const box = $('kpOcrLangBox');
-    if (!box) return [];
-    const checked = [...box.querySelectorAll('input:checked')].map(input => input.value);
-    const picked = (Array.isArray(selected) && selected.length ? selected : checked.length ? checked : ['eng', 'vie']);
+    if (!box) return;
+    const needle = String(filter || '').trim().toLowerCase();
     box.replaceChildren();
-    for (const value of Object.keys(LANG_KEYS)) {
+    for (const lang of LANG_META) {
+      const name = t(lang.key);
+      if (needle && !name.toLowerCase().includes(needle) && !lang.native.toLowerCase().includes(needle) && !lang.c.includes(needle)) continue;
       const label = document.createElement('label');
-      label.className = 'kpCheck';
+      label.className = `kpKpick${langOn[lang.c] ? ' kpOn' : ''}`;
       const input = document.createElement('input');
-      input.type = 'checkbox'; input.value = value;
-      input.checked = picked.includes(value);
-      input.onchange = () => { updateLangSummary(); markRadios(box); };
+      input.type = 'checkbox'; input.className = 'kpLang'; input.value = lang.c; input.checked = !!langOn[lang.c];
+      input.onchange = () => {
+        langOn[lang.c] = input.checked;
+        label.classList.toggle('kpOn', input.checked);
+        updateLangSummary();
+      };
       const span = document.createElement('span');
-      span.textContent = t(LANG_KEYS[value]);
+      span.textContent = name;
+      const small = document.createElement('small');
+      small.textContent = lang.native;
+      span.append(small);
       label.append(input, span);
       box.append(label);
     }
+    if (!box.children.length) {
+      const empty = document.createElement('div');
+      empty.className = 'kpKpick';
+      empty.textContent = t('ocrUiNoLangMatch');
+      box.append(empty);
+    }
     updateLangSummary();
-    return [...box.querySelectorAll('input:checked')].map(input => input.value);
+  }
+  function buildLangs(selected = null) {
+    if (Array.isArray(selected) && selected.length) {
+      for (const key of Object.keys(langOn)) langOn[key] = selected.includes(key);
+    }
+    renderLangs($('kpOcrLangSearch')?.value || '');
+    return selectedLangs();
   }
   function selectedLangs() {
-    const box = $('kpOcrLangBox');
-    const values = box ? [...box.querySelectorAll('input:checked')].map(input => input.value) : [];
+    const values = Object.keys(langOn).filter(key => langOn[key]);
     return values.length ? values : ['eng'];
   }
   function updateLangSummary() {
     const summary = $('kpOcrLangSummary');
-    if (summary) summary.textContent = selectedLangs().map(value => LANG_NAMES[value] || value).join(' + ');
+    if (!summary) return;
+    const picked = LANG_META.filter(lang => langOn[lang.c]).map(lang => t(lang.key));
+    summary.textContent = picked.length ? picked.join(' + ') : t('ocrUiLangNone');
   }
 
   /* ---------- hộp sửa chữ của vùng (demo: #regionEditor) ---------- */
@@ -399,7 +436,8 @@ function localize() {
     const root = $('kpOcrRegionEditor'), area = $('kpOcrRegionText');
     if (!root || !area) return;
     area.value = text;
-    if ($('kpOcrReHead') && label) $('kpOcrReHead').textContent = label;
+    const head = $('kpOcrRegionEditor')?.querySelector('.kpReHead');
+    if (head && label) head.textContent = label;
     if ($('kpOcrApplyRegion')) $('kpOcrApplyRegion').disabled = !String(text).trim();
     root.classList.add('show');
   }
@@ -408,9 +446,10 @@ function localize() {
   function openDialog({
     mode = 'pp', scope = 'current', onRun, onCancel } = {}) {
     localize();
-    const modal = $('kpOcrOcrModal'), scrim = $('kpOcrScrim');
+    const modal = $('kpOcrOcrModal'), scrim = $('kpOcrOcrScrim');
     if (!modal || !scrim) return null;
     dialogOpen = true;
+    $('kpOcrTrPanel')?.classList.add('open');
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
     const page = info?.page || 1, pages = info?.pages || 1;
     if ($('kpOcrOcrSub')) $('kpOcrOcrSub').textContent = info?.name || t('ocrNoDocument');
@@ -459,21 +498,24 @@ function localize() {
       if (event.target?.name === 'mode') syncMode();
     });
     /* hộp ngôn ngữ: ô tìm lọc danh sách */
-    if ($('kpOcrLangSearch')) $('kpOcrLangSearch').oninput = event => {
-      const needle = String(event.target.value || '').trim().toLowerCase();
-      for (const label of $('kpOcrLangBox')?.querySelectorAll('label') || []) {
-        label.hidden = !!needle && !label.textContent.toLowerCase().includes(needle);
-      }
-    };
+    if ($('kpOcrLangSearch')) $('kpOcrLangSearch').oninput = event => renderLangs(event.target.value);
+    if ($('kpOcrLangSearch')) $('kpOcrLangSearch').onfocus = event => event.target.select();
     /* mỗi cách nhận dạng hiện đúng nhóm tuỳ chọn của nó */
     const syncMode = () => {
       const picked = modal.querySelector('input[name="mode"]:checked')?.value || mode;
-      for (const [id, show] of [['kpOcrTessOptions', picked === 'tess'], ['kpOcrPpOptions', picked === 'pp'], ['kpOcrFusorOptions', picked === 'fusor']]) {
-        const el = $(id); if (el) el.hidden = !show;
+      for (const el of modal.querySelectorAll('[data-for]')) el.classList.toggle('kpOff', el.dataset.for !== picked);
+      if ($('kpOcrMethodHint')) {
+        const key = { tess: 'ocrHintTess', pp: 'ocrHintPP', fusor: 'ocrHintFusor' }[picked] || 'ocrHintTess';
+        $('kpOcrMethodHint').textContent = t(key);
       }
-      if ($('kpOcrAutoHint')) $('kpOcrAutoHint').hidden = picked === 'tess';
     };
     syncMode();
+    for (const input of modal.querySelectorAll('input[name="scopePick"]')) {
+      input.onchange = () => { markRadios($('kpOcrOcrScopePick')); scopeSync(); };
+    }
+    for (const input of modal.querySelectorAll('input[name="mode"]')) {
+      input.onchange = () => { markRadios($('kpOcrOcrModes')); syncMode(); };
+    }
     /* “Hiện khung vùng đã nhận dạng” (ô trong popup + ô ẩn như demo) */
     for (const id of ['kpOcrOptBoxes', 'kpOcrShowBoxes']) {
       const input = $(id);
@@ -529,7 +571,7 @@ function localize() {
   }
   function closeDialog() {
     dialogOpen = false;
-    $('kpOcrScrim')?.classList.remove('show');
+    $('kpOcrOcrScrim')?.classList.remove('show');
     $('kpOcrOcrModal')?.classList.remove('show');
   }
   const dialogVisible = () => dialogOpen;

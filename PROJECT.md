@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.616** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu dùng đúng giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
+- Version **3.5.617** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -9,7 +9,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
-- **OCR trong Tài liệu (3.5.616):** base 3.5.611 + demo 2.9.7.26; jsdom 51 assert + wiring 39 assert + core 19 assert; **chưa kiểm trên Chromium thật** (không có trình duyệt trong sandbox); “Tải PDF có lớp chữ” báo rõ chưa nối; kết quả OCR chưa lưu vào `keepit-documents`.
+- **OCR trong Tài liệu (3.5.617):** base 3.5.611 + demo 2.9.7.26; jsdom 51 assert + wiring 39 assert + core 19 assert; **chưa kiểm trên Chromium thật** (không có trình duyệt trong sandbox); “Tải PDF có lớp chữ” báo rõ chưa nối; kết quả OCR chưa lưu vào `keepit-documents`.
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
@@ -163,6 +163,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.617 | Arena:**
+- Lệnh của người dùng: **giao diện đang là bản port sai** (ảnh gửi: app Keepit còn chip `v2.7.0`, nhãn tiếng Anh) ⇒ phải port **đúng demo 2.9.7.26**; **version tăng tiếp**; **nhãn đủ 3 tiếng en/vi/ko**; **bỏ chip version**.
+- **Nguyên nhân sai:** 3 khối `.kpOcrUi` của 3.5.616 lấy từ `Demo/ocr-ui-2.6/` (chip `v2.7.0`), không phải `Demo/OCR-Keepit-giao-dien-v2.9.7.26.zip`. Đã tách lại 8 khối markup từ `index.html` của 2.9.7.26 (banner, bóng đèn, nền mờ, popup 49 id, thẻ tiến độ, “Bổ sung vùng”, sidebar 10 id, toast) → đổi tiền tố `kpOcr`/`kp`, **xoá span chip `#ocrVer`**.
+- **CSS:** dựng lại `css/dashboard/ocr.css` bằng bộ sinh scope từ `style.css` của 2.9.7.26 (219 quy tắc gốc + dark mode), giữ nguyên mọi giá trị màu/kích thước demo; phần cuối file là các bổ sung riêng của Keepit có ghi chú (drawer sidebar, 2 hộp nổi cách đáy 8px, khung chọn vùng, khung chữ đã nhận dạng).
+- **Hành vi theo demo:** danh sách ngôn ngữ hiện **tên + tên bản ngữ** (`Anh / English`, `Việt / Tiếng Việt`, `Hàn / 한국어`), ô tìm render lại danh sách và báo “Không có ngôn ngữ này” như demo; 3 câu gợi ý dùng **đúng lời demo** (PP-OCR nêu 32 MB + thiếu dấu tiếng Việt; Fusor nêu 831 MB); nhóm tuỳ chọn không thuộc cách đang chọn **mờ đi** (`.kpOff`, không ẩn) đúng demo; bấm OCR là **mở sidebar phải** ngay.
+- **3 tiếng:** mọi chuỗi của popup/sidebar/toast đi qua `DEMO_TEXT` + `MESSAGES` en/vi/ko; chỉ **tên bản ngữ** của ngôn ngữ là giữ nguyên (đúng demo).
+- Đã xác minh: jsdom **51/51**, wiring **39/39**, core **19/19**; HTML **0 thẻ hở, 0 id trùng, 87 id `kpOcr*`**; không còn `kpOcrOcrVer`.
+- Chưa kiểm được: Chromium thật (chạy OCR thật trên PDF, ảnh 1512/390, sáng/tối) — sandbox không có trình duyệt.
 
 **2026-11-24 | v3.5.616 | Arena:**
 - Lệnh của người dùng: **base 3.5.611** rồi áp demo 2.9.7.26; **version đầu ra phải khác 3.5.611** (3.5.611 chỉ là base) ⇒ bản này là **3.5.616**.
