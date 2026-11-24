@@ -926,7 +926,7 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
   ready: () => !!(V.doc && activeEngine),
   info: () => {
     if (!V.doc) return null;
-    return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: activeEngine?.pages?.length || V.doc.pages || 1, image: !!V.doc.image, hasText: !!sourceEntries(V.page).length };
+    return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: Math.max(activeEngine?.pages?.length || 0, V.doc.pages || 1), image: !!V.doc.image, hasText: !!sourceEntries(V.page).length };
   },
   /* Raster một trang ở độ phân giải đủ cho OCR (~2000 px cạnh dài) mà không đụng trang đang hiện. */
   pageElement(page) {

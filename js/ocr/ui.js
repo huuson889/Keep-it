@@ -423,36 +423,57 @@ function localize() {
     { c: 'kor', key: 'ocrLangKor', native: '한국어' }
   ];
   const langOn = { eng: true, vie: true, kor: false };
+  function langName(lang) {
+    try { return String(t(lang.key) || lang.native || lang.c); } catch { return lang.native || lang.c; }
+  }
   function renderLangs(filter = '') {
     const box = $('kpOcrLangBox');
     if (!box) return;
-    const needle = String(filter || '').trim().toLowerCase();
-    box.replaceChildren();
-    for (const lang of LANG_META) {
-      const name = t(lang.key);
-      if (needle && !name.toLowerCase().includes(needle) && !lang.native.toLowerCase().includes(needle) && !lang.c.includes(needle)) continue;
-      const label = document.createElement('label');
-      label.className = `kpKpick${langOn[lang.c] ? ' kpOn' : ''}`;
-      const input = document.createElement('input');
-      input.type = 'checkbox'; input.className = 'kpLang'; input.value = lang.c; input.checked = !!langOn[lang.c];
-      input.onchange = () => {
-        langOn[lang.c] = input.checked;
-        label.classList.toggle('kpOn', input.checked);
-        updateLangSummary();
-      };
-      const span = document.createElement('span');
-      span.textContent = name;
-      const small = document.createElement('small');
-      small.textContent = lang.native;
-      span.append(small);
-      label.append(input, span);
-      box.append(label);
-    }
-    if (!box.children.length) {
-      const empty = document.createElement('div');
-      empty.className = 'kpKpick';
-      empty.textContent = t('ocrUiNoLangMatch');
-      box.append(empty);
+    try {
+      const needle = String(filter || '').trim().toLowerCase();
+      box.replaceChildren();
+      for (const lang of LANG_META) {
+        const name = langName(lang);
+        const hit = !needle || name.toLowerCase().includes(needle) || String(lang.native).toLowerCase().includes(needle) || lang.c.includes(needle);
+        if (!hit) continue;
+        const label = document.createElement('label');
+        label.className = `kpKpick${langOn[lang.c] ? ' kpOn' : ''}`;
+        const input = document.createElement('input');
+        input.type = 'checkbox'; input.className = 'kpLang'; input.value = lang.c; input.checked = !!langOn[lang.c];
+        input.onchange = () => {
+          langOn[lang.c] = input.checked;
+          label.classList.toggle('kpOn', input.checked);
+          updateLangSummary();
+        };
+        const span = document.createElement('span');
+        span.textContent = name;
+        const small = document.createElement('small');
+        small.textContent = lang.native;
+        span.append(small);
+        label.append(input, span);
+        box.append(label);
+      }
+      if (!box.children.length) {
+        const empty = document.createElement('div');
+        empty.className = 'kpKpick';
+        empty.textContent = t('ocrUiNoLangMatch');
+        box.append(empty);
+      }
+    } catch (error) {
+      /* không bao giờ để hộp ngôn ngữ trống: dựng dự phòng bằng dữ liệu tĩnh */
+      console.warn('[Keepit] OCR languages', error);
+      box.replaceChildren();
+      for (const lang of LANG_META) {
+        const label = document.createElement('label');
+        label.className = `kpKpick${langOn[lang.c] ? ' kpOn' : ''}`;
+        const input = document.createElement('input');
+        input.type = 'checkbox'; input.className = 'kpLang'; input.value = lang.c; input.checked = !!langOn[lang.c];
+        input.onchange = () => { langOn[lang.c] = input.checked; label.classList.toggle('kpOn', input.checked); updateLangSummary(); };
+        const span = document.createElement('span');
+        span.textContent = lang.native;
+        label.append(input, span);
+        box.append(label);
+      }
     }
     updateLangSummary();
   }
@@ -470,8 +491,10 @@ function localize() {
   function updateLangSummary() {
     const summary = $('kpOcrLangSummary');
     if (!summary) return;
-    const picked = LANG_META.filter(lang => langOn[lang.c]).map(lang => t(lang.key));
-    summary.textContent = picked.length ? picked.join(' + ') : t('ocrUiLangNone');
+    try {
+      const picked = LANG_META.filter(lang => langOn[lang.c]).map(lang => langName(lang));
+      summary.textContent = picked.length ? picked.join(' + ') : t('ocrUiLangNone');
+    } catch { summary.textContent = LANG_META.filter(lang => langOn[lang.c]).map(lang => lang.native).join(' + '); }
   }
 
   /* ---------- hộp sửa chữ của vùng (demo: #regionEditor) ---------- */
@@ -509,6 +532,7 @@ function localize() {
     syncLayerBoxes();
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
     const page = info?.page || 1, pages = info?.pages || 1;
+    if ($('kpOcrOcrBody')) $('kpOcrOcrBody').scrollTop = 0;
     if ($('kpOcrOcrSub')) {
       $('kpOcrOcrSub').textContent = info
         ? t('ocrSubLine', { page, state: t(info.hasText ? 'ocrSubHasLayer' : 'ocrSubNoLayer') })

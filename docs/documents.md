@@ -62,7 +62,7 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 - Bộ xem cung cấp `LHN_DOCUMENTS_OCR` (`raster`, `apply`, `refresh`): `raster` ưu tiên chép canvas đang hiển thị nếu đủ nét, vẽ ảnh sang canvas, cuối cùng mới dựng lại trang ở ~2000px cạnh dài; `apply` ghi vào `activeEngine.pages[n-1].texts/paragraphs` và tạo span từng từ trong `.pdfTextLayer` (thêm `.ocrTextLayer`) để chọn chữ/dịch/đọc to/ghi chú dùng được ngay.
 - Khoanh vùng (`Chọn vùng`) nhận dạng riêng phần đã chọn rồi ghép toạ độ về trang. Kết quả OCR hiện **chưa** lưu vào `keepit-documents`, nên mở lại tài liệu phải nhận dạng lại.
 
-### Bố cục OCR (v3.5.618 — base 3.5.611 + port demo 2.9.7.26) — yêu cầu chốt: `docs/ocr-demo-2.9.7.26-yeu-cau.md`
+### Bố cục OCR (v3.5.621 — base 3.5.611 + port demo 2.9.7.26) — yêu cầu chốt: `docs/ocr-demo-2.9.7.26-yeu-cau.md`
 
 - **Nguồn chuẩn:** `Demo/OCR-Keepit-giao-dien-v2.9.7.26.zip` → `index.html` + `style.css` (bản 3.5.616 lấy nhầm `Demo/ocr-ui-2.6`, nên còn chip `v2.7.0`; 3.5.617 đã tách lại từ đúng nguồn và **bỏ span chip version**). Markup 8 khối được chép **nguyên văn** vào `pages/documents.html`, chỉ đổi id/lớp bằng tiền tố `kp` (`ocrModal` → `kpOcrOcrModal`) và scope CSS dưới `.kpOcrUi`. Không tự đặt lại nhãn, không gộp/bỏ nhóm, không dựng markup mới.
 - **Khối:** `#kpOcrVBanner` (thẻ gợi ý ảnh quét + “Không hiện lại”) và `#kpOcrVBulb` (bóng đèn khi đã thu gọn) nằm trong `.stage`; `#kpOcrOcrScrim` + `#kpOcrOcrModal` (popup giữa), `#kpOcrOcrProg` (thẻ tiến độ), `#kpOcrRegionEditor` (khoanh vùng), `#kpOcrTrPanel` (panel phải “Văn bản nhận dạng”) nằm trong `.kpOcrUi` cuối `body`; `#kpOcrToast` cho thông báo.
