@@ -90,47 +90,181 @@
 <div class="rail" id="rail"></div><div class="railResize" id="railResize" role="separator" aria-controls="rail" aria-orientation="vertical" tabindex="0" data-doc-aria="resize" data-doc-title="resize"></div>
 <div class="stageWrap">
 <div class="stage" id="stage"></div>
-<div class="kpOcrBanner" id="kpOcrBanner" role="dialog" aria-label="Nhận dạng chữ"><div class="bh"><span class="nicon"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9.6 18h4.8M10.4 21h3.2M12 3a6 6 0 0 0-3.7 10.7c.4.3.7.8.7 1.3v.5h6v-.5c0-.5.3-1 .7-1.3A6 6 0 0 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b data-doc-label="ocrBannerTitle">Nhận dạng chữ</b><button id="kpOcrBannerClose" aria-label="Thu gọn thông báo" title="Thu gọn">✕</button></div><p data-doc-label="ocrBannerBody">Trang này là ảnh quét nên chưa có lớp chữ — Dịch, Đọc to và Ghi chú chưa dùng được. Chạy nhận dạng để chọn, sao chép và tìm kiếm được chữ.</p><div class="bf"><button class="go" id="kpOcrBannerAct" data-doc-label="ocrBannerAct">Nhận dạng chữ</button><label class="nask"><input type="checkbox" id="kpOcrNoAsk"><span data-doc-label="ocrNoAsk">Không hiện lại</span></label></div></div><button class="kpOcrBulb" id="kpOcrBulb" aria-label="Thông báo nhận dạng chữ" title="Trang này chưa có lớp chữ — bấm để xem"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9.6 18h4.8M10.4 21h3.2M12 3a6 6 0 0 0-3.7 10.7c.4.3.7.8.7 1.3v.5h6v-.5c0-.5.3-1 .7-1.3A6 6 0 0 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-<aside class="kpOcrPanel" id="kpOcrPanel" aria-label="Văn bản nhận dạng"><header><b data-doc-label="ocrPanel">Văn bản nhận dạng</b><button id="kpOcrCopy" aria-label="Sao chép văn bản" title="Sao chép"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button><button id="kpOcrExport" aria-label="Xuất tệp văn bản" title="Xuất .txt"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button><button id="kpOcrPanelClose" aria-label="Đóng panel" title="Đóng">✕</button></header><div class="body"><pre class="doc" id="kpOcrText" hidden></pre><div class="empty" id="kpOcrEmpty" data-doc-label="ocrPanelEmpty">Chưa có văn bản. Bấm “Nhận dạng chữ” để đọc trang này.</div></div></aside>
-<div class="pager"><div class="pageNav"><button aria-keyshortcuts="ArrowLeft" data-doc-title="previous" id="pPrev" title="Trang trước (←)"><svg class="i" viewbox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></svg></button><span class="pageJump"><label data-doc-label="page" for="pNum" id="pLbl"><span data-doc-label="page">Trang</span></label><input aria-label="Đi đến trang" data-doc-aria="goPage" id="pNum" min="1" type="number" value="1"/><span id="pTotal"></span></span><button aria-keyshortcuts="ArrowRight" data-doc-title="next" id="pNext" title="Trang sau (→)"><svg class="i" viewbox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></svg></button></div><div class="docControls" id="docControls">
-<div class="flowGroup" data-dock="flow" id="flowGroup">
-<select aria-label="Cách xem trang" data-doc-aria="pageFlow" id="vFlow"><option value="single">Từng trang</option><option value="continuous">Cuộn liên tục</option><option value="facing">Hai trang</option><option value="facingContinuous">Hai trang liên tục</option></select>
-</div>
-<div class="zoomGroup" data-dock="zoom" id="zoomWrap"><button aria-label="Thu nhỏ" class="vbtn" data-doc-aria="zoomOut" data-doc-title="zoomOut" id="zOut" title="Thu nhỏ"><svg class="i" viewbox="0 0 24 24"><path d="M5 12h14"></path></svg></button><select aria-label="Thu phóng trang" data-doc-aria="zoom" id="vZoom"><option value="fit"><span data-doc-label="fitWidth">Vừa rộng</span></option><option value="fitImage" hidden>Vừa ảnh</option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option><option value="125">125%</option><option value="150">150%</option><option value="175">175%</option><option value="200">200%</option><option value="400">400%</option><option value="800">800%</option><option value="1600">1600%</option><option value="3200">3200%</option><option value="6400">6400%</option></select><button aria-label="Phóng to" class="vbtn" data-doc-aria="zoomIn" data-doc-title="zoomIn" id="zIn" title="Phóng to"><svg class="i" viewbox="0 0 24 24"><path d="M5 12h14M12 5v14"></path></svg></button></div>
-</div><button id="pageFullscreen" class="pageFullscreen" type="button" aria-label="Toàn màn hình" title="Toàn màn hình"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"></svg></button><button aria-controls="lhn-touch-ui" aria-expanded="false" aria-label="Menu chính" class="pageMenu" data-doc-aria="mainMenu" data-doc-title="mainMenu" id="pageMenu" title="Menu chính" type="button"><svg class="i" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div>
+<div class="kpOcrUi"><div class="kpVbanner" id="kpOcrVBanner" role="dialog" aria-label="Nhận dạng chữ">
+    <div class="kpBhead"><span class="kpNicon"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9.6 18h4.8M10.4 21h3.2M12 3a6 6 0 0 0-3.7 10.7c.4.3.7.8.7 1.3v.5h6v-.5c0-.5.3-1 .7-1.3A6 6 0 0 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><b>Nhận dạng chữ</b><span class="kpSp"></span><button id="kpOcrBannerClose" aria-label="Thu gọn thông báo" title="Thu gọn">✕</button></div>
+    <p class="kpBbody" id="kpOcrBannerText">Trang này là ảnh quét nên chưa có lớp chữ — Dịch, Đọc to và Ghi chú chưa dùng được. Chạy nhận dạng để chọn, sao chép và tìm kiếm được chữ.</p>
+    <div class="kpBfoot">
+      <button id="kpOcrBannerAct" class="kpBlink">Nhận dạng chữ</button>
+      <label class="kpBnoAsk"><input type="checkbox" id="kpOcrBannerNoAsk"><span>Không hiện lại</span></label>
+    </div>
+  </div><button class="kpVbulb" id="kpOcrVBulb" hidden aria-label="Thông báo nhận dạng chữ" title="Trang này chưa có lớp chữ — bấm để xem">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9.6 18h4.8M10.4 21h3.2M12 3a6 6 0 0 0-3.7 10.7c.4.3.7.8.7 1.3v.5h6v-.5c0-.5.3-1 .7-1.3A6 6 0 0 0 12 3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button><aside class="kpTranslation" id="kpOcrTrPanel">
+      <div class="kpTrResize" id="kpOcrTrResize" title="Kéo để đổi độ rộng" role="separator" aria-label="Đổi độ rộng bảng"></div>
+      <header>
+        <b>Văn bản nhận dạng</b>
+        <button class="kpIbtn" id="kpOcrCopy" disabled aria-label="Sao chép văn bản" title="Sao chép văn bản">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M15 5.5A2.5 2.5 0 0 0 12.5 4H6.5A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 5.5 15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+        <button class="kpIbtn" id="kpOcrSave" disabled aria-label="Tải tệp TXT" title="Tải tệp TXT">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+        <button class="kpIbtn" id="kpOcrSavePdf" disabled aria-label="Tải PDF có lớp chữ" title="Tải PDF có lớp chữ">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v5h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 11.5v6m0 0 2.2-2.2M12 17.5l-2.2-2.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+        <button class="kpIbtn" id="kpOcrTrRegion" aria-label="Chọn vùng để bổ sung chữ" title="Chọn vùng để bổ sung chữ">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-dasharray="3.2 2.6"/><path d="M9.5 12h5M12 9.5v5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+        <button class="kpIbtn kpPrimary" id="kpOcrTextApply" disabled aria-label="Áp dụng phần chữ đã sửa" title="Áp dụng phần chữ đã sửa">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m5 12.5 4.6 4.6L19 7.6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="kpIbtn" id="kpOcrTrClose" aria-label="Đóng bảng văn bản" title="Đóng (không lưu thay đổi)">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="kpTrBody"><div class="kpTrHover" id="kpOcrTrHover" hidden></div><textarea id="kpOcrText" placeholder="Văn bản nhận dạng của trang sẽ hiện ở đây. Sửa trực tiếp được."></textarea></div>
+    </aside></div>
 
-<div class="legend" id="legend"><header><span data-doc-label="legend"></span><button data-doc-title="close" id="lgClose" type="button">×</button></header><div id="wordClassLegend"></div></div>
-</div>
-<aside class="translation side2 resizablePanel" data-panel="translation" id="trPanel"><div aria-controls="trPanel" aria-label="Đổi độ rộng bản dịch" aria-orientation="vertical" class="panelResize" data-doc-aria="resize" data-doc-title="resize" role="separator" tabindex="0" title="Kéo để đổi độ rộng"></div><header><b class="transTitle" data-doc-label="translation"><span data-doc-label="translation">Bản dịch</span></b><label class="trLangWrap"><select aria-label="Ngôn ngữ bản dịch" data-doc-aria="trLanguage" id="trLang"></select><svg aria-hidden="true" class="i" viewbox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></label><button aria-controls="transList" aria-label="Cuộn theo tệp" aria-pressed="true" class="vbtn on" data-doc-aria="follow" data-doc-title="follow" id="trFollow" title="Cuộn theo tệp"><svg aria-hidden="true" class="i" viewbox="0 0 24 24"><path d="M4 4v16M1 7l3-3 3 3M1 17l3 3 3-3M11 5h10M11 12h8M11 19h10"></path></svg></button><button aria-label="Đóng bản dịch" class="vbtn" data-doc-aria="close" data-doc-title="close" id="trClose" title="Đóng bản dịch"><svg class="i" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></header><div class="transList" id="transList"></div><div class="transTip"><span data-doc-label="trTip">Bản dịch không làm thay đổi bố cục tệp.</span></div></aside>
+<div class="kpOcrUi"><div class="kpOcrScrim" id="kpOcrScrim"></div><section class="kpOcrModal" id="kpOcrOcrModal" role="dialog" aria-modal="true" aria-labelledby="kpOcrOcrTitle">
+    <header class="kpOcrHead">
+      <span class="kpOcrIco"><span class="kpLogoDot" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><defs><linearGradient id="kpOcrKpDlg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpDlg)"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg></span></span>
+      <div class="kpTt"><b id="kpOcrOcrTitle">Nhận dạng chữ (OCR)</b><small id="kpOcrOcrSub">Chưa mở tệp</small></div>
+      <span class="kpVer" id="kpOcrOcrVer">v2.7.0</span>
+      <button class="kpVbtn" id="kpOcrOcrClose" aria-label="Đóng">✕</button>
+    </header>
 
+    <div class="kpOcrBody" id="kpOcrOcrBody">
+      <section class="kpFGroup">
+        <h3>Phạm vi trang</h3>
+        <div class="kpFset">
+          <div class="kpRadios" id="kpOcrOcrScopePick">
+            <label class="kpOn"><input type="radio" name="scopePick" value="current" checked><span>Trang đang xem</span><em id="kpOcrScopePage">trang 1</em></label>
+            <label><input type="radio" name="scopePick" value="all"><span>Tất cả các trang</span><em id="kpOcrScopeAll">1 trang</em></label>
+            <div class="kpRangeRow">
+              <label class="kpRlab"><input type="radio" name="scopePick" value="range"><span>Từ trang</span></label>
+              <span class="kpPgWrap" id="kpOcrWrapFrom">
+                <input id="kpOcrFrom" type="number" min="1" value="1" aria-label="Từ trang" disabled>
+                <button type="button" class="kpPgBtn" id="kpOcrBtnFrom" tabindex="-1" aria-label="Chọn trang bắt đầu" disabled>▾</button>
+                <div class="kpPgMenu" id="kpOcrMenuFrom"></div>
+              </span>
+              <span class="kpTo">đến</span>
+              <span class="kpPgWrap" id="kpOcrWrapTo">
+                <input id="kpOcrTo" type="number" min="1" value="1" aria-label="Đến trang" disabled>
+                <button type="button" class="kpPgBtn" id="kpOcrBtnTo" tabindex="-1" aria-label="Chọn trang kết thúc" disabled>▾</button>
+                <div class="kpPgMenu" id="kpOcrMenuTo"></div>
+              </span>
+              <span class="kpOf">trong <b id="kpOcrOfTotal">—</b> trang</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-</div>
-</div>
+      <section class="kpFGroup">
+        <h3>Ngôn ngữ tài liệu</h3>
+        <div class="kpLangSearch"><span>⌕</span><input id="kpOcrLangSearch" type="text" placeholder="Tìm ngôn ngữ… (Anh, Việt, Hàn)" autocomplete="off"></div>
+        <div class="kpLangBox" id="kpOcrLangBox"></div>
+        <p class="kpFHint">Đang chọn <b id="kpOcrLangSummary">Anh + Việt</b>.</p>
+        <div id="kpOcrTessOptions" hidden></div>
+      </section>
 
+      <section class="kpFGroup">
+        <h3>Cách nhận dạng</h3>
+        <div class="kpRadios" id="kpOcrOcrModes">
+          <label class="kpOn"><input type="radio" name="mode" value="tess" checked><span>Chữ in</span><em>Tesseract</em></label>
+          <label><input type="radio" name="mode" value="pp"><span>Nhanh</span><em>PP-OCR</em></label>
+          <label><input type="radio" name="mode" value="fusor"><span>Viết tay</span><em>Fusor</em></label>
+        </div>
+        <p class="kpFHint" id="kpOcrMethodHint">Chữ in: đọc thẳng cả trang một lượt, nhanh nhất với tài liệu in rõ.</p>
+      </section>
 
-<div class="dropAll" id="dropAll"><div><span class="dzIcon" style="display:grid;place-items:center"><svg class="i" style="width:30px;height:30px" viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></svg></span><span data-doc-label="drop">Thả tệp để mở bằng Keepit</span><small><span data-doc-label="private">PDF · Word · PowerPoint · JPG, PNG, WebP — mở trên máy, không tải lên</span></small></div></div>
-<div class="modalWrap" id="openWrap"><div class="modal">
-<div class="mHead"><span class="fIco" id="oIco"></span><div><b id="oName"></b><small id="oMeta"></small></div></div>
-<ol class="steps" id="oSteps"></ol>
-<div class="track"><div class="fill" id="oFill" style="width:0;transition:width .3s"></div></div>
-<div class="mFoot"><span class="priv"><svg class="i" viewbox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-4"></path></svg><span data-doc-label="private">Đọc trên máy, không tải lên</span></span><button class="btnG" id="oCancel"><span data-doc-label="cancel">Hủy</span></button></div>
-</div></div>
-<div class="modalWrap" id="pwWrap" style="z-index:89"><div class="modal">
-<h4><span data-doc-label="passwordTitle">Tệp có mật khẩu</span></h4><p><b id="pwName"></b><span data-doc-label="passwordHint"></span></p>
-<input autocomplete="off" class="pwIn" data-doc-placeholder="password" id="pwIn" placeholder="Mật khẩu" type="password"/>
-<div id="pwErr" style="visibility:hidden;color:var(--pdf);font-size:12.5px;margin-top:6px"><span data-doc-label="passwordWrong">Mật khẩu chưa đúng. Nhập lại.</span></div>
-<div class="hint"><span data-doc-label="passwordPrivate">Mật khẩu chỉ dùng để mở tệp lần này, Keepit không lưu.</span></div>
-<div class="mBtns"><button class="btnG" id="pwCancel"><span data-doc-label="cancel">Hủy</span></button><button class="btnP" id="pwOk"><span data-doc-label="openFile">Mở tệp</span></button></div>
-</div></div>
-<div class="modalWrap" id="errWrap"><div class="modal" id="errModal" role="dialog" aria-modal="true" aria-labelledby="errTitle" aria-describedby="errMsg">
-<div class="errHeader"><div class="errIco"><svg class="i" viewbox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg></div><h4 id="errTitle"></h4></div>
-<p id="errMsg"></p><div class="pdfAccessSteps" id="errAccessSteps" hidden><div class="pdfAccessStep"><span class="accessNum">1</span><span><span data-doc-label="pdfAccessStep1Before">Mở </span><b data-doc-label="pdfAccessExtensions">Tiện ích</b><span data-doc-label="pdfAccessStep1After"> trên Chrome, chọn </span><b data-doc-label="pdfAccessKeepit">Keepit.</b></span></div><div class="pdfAccessStep"><span class="accessNum">2</span><span><span data-doc-label="pdfAccessStep2Before">Bật </span><b data-doc-label="pdfAccessFileUrls">Cho phép truy cập URL tệp.</b></span></div></div><div class="hint" id="errHint"></div>
-<div class="mBtns"><button class="btnP" id="errChoose" hidden><span data-doc-label="pdfChooseFile">Chọn PDF</span></button><button class="btnG" id="errOk"><span data-doc-label="understood">Đã hiểu</span></button></div>
-</div></div>
-<div class="toast" id="toast"></div>
+      <section class="kpFGroup">
+        <h3>Kết quả trên tệp</h3>
+        <div class="kpFRow">
+          <label for="kpOcrOcrOutput">Kiểu đầu ra</label>
+          <select id="kpOcrOcrOutput">
+            <option value="searchable" selected>Ảnh gốc + lớp chữ ẩn</option>
+          </select>
+        </div>
+        <div class="kpFRow">
+          <label for="kpOcrOcrRes">Độ phân giải dò</label>
+          <select id="kpOcrOcrRes">
+            <option value="1280" selected>1280 px · chính xác</option>
+            <option value="960">960 px</option>
+            <option value="640">640 px · nhanh</option>
+          </select>
+        </div>
+        <div class="kpChecks">
+          <label><input type="checkbox" id="kpOcrOptTiny" checked><span>Bỏ vùng chữ rất nhỏ khi chữ trên trang chênh lệch rõ</span></label>
+          <label><input type="checkbox" id="kpOcrOptLoop" checked><span>Dừng khi cùng một dòng lặp 12 lần</span></label>
+          <label><input type="checkbox" id="kpOcrOptTime" checked><span>Giới hạn 90 giây mỗi vùng</span></label>
+          <label><input type="checkbox" id="kpOcrOptBoxes" checked><span>Hiện khung vùng đã nhận dạng trên trang</span></label>
+        </div>
+      </section>
+
+      <section class="kpFGroup">
+        <h3>Tuỳ chọn engine</h3>
+        <div class="kpFRow" data-for="pp"><label for="kpOcrPpScale">Độ phân giải PDF</label><select id="kpOcrPpScale"><option value="1.5">~108 DPI</option><option value="2" selected>~144 DPI</option><option value="3">~216 DPI</option></select></div>
+        <div class="kpFRow" data-for="fusor"><label for="kpOcrThreads">Số luồng</label><select id="kpOcrThreads"><option value="4">4 luồng</option><option value="2">2 luồng</option><option value="6">6 luồng</option><option value="1">1 luồng</option><option value="8">8 luồng</option></select></div>
+        <div class="kpFRow" data-for="fusor"><label>Model Fusor</label><button class="kpVbtn" id="kpOcrFolder">Chọn thư mục model</button></div>
+        <p class="kpFHint" id="kpOcrModelStatus">Chưa chọn thư mục model.</p>
+        <div class="kpFRow" data-for="fusor"><label for="kpOcrFusorMethod">Phương pháp</label><select id="kpOcrFusorMethod"><option value="auto" selected>Tự động · chọn theo từng ảnh</option><option value="regions">Từng vùng chữ</option><option value="full">Toàn trang</option></select></div>
+        <p class="kpFHint" id="kpOcrAutoHint">Tự động dò vùng trước: ít vùng → đọc cả trang; nhiều vùng cỡ chữ chênh lệch → bỏ vùng rất nhỏ; nhiều vùng đều cỡ → đọc mọi vùng.</p>
+        <select id="kpOcrDetLimit" hidden><option value="640">640</option><option value="960">960 · nhanh</option><option value="1280" selected>1280</option><option value="1600">1600 · chữ nhỏ</option></select>
+        <select id="kpOcrRegionLimit" hidden><option value="640">640</option><option value="960">960</option><option value="1280" selected>1280</option><option value="1600">1600</option></select>
+        <select id="kpOcrRegionPolicy" hidden><option value="main" selected>Ưu tiên chữ chính</option><option value="all">Mọi vùng phát hiện</option></select>
+        <select id="kpOcrRegionTimeout" hidden><option value="60">60 giây</option><option value="90" selected>90 giây</option><option value="180">180 giây</option><option value="0">Không giới hạn</option></select>
+        <input type="checkbox" id="kpOcrLoopGuard" checked hidden>
+        <div id="kpOcrPpOptions" hidden></div>
+        <div id="kpOcrFusorOptions" hidden></div>
+      </section>
+
+      <select id="kpOcrScope" hidden>
+        <option value="current">Trang hiện tại</option>
+        <option value="all">Tất cả các trang</option>
+        <option value="range">Khoảng trang</option>
+      </select>
+      <input id="kpOcrShowBoxes" type="checkbox" hidden>
+      <span id="kpOcrRangeBox" hidden></span>
+    </div>
+
+    <footer class="kpOcrFoot">
+      <span class="kpFootNote">Chạy trên máy · tệp không rời máy</span>
+      <button id="kpOcrOcrCancel">Hủy</button>
+      <button class="kpPrimary" id="kpOcrRun" disabled>Nhận dạng chữ</button>
+    </footer>
+  </section><section class="kpOcrProg" id="kpOcrOcrProg" aria-live="polite">
+    <header class="kpProgHead">
+      <span class="kpDot"></span>
+      <b id="kpOcrProgTitle">Đang nhận dạng chữ</b>
+      <span class="kpPg" id="kpOcrProgPage">Trang 1/1</span>
+      <button class="kpVbtn" id="kpOcrProgClose" aria-label="Đóng" style="min-width:28px;height:28px;padding:0">✕</button>
+    </header>
+    <div class="kpProgBody">
+      <div class="kpStTop"><b id="kpOcrPTitle">Đang chuẩn bị…</b><span class="kpClock" id="kpOcrPClock">0.0 giây</span></div>
+      <progress id="kpOcrProgress" max="1" value="0"></progress>
+      <div class="kpPLog" id="kpOcrPLog"></div>
+      <div class="kpPDone" id="kpOcrPDone">
+        <div class="kpSum" id="kpOcrPSum"></div>
+        <div class="kpWarn" id="kpOcrPWarn"></div>
+      </div>
+      <div class="kpProgFoot">
+        <button class="kpPrimary" id="kpOcrStop" disabled>Dừng</button>
+        <button id="kpOcrPForce" hidden>Buộc dừng</button>
+        <button id="kpOcrPAgain" hidden>Nhận dạng lại</button>
+        <button id="kpOcrPRegion" hidden>Chọn vùng</button>
+      </div>
+    </div>
+    <span id="kpOcrStatus" hidden></span>
+  </section><section class="kpRegionEditor" id="kpOcrRegionEditor" hidden>
+    <div class="kpReHead"><b>Bổ sung vùng</b><span>Chọn một hoặc nhiều vùng</span></div>
+    <label for="kpOcrRegionText">Chữ trong vùng đã chọn · mỗi dòng một hàng</label>
+    <textarea id="kpOcrRegionText" placeholder="Bấm “Nhận dạng vùng” hoặc nhập tay chữ cho vùng này…"></textarea>
+    <div class="kpRow">
+      <button id="kpOcrOcrRegion" disabled>Nhận dạng vùng</button>
+      <button id="kpOcrApplyRegion" disabled>Áp dụng</button>
+      <button id="kpOcrCancelRegion">Hủy</button>
+    </div>
+  </section></div><div class="kpOcrUi"><div class="kpOcrToast" id="kpOcrToast"></div></div>
 <script src="../js/core/browser-polyfill.js"></script><script src="../js/core/messaging.js"></script><script src="../js/core/defaults.js"></script><script src="../js/core/config.js"></script><script src="../js/core/settings.js"></script><script src="../js/core/languages.js"></script><script src="../js/core/shortcuts.js"></script><script src="../js/shared/theme-tokens.js"></script><script src="../js/content/keepit-bar-css.js"></script><script src="../js/shared/sheet-kit.js"></script><script src="../js/shared/selection-toolbar.js"></script><script src="../js/shared/search.js"></script><script src="../js/shared/icons.js"></script><script src="../js/shared/thumbnails.js"></script><script src="../js/shared/site-icons.js"></script><script src="../js/reader/tts-engine.js"></script><script src="../js/translate/study-translation.js"></script><script src="../js/translate/dictionary.js"></script><script src="../js/content/web-highlighter.js"></script><script src="../js/content/sentence-note.js"></script><script src="../js/content/ui-components.js"></script><script src="../js/content/page-layout.js"></script><script src="../js/content/sidebar.js"></script><script src="../js/content/note-composer.js"></script><script src="../js/content/annotation-restore.js"></script><script src="../js/ask-ai/sheet.js"></script><script src="../js/dashboard/documents-context.js"></script><script src="../js/shared/heart-effects.js"></script><script src="../js/content/content.js"></script><script src="../vendor/readability/Readability.js"></script><script src="../vendor/readability/Readability-readerable.js"></script><script src="../js/reader/bilingual-flags.js"></script><script src="../js/reader/reader-css.js"></script><script src="../js/reader/bilingual-reader.js"></script><script src="../js/word-class/core.js"></script><script src="../js/ocr/core.js"></script><script src="../js/dashboard/documents-store.js"></script><script src="../js/dashboard/documents-renderers.js"></script><script src="../js/content/keepit-bar.js"></script><script src="../js/dashboard/documents.js"></script><script type="module" src="../js/ocr/engine.js"></script><script src="../js/ocr/ui.js"></script><script src="../js/ocr/run.js"></script>
-<div class="kpOcrScrim" id="kpOcrScrim"></div><section class="kpOcrModal" id="kpOcrModal" role="dialog" aria-modal="true" aria-labelledby="kpOcrModalTitle"><header><b id="kpOcrModalTitle" data-doc-label="ocrTitle">Nhận dạng chữ (OCR)</b><button class="x" id="kpOcrCancel" aria-label="Đóng">✕</button></header><div class="kpOcrBody"><div class="fg"><h3 data-doc-label="ocrGroupScope">Phạm vi trang</h3><div class="choices" id="kpOcrScope"><label class="choice"><input type="radio" name="kpOcrScope" value="page" checked><span data-doc-label="ocrScopePage">Trang này</span></label><label class="choice"><input type="radio" name="kpOcrScope" value="all"><span id="kpOcrScopeAll">Cả tài liệu</span></label></div></div><div class="fg"><h3 data-doc-label="ocrGroupMode">Cách nhận dạng</h3><div class="choices" id="kpOcrModes"><label class="choice"><input type="radio" name="kpOcrMode" value="pp" checked><span data-doc-label="ocrModePP">Nhanh (PP-OCR)</span></label><label class="choice"><input type="radio" name="kpOcrMode" value="fusor"><span data-doc-label="ocrModeFusor">Fusor (cần model)</span></label><label class="choice"><input type="radio" name="kpOcrMode" value="tess"><span data-doc-label="ocrModeTess">Tesseract</span></label></div><p class="hint" data-doc-label="ocrModeHint">Nhanh đọc theo dòng và chạy trong worker; Fusor đọc cả trang và cần tải model một lần; Tesseract có sẵn, hợp với ảnh chụp.</p></div><div class="fg"><h3 data-doc-label="ocrGroupResult">Kết quả trên tệp</h3><p class="hint" data-doc-label="ocrResultHint">Văn bản được ghi vào lớp chữ của trang nên chọn chữ, Dịch, Đọc to, Ghi chú và tìm kiếm dùng được ngay; bản đầy đủ nằm ở panel phải.</p></div></div><div class="kpOcrFoot"><button id="kpOcrCancel2" data-doc-label="ocrCancel">Hủy</button><button class="primary" id="kpOcrRun" data-doc-label="ocrRun">Nhận dạng chữ</button></div></section>
-<section class="kpOcrCard" id="kpOcrProg" aria-live="polite"><header><span class="dot"></span><b id="kpOcrProgTitle">Đang nhận dạng chữ</b><span class="pg" id="kpOcrProgPage"></span><button class="x" id="kpOcrProgClose" aria-label="Đóng">✕</button></header><div class="pBody"><div class="stTop"><b id="kpT">Đang chuẩn bị…</b><span class="clock" id="kpClock">0.0 giây</span></div><progress id="kpBar" max="1" value="0"></progress><div class="pLog" id="kpLog"></div><div class="pDone" id="kpDone"><div class="sum" id="kpSum"></div><div class="warn" id="kpWarn"></div></div><div class="pFoot"><button class="primary" id="kpStop">Dừng</button><button id="kpForce" hidden>Buộc dừng</button><button id="kpAgain" hidden>Nhận dạng lại</button><button id="kpRegion" hidden>Chọn vùng</button></div></div></section>
-<div class="kpOcrToast" id="kpToast"></div>
 </body>
 </html>

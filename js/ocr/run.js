@@ -37,13 +37,19 @@
     return card;
   }
 
-  const totalPages = () => options.scope === 'all' ? (docs()?.info?.()?.pages || 1) : 1;
+  const totalPages = () => options.scope === 'all' ? (docs()?.info?.()?.pages || 1) : options.scope === 'range' ? pageList().length : 1;
   let applied = 0;
   const donePages = () => applied;
 
   function pageList() {
     const info = docs().info();
-    return options.scope === 'all' ? Array.from({ length: Math.max(1, info.pages) }, (_, index) => index + 1) : [info.page];
+    if (options.scope === 'all') return Array.from({ length: Math.max(1, info.pages) }, (_, index) => index + 1);
+    if (options.scope === 'range') {
+      const first = Math.max(1, Math.min(info.pages, Number(options.from) || info.page));
+      const last = Math.max(first, Math.min(info.pages, Number(options.to) || info.pages));
+      return Array.from({ length: last - first + 1 }, (_, index) => first + index);
+    }
+    return [info.page];
   }
 
   async function start() {
@@ -62,7 +68,7 @@
         if (stopRequested) break;
         ui().setPage(t('ocrPageOf', { page, total: pages.length > 1 ? pages.length : info.pages }));
         ui().progress(index / pages.length);
-        const canvas = await docs().raster(page);
+        const canvas = await docs().raster(page, options.longSide || 2000);
         if (!canvas) { failures.push({ page, error: t('ocrNoRaster') }); continue; }
         let result = null, error = null;
         try { result = await recognize(canvas, page); }
@@ -104,6 +110,7 @@
       label: t('ocrPageLabel', { page }),
       seconds: 0,
       forImage: !!docs()?.info?.()?.image,
+      langs: options.langs || 'eng+vie+kor',
       onProgress: event => {
         if (event?.stage === 'recognize' && typeof event.progress === 'number') ui().setState(t('ocrWorking', { percent: Math.round(event.progress * 100) }));
         else if (event?.stage === 'variant') ui().setState(t('ocrVariant', { index: event.index, count: event.count }));
@@ -124,7 +131,7 @@
     if (!info) return;
     const rect = await ui().selectRegion({ label: t('ocrRegionHint') });
     if (!rect) return;
-    const canvas = await docs().raster(info.page);
+    const canvas = await docs().raster(info.page, options.longSide || 2000);
     if (!canvas) return;
     const left = Math.floor(rect[0] * canvas.width), top = Math.floor(rect[1] * canvas.height);
     const width = Math.max(1, Math.ceil(rect[2] * canvas.width) - left), height = Math.max(1, Math.ceil(rect[3] * canvas.height) - top);

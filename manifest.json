@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.614",
+  "version": "3.5.615",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
+  "cross_origin_embedder_policy": { "value": "require-corp" },
+  "cross_origin_opener_policy": { "value": "same-origin" },
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
@@ -216,7 +218,8 @@
         "assets/fonts/TwemojiCountryFlags.woff2",
         "assets/images/web-thumbnail-lofi.webp",
         "pages/ai-panel.html",
-        "pages/pdf-suggestion.html"
+        "pages/pdf-suggestion.html",
+          "vendor/ocr/*"
       ],
       "matches": [
         "<all_urls>"
@@ -231,7 +234,8 @@
     "https://lingva.thedaviddelta.com/*",
     "https://fonts.googleapis.com/*",
     "https://fonts.gstatic.com/*",
-    "https://huggingface.co/*"
+    "https://huggingface.co/*",
+    "https://*.hf.co/*"
   ],
   "action": {
     "default_title": "Keepit - Translate, Learn, Ask AI",

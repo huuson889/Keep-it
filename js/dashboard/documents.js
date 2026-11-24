@@ -929,13 +929,13 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
     return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: activeEngine?.pages?.length || V.doc.pages || 1, image: !!V.doc.image };
   },
   /* Raster một trang ở độ phân giải đủ cho OCR (~2000 px cạnh dài) mà không đụng trang đang hiện. */
-  async raster(page) {
+  async raster(page, longSide = 2000) {
     const spec = activeEngine?.pages?.[page - 1];
     if (!spec) return null;
     /* Trang đã vẽ đủ nét thì chép lại, khỏi dựng lại; ảnh thì vẽ sang canvas thật. */
     const shown = document.querySelector(`#pageStack > [data-page="${page}"] .docsSource`) || document.querySelector(`#pageStack [data-page="${page}"] .docsSource`);
     const live = shown?.querySelector(':scope > canvas:not(.pdfDetail)');
-    const factor = Math.max(1, Math.min(2.6, 2000 / Math.max(1, spec.width, spec.height)));
+    const factor = Math.max(1, Math.min(3.2, Number(longSide) / Math.max(1, spec.width, spec.height)));
     if (live && live.width >= Math.min(1400, spec.width * factor * .9)) {
       const copy = document.createElement('canvas');
       copy.width = live.width; copy.height = live.height;
@@ -970,8 +970,8 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
     if (!spec || !text) return 0;
     const core = globalThis.LHN_OCR_CORE;
     const lines = core ? core.groupLines(result.boxes || []) : [];
-    const paragraphs = core ? core.groupParagraphs(lines) : [{ text, rect: [0, 0, 1, 1], lines: [] }];
-    if (!paragraphs.length) return 0;
+    let paragraphs = core ? core.groupParagraphs(lines) : [];
+    if (!paragraphs.length) paragraphs = [{ text, rect: [0.06, 0.06, 0.94, 0.94], lines: [] }];
     spec.texts = spec.texts || []; spec.paragraphs = spec.paragraphs || [];
     const base = spec.texts.length;
     for (const paragraph of paragraphs) {

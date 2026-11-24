@@ -265,7 +265,7 @@ function fusorRead(canvas, label, seconds, onProgress) {
   }).finally(() => { clearTimeout(timeout); clearTimeout(force); });
 }
 
-async function fusorRun(canvas, { label = 'page', seconds = 0, onProgress } = {}) {
+async function fusorRun(canvas, { label = 'page', seconds = 0, onProgress, langs = 'eng+vie+kor' } = {}) {
   await loadModel({ onProgress });
   const answer = await fusorRead(canvas, label, seconds, onProgress);
   if (answer?.timedOut) throw new Error('ocrRegionTimeout');
@@ -273,7 +273,7 @@ async function fusorRun(canvas, { label = 'page', seconds = 0, onProgress } = {}
   const text = String(answer?.text || '').trim();
   if (!text) return { text: '', boxes: [] };
   onProgress?.({ stage: 'align' });
-  const matchWorker = await newTess('eng+vie+kor');
+  const matchWorker = await newTess(langs);
   await matchWorker.setParameters({ tessedit_pageseg_mode: '11' });
   const { data } = await matchWorker.recognize(canvas, {}, { blocks: true, text: true });
   if (stopped) throw new Error('ocrStopped');
@@ -291,7 +291,7 @@ export async function runCanvas(mode, canvas, options = {}) {
   stopped = false;
   if (mode === 'pp') return ppRun(canvas, options);
   if (mode === 'fusor') return fusorRun(canvas, options);
-  return tessRun(canvas, options);
+  return tessRun(canvas, { ...options, langs: options.langs || 'eng+vie+kor' });
 }
 
 /* Dừng mềm: cắt việc đang chạy, GIỮ model Fusor trong RAM để chạy lại ngay. */

@@ -1,77 +1,553 @@
-// OCR UI cho Tài liệu — dùng đúng các khối markup trong pages/documents.html để bố cục
-// giống bản demo: gợi ý ảnh quét (thẻ vàng + bóng đèn), popup giữa, panel phải
-// “Văn bản nhận dạng”, thẻ tiến độ góc phải dưới. Nhãn lấy từ languages.js.
+
+/* v3.5.615: markup port nguyên văn demo (tiếng Việt) — đổi nhãn sang ngôn ngữ đang dùng */
+const DEMO_TEXT = [
+  ["Chữ in: đọc thẳng cả trang một lượt, nhanh nhất với tài liệu in rõ.", 'ocrHintTess'],
+  ["Printed text: reads the whole page in one pass, fastest for clean print.", 'ocrHintTess'],
+  ["인쇄체: 페이지 전체를 한 번에 읽어 깨끗한 인쇄물에 가장 빠릅니다.", 'ocrHintTess'],
+  ["Nhận dạng chữ", 'ocrUiRunBtn'],
+  ["Trang này là ảnh quét nên chưa có lớp chữ — Dịch, Đọc to và Ghi chú chưa dùng được. Chạy nhận dạng để chọn, sao chép và tìm kiếm được chữ.", 'ocrUiBanner'],
+  ["Không hiện lại", 'ocrUiNoAsk'],
+  ["Nhận dạng chữ (OCR)", 'ocrUiTitle'],
+  ["Chưa mở tệp", 'ocrUiNoFile'],
+  ["Phạm vi trang", 'ocrUiScope'],
+  ["Trang đang xem", 'ocrUiScopeCurrent'],
+  ["Tất cả các trang", 'ocrUiScopeAll'],
+  ["Từ trang", 'ocrUiFromPage'],
+  ["đến", 'ocrUiToPage'],
+  ["trong", 'ocrUiOfA'],
+  ["trang", 'ocrUiOfB'],
+  ["Ngôn ngữ tài liệu", 'ocrUiLangGroup'],
+  ["Đang chọn", 'ocrUiLangPick'],
+  ["Cách nhận dạng", 'ocrUiMode'],
+  ["Chữ in", 'ocrUiPrinted'],
+  ["Nhanh", 'ocrUiFast'],
+  ["Viết tay", 'ocrUiHand'],
+  ["Kết quả trên tệp", 'ocrUiResult'],
+  ["Kiểu đầu ra", 'ocrUiOutput'],
+  ["Ảnh gốc + lớp chữ ẩn", 'ocrUiOutputText'],
+  ["Độ phân giải dò", 'ocrUiRes'],
+  ["1280 px · chính xác", 'ocrUiRes1280'],
+  ["960 px", 'ocrUiRes960'],
+  ["640 px · nhanh", 'ocrUiRes640'],
+  ["Bỏ vùng chữ rất nhỏ khi chữ trên trang chênh lệch rõ", 'ocrUiTiny'],
+  ["Dừng khi cùng một dòng lặp 12 lần", 'ocrUiLoop'],
+  ["Giới hạn 90 giây mỗi vùng", 'ocrUiTime'],
+  ["Hiện khung vùng đã nhận dạng trên trang", 'ocrUiBoxes'],
+  ["Tuỳ chọn engine", 'ocrUiEngine'],
+  ["Độ phân giải PDF", 'ocrUiDpi'],
+  ["Số luồng", 'ocrUiThreads'],
+  ["{n} luồng", 'ocrUiThreadN'],
+  ["Model Fusor", 'ocrUiModel'],
+  ["Chọn thư mục model", 'ocrUiChooseFolder'],
+  ["Chưa chọn thư mục model.", 'ocrUiModelMissing'],
+  ["Phương pháp", 'ocrUiMethod'],
+  ["Tự động · chọn theo từng ảnh", 'ocrUiMethodAuto'],
+  ["Từng vùng chữ", 'ocrUiMethodRegion'],
+  ["Toàn trang", 'ocrUiMethodPage'],
+  ["Tự động dò vùng trước: ít vùng → đọc cả trang; nhiều vùng cỡ chữ chênh lệch → bỏ vùng rất nhỏ; nhiều vùng đều cỡ → đọc mọi vùng.", 'ocrUiAutoHint'],
+  ["960 · nhanh", 'ocrUiDet960Fast'],
+  ["1600 · chữ nhỏ", 'ocrUiDet1600Small'],
+  ["Ưu tiên chữ chính", 'ocrUiPriority'],
+  ["Mọi vùng phát hiện", 'ocrUiAllRegions'],
+  ["60 giây", 'ocrUiSec60'],
+  ["90 giây", 'ocrUiSec90'],
+  ["180 giây", 'ocrUiSec180'],
+  ["Không giới hạn", 'ocrUiUnlimited'],
+  ["Trang hiện tại", 'ocrUiScopeCurrentOpt'],
+  ["Khoảng trang", 'ocrUiScopeRangeOpt'],
+  ["Chạy trên máy · tệp không rời máy", 'ocrUiFoot'],
+  ["Hủy", 'ocrUiCancel'],
+  ["Đang nhận dạng chữ", 'ocrUiRunning'],
+  ["Đang chuẩn bị…", 'ocrUiPreparing'],
+  ["Dừng", 'ocrUiStopBtn'],
+  ["Buộc dừng", 'ocrUiForce'],
+  ["Nhận dạng lại", 'ocrUiAgain'],
+  ["Chọn vùng", 'ocrUiPickRegion'],
+  ["Bổ sung vùng", 'ocrUiAddRegion'],
+  ["Chọn một hoặc nhiều vùng", 'ocrUiPickMany'],
+  ["Chữ trong vùng đã chọn · mỗi dòng một hàng", 'ocrUiRegionBoxText'],
+  ["Nhận dạng vùng", 'ocrUiRunRegion'],
+  ["Áp dụng", 'ocrUiApply'],
+  ["Văn bản nhận dạng", 'ocrUiPanelTitle'],
+  ["Thu gọn thông báo", 'ocrUiCollapse'],
+  ["Thu gọn", 'ocrUiCollapseShort'],
+  ["Thông báo nhận dạng chữ", 'ocrUiToastLabel'],
+  ["Trang này chưa có lớp chữ — bấm để xem", 'ocrUiBadgeNoText'],
+  ["Đóng", 'ocrUiClose'],
+  ["Chọn trang bắt đầu", 'ocrUiPickStart'],
+  ["Đến trang", 'ocrUiToPageLabel'],
+  ["Chọn trang kết thúc", 'ocrUiPickEnd'],
+  ["Tìm ngôn ngữ… (Anh, Việt, Hàn)", 'ocrUiSearchLang'],
+  ["Bấm “Nhận dạng vùng” hoặc nhập tay chữ cho vùng này…", 'ocrUiRegionPlaceholder'],
+  ["Kéo để đổi độ rộng", 'ocrUiDragResize'],
+  ["Đổi độ rộng bảng", 'ocrUiResizeTitle'],
+  ["Sao chép văn bản", 'ocrUiCopy'],
+  ["Tải tệp TXT", 'ocrUiSaveTxt'],
+  ["Tải PDF có lớp chữ", 'ocrUiSavePdf'],
+  ["Chọn vùng để bổ sung chữ", 'ocrUiRegionBadge'],
+  ["Áp dụng phần chữ đã sửa", 'ocrUiApplyEdit'],
+  ["Đóng bảng văn bản", 'ocrUiClosePanel'],
+  ["Đóng (không lưu thay đổi)", 'ocrUiCloseNoSave'],
+  ["Văn bản nhận dạng của trang sẽ hiện ở đây. Sửa trực tiếp được.", 'ocrUiPanelEmpty'],
+  ["Recognise text", 'ocrUiRunBtn'],
+  ["텍스트 인식", 'ocrUiRunBtn'],
+  ["This page is a scan with no text layer — Translate, Read aloud and Notes are not usable yet. Run recognition to select, copy and search the text.", 'ocrUiBanner'],
+  ["이 페이지는 스캔 이미지라 텍스트 레이어가 없습니다 — 번역, 소리 내어 읽기, 메모를 아직 쓸 수 없습니다. 인식을 실행하면 텍스트를 선택·복사·검색할 수 있습니다.", 'ocrUiBanner'],
+  ["Don't show again", 'ocrUiNoAsk'],
+  ["다시 표시 안 함", 'ocrUiNoAsk'],
+  ["Recognise text (OCR)", 'ocrUiTitle'],
+  ["텍스트 인식 (OCR)", 'ocrUiTitle'],
+  ["No file open", 'ocrUiNoFile'],
+  ["열린 파일 없음", 'ocrUiNoFile'],
+  ["Page range", 'ocrUiScope'],
+  ["페이지 범위", 'ocrUiScope'],
+  ["Current page", 'ocrUiScopeCurrent'],
+  ["현재 페이지", 'ocrUiScopeCurrent'],
+  ["All pages", 'ocrUiScopeAll'],
+  ["모든 페이지", 'ocrUiScopeAll'],
+  ["From page", 'ocrUiFromPage'],
+  ["시작 페이지", 'ocrUiFromPage'],
+  ["to", 'ocrUiToPage'],
+  ["끝", 'ocrUiToPage'],
+  ["of", 'ocrUiOfA'],
+  ["중", 'ocrUiOfA'],
+  ["pages", 'ocrUiOfB'],
+  ["페이지", 'ocrUiOfB'],
+  ["Document languages", 'ocrUiLangGroup'],
+  ["문서 언어", 'ocrUiLangGroup'],
+  ["Selected", 'ocrUiLangPick'],
+  ["선택됨", 'ocrUiLangPick'],
+  ["Recognition method", 'ocrUiMode'],
+  ["인식 방법", 'ocrUiMode'],
+  ["Printed", 'ocrUiPrinted'],
+  ["인쇄체", 'ocrUiPrinted'],
+  ["Fast", 'ocrUiFast'],
+  ["빠름", 'ocrUiFast'],
+  ["Handwriting", 'ocrUiHand'],
+  ["필기체", 'ocrUiHand'],
+  ["Result on the file", 'ocrUiResult'],
+  ["파일 결과", 'ocrUiResult'],
+  ["Output type", 'ocrUiOutput'],
+  ["출력 형식", 'ocrUiOutput'],
+  ["Original image + hidden text layer", 'ocrUiOutputText'],
+  ["원본 이미지 + 숨은 텍스트 레이어", 'ocrUiOutputText'],
+  ["Scan resolution", 'ocrUiRes'],
+  ["스캔 해상도", 'ocrUiRes'],
+  ["1280 px · accurate", 'ocrUiRes1280'],
+  ["1280 px · 정확", 'ocrUiRes1280'],
+  ["640 px · fast", 'ocrUiRes640'],
+  ["640 px · 빠름", 'ocrUiRes640'],
+  ["Drop very small text boxes when type sizes differ clearly", 'ocrUiTiny'],
+  ["글자 크기 차이가 뚜렷하면 아주 작은 영역은 버림", 'ocrUiTiny'],
+  ["Stop when a line repeats 12 times", 'ocrUiLoop'],
+  ["같은 줄이 12번 반복되면 중지", 'ocrUiLoop'],
+  ["Limit 90 seconds per region", 'ocrUiTime'],
+  ["영역당 90초 제한", 'ocrUiTime'],
+  ["Show recognised boxes on the page", 'ocrUiBoxes'],
+  ["인식된 영역 상자를 페이지에 표시", 'ocrUiBoxes'],
+  ["Engine options", 'ocrUiEngine'],
+  ["엔진 옵션", 'ocrUiEngine'],
+  ["PDF resolution", 'ocrUiDpi'],
+  ["PDF 해상도", 'ocrUiDpi'],
+  ["Threads", 'ocrUiThreads'],
+  ["스레드 수", 'ocrUiThreads'],
+  ["{n} threads", 'ocrUiThreadN'],
+  ["{n} 스레드", 'ocrUiThreadN'],
+  ["Fusor model", 'ocrUiModel'],
+  ["Fusor 모델", 'ocrUiModel'],
+  ["Choose model folder", 'ocrUiChooseFolder'],
+  ["모델 폴더 선택", 'ocrUiChooseFolder'],
+  ["No model folder chosen yet.", 'ocrUiModelMissing'],
+  ["모델 폴더를 아직 선택하지 않았습니다.", 'ocrUiModelMissing'],
+  ["Method", 'ocrUiMethod'],
+  ["방식", 'ocrUiMethod'],
+  ["Auto · per image", 'ocrUiMethodAuto'],
+  ["자동 · 이미지별 선택", 'ocrUiMethodAuto'],
+  ["Text regions", 'ocrUiMethodRegion'],
+  ["텍스트 영역별", 'ocrUiMethodRegion'],
+  ["Whole page", 'ocrUiMethodPage'],
+  ["전체 페이지", 'ocrUiMethodPage'],
+  ["Auto: detect regions first — few regions → read the whole page; many regions with mixed sizes → drop the smallest; many same-size regions → read every region.", 'ocrUiAutoHint'],
+  ["자동: 먼저 영역을 감지합니다 — 영역이 적으면 전체 페이지를 읽고, 크기가 다른 영역이 많으면 아주 작은 영역을 버리며, 같은 크기 영역이 많으면 모든 영역을 읽습니다.", 'ocrUiAutoHint'],
+  ["960 · fast", 'ocrUiDet960Fast'],
+  ["960 · 빠름", 'ocrUiDet960Fast'],
+  ["1600 · small text", 'ocrUiDet1600Small'],
+  ["1600 · 작은 글자", 'ocrUiDet1600Small'],
+  ["Prefer main text", 'ocrUiPriority'],
+  ["본문 우선", 'ocrUiPriority'],
+  ["All detected regions", 'ocrUiAllRegions'],
+  ["감지된 모든 영역", 'ocrUiAllRegions'],
+  ["60 seconds", 'ocrUiSec60'],
+  ["60초", 'ocrUiSec60'],
+  ["90 seconds", 'ocrUiSec90'],
+  ["90초", 'ocrUiSec90'],
+  ["180 seconds", 'ocrUiSec180'],
+  ["180초", 'ocrUiSec180'],
+  ["No limit", 'ocrUiUnlimited'],
+  ["제한 없음", 'ocrUiUnlimited'],
+  ["Runs on your device · the file never leaves it", 'ocrUiFoot'],
+  ["기기에서 실행 · 파일은 밖으로 나가지 않습니다", 'ocrUiFoot'],
+  ["Cancel", 'ocrUiCancel'],
+  ["취소", 'ocrUiCancel'],
+  ["Recognising text", 'ocrUiRunning'],
+  ["텍스트 인식 중", 'ocrUiRunning'],
+  ["Preparing…", 'ocrUiPreparing'],
+  ["준비 중…", 'ocrUiPreparing'],
+  ["Stop", 'ocrUiStopBtn'],
+  ["중지", 'ocrUiStopBtn'],
+  ["Force stop", 'ocrUiForce'],
+  ["강제 중지", 'ocrUiForce'],
+  ["Recognise again", 'ocrUiAgain'],
+  ["다시 인식", 'ocrUiAgain'],
+  ["Select region", 'ocrUiPickRegion'],
+  ["영역 선택", 'ocrUiPickRegion'],
+  ["Add region", 'ocrUiAddRegion'],
+  ["영역 추가", 'ocrUiAddRegion'],
+  ["Select one or more regions", 'ocrUiPickMany'],
+  ["영역을 하나 이상 선택", 'ocrUiPickMany'],
+  ["Text in the selected region · one line per row", 'ocrUiRegionBoxText'],
+  ["선택한 영역의 텍스트 · 한 줄에 한 행", 'ocrUiRegionBoxText'],
+  ["Recognise region", 'ocrUiRunRegion'],
+  ["영역 인식", 'ocrUiRunRegion'],
+  ["Apply", 'ocrUiApply'],
+  ["적용", 'ocrUiApply'],
+  ["Recognised text", 'ocrUiPanelTitle'],
+  ["인식된 텍스트", 'ocrUiPanelTitle'],
+  ["Collapse message", 'ocrUiCollapse'],
+  ["알림 접기", 'ocrUiCollapse'],
+  ["Collapse", 'ocrUiCollapseShort'],
+  ["접기", 'ocrUiCollapseShort'],
+  ["Recognition notice", 'ocrUiToastLabel'],
+  ["인식 알림", 'ocrUiToastLabel'],
+  ["This page has no text layer — click to view", 'ocrUiBadgeNoText'],
+  ["이 페이지에는 텍스트 레이어가 없습니다 — 클릭하여 보기", 'ocrUiBadgeNoText'],
+  ["Close", 'ocrUiClose'],
+  ["닫기", 'ocrUiClose'],
+  ["Choose start page", 'ocrUiPickStart'],
+  ["시작 페이지 선택", 'ocrUiPickStart'],
+  ["To page", 'ocrUiToPageLabel'],
+  ["끝 페이지", 'ocrUiToPageLabel'],
+  ["Choose end page", 'ocrUiPickEnd'],
+  ["끝 페이지 선택", 'ocrUiPickEnd'],
+  ["Search languages… (English, Vietnamese, Korean)", 'ocrUiSearchLang'],
+  ["언어 검색… (영어, 베트남어, 한국어)", 'ocrUiSearchLang'],
+  ["Press “Recognise region” or type the text for this region…", 'ocrUiRegionPlaceholder'],
+  ["“영역 인식”을 누르거나 이 영역의 텍스트를 직접 입력하세요…", 'ocrUiRegionPlaceholder'],
+  ["Drag to resize", 'ocrUiDragResize'],
+  ["끌어서 너비 조정", 'ocrUiDragResize'],
+  ["Resize panel", 'ocrUiResizeTitle'],
+  ["패널 너비 조정", 'ocrUiResizeTitle'],
+  ["Copy text", 'ocrUiCopy'],
+  ["텍스트 복사", 'ocrUiCopy'],
+  ["Download TXT", 'ocrUiSaveTxt'],
+  ["TXT 다운로드", 'ocrUiSaveTxt'],
+  ["Download PDF with text layer", 'ocrUiSavePdf'],
+  ["텍스트 레이어 PDF 다운로드", 'ocrUiSavePdf'],
+  ["Pick a region to add text", 'ocrUiRegionBadge'],
+  ["텍스트를 추가할 영역 선택", 'ocrUiRegionBadge'],
+  ["Apply edited text", 'ocrUiApplyEdit'],
+  ["수정한 텍스트 적용", 'ocrUiApplyEdit'],
+  ["Close text panel", 'ocrUiClosePanel'],
+  ["텍스트 패널 닫기", 'ocrUiClosePanel'],
+  ["Close (discard changes)", 'ocrUiCloseNoSave'],
+  ["닫기 (변경 사항 버림)", 'ocrUiCloseNoSave'],
+  ["Recognised text for the page shows here. You can edit it directly.", 'ocrUiPanelEmpty'],
+  ["페이지의 인식된 텍스트가 여기에 표시되며 직접 수정할 수 있습니다.", 'ocrUiPanelEmpty'],
+  ["Đã chọn thư mục model", 'ocrModelReady'],
+  ["Nhanh: đọc theo từng dòng trong worker, giao diện không đơ.", 'ocrHintPP'],
+  ["Viết tay: model Fusor đọc cả trang; cần tải model một lần.", 'ocrHintFusor'],
+
+];
+const DEMO_MAP = new Map(DEMO_TEXT);
+const LANG_KEY = { eng: 'ocrLangEng', vie: 'ocrLangVie', kor: 'ocrLangKor' };
+function localize() {
+  const doc = document;
+  const tr = (key, vars) => globalThis.LHN_LANGUAGES?.t?.(key, vars || {}, doc.documentElement.lang) ?? key;
+  for (const host of doc.querySelectorAll('.kpOcrUi')) {
+    const walker = doc.createTreeWalker(host, 4 /* SHOW_TEXT */);
+    let node;
+    while ((node = walker.nextNode())) {
+      const raw = node.nodeValue;
+      const value = raw.trim();
+      if (!value) continue;
+      const thread = /^(\d+) luồng$/.exec(value);
+      const key = DEMO_MAP.get(value) || (thread ? 'ocrUiThreadN' : null);
+      if (!key) continue;
+      const lead = raw.match(/^\s*/)[0];
+      const trail = raw.match(/\s*$/)[0];
+      node.nodeValue = lead + (thread ? tr(key).replace('{n}', thread[1]) : tr(key)) + trail;
+    }
+    const box = doc.getElementById('kpOcrLangBox');
+    if (box && box.children.length) {
+      for (const input of box.querySelectorAll('input')) {
+        const span = input.parentElement.querySelector('span');
+        if (span) span.textContent = tr(LANG_KEY[input.value]);
+      }
+      const summary = doc.getElementById('kpOcrLangSummary');
+      const names = [...box.querySelectorAll('input:checked')].map(input => tr(LANG_KEY[input.value]));
+      if (summary && names.length) summary.textContent = names.join(' + ');
+    }
+    for (const el of host.querySelectorAll('[placeholder],[title],[aria-label]')) {
+      for (const attr of ['placeholder', 'title', 'aria-label']) {
+        const value = el.getAttribute(attr);
+        if (!value) continue;
+        const key = DEMO_MAP.get(value.trim());
+        if (key) el.setAttribute(attr, tr(key));
+      }
+    }
+  }
+}
+
+// OCR UI cho Tài liệu — bám đúng markup port từ bản demo (pages/documents.html):
+// thẻ gợi ý ảnh quét + bóng đèn, popup giữa, panel phải “Văn bản nhận dạng”, thẻ tiến độ.
+// Nhãn tĩnh nằm trong markup như demo; chuỗi do JS sinh đi qua languages.js (`ocr*`).
 (() => {
   'use strict';
   if (globalThis.LHN_OCR_UI) return;
   const t = (key, params) => globalThis.LHN_LANGUAGES?.t?.(key, params, document.documentElement.lang) ?? key;
   const $ = id => document.getElementById(id);
   const NO_ASK = 'keepit-ocr-noask';
+  const LANG_KEYS = LANG_KEY;
+  const LANG_NAMES = new Proxy(LANG_KEYS, { get: (_, key) => t(LANG_KEYS[key]) });
   let card = null, dialogOpen = false;
 
-  const el = (tag, className, text) => {
-    const node = document.createElement(tag);
-    if (className) node.className = className;
-    if (text != null) node.textContent = text;
-    return node;
-  };
   const noAsk = () => { try { return localStorage.getItem(NO_ASK) === '1'; } catch { return false; } };
-  const setNoAsk = value => { try { localStorage.setItem(NO_ASK, value ? '1' : '0'); } catch { /* ignore */ } };
+  const setNoAsk = value => { try { localStorage.setItem(NO_ASK, String(!!value)); } catch { /* ignore */ } };
+  const markRadios = container => {
+    if (!container) return;
+    for (const label of container.querySelectorAll('label')) label.classList.toggle('kpOn', !!label.querySelector('input:checked'));
+  };
+  const toast = text => {
+    const node = $('kpOcrToast');
+    if (!node || !text) return;
+    node.textContent = text;
+    node.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => node.classList.remove('show'), 2600);
+  };
+
+  /* vị trí đáy: 2 hộp nổi cách đường kẻ ngang đáy khung đọc 8px (CSS dùng --sideBottom) */
+  function placeBottom() {
+    const stage = document.getElementById('stage');
+    const bottom = stage ? Math.max(0, Math.round(window.innerHeight - stage.getBoundingClientRect().bottom)) : 0;
+    document.documentElement.style.setProperty('--sideBottom', `${bottom}px`);
+  }
+  window.addEventListener('resize', placeBottom);
+  /* kéo để đổi độ rộng bảng văn bản (demo có #trResize) */
+  function bindPanelResize() {
+    const handle = $('kpOcrTrResize'), root = $('kpOcrTrPanel');
+    if (!handle || !root || handle.dataset.bound) return;
+    handle.dataset.bound = '1';
+    let startX = 0, startW = 0, dragging = false;
+    handle.addEventListener('pointerdown', event => {
+      dragging = true; startX = event.clientX; startW = root.getBoundingClientRect().width || 360;
+      try { handle.setPointerCapture?.(event.pointerId); } catch { /* ignore */ }
+      event.preventDefault();
+    });
+    handle.addEventListener('pointermove', event => {
+      if (!dragging) return;
+      const next = Math.min(Math.max(startW + (startX - event.clientX), 260), Math.min(720, window.innerWidth - 120));
+      root.style.setProperty('--trW', `${Math.round(next)}px`);
+    });
+    const stopDrag = event => { dragging = false; try { handle.releasePointerCapture?.(event.pointerId); } catch { /* ignore */ } };
+    handle.addEventListener('pointerup', stopDrag);
+    handle.addEventListener('pointercancel', stopDrag);
+  }
+
+  /* ---------- chọn ngôn ngữ trong popup (dựng một lần) ---------- */
+  function buildLangs(selected = null) {
+    const box = $('kpOcrLangBox');
+    if (!box) return [];
+    const checked = [...box.querySelectorAll('input:checked')].map(input => input.value);
+    const picked = (Array.isArray(selected) && selected.length ? selected : checked.length ? checked : ['eng', 'vie']);
+    box.replaceChildren();
+    for (const value of Object.keys(LANG_KEYS)) {
+      const label = document.createElement('label');
+      label.className = 'kpCheck';
+      const input = document.createElement('input');
+      input.type = 'checkbox'; input.value = value;
+      input.checked = picked.includes(value);
+      input.onchange = () => { updateLangSummary(); markRadios(box); };
+      const span = document.createElement('span');
+      span.textContent = t(LANG_KEYS[value]);
+      label.append(input, span);
+      box.append(label);
+    }
+    updateLangSummary();
+    return [...box.querySelectorAll('input:checked')].map(input => input.value);
+  }
+  function selectedLangs() {
+    const box = $('kpOcrLangBox');
+    const values = box ? [...box.querySelectorAll('input:checked')].map(input => input.value) : [];
+    return values.length ? values : ['eng'];
+  }
+  function updateLangSummary() {
+    const summary = $('kpOcrLangSummary');
+    if (summary) summary.textContent = selectedLangs().map(value => LANG_NAMES[value] || value).join(' + ');
+  }
+
+  /* ---------- hộp sửa chữ của vùng (demo: #regionEditor) ---------- */
+  function closeRegionEditor() {
+    const root = $('kpOcrRegionEditor');
+    if (root) root.classList.remove('show');
+  }
+  function openRegionEditor({ text = '', label = '' } = {}) {
+    localize();
+    const root = $('kpOcrRegionEditor'), area = $('kpOcrRegionText');
+    if (!root || !area) return;
+    area.value = text;
+    if ($('kpOcrReHead') && label) $('kpOcrReHead').textContent = label;
+    if ($('kpOcrApplyRegion')) $('kpOcrApplyRegion').disabled = !String(text).trim();
+    root.classList.add('show');
+  }
 
   /* ---------- popup giữa ---------- */
-  function openDialog({ mode = 'pp', scope = 'page', modes = ['pp', 'fusor', 'tess'], onRun, onCancel } = {}) {
-    const modal = $('kpOcrModal'), scrim = $('kpOcrScrim');
+  function openDialog({
+    mode = 'pp', scope = 'current', onRun, onCancel } = {}) {
+    localize();
+    const modal = $('kpOcrOcrModal'), scrim = $('kpOcrScrim');
     if (!modal || !scrim) return null;
     dialogOpen = true;
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
-    const scopeAll = $('kpOcrScopeAll');
-    if (scopeAll) scopeAll.textContent = t('ocrScopeAll', { count: info?.pages || 1 });
-    for (const input of modal.querySelectorAll('input[name="kpOcrMode"]')) {
-      input.checked = input.value === mode;
-      input.parentElement.hidden = !modes.includes(input.value);
-    }
-    for (const input of modal.querySelectorAll('input[name="kpOcrScope"]')) input.checked = input.value === scope;
+    const page = info?.page || 1, pages = info?.pages || 1;
+    if ($('kpOcrOcrSub')) $('kpOcrOcrSub').textContent = info?.name || t('ocrNoDocument');
+    if ($('kpOcrScopePage')) $('kpOcrScopePage').textContent = t('ocrPageLabel', { page });
+    if ($('kpOcrScopeAll')) $('kpOcrScopeAll').textContent = t('ocrUiPagesCount', { n: pages });
+    if ($('kpOcrOfTotal')) $('kpOcrOfTotal').textContent = String(pages);
+    for (const input of modal.querySelectorAll('input[name="scopePick"]')) input.checked = input.value === scope;
+    for (const input of modal.querySelectorAll('input[name="mode"]')) input.checked = input.value === mode;
+    markRadios($('kpOcrOcrScopePick'));
+    markRadios($('kpOcrOcrModes'));
+    buildLangs();
+    if ($('kpOcrRun')) $('kpOcrRun').disabled = !info;
+    /* phạm vi khoảng trang: bật ô nhập + menu chọn trang như demo */
+    const scopeSync = () => {
+      const picked = modal.querySelector('input[name="scopePick"]:checked')?.value || 'current';
+      for (const id of ['kpOcrFrom', 'kpOcrTo', 'kpOcrBtnFrom', 'kpOcrBtnTo']) { const el = $(id); if (el) el.disabled = picked !== 'range'; }
+      const box = $('kpOcrRangeBox'); if (box) box.hidden = false;
+    };
+    const fillMenu = (menu, input) => {
+      if (!menu) return;
+      const current = Number(input?.value) || 1;
+      menu.replaceChildren();
+      for (let n = 1; n <= pages; n += 1) {
+        const item = document.createElement('button');
+        item.type = 'button'; item.textContent = String(n);
+        item.className = n === current ? 'kpOn' : '';
+        item.onclick = () => { if (input) input.value = String(n); menu.classList.remove('open'); };
+        menu.append(item);
+      }
+    };
+    const bindMenu = (btnId, menuId, inputId) => {
+      const btn = $(btnId), menu = $(menuId), input = $(inputId);
+      if (!btn || !menu) return;
+      btn.disabled = input ? input.disabled : btn.disabled;
+      btn.onclick = () => {
+        if (btn.disabled) return;
+        fillMenu(menu, input);
+        menu.classList.toggle('open');
+      };
+    };
+    bindMenu('kpOcrBtnFrom', 'kpOcrMenuFrom', 'kpOcrFrom');
+    bindMenu('kpOcrBtnTo', 'kpOcrMenuTo', 'kpOcrTo');
+    scopeSync();
+    modal.addEventListener('change', event => {
+      if (event.target?.name === 'scopePick') scopeSync();
+      if (event.target?.name === 'mode') syncMode();
+    });
+    /* hộp ngôn ngữ: ô tìm lọc danh sách */
+    if ($('kpOcrLangSearch')) $('kpOcrLangSearch').oninput = event => {
+      const needle = String(event.target.value || '').trim().toLowerCase();
+      for (const label of $('kpOcrLangBox')?.querySelectorAll('label') || []) {
+        label.hidden = !!needle && !label.textContent.toLowerCase().includes(needle);
+      }
+    };
+    /* mỗi cách nhận dạng hiện đúng nhóm tuỳ chọn của nó */
+    const syncMode = () => {
+      const picked = modal.querySelector('input[name="mode"]:checked')?.value || mode;
+      for (const [id, show] of [['kpOcrTessOptions', picked === 'tess'], ['kpOcrPpOptions', picked === 'pp'], ['kpOcrFusorOptions', picked === 'fusor']]) {
+        const el = $(id); if (el) el.hidden = !show;
+      }
+      if ($('kpOcrAutoHint')) $('kpOcrAutoHint').hidden = picked === 'tess';
+    };
+    syncMode();
+    /* khoanh vùng: 2 nút Hủy / Áp dụng phải chạy */
+    if ($('kpOcrCancelRegion')) $('kpOcrCancelRegion').onclick = () => { closeRegionEditor(); };
+    if ($('kpOcrApplyRegion')) $('kpOcrApplyRegion').onclick = () => {
+      const text = $('kpOcrRegionText')?.value?.trim();
+      const info2 = globalThis.LHN_DOCUMENTS_OCR?.info?.();
+      if (!text || !info2) { closeRegionEditor(); return; }
+      try { globalThis.LHN_DOCUMENTS_OCR.apply(info2.page, { text, boxes: [] }); globalThis.LHN_DOCUMENTS_OCR.refresh?.(); toast(t('ocrRegionApplied')); }
+      catch { toast(t('ocrRegionError')); }
+      closeRegionEditor();
+    };
+    if ($('kpOcrOcrRegion')) $('kpOcrOcrRegion').onclick = () => { closeRegionEditor(); globalThis.LHN_OCR?.runRegion?.(); };
+    if ($('kpOcrModelStatus')) $('kpOcrModelStatus').textContent = globalThis.LHN_OCR_ENGINE?.status?.().loaded ? t('ocrModelReady') : t('ocrModelMissing');
+    if ($('kpOcrFolder')) $('kpOcrFolder').onclick = async () => {
+      const status = $('kpOcrModelStatus');
+      try {
+        await globalThis.LHN_OCR_ENGINE?.chooseModel?.({ onProgress: event => { if (status && event?.bytes) status.textContent = t('ocrConfirmModel', { size: (event.bytes / 1e6).toFixed(1) }); } });
+        if (status) status.textContent = t('ocrModelReady');
+      } catch (error) { toast(error?.message === 'ocrStopped' ? t('ocrStopped') : t('ocrModelPermission')); }
+    };
     const close = () => { closeDialog(); onCancel?.(); };
-    $('kpOcrCancel').onclick = close;
-    $('kpOcrCancel2').onclick = close;
+    if ($('kpOcrOcrClose')) $('kpOcrOcrClose').onclick = close;
+    if ($('kpOcrOcrCancel')) $('kpOcrOcrCancel').onclick = close;
     scrim.onclick = close;
-    $('kpOcrRun').onclick = () => {
-      const pickedMode = modal.querySelector('input[name="kpOcrMode"]:checked')?.value || mode;
-      const pickedScope = modal.querySelector('input[name="kpOcrScope"]:checked')?.value || scope;
+    modal.onclick = event => { const label = event.target.closest('label'); if (label) setTimeout(() => { markRadios($('kpOcrOcrScopePick')); markRadios($('kpOcrOcrModes')); }, 0); };
+    if ($('kpOcrMethodHint')) {
+      const hint = { tess: 'ocrHintTess', pp: 'ocrHintPP', fusor: 'ocrHintFusor' };
+      const update = () => { $('kpOcrMethodHint').textContent = t(hint[modal.querySelector('input[name="mode"]:checked')?.value || 'pp']); };
+      modal.addEventListener('change', update);
+      update();
+    }
+    if ($('kpOcrRun')) $('kpOcrRun').onclick = () => {
+      const picked = modal.querySelector('input[name="scopePick"]:checked')?.value || 'current';
+      const pickedMode = modal.querySelector('input[name="mode"]:checked')?.value || mode;
+      const options = {
+        mode: pickedMode,
+        scope: picked === 'current' ? 'page' : picked,
+        from: Number($('kpOcrFrom')?.value) || page,
+        to: Number($('kpOcrTo')?.value) || pages,
+        langs: selectedLangs().join('+'),
+        longSide: Number($('kpOcrOcrRes')?.value) || 1280
+      };
       closeDialog();
-      onRun?.({ mode: pickedMode, scope: pickedScope });
+      onRun?.(options);
     };
     scrim.classList.add('show');
     modal.classList.add('show');
-    $('kpOcrRun').focus?.();
     return modal;
   }
   function closeDialog() {
     dialogOpen = false;
     $('kpOcrScrim')?.classList.remove('show');
-    $('kpOcrModal')?.classList.remove('show');
+    $('kpOcrOcrModal')?.classList.remove('show');
   }
   const dialogVisible = () => dialogOpen;
 
   /* ---------- thẻ tiến độ ---------- */
-  function openCard({ onStop, onForce, onAgain, onRegion, onClose } = {}) {
-    const root = $('kpOcrProg');
+  function openCard({
+    onStop, onForce, onAgain, onRegion, onClose } = {}) {
+    localize();
+    const root = $('kpOcrOcrProg');
     if (!root) return null;
     card = { started: Date.now(), timer: 0, stopRequested: false, busy: true, root };
+    placeBottom();
     root.classList.add('show');
     root.classList.remove('done', 'stopped', 'error');
     card.title = $('kpOcrProgTitle'); card.pageLabel = $('kpOcrProgPage');
-    card.state = $('kpT'); card.clock = $('kpClock'); card.bar = $('kpBar'); card.logBox = $('kpLog');
-    card.doneBox = $('kpDone'); card.sum = $('kpSum'); card.warn = $('kpWarn');
-    card.actions = { stop: $('kpStop'), force: $('kpForce'), again: $('kpAgain'), region: $('kpRegion'), close: $('kpOcrProgClose') };
+    card.state = $('kpOcrPTitle'); card.clock = $('kpOcrPClock'); card.bar = $('kpOcrProgress');
+    card.logBox = $('kpOcrPLog'); card.doneBox = $('kpOcrPDone'); card.sum = $('kpOcrPSum'); card.warn = $('kpOcrPWarn');
+    card.actions = { stop: $('kpOcrStop'), force: $('kpOcrPForce'), again: $('kpOcrPAgain'), region: $('kpOcrPRegion'), close: $('kpOcrProgClose') };
     card.title.textContent = t('ocrTitleRun');
     card.state.textContent = t('ocrPreparing');
     card.clock.textContent = `0.0 ${t('ocrSeconds')}`;
     card.bar.value = 0;
     card.logBox.replaceChildren();
-    card.doneBox.classList.remove('show');
+    card.doneBox.style.display = 'none';
     card.warn.textContent = '';
-    card.actions.stop.hidden = false;
+    card.actions.stop.hidden = false; card.actions.stop.disabled = false;
     card.actions.force.hidden = true;
     card.actions.again.hidden = true;
     card.actions.region.hidden = true;
@@ -99,13 +575,16 @@
   function setState(main) {
     if (!card || !main) return;
     card.state.textContent = main;
+    const status = $('kpOcrStatus'); if (status) status.textContent = main;
     log(main);
   }
   function log(line) {
     if (!card || !line) return;
     const text = String(line).trim();
     if (!text || card.logBox.firstElementChild?.textContent === text) return;
-    card.logBox.prepend(el('div', null, text));
+    const node = document.createElement('div');
+    node.textContent = text;
+    card.logBox.prepend(node);
     while (card.logBox.children.length > 3) card.logBox.lastElementChild.remove();
   }
   function progress(value) { if (card) card.bar.value = Math.max(0, Math.min(1, Number(value) || 0)); }
@@ -118,7 +597,7 @@
     card.title.textContent = kind === 'done' ? t('ocrTitleDone') : kind === 'error' ? t('ocrTitleError') : t('ocrTitleStopped');
     card.sum.textContent = summary;
     card.warn.textContent = warning;
-    card.doneBox.classList.add('show');
+    card.doneBox.style.display = '';
     card.actions.stop.hidden = true;
     card.actions.force.hidden = true;
     card.actions.again.hidden = false;
@@ -128,83 +607,89 @@
   function busy(value) { if (card) card.busy = !!value; }
 
   /* ---------- panel phải “Văn bản nhận dạng” ---------- */
-  function panel({ text = '', page = 0, append = false, reset = false } = {}) {
-    const root = $('kpOcrPanel'), pre = $('kpOcrText'), empty = $('kpOcrEmpty');
-    if (!root || !pre || !empty) return;
-    if (reset) { pre.textContent = ''; pre.hidden = true; empty.hidden = false; }
-    const body = append && !pre.hidden && pre.textContent ? `${pre.textContent}\n\n` : '';
+  function panel({
+    text = '', page = 0, append = false, reset = false } = {}) {
+    localize();
+    const root = $('kpOcrTrPanel'), area = $('kpOcrText');
+    if (!root || !area) return;
+    bindPanelResize();
+    if (reset) area.value = '';
     const value = String(text || '').trim();
-    if (value) {
-      pre.textContent = body + (page ? `— ${t('ocrPageLabel', { page })} —\n${value}` : value);
-      pre.hidden = false;
-      empty.hidden = true;
-    } else if (!pre.textContent) {
-      pre.hidden = true;
-      empty.hidden = false;
+    if (value) area.value = (append && area.value ? `${area.value}\n\n` : '') + (page ? `— ${t('ocrPageLabel', { page })} —\n${value}` : value);
+    if (area.value.trim()) {
+      root.classList.add('open');
+      for (const id of ['kpOcrCopy', 'kpOcrSave', 'kpOcrSavePdf', 'kpOcrTextApply']) { const button = $(id); if (button) button.disabled = false; }
     }
-    root.classList.add('show');
-    $('kpOcrPanelClose').onclick = () => root.classList.remove('show');
-    $('kpOcrCopy').onclick = () => {
-      const valueNow = pre.textContent || '';
-      const done = () => toast(t('ocrCopyDone'));
-      try { navigator.clipboard?.writeText(valueNow).then(done, () => toast(t('ocrCopyFail'))); }
+    $('kpOcrCopy') && ($('kpOcrCopy').onclick = () => {
+      try { navigator.clipboard?.writeText(area.value).then(() => toast(t('ocrCopyDone')), () => toast(t('ocrCopyFail'))); }
       catch { toast(t('ocrCopyFail')); }
-    };
-    $('kpOcrExport').onclick = () => {
+    });
+    $('kpOcrSave') && ($('kpOcrSave').onclick = () => {
       const name = (globalThis.LHN_DOCUMENTS_OCR?.info?.()?.name || 'ocr').replace(/\.[^.]+$/, '');
-      const blob = new Blob([pre.textContent || ''], { type: 'text/plain;charset=utf-8' });
+      const blob = new Blob([area.value], { type: 'text/plain;charset=utf-8' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `${name}.txt`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+    });
+    const close = $('kpOcrTrClose');
+    if (close) close.onclick = () => root.classList.remove('open');
+    const addRegion = $('kpOcrTrRegion');
+    if (addRegion) addRegion.onclick = () => openRegionEditor({ label: t('ocrUiRegionBadge') });
+    const applyText = $('kpOcrTextApply');
+    if (applyText) applyText.onclick = () => {
+      const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
+      const value = area.value.trim();
+      if (!info || !value) { toast(t('ocrNoDocument')); return; }
+      try {
+        globalThis.LHN_DOCUMENTS_OCR.apply(info.page, { text: value, boxes: [] });
+        globalThis.LHN_DOCUMENTS_OCR.refresh?.();
+        toast(t('ocrTextApplied'));
+      } catch { toast(t('ocrTextApplyFail')); }
     };
+    const savePdf = $('kpOcrSavePdf');
+    if (savePdf) savePdf.onclick = () => toast(t('ocrPdfPending'));
   }
-  function panelText() { return $('kpOcrText')?.textContent || ''; }
-  const closePanel = () => $('kpOcrPanel')?.classList.remove('show');
+  const panelText = () => $('kpOcrText')?.value || '';
+  const closePanel = () => $('kpOcrTrPanel')?.classList.remove('open');
 
-  /* ---------- gợi ý ảnh quét ---------- */
-  function syncBanner({ needsOcr = false } = {}) {
-    const banner = $('kpOcrBanner'), bulb = $('kpOcrBulb');
+  /* ---------- thẻ gợi ý ảnh quét + bóng đèn ---------- */
+  function syncBanner({
+    needsOcr = false } = {}) {
+    localize();
+    const banner = $('kpOcrVBanner'), bulb = $('kpOcrVBulb');
     if (!banner || !bulb) return;
     if (!needsOcr || noAsk()) {
-      banner.classList.remove('show'); bulb.classList.remove('show');
-      if (!needsOcr) collapseTo(null);
+      banner.classList.remove('show');
+      bulb.hidden = true;
       return;
     }
-    if (banner.dataset.collapsed === '1') { banner.classList.remove('show'); bulb.classList.add('show'); }
-    else { banner.classList.add('show'); bulb.classList.remove('show'); }
-    const checkbox = $('kpOcrNoAsk');
-    if (checkbox) checkbox.checked = noAsk();
-    $('kpOcrBannerClose').onclick = () => collapseTo('1');
-    bulb.onclick = () => collapseTo(null);
-    $('kpOcrBannerAct').onclick = () => { collapseTo(null); globalThis.LHN_OCR?.open?.(); };
-    if (checkbox) checkbox.onchange = event => { setNoAsk(event.target.checked); syncBanner({ needsOcr: true }); };
-  }
-  function collapseTo(state) {
-    const banner = $('kpOcrBanner'), bulb = $('kpOcrBulb');
-    if (!banner || !bulb) return;
-    if (state === null) { delete banner.dataset.collapsed; banner.classList.add('show'); bulb.classList.remove('show'); }
-    else { banner.dataset.collapsed = state; banner.classList.remove('show'); bulb.classList.add('show'); }
+    const collapsed = banner.dataset.collapsed === '1';
+    banner.classList.toggle('show', !collapsed);
+    bulb.hidden = !collapsed;
+    const checkbox = $('kpOcrBannerNoAsk');
+    if (checkbox) {
+      checkbox.checked = noAsk();
+      checkbox.onchange = event => { setNoAsk(event.target.checked); syncBanner({ needsOcr: true }); };
+    }
+    if ($('kpOcrBannerClose')) $('kpOcrBannerClose').onclick = () => { banner.dataset.collapsed = '1'; syncBanner({ needsOcr: true }); };
+    if (bulb) bulb.onclick = () => { delete banner.dataset.collapsed; syncBanner({ needsOcr: true }); };
+    if ($('kpOcrBannerAct')) $('kpOcrBannerAct').onclick = () => { delete banner.dataset.collapsed; syncBanner({ needsOcr: true }); globalThis.LHN_OCR?.open?.(); };
   }
 
-  function toast(text) {
-    const node = $('kpToast');
-    if (!node || !text) return;
-    node.textContent = text;
-    node.classList.add('show');
-    clearTimeout(toast.timer);
-    toast.timer = setTimeout(() => node.classList.remove('show'), 2600);
-  }
-
-  /* ---------- khoanh vùng trên trang ---------- */
+  /* ---------- khoanh vùng ---------- */
   function selectRegion({ label } = {}) {
     return new Promise(resolve => {
+      placeBottom();
       const page = document.querySelector('#pageStack > [data-page] .docsSource') || document.querySelector('#pageStack [data-page] .docsSource');
       if (!page) { resolve(null); return; }
-      const layer = el('div', 'kpOcrRegion');
-      const hint = el('div', 'hint', label || t('ocrRegionHint'));
-      const box = el('div', 'box');
+      const layer = document.createElement('div');
+      layer.className = 'kpOcrRegion';
+      const hint = document.createElement('div');
+      hint.className = 'hint'; hint.textContent = label || t('ocrRegionHint');
+      const box = document.createElement('div');
+      box.className = 'box';
       layer.append(hint, box);
       const rect0 = page.getBoundingClientRect();
       Object.assign(layer.style, { left: `${rect0.left}px`, top: `${rect0.top}px`, width: `${rect0.width}px`, height: `${rect0.height}px` });
@@ -234,6 +719,8 @@
 
   globalThis.LHN_OCR_UI = Object.freeze({
     openDialog, closeDialog, dialogVisible, openCard, closeCard, current, setPage, setState, log, progress,
-    finish, busy, toast, selectRegion, panel, panelText, closePanel, syncBanner
+    finish, busy, toast, selectRegion, panel, panelText, closePanel, syncBanner, selectedLangs,
+    openRegionEditor, closeRegionEditor
   });
 })();
+

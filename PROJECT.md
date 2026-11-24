@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.614**: giao diện OCR trong Tài liệu **giống demo** — thẻ gợi ý ảnh quét + bóng đèn, popup giữa, panel phải “Văn bản nhận dạng”, thẻ tiến độ góc phải dưới; 3 engine, Dừng giữ model, ✕ giải phóng, kết quả ghi vào lớp chữ của trang.
+- Version **3.5.615**: giao diện OCR trong Tài liệu **port nguyên văn markup + CSS của bản demo** (`Demo/ocr-ui-2.6/`): 6 khối (banner, bóng đèn, popup giữa, thẻ tiến độ, khoanh vùng, panel phải) chỉ đổi tiền tố `kp`, scope `.kpOcrUi`; 5 nhóm trong popup đúng demo (Phạm vi trang · Ngôn ngữ tài liệu · Cách nhận dạng · Kết quả trên tệp · Tuỳ chọn engine), 216 rule CSS port nguyên, token màu + dark mode theo demo; 3 engine thật, Dừng giữ model, ✕ giải phóng, kết quả ghi vào lớp chữ của trang.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -9,7 +9,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
-- **OCR trong Tài liệu (3.5.614):** bố cục đã giống demo; còn phải kiểm trên Chromium thật (ảnh 1512/390 sáng/tối, PDF scan thật, tốc độ, vị trí chữ sau zoom, model Fusor tải từ Hugging Face, panel phải khi cửa sổ hẹp) và chưa lưu kết quả OCR vào `keepit-documents` (mở lại phải nhận dạng lại).
+- **OCR trong Tài liệu (3.5.615):** markup + CSS đã port nguyên văn demo và kiểm bằng jsdom (45 assert) + wiring (30 assert); còn phải kiểm trên Chromium thật (ảnh 1512/390 sáng/tối, PDF scan thật, tốc độ, vị trí chữ sau zoom, model Fusor tải từ Hugging Face, panel phải khi cửa sổ hẹp) và chưa lưu kết quả OCR vào `keepit-documents` (mở lại phải nhận dạng lại).
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
@@ -163,6 +163,14 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.615 | Arena:**
+- Mục tiêu: sửa đúng lỗi “giao diện OCR không giống demo” của 3.5.614 — **không** tự đặt lại nhãn/nhóm/kiểu chữ.
+- Tóm tắt: port **nguyên văn markup** 6 khối của `Demo/ocr-ui-2.6/index.html` (banner 981B, bóng đèn 436B, popup giữa 8120B, thẻ tiến độ 1169B, khoanh vùng 576B, panel phải 3171B) và **nguyên CSS** `style.css` (216 rule) sang `css/dashboard/ocr.css`, chỉ thêm tiền tố `kp` cho id/lớp và scope `.kpOcrUi`. Popup giữa có đủ **5 nhóm** như demo: Phạm vi trang (Trang đang xem · trang N / Tất cả các trang · N trang / Từ trang … đến … trong … trang), Ngôn ngữ tài liệu (ô tìm + “Đang chọn Anh + Việt”), Cách nhận dạng (Chữ in · Tesseract / Nhanh · PP-OCR / Viết tay · Fusor + hint), Kết quả trên tệp (Kiểu đầu ra, Độ phân giải dò 1280/960/640, Bỏ vùng chữ rất nhỏ, Dừng khi lặp 12 lần, Giới hạn 90 giây, Hiện khung), Tuỳ chọn engine (DPI, số luồng, Model Fusor + Chọn thư mục model, Phương pháp, Ưu tiên); chân popup “Chạy trên máy · tệp không rời máy” + Hủy + Nhận dạng chữ.
+- Việc phải làm thêm để chạy được (không đổi giao diện): `js/ocr/ui.js` bám id thật của demo (`openDialog`/`openCard`/`panel`/`syncBanner`/`selectRegion`), dựng hộp ngôn ngữ, `placeBottom()` đặt 2 hộp nổi cách đường kẻ đáy khung đọc 8px, kéo `#kpOcrTrResize` đổi độ rộng panel; `js/ocr/run.js` nhận `scope: 'range'` + `langs` + `longSide`; `documents.js#raster(page, longSide)`; `languages.js` thêm 92 khoá `ocrUi*`/`ocrLang*` × en/vi/ko và `localize()` dịch mọi nhãn tĩnh của markup demo theo ngôn ngữ đang dùng (vi giữ nguyên chữ demo).
+- Đã xác minh: jsdom 45/45 (markup demo: 5 nhóm · 3 cách · 3 phạm vi · thẻ tiến độ 4 nút; banner → bóng đèn → “Không hiện lại”; chạy ⇒ `done`; Dừng ⇒ `stopped` + **không** release; ✕ ⇒ release; đổi en/ko rồi về vi đúng chữ demo; menu chọn trang 1–16, ô tìm ngôn ngữ lọc, mỗi cách nhận dạng hiện đúng nhóm tuỳ chọn, Hủy/Áp dụng hộp vùng chạy, “PDF có lớp chữ” báo đúng là chưa nối), wiring 30/30, core 19/19, CSS parse sạch 239 rule, 58/58 lớp có rule, 85/85 nhãn demo có bản dịch, token màu + 19 rule dark đúng scope `html.dark .kpOcrUi`.
+- Chưa kiểm được trong sandbox: Chromium thật (không có trình duyệt) ⇒ chưa có ảnh 1512/390, chưa chạy OCR thật trên PDF; model Fusor cần tải từ Hugging Face.
+- File: `pages/documents.html` (6 khối demo + 3 thẻ script khôi phục), `css/dashboard/ocr.css` (port 216 rule + token + dark + phần khoanh vùng/lớp chữ), `js/ocr/ui.js` (viết lại bám id demo + `localize`), `js/ocr/run.js`, `js/ocr/engine.js` (truyền `langs`), `js/dashboard/documents.js` (`raster(page, longSide)`), `js/core/languages.js`, `manifest.json` (3.5.615 + `cross_origin_embedder_policy`/`cross_origin_opener_policy`, host `*.hf.co`, WAR `vendor/ocr/*`), `docs/documents.md`, `PROJECT.md`.
 
 **2026-11-22 | v3.5.614 | Arena:**
 
