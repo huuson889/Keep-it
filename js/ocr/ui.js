@@ -297,11 +297,13 @@ function localize() {
     }
   }
   const sub = doc.getElementById('kpOcrOcrSub');
-  const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
   if (sub) {
-    sub.textContent = info
-      ? tr('ocrSubLine', { page: info.page || 1, state: tr(info.hasText ? 'ocrSubHasLayer' : 'ocrSubNoLayer') })
-      : tr('ocrNoDocument');
+    try {
+      const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
+      sub.textContent = info
+        ? tr('ocrSubLine', { page: info.page || 1, state: tr(info.hasText ? 'ocrSubHasLayer' : 'ocrSubNoLayer') })
+        : tr('ocrNoDocument');
+    } catch { /* hộp thông tin lỗi không được làm hỏng popup */ }
   }
   const hint = doc.getElementById('kpOcrMethodHint');
   if (hint) {
@@ -516,20 +518,33 @@ function localize() {
   /* ---------- popup giữa ---------- */
   function openDialog({
     mode = 'pp', scope = 'current', onRun, onCancel } = {}) {
-    localize();
     const modal = $('kpOcrOcrModal'), scrim = $('kpOcrOcrScrim');
     if (!modal || !scrim) return null;
     dialogOpen = true;
+    /* từng bước cấu hình chạy riêng: một bước lỗi KHÔNG kéo theo các bước khác (nhất là danh sách ngôn ngữ) */
+    const problems = [];
+    const step = (name, run) => { try { return run(); } catch (error) { problems.push(`${name}: ${error?.message || error}`); console.warn(`[Keepit] OCR ${name}`, error); } };
+    const reportProblems = () => {
+      const body = $('kpOcrOcrBody');
+      if (!body) return;
+      body.querySelector('.kpOcrErr')?.remove();
+      if (!problems.length) return;
+      const box = document.createElement('p');
+      box.className = 'kpOcrErr';
+      box.textContent = `Lỗi cấu hình: ${problems.slice(0, 3).join(' · ')}`;
+      body.append(box);
+    };
     /* hiện popup NGAY — mọi phần còn lại chạy trong try/catch để một lỗi nhỏ không làm mất popup */
     try {
       scrim.classList.add('show');
       modal.classList.add('show');
       modal.setAttribute('aria-hidden', 'false');
     } catch (error) { console.warn('[Keepit] OCR dialog', error); }
+    step('localize', () => localize());
+    step('languages', () => buildLangs());
+    step('panel', () => { $('kpOcrTrPanel')?.classList.add('open'); syncLayerBoxes(); });
     try {
-    collapseNotice();
-    $('kpOcrTrPanel')?.classList.add('open');
-    syncLayerBoxes();
+    step('notice', () => collapseNotice());
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
     const page = info?.page || 1, pages = info?.pages || 1;
     if ($('kpOcrOcrBody')) $('kpOcrOcrBody').scrollTop = 0;
@@ -547,7 +562,6 @@ function localize() {
     for (const input of modal.querySelectorAll('input[name="mode"]')) input.checked = input.value === mode;
     markRadios($('kpOcrOcrScopePick'));
     markRadios($('kpOcrOcrModes'));
-    buildLangs();
     if ($('kpOcrRun')) $('kpOcrRun').disabled = !info;
     /* phạm vi khoảng trang: bật ô nhập + menu chọn trang như demo */
     const scopeSync = () => {
@@ -596,7 +610,7 @@ function localize() {
         $('kpOcrMethodHint').textContent = t(key);
       }
     };
-    syncMode();
+    step('method', () => syncMode());
     for (const input of modal.querySelectorAll('input[name="scopePick"]')) {
       input.onchange = () => { markRadios($('kpOcrOcrScopePick')); scopeSync(); };
     }
@@ -654,7 +668,9 @@ function localize() {
     };
     } catch (error) {
       console.warn('[Keepit] OCR dialog setup', error);
+      problems.push(`setup: ${error?.message || error}`);
     }
+    try { reportProblems(); } catch { /* ignore */ }
     return modal;
   }
   function closeDialog() {
@@ -1034,6 +1050,10 @@ function localize() {
     area.addEventListener('mouseleave', () => paintHover([]));
     area.addEventListener('scroll', () => { const bar = $('kpOcrTrHover'); if (bar) bar.hidden = true; });
   }
+  /* dựng sẵn danh sách ngôn ngữ: dù openDialog có lỗi thì hộp chọn vẫn có đủ 3 dòng */
+  const primeLangs = () => { try { renderLangs(''); } catch (error) { console.warn('[Keepit] OCR prime languages', error); } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', primeLangs, { once: true });
+  else setTimeout(primeLangs, 0);
   globalThis.LHN_OCR_UI = Object.freeze({
     openDialog, closeDialog, dialogVisible, openCard, closeCard, current, setPage, setState, log, progress,
     finish, busy, toast, selectRegion, panel, panelText, closePanel, syncBanner, selectedLangs,

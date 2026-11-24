@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.621** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
+- Version **3.5.622** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -163,6 +163,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.622 | Arena:**
+- Người dùng gửi ảnh: hộp **DOCUMENT LANGUAGES vẫn trống** ở 3.5.621 ⇒ chứng minh lỗi xảy ra **TRƯỚC** `renderLangs` (bản 3.5.621 chỉ bọc bên trong `renderLangs` nên không cứu được).
+- **Tìm ra đường chết thật:** `localize()` gọi `LHN_DOCUMENTS_OCR.info()` **không bọc** — `info()` ném lỗi là `openDialog` chết trước khi dựng danh sách. Tương tự `syncLayerBoxes()` → `pageElement()`.
+- **Sửa:** (1) popup hiện trước, mỗi bước cấu hình chạy trong `step()` riêng (localize / languages / panel / notice / method), lỗi bước nào không kéo theo bước khác; (2) `buildLangs()` chạy **ngay sau khi popup hiện**, trước mọi bước khác; (3) **dựng sẵn danh sách ngôn ngữ ngay khi trang nạp** (`primeLangs` — DOMContentLoaded) nên hộp chọn **không bao giờ trống**, kể cả khi `openDialog` lỗi; (4) lỗi cấu hình in thẳng trong popup (`.kpOcrErr`, tối đa 3 lỗi) + `console.warn('[Keepit] OCR <bước>')` để chẩn đoán ngay.
+- Đã xác minh: **622: 7/7** (nạp trang đã có 3 dòng; `info()`/`pageElement()` ném lỗi mà ngôn ngữ vẫn đủ 3 dòng và lỗi hiện trong popup; thiếu `languages.js` vẫn 3 dòng), jsdom **51/51**, khung/hover **10/10**, **14/14**, popup ngôn ngữ **9/9**.
+- Chưa kiểm được: Chromium thật.
 
 **2026-11-22 | v3.5.621 | Arena:**
 - Ảnh người dùng gửi (bản 3.5.620, dark mode) cho thấy: **hộp ngôn ngữ trống**, dòng “Selected none selected.”, **“1 trang”** thay vì 16, “of — pages”, và **dòng “Trang đang xem” bị cắt** ở mép trên popup.

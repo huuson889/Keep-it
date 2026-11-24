@@ -502,3 +502,7 @@ html.kpOcrPanelOpen .kpOcrUi .kpRegionEditor{right:calc(var(--trW,380px) + 12px)
 /* ===== Sidebar OCR nằm trong .stageWrap như demo: chiếm chỗ thật, đẩy trang vào giữa ===== */
 .stageWrap > .kpOcrUi{display:flex;flex:none;min-width:0;height:100%}
 .kpOcrUi .kpTranslation{height:100%}
+
+/* ===== Chẩn đoán: nếu một bước cấu hình popup lỗi thì in thẳng lý do trong popup ===== */
+.kpOcrUi .kpOcrErr{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:#fdecec;color:#b4282d;font-size:12px;font-weight:600;line-height:1.4}
+html.dark .kpOcrUi .kpOcrErr{background:#3a1719;color:#ff9aa0}
