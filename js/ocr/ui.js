@@ -296,6 +296,13 @@ function localize() {
       }
     }
   }
+  const sub = doc.getElementById('kpOcrOcrSub');
+  const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
+  if (sub) {
+    sub.textContent = info
+      ? tr('ocrSubLine', { page: info.page || 1, state: tr(info.hasText ? 'ocrSubHasLayer' : 'ocrSubNoLayer') })
+      : tr('ocrNoDocument');
+  }
   const hint = doc.getElementById('kpOcrMethodHint');
   if (hint) {
     const picked = doc.querySelector('#kpOcrOcrModes input:checked')?.value || 'tess';
@@ -317,13 +324,54 @@ function localize() {
   if (globalThis.LHN_OCR_UI) return;
   const t = (key, params) => globalThis.LHN_LANGUAGES?.t?.(key, params, document.documentElement.lang) ?? key;
   const $ = id => document.getElementById(id);
-  const NO_ASK = 'keepit-ocr-noask';
+  const NO_ASK = 'keepit.ocrNoticeOff:';   // đúng khoá của demo (mỗi tệp một khoá)
   const LANG_KEYS = LANG_KEY;
   const LANG_NAMES = new Proxy(LANG_KEYS, { get: (_, key) => t(LANG_KEYS[key]) });
   let card = null, dialogOpen = false;
 
-  const noAsk = () => { try { return localStorage.getItem(NO_ASK) === '1'; } catch { return false; } };
-  const setNoAsk = value => { try { localStorage.setItem(NO_ASK, String(!!value)); } catch { /* ignore */ } };
+  /* Thông báo “chưa có lớp chữ”: thu gọn thành bóng đèn — hành vi y như demo 2.9.7.26 */
+  const NOTICE_AUTO_HIDE = 10000;   // tự thu thành bóng đèn sau 10 giây không tương tác
+  const NOTICE_NARROW = 640;        // vùng xem hẹp hơn mức này thì không bung thẻ
+  let noticeFileKey = '', noticeCollapsed = false, noticeForcedOpen = false, noticeWasExpanded = false;
+  let noticeTimer = null, noticeNeeds = null;
+  const noAskKey = () => NO_ASK + (noticeFileKey || 'unknown');
+  const noAsk = () => { try { return localStorage.getItem(noAskKey()) === '1'; } catch { return false; } };
+  const setNoAsk = value => {
+    try { value ? localStorage.setItem(noAskKey(), '1') : localStorage.removeItem(noAskKey()); } catch { /* ignore */ }
+    noticeForcedOpen = false;
+    if (value) noticeCollapsed = true;
+    refreshNotice(true);
+  };
+  function pickNoticeTheme() {
+    const theme = Math.random() < 0.5 ? 'amber' : 'violet';
+    for (const el of [$('kpOcrVBanner'), $('kpOcrVBulb')]) if (el) el.dataset.nt = theme;
+  }
+  function noticeNarrow() {
+    const stage = $('stage');
+    return !!stage && stage.clientWidth > 0 && stage.clientWidth < NOTICE_NARROW;
+  }
+  function scheduleNoticeHide() {
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => {
+      if ($('kpOcrVBanner')?.classList.contains('show')) { noticeCollapsed = true; refreshNotice(noticeNeeds); }
+    }, NOTICE_AUTO_HIDE);
+  }
+  function collapseNotice() { noticeCollapsed = true; noticeForcedOpen = false; refreshNotice(true); }
+  function expandNotice() { noticeForcedOpen = true; noticeCollapsed = false; refreshNotice(true); }
+  function refreshNotice(needsOcr) {
+    const banner = $('kpOcrVBanner'), bulb = $('kpOcrVBulb');
+    if (!banner || !bulb) return;
+    if (needsOcr !== undefined) noticeNeeds = !!needsOcr;
+    const needs = !!noticeNeeds;
+    const expanded = needs && !noticeCollapsed && (noticeForcedOpen || !noAsk()) && !noticeNarrow();
+    if (expanded && !noticeWasExpanded) pickNoticeTheme();
+    noticeWasExpanded = expanded;
+    banner.classList.toggle('show', expanded);
+    if (expanded) scheduleNoticeHide(); else clearTimeout(noticeTimer);
+    bulb.hidden = !(needs && !expanded);
+    const checkbox = $('kpOcrBannerNoAsk');
+    if (checkbox) checkbox.checked = noAsk();
+  }
   const markRadios = container => {
     if (!container) return;
     for (const label of container.querySelectorAll('label')) label.classList.toggle('kpOn', !!label.querySelector('input:checked'));
@@ -449,13 +497,20 @@ function localize() {
     const modal = $('kpOcrOcrModal'), scrim = $('kpOcrOcrScrim');
     if (!modal || !scrim) return null;
     dialogOpen = true;
+    collapseNotice();
     $('kpOcrTrPanel')?.classList.add('open');
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
     const page = info?.page || 1, pages = info?.pages || 1;
-    if ($('kpOcrOcrSub')) $('kpOcrOcrSub').textContent = info?.name || t('ocrNoDocument');
+    if ($('kpOcrOcrSub')) {
+      $('kpOcrOcrSub').textContent = info
+        ? t('ocrSubLine', { page, state: t(info.hasText ? 'ocrSubHasLayer' : 'ocrSubNoLayer') })
+        : t('ocrNoDocument');
+    }
     if ($('kpOcrScopePage')) $('kpOcrScopePage').textContent = t('ocrPageLabel', { page });
     if ($('kpOcrScopeAll')) $('kpOcrScopeAll').textContent = t('ocrUiPagesCount', { n: pages });
     if ($('kpOcrOfTotal')) $('kpOcrOfTotal').textContent = String(pages);
+    if ($('kpOcrFrom')) { $('kpOcrFrom').max = String(pages); if (!$('kpOcrFrom').value) $('kpOcrFrom').value = '1'; }
+    if ($('kpOcrTo')) { $('kpOcrTo').max = String(pages); $('kpOcrTo').value = String(pages); }
     for (const input of modal.querySelectorAll('input[name="scopePick"]')) input.checked = input.value === scope;
     for (const input of modal.querySelectorAll('input[name="mode"]')) input.checked = input.value === mode;
     markRadios($('kpOcrOcrScopePick'));
@@ -705,29 +760,26 @@ function localize() {
   const closePanel = () => $('kpOcrTrPanel')?.classList.remove('open');
 
   /* ---------- thẻ gợi ý ảnh quét + bóng đèn ---------- */
-  function syncBanner({
-    needsOcr = false } = {}) {
+  function setNoticeFileKey(key) {
+    if (key === noticeFileKey) return;
+    noticeFileKey = key || '';
+    noticeCollapsed = false; noticeForcedOpen = false; noticeWasExpanded = false;
+  }
+  function syncBanner({ needsOcr = false, fileKey = '' } = {}) {
     localize();
     const banner = $('kpOcrVBanner'), bulb = $('kpOcrVBulb');
     if (!banner || !bulb) return;
-    if (!needsOcr || noAsk()) {
-      banner.classList.remove('show');
-      bulb.hidden = true;
-      return;
-    }
-    const collapsed = banner.dataset.collapsed === '1';
-    banner.classList.toggle('show', !collapsed);
-    bulb.hidden = !collapsed;
+    setNoticeFileKey(fileKey);
     const checkbox = $('kpOcrBannerNoAsk');
-    if (checkbox) {
-      checkbox.checked = noAsk();
-      checkbox.onchange = event => { setNoAsk(event.target.checked); syncBanner({ needsOcr: true }); };
-    }
-    if ($('kpOcrBannerClose')) $('kpOcrBannerClose').onclick = () => { banner.dataset.collapsed = '1'; syncBanner({ needsOcr: true }); };
-    if (bulb) bulb.onclick = () => { delete banner.dataset.collapsed; syncBanner({ needsOcr: true }); };
-    if ($('kpOcrBannerAct')) $('kpOcrBannerAct').onclick = () => { delete banner.dataset.collapsed; syncBanner({ needsOcr: true }); globalThis.LHN_OCR?.open?.(); };
+    if (checkbox) checkbox.onchange = event => setNoAsk(event.target.checked);
+    const close = $('kpOcrBannerClose');
+    if (close) close.onclick = () => collapseNotice();
+    if ($('kpOcrBannerAct')) $('kpOcrBannerAct').onclick = () => { collapseNotice(); globalThis.LHN_OCR?.open?.(); };
+    bulb.onclick = () => expandNotice();   // bóng đèn LUÔN mở lại thẻ, kể cả tệp đã tick “Không hiện lại”
+    banner.onmouseenter = () => clearTimeout(noticeTimer);
+    banner.onmouseleave = () => { if (banner.classList.contains('show')) scheduleNoticeHide(); };
+    refreshNotice(needsOcr);
   }
-
   /* ---------- khoanh vùng ---------- */
   function pageBox() {
     const page = globalThis.LHN_DOCUMENTS_OCR?.pageElement?.()

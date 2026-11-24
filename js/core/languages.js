@@ -1169,6 +1169,10 @@
   Object.assign(MESSAGES.en, {"ocrHintTess": "Printed: reads the whole page in one pass, fastest for clean printouts.", "ocrHintPP": "Fast: PP-OCR reads the whole page in one pass in a background worker, so the interface stays clickable and Stop takes effect at once. The first run loads a ~32 MB model (10–30 seconds); it misses many Vietnamese diacritics.", "ocrHintFusor": "Handwriting: uses Fusor — press “Choose model folder” (~831 MB) first, then Recognise text becomes available; it runs noticeably slower.", "ocrUiLangNone": "none selected", "ocrUiNoLangMatch": "No such language"});
   Object.assign(MESSAGES.vi, {"ocrHintTess": "Chữ in: đọc thẳng cả trang một lượt, nhanh nhất với tài liệu in rõ.", "ocrHintPP": "Nhanh: PP-OCR đọc cả trang một lượt, chạy trong worker nền nên giao diện vẫn bấm được và Dừng ăn ngay. Lần đầu phải nạp model ~32 MB (10–30 giây); thiếu nhiều dấu tiếng Việt.", "ocrHintFusor": "Viết tay: dùng Fusor — phải bấm “Chọn thư mục model” (~831 MB) xong mới bấm được Nhận dạng chữ; chạy chậm hơn hẳn.", "ocrUiLangNone": "chưa chọn", "ocrUiNoLangMatch": "Không có ngôn ngữ này"});
   Object.assign(MESSAGES.ko, {"ocrHintTess": "인쇄체: 페이지 전체를 한 번에 읽으며 깨끗한 인쇄물에 가장 빠릅니다.", "ocrHintPP": "빠름: PP-OCR이 백그라운드 워커에서 페이지 전체를 한 번에 읽어 화면이 계속 반응하고 중지가 즉시 적용됩니다. 첫 실행에는 약 32MB 모델을 불러옵니다(10–30초). 베트남어 성조 부호는 많이 놓칩니다.", "ocrHintFusor": "필기체: Fusor를 사용합니다 — 먼저 “모델 폴더 선택”(약 831MB)을 눌러야 “텍스트 인식”을 사용할 수 있고, 속도가 눈에 띄게 느립니다.", "ocrUiLangNone": "선택 없음", "ocrUiNoLangMatch": "해당 언어가 없습니다"});
+  // v3.5.618: phụ đề popup OCR đúng câu của demo 2.9.7.26
+  Object.assign(MESSAGES.en, {"ocrSubLine": "Page {page} · {state}", "ocrSubHasLayer": "already has a text layer", "ocrSubNoLayer": "no text layer yet"});
+  Object.assign(MESSAGES.vi, {"ocrSubLine": "Trang {page} · {state}", "ocrSubHasLayer": "đã có lớp chữ gốc", "ocrSubNoLayer": "chưa có lớp chữ"});
+  Object.assign(MESSAGES.ko, {"ocrSubLine": "페이지 {page} · {state}", "ocrSubHasLayer": "원본 텍스트 레이어 있음", "ocrSubNoLayer": "아직 텍스트 레이어 없음"});
   globalThis.LHN_LANGUAGES = { LANGS, MESSAGES, detectLanguage, languageFor, t };
 })();
 

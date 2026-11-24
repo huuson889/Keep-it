@@ -489,3 +489,11 @@ html.dark .kpOcrUi{--page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4
 /* ===== Nhóm tuỳ chọn không thuộc cách nhận dạng đang chọn: làm mờ như demo (.off) ===== */
 .kpOcrUi .kpFRow.kpOff,.kpOcrUi .kpChecks.kpOff{opacity:.45}
 .kpOcrUi .kpFRow.kpOff label,.kpOcrUi .kpChecks.kpOff span{color:var(--muted)}
+/* ===== Danh sách ngôn ngữ: lớp .kpick do JS dựng nên bộ sinh scope không thấy — chép nguyên từ style.css demo ===== */
+.kpOcrUi .kpKpick{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 9px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer}
+.kpOcrUi .kpKpick:hover{background:var(--surface)}
+.kpOcrUi .kpKpick input{accent-color:var(--brand);margin:0}
+.kpOcrUi .kpKpick span{flex:1;display:flex;align-items:baseline;gap:6px;min-width:0}
+.kpOcrUi .kpKpick span small{font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpOcrUi .kpKpick.kpOn{background:var(--brandSoft);color:var(--brand)}
+.kpOcrUi .kpKpick.kpOn span small{color:var(--brand);opacity:.75}

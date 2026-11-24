@@ -152,7 +152,7 @@ function applyTools(){
  for(const b of $$('#viewer [data-t]')){const k=b.dataset.t,off=(k==='notes'&&settings.notesEnabled===false)||(k==='translate'&&settings.translateEnabled===false)||(k==='ai'&&settings.askAIEnabled===false);b.disabled=off||(!text&&!['notes','ocr'].includes(k));b.style.display=V.doc.image&&!['notes','ocr'].includes(k)?'none':'';b.style.opacity=b.disabled?'.4':'';b.title=off?t('masterOff'):!text&&k!=='notes'?t('noText'):t({notes:'notes',translate:'translate',tts:'readAloud',wc:'wordClass',ai:'askAI',ocr:'ocrButton'}[k]);b.classList.toggle('on',k==='notes'?nativeNotesOpen:k==='tts'?LHN_READER_API.state.reading:V.tools.has(k));}
 
  const message=V.doc.image?t('imageHint'):!text?t('scan'):['docx','pptx'].includes(V.doc.type)?t('officeHint'):'';
- try{globalThis.LHN_OCR_UI?.syncBanner?.({needsOcr:(V.doc.image||!text)&&!V.doc?.scan});}catch{}$('#vBanner').textContent=message;$('#vBanner').classList.toggle('show',!!message);
+ try{globalThis.LHN_OCR_UI?.syncBanner?.({needsOcr:V.doc.image||!text,fileKey:`${V.doc.name||V.doc.title||''}|${V.doc.size||''}`});}catch{} const bl=$('#vBanner'); if(bl){bl.textContent='';bl.classList.remove('show','image','scan');} void message;
 
 }
 function sourceTexts(page=V.page){return activeEngine?.pages[page-1]?.texts||[];}
@@ -926,7 +926,7 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
   ready: () => !!(V.doc && activeEngine),
   info: () => {
     if (!V.doc) return null;
-    return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: activeEngine?.pages?.length || V.doc.pages || 1, image: !!V.doc.image };
+    return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: activeEngine?.pages?.length || V.doc.pages || 1, image: !!V.doc.image, hasText: !!sourceEntries(V.page).length };
   },
   /* Raster một trang ở độ phân giải đủ cho OCR (~2000 px cạnh dài) mà không đụng trang đang hiện. */
   pageElement(page) {

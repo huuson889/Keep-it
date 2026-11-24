@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.617** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
+- Version **3.5.618** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -163,6 +163,19 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.618 | Arena:**
+- Người dùng gửi 2 ảnh đối chiếu (app 3.5.617 vs demo 2.9.7.26) và yêu cầu **giống 100%**, hỏi **bóng đèn gợi ý đâu**, và yêu cầu **viết rõ lại yêu cầu**. Đã viết bản chốt: `docs/ocr-demo-2.9.7.26-yeu-cau.md`.
+- **Sửa 6 sai lệch nhìn thấy được trên ảnh:**
+  1. **Mất icon đầu popup**: gradient bị đổi id thành `kpOcrKpDlg` nhưng `fill` vẫn `url(#kpDlg)` ⇒ icon trong suốt. Nay `fill="url(#kpOcrKpDlg)"`.
+  2. **Danh sách ngôn ngữ nằm ngang, dính chữ** (`EnglishEnglish`, `VietnameseTiếng Việt`): lớp `.kpick` do JS dựng nên bộ sinh CSS không thấy, mất toàn bộ rule `display:flex/gap/padding/…`. Nay chép nguyên 7 rule `.kpick` của demo thành `.kpKpick` (+ `span small`, `:hover`, `.kpOn`).
+  3. **Phụ đề popup sai**: đang là tên tệp; nay đúng demo `Trang N · chưa có lớp chữ` (hoặc `đã có lớp chữ gốc`), đủ 3 tiếng.
+  4. **Khoảng trang mặc định 1…1**: nay **1…N** như ảnh demo.
+  5. **Vẫn còn thanh vàng gợi ý quét của Keepit**: đã bỏ hẳn (`#vBanner` không còn được bật), thay bằng thẻ gợi ý + bóng đèn của demo.
+  6. **Thẻ gợi ý/bóng đèn chưa chạy đủ hành vi demo**: nay có tự thu sau **10 giây**, ẩn thẻ khi vùng xem **< 640px**, **2 bảng màu** ngẫu nhiên (`data-nt` amber/violet), “Không hiện lại” **theo từng tệp** (`keepit.ocrNoticeOff:<tên|size>`), bóng đèn **luôn** mở lại thẻ, rê chuột thì hoãn tự thu, mở popup/khoanh vùng thì thu gọn.
+- `documents.js`: `info()` thêm `hasText`; điều kiện cần OCR bỏ cờ `scan` (trang không có lớp chữ là hiện thẻ, đúng demo).
+- Đã xác minh: jsdom **51/51**, wiring **39/39**, core **19/19**, bộ mới **14/14** (icon, CSS ngôn ngữ, thông báo 10s/640px/2 màu, bỏ thanh vàng, phụ đề, mặc định 1…N, ✕→bóng đèn→mở lại, “Không hiện lại”, ẩn khi đã có lớp chữ).
+- Chưa kiểm được: Chromium thật (ảnh chụp 1512/390, sáng/tối, chạy OCR thật trên PDF) — sandbox không có trình duyệt.
 
 **2026-11-22 | v3.5.617 | Arena:**
 - Lệnh của người dùng: **giao diện đang là bản port sai** (ảnh gửi: app Keepit còn chip `v2.7.0`, nhãn tiếng Anh) ⇒ phải port **đúng demo 2.9.7.26**; **version tăng tiếp**; **nhãn đủ 3 tiếng en/vi/ko**; **bỏ chip version**.
