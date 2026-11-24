@@ -973,8 +973,14 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
     const text = String(result?.text || '').trim();
     if (!spec || !text) return 0;
     const core = globalThis.LHN_OCR_CORE;
-    const lines = core ? core.groupLines(result.boxes || []) : [];
-    let paragraphs = core ? core.groupParagraphs(lines) : [];
+    /* Gộp dòng/đoạn có thể ném lỗi với box thiếu toạ độ ⇒ phải chặn, nếu không cả lượt OCR
+       bị đánh "không đọc được" và khung chữ/hover không bao giờ được vẽ. */
+    let paragraphs = [];
+    try {
+      const lines = core ? core.groupLines(result.boxes || []) : [];
+      paragraphs = core ? core.groupParagraphs(lines) : [];
+      paragraphs = (paragraphs || []).filter(paragraph => paragraph && Array.isArray(paragraph.rect) && paragraph.text);
+    } catch (error) { paragraphs = []; console.warn('[Keepit] OCR gom đoạn:', error?.message || error); }
     if (!paragraphs.length) paragraphs = [{ text, rect: [0.06, 0.06, 0.94, 0.94], lines: [] }];
     spec.texts = spec.texts || []; spec.paragraphs = spec.paragraphs || [];
     const base = spec.texts.length;

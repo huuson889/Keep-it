@@ -234,7 +234,7 @@ html.dark .kpOcrUi .kpOcrFoot button{border-color:#41414d}
 
 .kpOcrUi .kpOcrFoot button:disabled{opacity:.5;cursor:default}
 
-.kpOcrUi .kpOcrProg{position:absolute;right:14px;bottom:14px;z-index:79;width:380px;max-width:calc(100vw - 24px);display:none;flex-direction:column;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);overflow:hidden}
+.kpOcrUi .kpOcrProg{position:fixed;right:12px;bottom:8px;z-index:79;width:380px;max-width:calc(100vw - 24px);display:none;flex-direction:column;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);overflow:hidden}
 
 html.dark .kpOcrUi .kpOcrProg{border-color:#3b3b46}
 
@@ -347,7 +347,7 @@ html.dark .kpOcrUi .kpLangSearch{border-color:#41414d}
 
 .kpOcrUi .kpTranslation>header button:disabled{opacity:.4}
 
-.kpOcrUi .kpRegionEditor{position:absolute;right:14px;left:auto;transform:none;bottom:14px;z-index:79;width:min(380px,calc(100vw - 24px));max-height:min(64vh,540px);overflow:auto;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);padding:12px}
+.kpOcrUi .kpRegionEditor{position:fixed;right:12px;left:auto;transform:none;bottom:8px;z-index:79;width:min(380px,calc(100vw - 24px));max-height:min(64vh,540px);overflow:auto;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);padding:12px}
 
 html.dark .kpOcrUi .kpRegionEditor{border-color:#3b3b46}
 
@@ -464,9 +464,9 @@ html.dark .kpOcrUi{--page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4
    thì nép sang trái đúng bằng bề rộng sidebar (sidebar đẩy trang nên trang vẫn ở giữa) ===== */
 .kpOcrUi .kpOcrProg{bottom:8px}
 .kpOcrUi .kpRegionEditor{bottom:8px}
-html.kpOcrPanelOpen .kpOcrUi .kpOcrProg,
-html.kpOcrPanelOpen .kpOcrUi .kpRegionEditor{right:calc(var(--trW,380px) + 12px)}
-@media (max-width:820px){html.kpOcrPanelOpen .kpOcrUi .kpOcrProg,html.kpOcrPanelOpen .kpOcrUi .kpRegionEditor{right:12px}}
+/* Demo 2.9.7.26: thẻ tiến độ + khung vùng là position:fixed right:12px ⇒ NẰM ĐÈ LÊN sidebar,
+   không nép sang trái, không dịch theo bề rộng sidebar (bỏ hẳn mọi dịch chuyển). */
+@media (max-width:820px){.kpOcrUi .kpOcrProg,.kpOcrUi .kpRegionEditor{left:12px;right:12px;width:auto;max-width:none}}
 
 /* ===== Riêng Keepit: chọn vùng trong trang (demo dùng #regionSurface nằm trong trang) ===== */
 .kpRegionSurface{position:absolute;inset:0;z-index:6;cursor:crosshair;touch-action:none}
