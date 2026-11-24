@@ -331,6 +331,9 @@ function localize() {
     const stage = document.getElementById('stage');
     const bottom = stage ? Math.max(0, Math.round(window.innerHeight - stage.getBoundingClientRect().bottom)) : 0;
     document.documentElement.style.setProperty('--sideBottom', `${bottom}px`);
+    const bar = document.getElementById('vBar');
+    const top = bar && typeof bar.getBoundingClientRect === 'function' ? Math.max(0, Math.round(bar.getBoundingClientRect().bottom)) : 0;
+    document.documentElement.style.setProperty('--ocrTop', `${top}px`);
   }
   window.addEventListener('resize', placeBottom);
   /* kéo để đổi độ rộng bảng văn bản (demo có #trResize) */
@@ -471,6 +474,11 @@ function localize() {
       if ($('kpOcrAutoHint')) $('kpOcrAutoHint').hidden = picked === 'tess';
     };
     syncMode();
+    /* “Hiện khung vùng đã nhận dạng” (ô trong popup + ô ẩn như demo) */
+    for (const id of ['kpOcrOptBoxes', 'kpOcrShowBoxes']) {
+      const input = $(id);
+      if (input) input.onchange = () => setBoxesVisible(!!input.checked);
+    }
     /* khoanh vùng: 2 nút Hủy / Áp dụng phải chạy */
     if ($('kpOcrCancelRegion')) $('kpOcrCancelRegion').onclick = () => { closeRegionEditor(); };
     if ($('kpOcrApplyRegion')) $('kpOcrApplyRegion').onclick = () => {
@@ -679,48 +687,103 @@ function localize() {
   }
 
   /* ---------- khoanh vùng ---------- */
+  function pageBox() {
+    const page = globalThis.LHN_DOCUMENTS_OCR?.pageElement?.()
+      || document.querySelector('#pageStack > [data-page] .docsSource')
+      || document.querySelector('#pageStack [data-page] .docsSource');
+    return page || null;
+  }
+  /* lớp chọn vùng + khung đã nhận dạng nằm trong chính trang, đúng demo (#regionSurface) */
+  function regionSurface(page) {
+    let host = page.querySelector(':scope > .kpRegionSurface');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'kpRegionSurface';
+      host.hidden = true;
+      host.innerHTML = '<div class="kpRegionMarks"></div><div class="kpRegionRect"></div>';
+      page.append(host);
+    }
+    return host;
+  }
   function selectRegion({ label } = {}) {
     return new Promise(resolve => {
       placeBottom();
-      const page = document.querySelector('#pageStack > [data-page] .docsSource') || document.querySelector('#pageStack [data-page] .docsSource');
+      const page = pageBox();
       if (!page) { resolve(null); return; }
-      const layer = document.createElement('div');
-      layer.className = 'kpOcrRegion';
+      const host = regionSurface(page);
+      const marks = host.querySelector('.kpRegionMarks');
+      const box = host.querySelector('.kpRegionRect');
       const hint = document.createElement('div');
-      hint.className = 'hint'; hint.textContent = label || t('ocrRegionHint');
-      const box = document.createElement('div');
-      box.className = 'box';
-      layer.append(hint, box);
+      hint.className = 'kpRegionHintBar';
+      hint.textContent = label || t('ocrRegionHint');
+      host.hidden = false;
+      host.append(hint);
       const rect0 = page.getBoundingClientRect();
-      Object.assign(layer.style, { left: `${rect0.left}px`, top: `${rect0.top}px`, width: `${rect0.width}px`, height: `${rect0.height}px` });
-      document.body.append(layer);
       let start = null;
       const point = event => ({
         x: Math.min(1, Math.max(0, (event.clientX - rect0.left) / Math.max(1, rect0.width))),
         y: Math.min(1, Math.max(0, (event.clientY - rect0.top) / Math.max(1, rect0.height)))
       });
       const draw = (a, b) => {
+        box.classList.add('on');
         box.style.left = `${Math.min(a.x, b.x) * 100}%`; box.style.top = `${Math.min(a.y, b.y) * 100}%`;
         box.style.width = `${Math.abs(a.x - b.x) * 100}%`; box.style.height = `${Math.abs(a.y - b.y) * 100}%`;
       };
-      const stop = value => { layer.remove(); document.removeEventListener('keydown', escape); resolve(value); };
+      const stop = value => {
+        host.hidden = true; box.classList.remove('on'); hint.remove();
+        document.removeEventListener('keydown', escape);
+        host.removeEventListener('pointerdown', down);
+        host.removeEventListener('pointermove', move);
+        host.removeEventListener('pointerup', up);
+        if (value && marks) {
+          const mark = document.createElement('div');
+          mark.className = 'kpRegionMark';
+          Object.assign(mark.style, { left: `${value[0] * 100}%`, top: `${value[1] * 100}%`, width: `${(value[2] - value[0]) * 100}%`, height: `${(value[3] - value[1]) * 100}%` });
+          marks.append(mark);
+        }
+        resolve(value);
+      };
       const escape = event => { if (event.key === 'Escape') stop(null); };
-      layer.addEventListener('pointerdown', event => { start = point(event); draw(start, start); });
-      layer.addEventListener('pointermove', event => { if (start) draw(start, point(event)); });
-      layer.addEventListener('pointerup', event => {
-        if (!start) { stop(null); return; }
+      const down = event => { event.preventDefault(); start = point(event); draw(start, start); };
+      const move = event => { if (start) draw(start, point(event)); };
+      const up = event => {
+        if (!start) return;
         const end = point(event);
         const rect = [Math.min(start.x, end.x), Math.min(start.y, end.y), Math.max(start.x, end.x), Math.max(start.y, end.y)];
+        start = null;
         stop(rect[2] - rect[0] > .01 && rect[3] - rect[1] > .01 ? rect : null);
-      });
+      };
+      host.addEventListener('pointerdown', down);
+      host.addEventListener('pointermove', move);
+      host.addEventListener('pointerup', up);
       document.addEventListener('keydown', escape);
     });
   }
-
+  /* “Hiện khung vùng đã nhận dạng trên trang” — khung theo toạ độ OCR thật */
+  function drawBoxes(boxes = []) {
+    const host = pageBox();
+    if (!host || !Array.isArray(boxes)) return;
+    let layer = host.querySelector(':scope > .kpBoxLayer');
+    if (!layer) { layer = document.createElement('div'); layer.className = 'kpBoxLayer'; host.append(layer); }
+    layer.replaceChildren();
+    for (const box of boxes) {
+      const rect = box?.rect;
+      if (!Array.isArray(rect) || rect.length !== 4) continue;
+      const node = document.createElement('div');
+      node.className = 'kpOcrBox';
+      Object.assign(node.style, { left: `${rect[0] * 100}%`, top: `${rect[1] * 100}%`, width: `${(rect[2] - rect[0]) * 100}%`, height: `${(rect[3] - rect[1]) * 100}%` });
+      layer.append(node);
+    }
+    layer.hidden = !($('kpOcrOptBoxes')?.checked ?? true);
+  }
+  function setBoxesVisible(visible) {
+    const layer = pageBox()?.querySelector(':scope > .kpBoxLayer');
+    if (layer) layer.hidden = !visible;
+  }
   globalThis.LHN_OCR_UI = Object.freeze({
     openDialog, closeDialog, dialogVisible, openCard, closeCard, current, setPage, setState, log, progress,
     finish, busy, toast, selectRegion, panel, panelText, closePanel, syncBanner, selectedLangs,
-    openRegionEditor, closeRegionEditor
+    openRegionEditor, closeRegionEditor, drawBoxes, setBoxesVisible
   });
 })();
 

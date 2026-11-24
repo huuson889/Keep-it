@@ -82,6 +82,7 @@
         if (error) { failures.push({ page, error: errorText(error) }); ui().log(t('ocrPageFailed', { page, reason: errorText(error) })); continue; }
         docs().apply(page, result);
         ui().panel({ text: result.text, page, append: options.scope === 'all' && applied > 0 });
+        ui().drawBoxes?.(result.boxes || []);
         applied++;
         ui().log(t('ocrPageDone', { page }));
         ui().progress((index + 1) / pages.length);

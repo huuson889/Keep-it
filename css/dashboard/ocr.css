@@ -83,7 +83,7 @@
 
 .kpOcrUi .zoomGroup .kpVbtn{width:36px;min-width:36px;height:36px;border-radius:9px}
 
-.kpOcrUi .kpTranslation{width:0;flex:none;overflow:hidden;border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;transition:width .26s cubic-bezier(.2,.8,.2,1)}
+.kpOcrUi .kpTranslation{position:fixed;right:0;top:var(--ocrTop,0px);bottom:0;z-index:76;width:0;max-width:min(560px,92vw);flex:none;overflow:hidden;border-left:1px solid var(--line);background:var(--surface);box-shadow:-12px 0 28px rgba(20,16,40,.10);display:flex;flex-direction:column;transition:width .26s cubic-bezier(.2,.8,.2,1)}
 
 .kpOcrUi .kpTranslation.open{width:var(--trW,min(380px,42vw))}
 
@@ -314,7 +314,7 @@ html.dark .kpOcrUi .kpLangSearch{border-color:#41414d}
   .kpOcrUi .kpOcrFoot .kpFootNote{display:none}
   .kpOcrUi .kpOcrProg{left:8px;right:8px;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
   .kpOcrUi .kpRegionEditor{left:8px;right:8px;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
-  .kpOcrUi .kpTranslation.open{position:absolute;inset:0;width:100%;z-index:70;border-left:0}
+  @media (max-width:820px){.kpOcrUi .kpTranslation.open{left:0;width:100%;border-left:0}}
 }
 
 @media (orientation:landscape) and (max-width:1080px){
@@ -473,3 +473,16 @@ html.dark .kpOcrUi{--page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4
 .pdfTextLayer.ocrTextLayer .para{position:absolute;margin:0}
 .ocrWord{position:absolute;color:transparent;white-space:pre;font-size:12px;line-height:1;cursor:text}
 .ocrWord::selection{background:rgba(90,120,255,.35)}
+
+/* ===== Chọn vùng trên trang — port từ demo (#regionSurface / #regionMarks / #regionRect) ===== */
+.kpRegionSurface{position:absolute;inset:0;z-index:6;cursor:crosshair;touch-action:none}
+.kpRegionSurface[hidden]{display:none}
+.kpRegionMarks{position:absolute;inset:0;pointer-events:none;z-index:6}
+.kpRegionRect{position:absolute;z-index:7;border:2px solid var(--red,#e5484d);background:#e5484d1f;border-radius:2px;pointer-events:none;display:none;box-shadow:0 0 0 1px #e5484d59,0 0 0 3px #e5484d26}
+.kpRegionRect.on{display:block}
+.kpRegionMark{position:absolute;border:2px solid var(--brand,#7262df);border-radius:2px;background:#7262df22}
+.kpRegionHintBar{position:absolute;inset-inline-start:0;top:-28px;padding:4px 9px;border-radius:8px;background:#111318;color:#fff;font-size:12px;white-space:nowrap;pointer-events:none}
+/* khung vùng đã nhận dạng (ô “Hiện khung vùng đã nhận dạng trên trang”) */
+.kpBoxLayer{position:absolute;inset:0;pointer-events:none;z-index:7}
+.kpBoxLayer[hidden]{display:none}
+.kpOcrBox{position:absolute;border:1px solid var(--brand,#7262df);background:#7262df14;border-radius:2px}

@@ -929,6 +929,10 @@ globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
     return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: activeEngine?.pages?.length || V.doc.pages || 1, image: !!V.doc.image };
   },
   /* Raster một trang ở độ phân giải đủ cho OCR (~2000 px cạnh dài) mà không đụng trang đang hiện. */
+  pageElement(page) {
+    const n = page || info().page;
+    return document.querySelector(`#pageStack > [data-page="${n}"] .docsSource`) || document.querySelector(`#pageStack [data-page="${n}"] .docsSource`);
+  },
   async raster(page, longSide = 2000) {
     const spec = activeEngine?.pages?.[page - 1];
     if (!spec) return null;
