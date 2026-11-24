@@ -53,3 +53,11 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 - Dải trang bên trái và bảng dịch ẩn/hiện trượt 260ms cùng đường cong thanh Ghi chú (tắt chuyển động khi hệ thống yêu cầu), có nút trên thanh trên và tay kéo mép phải đồng kiểu panel dịch (hỗ trợ phím mũi tên, Home/End); `lhnDocumentsRail` lưu trạng thái và chiều rộng. Mặc định hiện màn ngang, ẩn màn dọc; bề rộng bị giới hạn để chừa chỗ xem tài liệu, không áp dụng cho ảnh.
 
 - Chuyển chế độ Gốc/Đọc hoặc mở thẳng chế độ Đọc chỉ đổi cách xem, không tự khởi động giọng; muốn đọc to dùng nút Đọc to riêng.
+
+## OCR trên trang tài liệu (v3.5.613)
+
+- Nút **Nhận dạng chữ** (`data-t="ocr"`) bật cả với tài liệu ảnh/scan, vì đó chính là trường hợp cần OCR; các nút Dịch/Đọc to tự bật lại sau khi có lớp chữ.
+- Ba engine cục bộ trong `js/ocr/engine.js`: `pp` (PP-OCR trong worker, mặc định), `fusor` (model tải một lần từ Hugging Face vào thư mục người dùng chọn, handle giữ trong IndexedDB `keepit-ocr`), `tess` (Tesseract đóng gói sẵn). `runCanvas(mode, canvas)` trả `{text, boxes}` với `rect` chuẩn hoá 0..1.
+- `stop()` cắt việc đang chạy và **giữ** model Fusor trong RAM; chỉ `release()` (nút ✕) mới terminate worker + compute pool. Một trang lỗi được thử lại một lần rồi bỏ qua, không làm hỏng cả lượt.
+- Bộ xem cung cấp `LHN_DOCUMENTS_OCR` (`raster`, `apply`, `refresh`): `raster` ưu tiên chép canvas đang hiển thị nếu đủ nét, vẽ ảnh sang canvas, cuối cùng mới dựng lại trang ở ~2000px cạnh dài; `apply` ghi vào `activeEngine.pages[n-1].texts/paragraphs` và tạo span từng từ trong `.pdfTextLayer` (thêm `.ocrTextLayer`) để chọn chữ/dịch/đọc to/ghi chú dùng được ngay.
+- Khoanh vùng (`Chọn vùng`) nhận dạng riêng phần đã chọn rồi ghép toạ độ về trang. Kết quả OCR hiện **chưa** lưu vào `keepit-documents`, nên mở lại tài liệu phải nhận dạng lại.

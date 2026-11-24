@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Keepit - Translate, Learn, Ask AI",
-  "version": "3.5.611",
+  "version": "3.5.613",
   "description": "Translate web pages bilingually. Highlights, notes, dictionary, video player, Ask AI, speaking and listening practice, flashcards.",
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
@@ -230,7 +230,8 @@
     "https://lingva.ml/*",
     "https://lingva.thedaviddelta.com/*",
     "https://fonts.googleapis.com/*",
-    "https://fonts.gstatic.com/*"
+    "https://fonts.gstatic.com/*",
+    "https://huggingface.co/*"
   ],
   "action": {
     "default_title": "Keepit - Translate, Learn, Ask AI",

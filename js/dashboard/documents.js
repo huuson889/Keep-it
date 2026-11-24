@@ -149,7 +149,7 @@ function lockSelectionUntilQuiet(cycle){
 }
 function applyTools(){
  if(!V.doc)return;$('#viewer').classList.toggle('wcOn',V.tools.has('wc'));const text=isText(),anyText=!V.doc.image&&activeEngine?.pages.some((_,i)=>sourceEntries(i+1).length);$('#vMode').style.display=anyText?'':'none';if(!anyText)V.mode='orig';
- for(const b of $$('#viewer [data-t]')){const k=b.dataset.t,off=(k==='notes'&&settings.notesEnabled===false)||(k==='translate'&&settings.translateEnabled===false)||(k==='ai'&&settings.askAIEnabled===false);b.disabled=off||(!text&&!['notes'].includes(k));b.style.display=V.doc.image&&k!=='notes'?'none':'';b.style.opacity=b.disabled?'.4':'';b.title=off?t('masterOff'):!text&&k!=='notes'?t('noText'):t({notes:'notes',translate:'translate',tts:'readAloud',wc:'wordClass',ai:'askAI'}[k]);b.classList.toggle('on',k==='notes'?nativeNotesOpen:k==='tts'?LHN_READER_API.state.reading:V.tools.has(k));}
+ for(const b of $$('#viewer [data-t]')){const k=b.dataset.t,off=(k==='notes'&&settings.notesEnabled===false)||(k==='translate'&&settings.translateEnabled===false)||(k==='ai'&&settings.askAIEnabled===false);b.disabled=off||(!text&&!['notes','ocr'].includes(k));b.style.display=V.doc.image&&!['notes','ocr'].includes(k)?'none':'';b.style.opacity=b.disabled?'.4':'';b.title=off?t('masterOff'):!text&&k!=='notes'?t('noText'):t({notes:'notes',translate:'translate',tts:'readAloud',wc:'wordClass',ai:'askAI',ocr:'ocrButton'}[k]);b.classList.toggle('on',k==='notes'?nativeNotesOpen:k==='tts'?LHN_READER_API.state.reading:V.tools.has(k));}
 
  const message=V.doc.image?t('imageHint'):!text?t('scan'):['docx','pptx'].includes(V.doc.type)?t('officeHint'):'';$('#vBanner').textContent=message;$('#vBanner').classList.toggle('show',!!message);
 
@@ -866,7 +866,7 @@ const keepitBarHooks=globalThis.LHN_BAR_HOOKS||{};
 globalThis.LHN_BAR_HOOKS=Object.freeze({...keepitBarHooks,openMainSheet:(fromRect,options={})=>keepitBarHooks.openMainSheet?.(fromRect,{...options,documents:true,focusReader:options.focusReader??true}),translateOffline:()=>toast(t('trError'))});
 
 $('#stage').addEventListener('pointerdown',e=>{if(!isFacing())return;const frame=e.target.closest('.pageFrame[data-page]');if(frame&&+frame.dataset.page!==V.page)setActivePage(+frame.dataset.page);},{passive:true});
-$('#viewer').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b||b.disabled)return;setMore(false,false);if(b.dataset.t==='notes'){void openNativeNotes();return;}if(b.dataset.t==='ai'){void LHN_CONTENT_TOOLS.askAI();return;}if(b.dataset.t==='tts'){void runViewerAction('read');return;}if(b.dataset.t==='wc'){void toggleWordClass().catch(()=>toast(t('wcError')));return;}if(b.dataset.t==='translate')runViewerAction('translate');});
+$('#viewer').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(!b||b.disabled)return;setMore(false,false);if(b.dataset.t==='notes'){void openNativeNotes();return;}if(b.dataset.t==='ai'){void LHN_CONTENT_TOOLS.askAI();return;}if(b.dataset.t==='tts'){void runViewerAction('read');return;}if(b.dataset.t==='wc'){void toggleWordClass().catch(()=>toast(t('wcError')));return;}if(b.dataset.t==='ocr'){globalThis.LHN_OCR?.open?.();return;}if(b.dataset.t==='translate')runViewerAction('translate');});
 for(const header of $$('.side2 header')){let y=null;header.addEventListener('touchstart',e=>{y=e.target.closest('button,select,input')?null:e.touches[0].clientY;},{passive:true});header.addEventListener('touchend',e=>{if(y!==null&&matchMedia('(orientation:portrait)').matches&&e.changedTouches[0].clientY-y>55&&V.panel)setPanel(V.panel);y=null;},{passive:true});}
 $('#lgClose').onclick=()=>$('#legend').classList.remove('on');
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.fullscreenElement){e.preventDefault();void document.exitFullscreen();return;}if(['ArrowLeft','ArrowRight'].includes(e.key)&&$('#viewer').classList.contains('show')&&V.doc&&!e.defaultPrevented&&!e.isComposing&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&$('#vMorePanel').hidden&&!$('.modalWrap.show')&&!e.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="separator"],[role="slider"],[role="spinbutton"],[id^="lhn-"],[data-lhn-bilingual-ui]')){e.preventDefault();navigateStep(e.key==='ArrowRight'?1:-1);wakePager();return;}if(e.key==='Escape'&&!$('#vMorePanel').hidden){e.preventDefault();setMore(false);return;}if(e.key!=='Escape'||e.target.closest('input,textarea,[id^="lhn-"],[data-lhn-bilingual-ui]')||$('.modalWrap.show'))return;if($('#viewer').classList.contains('show')){if(V.panel)setPanel(V.panel);else void closeViewer();}});
@@ -919,5 +919,98 @@ if(EMBEDDED)addEventListener('message',event=>{
   })();
  }
 });
+
+/* ---------- v3.5.613: cầu nối OCR — bộ xem cho engine mượn trang, ảnh raster và lớp chữ ---------- */
+globalThis.LHN_DOCUMENTS_OCR = Object.freeze({
+  ready: () => !!(V.doc && activeEngine),
+  info: () => {
+    if (!V.doc) return null;
+    return { id: V.doc.id, name: V.doc.name || V.doc.title || '', type: V.doc.type, page: V.page, pages: activeEngine?.pages?.length || V.doc.pages || 1, image: !!V.doc.image };
+  },
+  /* Raster một trang ở độ phân giải đủ cho OCR (~2000 px cạnh dài) mà không đụng trang đang hiện. */
+  async raster(page) {
+    const spec = activeEngine?.pages?.[page - 1];
+    if (!spec) return null;
+    /* Trang đã vẽ đủ nét thì chép lại, khỏi dựng lại; ảnh thì vẽ sang canvas thật. */
+    const shown = document.querySelector(`#pageStack > [data-page="${page}"] .docsSource`) || document.querySelector(`#pageStack [data-page="${page}"] .docsSource`);
+    const live = shown?.querySelector(':scope > canvas:not(.pdfDetail)');
+    const factor = Math.max(1, Math.min(2.6, 2000 / Math.max(1, spec.width, spec.height)));
+    if (live && live.width >= Math.min(1400, spec.width * factor * .9)) {
+      const copy = document.createElement('canvas');
+      copy.width = live.width; copy.height = live.height;
+      copy.getContext('2d').drawImage(live, 0, 0);
+      return copy;
+    }
+    const image = shown?.querySelector('img.actualImage, img');
+    if (image && !live) {
+      const copy = document.createElement('canvas');
+      copy.width = Math.max(1, Math.round(spec.width * factor));
+      copy.height = Math.max(1, Math.round(spec.height * factor));
+      const context = copy.getContext('2d');
+      context.fillStyle = '#fff'; context.fillRect(0, 0, copy.width, copy.height);
+      context.drawImage(image, 0, 0, copy.width, copy.height);
+      return copy;
+    }
+    const host = document.createElement('div');
+    host.style.cssText = `position:absolute;left:-99999px;top:0;width:${Math.round(spec.width * factor)}px;height:${Math.round(spec.height * factor)}px;pointer-events:none`;
+    document.body.append(host);
+    try {
+      await activeEngine.render(host, page);
+      const canvas = host.querySelector('canvas');
+      if (!canvas) return null;
+      canvas.remove();
+      return canvas;
+    } finally { host.remove(); }
+  },
+  /* Ghi kết quả vào đúng mô hình trang + lớp chữ để chọn chữ/dịch/đọc to dùng được ngay. */
+  apply(page, result) {
+    const spec = activeEngine?.pages?.[page - 1];
+    const text = String(result?.text || '').trim();
+    if (!spec || !text) return 0;
+    const core = globalThis.LHN_OCR_CORE;
+    const lines = core ? core.groupLines(result.boxes || []) : [];
+    const paragraphs = core ? core.groupParagraphs(lines) : [{ text, rect: [0, 0, 1, 1], lines: [] }];
+    if (!paragraphs.length) return 0;
+    spec.texts = spec.texts || []; spec.paragraphs = spec.paragraphs || [];
+    const base = spec.texts.length;
+    for (const paragraph of paragraphs) {
+      spec.texts.push(paragraph.text);
+      spec.paragraphs.push({ isTable: false, ocr: true, boxes: (paragraph.lines || []).flatMap(line => line.boxes || []) });
+    }
+    const target = document.querySelector(`#pageStack > [data-page="${page}"] .docsSource`) || document.querySelector(`#pageStack [data-page="${page}"] .docsSource`);
+    if (target) {
+      let layer = target.querySelector(':scope > .pdfTextLayer');
+      if (!layer) { layer = document.createElement('div'); layer.className = 'textLayer pdfTextLayer ocrTextLayer'; target.append(layer); }
+      layer.classList.add('ocrTextLayer');
+      paragraphs.forEach((paragraph, index) => {
+        const para = document.createElement('div');
+        para.className = 'para';
+        para.dataset.page = String(page);
+        para.dataset.i = String(base + index);
+        para.dataset.paragraphIndex = String(base + index);
+        para.dataset.paragraphStart = 'true';
+        const [l, t, r, b] = paragraph.rect;
+        para.style.cssText = `position:absolute;left:${l * 100}%;top:${t * 100}%;width:${(r - l) * 100}%;height:${(b - t) * 100}%`;
+        const en = document.createElement('span');
+        en.className = 'en';
+        for (const line of paragraph.lines || []) for (const word of line.boxes || []) {
+          const span = document.createElement('span');
+          span.className = 'ocrWord';
+          span.textContent = word.text;
+          const [wl, wt, wr, wb] = word.rect;
+          span.style.cssText = `position:absolute;left:${(wl - l) / Math.max(1e-6, r - l) * 100}%;top:${(wt - t) / Math.max(1e-6, b - t) * 100}%;width:${(wr - wl) / Math.max(1e-6, r - l) * 100}%;height:${(wb - wt) / Math.max(1e-6, b - t) * 100}%`;
+          en.append(span);
+        }
+        if (!en.childNodes.length) en.textContent = paragraph.text;
+        para.append(en);
+        layer.append(para);
+      });
+    }
+    applyTools();
+    return paragraphs.length;
+  },
+  refresh() { try { applyTools(); } catch { /* ignore */ } }
+});
+
 void boot();
 })();

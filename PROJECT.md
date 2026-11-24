@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.611**: căn thanh phím tắt theo Reader tài liệu; giữ thanh dưới hiện khi menu Thêm hoặc sheet menu chính mở, tôn trọng chế độ Ẩn.
+- Version **3.5.613**: OCR chạy trong Tài liệu với 3 engine (PP-OCR · Fusor · Tesseract), thẻ tiến độ có Dừng (giữ model) / ✕ (giải phóng), khoanh vùng; kết quả ghi thẳng vào lớp chữ của trang nên dịch/đọc to/ghi chú dùng được.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -9,6 +9,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
+- **OCR trong Tài liệu (3.5.613):** đã đủ 3 engine + thẻ tiến độ + khoanh vùng; còn phải kiểm trên Chromium thật (ảnh 1512/390 sáng/tối, PDF scan thật, tốc độ, vị trí chữ sau zoom, model Fusor tải từ Hugging Face) và chưa lưu kết quả OCR vào `keepit-documents` (mở lại tài liệu phải nhận dạng lại).
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
@@ -162,6 +163,18 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.613 | Arena:**
+
+- Tóm tắt: Gắn OCR đầy đủ vào bộ xem Tài liệu, giống bản demo: nút **Nhận dạng chữ** trên thanh công cụ và trong menu Thêm → hộp chọn **engine** (Nhanh PP-OCR / Fusor / Tesseract) + **phạm vi** (trang này / cả tài liệu) → thẻ tiến độ (đồng hồ, thanh tiến độ, 3 dòng nhật ký, khối tổng kết + cảnh báo) với **Dừng**, **Buộc dừng**, **Nhận dạng lại**, **Chọn vùng**, **✕**. Bấm **Dừng** cắt việc đang chạy và **giữ model Fusor trong RAM**; chỉ **✕** mới gọi `release()`. Một trang lỗi không giết cả lượt (thử lại đúng trang đó 1 lần rồi bỏ qua, cuối lượt báo “Xong d/x trang · n trang lỗi”). Kết quả OCR được ghi vào `activeEngine.pages[n-1].texts/paragraphs` **và** vào `.pdfTextLayer` của trang (mỗi từ một span định vị theo toạ độ chuẩn hoá), nên chọn chữ / dịch / đọc to / ghi chú dùng được ngay trên trang scan. Khoanh vùng để nhận dạng riêng một phần trang rồi ghép lại đúng chỗ.
+- File: `js/ocr/engine.js` (viết lại: 3 engine, `runCanvas`, `stop` mềm, `release` cứng), `js/ocr/ui.js` (hộp chọn, thẻ tiến độ, khoanh vùng, toast), `js/ocr/run.js` (điều khiển lượt chạy), `js/ocr/core.js`, `js/dashboard/documents.js` (cầu nối `LHN_DOCUMENTS_OCR`: `raster`/`apply`/`refresh`; nút `data-t="ocr"` bật cả với trang scan), `pages/documents.html` (nút + 3 thẻ script + link CSS), `css/dashboard/ocr.css` (mới), `js/core/languages.js` (46 khoá `ocr*` × en/vi/ko), `vendor/ocr/ppocr` + `vendor/ocr/tess-v9` + `vendor/ocr/tess-v9-data` + `vendor/ocr/ppworker.js` + `vendor/ocr/tess-v9.js`, `manifest.json` (3.5.613), `PROJECT.md`.
+- Kiểm tra: `node --check` 5 tệp JS; **22/22** test hành vi bằng jsdom trên chính `ui.js`/`run.js`/`core.js`/`languages.js` (thẻ hiện đúng tiêu đề khi chạy, áp dụng kết quả vào trang, xong ⇒ xanh “Đã nhận dạng xong”, Dừng ⇒ cam “Đã dừng nhận dạng” + gọi `stop` + **không** `release`, ✕ ⇒ gọi `release` + đóng thẻ, hộp chọn đủ 3 engine/2 phạm vi, nhãn dịch theo ngôn ngữ, không lỗi runtime); **19/19** unit test `core.js`; **28/28** kiểm dây (CSS parse sạch bằng css-tree, html không mất script cũ, nút/nhãn/cầu nối, mọi khoá `ocr*` đủ 3 ngôn ngữ và không rỗng). **Chưa kiểm** trên Chromium (sandbox không có trình duyệt): chưa có ảnh 1512/390 sáng/tối, chưa chạy PP-OCR/Fusor/Tesseract thật trên PDF scan thật, chưa đo tốc độ và chưa xác minh vị trí chữ khớp ảnh sau khi zoom.
+
+**2026-11-22 | v3.5.612 | Arena:**
+
+- Tóm tắt: Đưa hạ tầng OCR (Fusor) vào Keepit theo cấu trúc `js/ocr/` đã chốt: thêm `js/ocr/core.js` (hàm thuần: `planRegions`, `regionStats`, `planAuto`, `groupLines`, `groupParagraphs`, `wordBoxes` — không DOM, không nhãn) và `js/ocr/engine.js` (module Fusor: chọn/tải model một lần vào thư mục người dùng chọn, giữ handle trong IndexedDB `keepit-ocr`, nạp runtime, `recognizePage(canvas)` trả `{text, boxes, truncated}` với rect chuẩn hoá, `stop()` giữ model, `release()` mới giải phóng). Vendor `vendor/ocr/fusor/` (engine + ocr + host + match + manifest-model + bản quyền, 26 MB) **không** chép lại `pdf.min.mjs`/`pdf.worker.min.mjs` vì Keepit đã có `vendor/pdfjs`. Bước này **chưa** thêm nút/UI nào nên bộ xem Tài liệu không đổi hành vi.
+- File: `js/ocr/core.js`, `js/ocr/engine.js`, `vendor/ocr/fusor/**`, `pages/documents.html` (2 thẻ script), `js/core/languages.js` (15 khoá `ocr_*` en/vi/ko), `manifest.json` (3.5.612 + host `huggingface.co`), `PROJECT.md`.
+- Kiểm tra: `node --check` 3 tệp sửa/viết; unit test `core.js` **19/19** (vm, gồm gộp dòng/cột, ngưỡng bỏ vùng nhỏ, 3 nhánh `planAuto`, kẹp toạ độ); kiểm dây **22/22** (đủ tệp vendor + bản quyền, import của engine có thật, API cho UI bước sau, `stop()` không terminate, `release()` mới terminate, `documents.html` không mất script nào, `core.js` đứng trước `documents.js`, đủ 15 khoá × 3 ngôn ngữ). **Chưa chạy** được trên Chromium (sandbox không có trình duyệt/Playwright) nên chưa xác minh: nạp model thật từ Hugging Face, engine chạy 1 luồng khi trang không cross-origin isolated, chèn lớp chữ vào trang scan.
 
 **2026-11-17 | v3.5.611 | Arena:**
 
