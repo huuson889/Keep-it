@@ -1173,6 +1173,10 @@
   Object.assign(MESSAGES.en, {"ocrSubLine": "Page {page} · {state}", "ocrSubHasLayer": "already has a text layer", "ocrSubNoLayer": "no text layer yet"});
   Object.assign(MESSAGES.vi, {"ocrSubLine": "Trang {page} · {state}", "ocrSubHasLayer": "đã có lớp chữ gốc", "ocrSubNoLayer": "chưa có lớp chữ"});
   Object.assign(MESSAGES.ko, {"ocrSubLine": "페이지 {page} · {state}", "ocrSubHasLayer": "원본 텍스트 레이어 있음", "ocrSubNoLayer": "아직 텍스트 레이어 없음"});
+  // v3.5.619: câu trạng thái cuối của thẻ tiến độ, đúng lời demo 2.9.7.26
+  Object.assign(MESSAGES.en, {"ocrSumLineDone": "Finished {count} pages · {seconds} s. Check the text and its position.", "ocrSumLineError": "Read {count}/{pages} pages · {failed} not readable. Check the text and its position.", "ocrSumLineStopped": "Stopped; kept what was processed. The running page may be incomplete."});
+  Object.assign(MESSAGES.vi, {"ocrSumLineDone": "Hoàn tất {count} trang · {seconds} giây. Kiểm tra nội dung và vị trí.", "ocrSumLineError": "Xong {count}/{pages} trang · {failed} trang chưa đọc được. Kiểm tra nội dung và vị trí.", "ocrSumLineStopped": "Đã dừng; giữ phần đã xử lý. Trang đang chạy có thể chưa đầy đủ."});
+  Object.assign(MESSAGES.ko, {"ocrSumLineDone": "{count}페이지 완료 · {seconds}초. 내용과 위치를 확인하세요.", "ocrSumLineError": "{count}/{pages}페이지 처리 · {failed}페이지 읽지 못함. 내용과 위치를 확인하세요.", "ocrSumLineStopped": "중지했습니다. 처리한 부분은 유지되며 진행 중이던 페이지는 불완전할 수 있습니다."});
   globalThis.LHN_LANGUAGES = { LANGS, MESSAGES, detectLanguage, languageFor, t };
 })();
 

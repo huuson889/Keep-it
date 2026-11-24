@@ -90,14 +90,14 @@
       }
       ui().progress(1);
       if (stopRequested) {
-        ui().finish({ kind: 'stopped', summary: t('ocrSumStopped', { count: applied, pages: pages.length }), warning: t('ocrWarnStopped') });
+        ui().finish({ kind: 'stopped', summary: t('ocrSumLineStopped'), warning: t('ocrWarnStopped') });
       } else if (failures.length) {
-        ui().finish({ kind: 'error', summary: t('ocrSumError', { count: applied, pages: pages.length, failed: failures.length }), warning: t('ocrWarnError', { reason: failures[0].error }) });
+        ui().finish({ kind: 'error', summary: t('ocrSumLineError', { count: applied, pages: pages.length, failed: failures.length }), warning: t('ocrWarnError', { reason: failures[0].error }) });
       } else {
-        ui().finish({ kind: 'done', summary: t('ocrSumDone', { count: applied, pages: pages.length, seconds: seconds() }) });
+        ui().finish({ kind: 'done', summary: t('ocrSumLineDone', { count: applied, seconds: seconds() }) });
       }
     } catch (error) {
-      ui().finish({ kind: 'error', summary: t('ocrSumError', { count: applied, pages: pages.length, failed: pages.length - applied }), warning: errorText(error) });
+      ui().finish({ kind: 'error', summary: t('ocrSumLineError', { count: applied, pages: pages.length, failed: pages.length - applied }), warning: errorText(error) });
     } finally {
       running = false;
       const current = ui().current();

@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.618** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
+- Version **3.5.619** (base **3.5.611** + áp demo 2.9.7.26): OCR trong Tài liệu port **lại từ đúng nguồn 2.9.7.26** (bản 3.5.616 port từ `Demo/ocr-ui-2.6` nên còn chip v2.7.0) — không chip version, danh sách ngôn ngữ có tên bản ngữ, gợi ý đúng lời demo, nhóm tuỳ chọn mờ theo cách nhận dạng, sidebar mở ngay khi bấm OCR; giao diện + hành vi demo — banner gợi ý + bóng đèn (không còn thanh vàng), popup cài đặt giữa đủ 5 nhóm, sidebar phải “Văn bản nhận dạng”, 2 hộp nổi dưới bên phải (thẻ tiến độ + “Bổ sung vùng”), chọn vùng trong trang, khung vùng đã nhận dạng; bảng “Thêm” giữ nguyên của Keepit.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -163,6 +163,15 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.619 | Arena:**
+- Người dùng gửi ảnh app 3.5.618 vs demo: **khung vùng đã nhận dạng không hiện, không có hover, thẻ tiến độ sai chữ**, hỏi “sao không nhận dạng/không hiệu ứng giống demo”.
+- **Khung chữ trên trang (đúng demo):** port kỹ thuật của demo — `.kpBoxLayer` chứa **span từng từ** (chữ trong suốt), chỉ bật viền xanh `--boxLine`/nền `--boxFill` khi **sidebar đang mở** và **“Hiện khung” bật** (`.kpBoxes`), hover từng khung đổi viền tím; khung không có chữ hoặc rỗng thì bỏ (như demo).
+- **Hover 2 chiều (đúng demo):** trỏ vào một dòng trong sidebar ⇒ tô **đúng các khung của dòng đó** trên trang (`.kpHoverBox`) + thanh dòng `#kpOcrTrHover`; khớp chữ trước, rồi ghép cụm từ, cuối cùng mới băng ngang theo tỉ lệ; rời chuột/đổi trang thì xoá.
+- **Thẻ tiến độ (đúng demo):** dòng “đang nhận dạng … N%” **chỉ giữ 1 dòng, cập nhật tại chỗ** (trước đây đẻ 3 dòng 100/69/67%); khi xong, **dòng đậm = câu trạng thái cuối** “Hoàn tất N trang · X giây. Kiểm tra nội dung và vị trí.” (en/vi/ko), tiêu đề thẻ đổi theo kết quả, hiện “Nhận dạng lại” + “Chọn vùng”.
+- Giữ nguyên engine (Tesseract/PP-OCR/Fusor) và tham số như demo (psm 3 cho PDF, 4 biến thể cho ảnh, ghép từ).
+- Đã xác minh: jsdom **51/51**, bộ mới **10/10** (khung, kpBoxes, hover, thanh dòng, gộp log, câu tổng kết), **14/14** (thông báo/ngôn ngữ/phụ đề), wiring **39/39**, core **19/19**; CSS parse sạch.
+- Chưa kiểm được: Chromium thật (chạy OCR trên PDF, ảnh 1512/390, sáng/tối) — sandbox không có trình duyệt.
 
 **2026-11-22 | v3.5.618 | Arena:**
 - Người dùng gửi 2 ảnh đối chiếu (app 3.5.617 vs demo 2.9.7.26) và yêu cầu **giống 100%**, hỏi **bóng đèn gợi ý đâu**, và yêu cầu **viết rõ lại yêu cầu**. Đã viết bản chốt: `docs/ocr-demo-2.9.7.26-yeu-cau.md`.

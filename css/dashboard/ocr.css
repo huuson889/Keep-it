@@ -481,14 +481,15 @@ html.dark .kpOcrUi{--page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4
 .kpRegionMark{position:absolute;border:2px solid var(--brand,#7262df);border-radius:2px;background:#7262df22}
 .kpRegionHintBar{position:absolute;inset-inline-start:0;top:-28px;padding:4px 9px;border-radius:8px;background:#111318;color:#fff;font-size:12px;white-space:nowrap;pointer-events:none}
 
-/* ===== Riêng Keepit: khung vùng đã nhận dạng trên trang ===== */
-.kpBoxLayer{position:absolute;inset:0;pointer-events:none;z-index:7}
-.kpBoxLayer[hidden]{display:none}
-.kpOcrBox{position:absolute;border:1px solid var(--brand,#7262df);background:#7262df14;border-radius:2px}
+/* ===== Riêng Keepit: lớp khung chữ đã nhận dạng trên trang — dùng đúng kỹ thuật + màu của demo
+   (.layer span trong suốt, viền xanh khi .boxes, hover viền tím) ===== */
+.kpOcrUi .kpBoxLayer{position:absolute;inset:0;overflow:hidden;line-height:1;z-index:3;pointer-events:none}
+.kpOcrUi .kpBoxLayer .kpOcrBox{position:absolute;white-space:pre;color:transparent;border-radius:2px;pointer-events:auto;cursor:text}
+.kpOcrUi .kpBoxLayer.kpBoxes .kpOcrBox{outline:1.5px solid var(--boxLine);background:var(--boxFill)}
+.kpOcrUi .kpBoxLayer.kpBoxes .kpOcrBox:hover{outline-color:var(--brand);background:#7262df1a}
+.kpOcrUi .kpHoverLayer{position:absolute;inset:0;pointer-events:none;z-index:1}
+.kpOcrUi .kpHoverBox{position:absolute;background:#7262df33;outline:1.5px solid var(--brand);border-radius:2px}
 
-/* ===== Nhóm tuỳ chọn không thuộc cách nhận dạng đang chọn: làm mờ như demo (.off) ===== */
-.kpOcrUi .kpFRow.kpOff,.kpOcrUi .kpChecks.kpOff{opacity:.45}
-.kpOcrUi .kpFRow.kpOff label,.kpOcrUi .kpChecks.kpOff span{color:var(--muted)}
 /* ===== Danh sách ngôn ngữ: lớp .kpick do JS dựng nên bộ sinh scope không thấy — chép nguyên từ style.css demo ===== */
 .kpOcrUi .kpKpick{display:flex;align-items:center;gap:9px;min-height:34px;padding:0 9px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer}
 .kpOcrUi .kpKpick:hover{background:var(--surface)}
@@ -497,3 +498,7 @@ html.dark .kpOcrUi{--page:#000000;--surface:#0d0d0f;--soft:#151517;--ink:#e0e0e4
 .kpOcrUi .kpKpick span small{font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpOcrUi .kpKpick.kpOn{background:var(--brandSoft);color:var(--brand)}
 .kpOcrUi .kpKpick.kpOn span small{color:var(--brand);opacity:.75}
+
+/* ===== Nhóm tuỳ chọn không thuộc cách nhận dạng đang chọn: làm mờ như demo (.off) ===== */
+.kpOcrUi .kpFRow.kpOff,.kpOcrUi .kpChecks.kpOff{opacity:.45}
+.kpOcrUi .kpFRow.kpOff label,.kpOcrUi .kpChecks.kpOff span{color:var(--muted)}

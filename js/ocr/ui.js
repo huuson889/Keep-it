@@ -499,6 +499,7 @@ function localize() {
     dialogOpen = true;
     collapseNotice();
     $('kpOcrTrPanel')?.classList.add('open');
+    syncLayerBoxes();
     const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
     const page = info?.page || 1, pages = info?.pages || 1;
     if ($('kpOcrOcrSub')) {
@@ -677,10 +678,14 @@ function localize() {
   }
   const current = () => card;
   function setPage(text) { if (card && text != null) card.pageLabel.textContent = text; }
+  const LOG_SKIP = /đang nhận dạng[^\n]*\d+%|recognis\w*[^\n]*\d+%|인식[^\n]*\d+%/i;
   function setState(main) {
     if (!card || !main) return;
     card.state.textContent = main;
     const status = $('kpOcrStatus'); if (status) status.textContent = main;
+    /* dòng “đang nhận dạng: N%” chỉ giữ 1 dòng, cập nhật tại chỗ — không đẻ 3 dòng như trước */
+    const top = card.logBox.firstElementChild;
+    if (LOG_SKIP.test(main) && top && LOG_SKIP.test(top.textContent)) { top.textContent = String(main).trim(); return; }
     log(main);
   }
   function log(line) {
@@ -700,7 +705,8 @@ function localize() {
     card.root.classList.remove('done', 'stopped', 'error');
     card.root.classList.add(kind === 'done' ? 'done' : kind === 'error' ? 'error' : 'stopped');
     card.title.textContent = kind === 'done' ? t('ocrTitleDone') : kind === 'error' ? t('ocrTitleError') : t('ocrTitleStopped');
-    card.sum.textContent = summary;
+    if (summary) card.state.textContent = summary;
+    card.sum.textContent = '';
     card.warn.textContent = warning;
     card.doneBox.style.display = '';
     card.actions.stop.hidden = true;
@@ -715,6 +721,7 @@ function localize() {
   function panel({
     text = '', page = 0, append = false, reset = false } = {}) {
     localize();
+    bindTextHover();
     const root = $('kpOcrTrPanel'), area = $('kpOcrText');
     if (!root || !area) return;
     bindPanelResize();
@@ -723,6 +730,7 @@ function localize() {
     if (value) area.value = (append && area.value ? `${area.value}\n\n` : '') + (page ? `— ${t('ocrPageLabel', { page })} —\n${value}` : value);
     if (area.value.trim()) {
       root.classList.add('open');
+      syncLayerBoxes();
       for (const id of ['kpOcrCopy', 'kpOcrSave', 'kpOcrSavePdf', 'kpOcrTextApply']) { const button = $(id); if (button) button.disabled = false; }
     }
     $('kpOcrCopy') && ($('kpOcrCopy').onclick = () => {
@@ -739,7 +747,7 @@ function localize() {
       setTimeout(() => URL.revokeObjectURL(link.href), 4000);
     });
     const close = $('kpOcrTrClose');
-    if (close) close.onclick = () => root.classList.remove('open');
+    if (close) close.onclick = () => { root.classList.remove('open'); syncLayerBoxes(); };
     const addRegion = $('kpOcrTrRegion');
     if (addRegion) addRegion.onclick = () => openRegionEditor({ label: t('ocrUiRegionBadge') });
     const applyText = $('kpOcrTextApply');
@@ -757,7 +765,7 @@ function localize() {
     if (savePdf) savePdf.onclick = () => toast(t('ocrPdfPending'));
   }
   const panelText = () => $('kpOcrText')?.value || '';
-  const closePanel = () => $('kpOcrTrPanel')?.classList.remove('open');
+  const closePanel = () => { $('kpOcrTrPanel')?.classList.remove('open'); syncLayerBoxes(); };
 
   /* ---------- thẻ gợi ý ảnh quét + bóng đèn ---------- */
   function setNoticeFileKey(key) {
@@ -853,31 +861,143 @@ function localize() {
       document.addEventListener('keydown', escape);
     });
   }
-  /* “Hiện khung vùng đã nhận dạng trên trang” — khung theo toạ độ OCR thật */
-  function drawBoxes(boxes = []) {
+  /* “Hiện khung vùng đã nhận dạng trên trang” — đúng demo: span từng từ, viền xanh,
+     chỉ hiện khi sidebar văn bản đang mở và ô “Hiện khung” đang bật. */
+  let lastBoxes = [];
+  const normText = value => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  function boxesLayer() {
     const host = pageBox();
-    if (!host || !Array.isArray(boxes)) return;
+    if (!host) return null;
     let layer = host.querySelector(':scope > .kpBoxLayer');
-    if (!layer) { layer = document.createElement('div'); layer.className = 'kpBoxLayer'; host.append(layer); }
-    layer.replaceChildren();
-    for (const box of boxes) {
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.className = 'kpBoxLayer';
+      layer.innerHTML = '<div class="kpHoverLayer"></div>';
+      host.append(layer);
+    }
+    return layer;
+  }
+  function drawBoxes(boxes = []) {
+    lastBoxes = Array.isArray(boxes) ? boxes : [];
+    const layer = boxesLayer();
+    if (!layer) return;
+    for (const node of [...layer.querySelectorAll('.kpOcrBox')]) node.remove();
+    const boxHost = layer;
+    for (const box of lastBoxes) {
       const rect = box?.rect;
       if (!Array.isArray(rect) || rect.length !== 4) continue;
-      const node = document.createElement('div');
-      node.className = 'kpOcrBox';
-      Object.assign(node.style, { left: `${rect[0] * 100}%`, top: `${rect[1] * 100}%`, width: `${(rect[2] - rect[0]) * 100}%`, height: `${(rect[3] - rect[1]) * 100}%` });
-      layer.append(node);
+      if (!String(box.text || '').trim() || rect[2] <= rect[0] || rect[3] <= rect[1]) continue;
+      const span = document.createElement('span');
+      span.className = 'kpOcrBox';
+      span.textContent = `${box.text} `;
+      Object.assign(span.style, {
+        left: `${rect[0] * 100}%`, top: `${rect[1] * 100}%`,
+        width: `${(rect[2] - rect[0]) * 100}%`, height: `${(rect[3] - rect[1]) * 100}%`
+      });
+      boxHost.append(span);
     }
-    layer.hidden = !($('kpOcrOptBoxes')?.checked ?? true);
+    syncLayerBoxes();
+    paintHover([]);
+  }
+  function syncLayerBoxes() {
+    const layer = boxesLayer();
+    if (!layer) return;
+    const open = !!$('kpOcrTrPanel')?.classList.contains('open');
+    const show = !!($('kpOcrOptBoxes')?.checked ?? true);
+    layer.classList.toggle('kpBoxes', open && show);
+    if (!open) paintHover([]);
   }
   function setBoxesVisible(visible) {
-    const layer = pageBox()?.querySelector(':scope > .kpBoxLayer');
-    if (layer) layer.hidden = !visible;
+    for (const id of ['kpOcrOptBoxes', 'kpOcrShowBoxes']) { const input = $(id); if (input) input.checked = !!visible; }
+    syncLayerBoxes();
+  }
+  /* Trỏ vào một dòng trong bảng ⇒ tô đúng khung chữ đó trên trang (demo: #hl + #trHover) */
+  function paintHover(list) {
+    const hover = pageBox()?.querySelector(':scope > .kpBoxLayer > .kpHoverLayer');
+    if (hover) {
+      hover.replaceChildren();
+      for (const box of list || []) {
+        const rect = box?.rect;
+        if (!Array.isArray(rect) || rect.length !== 4) continue;
+        const node = document.createElement('div');
+        node.className = 'kpHoverBox';
+        Object.assign(node.style, {
+          left: `${rect[0] * 100}%`, top: `${rect[1] * 100}%`,
+          width: `${(rect[2] - rect[0]) * 100}%`, height: `${(rect[3] - rect[1]) * 100}%`
+        });
+        hover.append(node);
+      }
+    }
+    if (!list || !list.length) { const bar = $('kpOcrTrHover'); if (bar) bar.hidden = true; }
+  }
+  function clusterForLine(target) {
+    const words = target.split(' ').filter(Boolean);
+    if (!words.length) return [];
+    const picked = [];
+    let acc = '';
+    for (const box of lastBoxes) {
+      const word = normText(box?.text);
+      if (!word) continue;
+      acc = acc ? `${acc} ${word}` : word;
+      picked.push(box);
+      if (acc === target) return picked;
+      if (!target.startsWith(acc)) { acc = ''; picked.length = 0; }
+      if (acc.length > target.length + 60) { acc = ''; picked.length = 0; }
+    }
+    return [];
+  }
+  function boxesForLine(lineIdx) {
+    const area = $('kpOcrText');
+    const lines = String(area?.value || '').split('\n');
+    const target = normText(lines[lineIdx]);
+    if (!target) return [];
+    const exact = lastBoxes.filter(box => normText(box?.text) === target);
+    if (exact.length) return exact;
+    const cluster = clusterForLine(target);
+    if (cluster.length) return cluster;
+    /* không khớp chữ ⇒ băng ngang theo tỉ lệ dòng, như demo */
+    const ratio = lines.length > 1 ? lineIdx / (lines.length - 1) : 0;
+    return lastBoxes.filter(box => {
+      const rect = box?.rect; if (!Array.isArray(rect) || rect.length !== 4) return false;
+      const mid = (rect[1] + rect[3]) / 2;
+      return Math.abs(mid - ratio) < 0.03;
+    });
+  }
+  function lineIndexAt(area, clientY) {
+    const style = getComputedStyle(area);
+    const lineHeight = parseFloat(style.lineHeight) || (parseFloat(style.fontSize) || 13) * 1.5;
+    const padTop = parseFloat(style.paddingTop) || 0;
+    const offset = clientY - area.getBoundingClientRect().top + area.scrollTop - padTop;
+    return Math.max(0, Math.floor(offset / lineHeight));
+  }
+  function paintLineBar(lineIdx) {
+    const area = $('kpOcrText'), bar = $('kpOcrTrHover');
+    if (!area || !bar || lineIdx < 0) return;
+    const style = getComputedStyle(area);
+    const lineHeight = parseFloat(style.lineHeight) || (parseFloat(style.fontSize) || 13) * 1.5;
+    const padTop = parseFloat(style.paddingTop) || 0;
+    bar.style.top = `${padTop + lineIdx * lineHeight - area.scrollTop}px`;
+    bar.style.height = `${lineHeight}px`;
+    bar.hidden = false;
+  }
+  function bindTextHover() {
+    const area = $('kpOcrText');
+    if (!area || area.dataset.kpHover === '1') return;
+    area.dataset.kpHover = '1';
+    area.addEventListener('mousemove', event => {
+      if (!$('kpOcrTrPanel')?.classList.contains('open') || !lastBoxes.length) return;
+      const lineIdx = lineIndexAt(area, event.clientY);
+      const picked = boxesForLine(lineIdx);
+      paintHover(picked);
+      if (picked.length) paintLineBar(lineIdx);
+    });
+    area.addEventListener('mouseleave', () => paintHover([]));
+    area.addEventListener('scroll', () => { const bar = $('kpOcrTrHover'); if (bar) bar.hidden = true; });
   }
   globalThis.LHN_OCR_UI = Object.freeze({
     openDialog, closeDialog, dialogVisible, openCard, closeCard, current, setPage, setState, log, progress,
     finish, busy, toast, selectRegion, panel, panelText, closePanel, syncBanner, selectedLangs,
-    openRegionEditor, closeRegionEditor, drawBoxes, setBoxesVisible
+    openRegionEditor, closeRegionEditor, drawBoxes, setBoxesVisible, syncLayerBoxes
   });
 })();
 
