@@ -151,7 +151,8 @@ function applyTools(){
  if(!V.doc)return;$('#viewer').classList.toggle('wcOn',V.tools.has('wc'));const text=isText(),anyText=!V.doc.image&&activeEngine?.pages.some((_,i)=>sourceEntries(i+1).length);$('#vMode').style.display=anyText?'':'none';if(!anyText)V.mode='orig';
  for(const b of $$('#viewer [data-t]')){const k=b.dataset.t,off=(k==='notes'&&settings.notesEnabled===false)||(k==='translate'&&settings.translateEnabled===false)||(k==='ai'&&settings.askAIEnabled===false);b.disabled=off||(!text&&!['notes','ocr'].includes(k));b.style.display=V.doc.image&&!['notes','ocr'].includes(k)?'none':'';b.style.opacity=b.disabled?'.4':'';b.title=off?t('masterOff'):!text&&k!=='notes'?t('noText'):t({notes:'notes',translate:'translate',tts:'readAloud',wc:'wordClass',ai:'askAI',ocr:'ocrButton'}[k]);b.classList.toggle('on',k==='notes'?nativeNotesOpen:k==='tts'?LHN_READER_API.state.reading:V.tools.has(k));}
 
- const message=V.doc.image?t('imageHint'):!text?t('scan'):['docx','pptx'].includes(V.doc.type)?t('officeHint'):'';$('#vBanner').textContent=message;$('#vBanner').classList.toggle('show',!!message);
+ const message=V.doc.image?t('imageHint'):!text?t('scan'):['docx','pptx'].includes(V.doc.type)?t('officeHint'):'';
+ try{globalThis.LHN_OCR_UI?.syncBanner?.({needsOcr:(V.doc.image||!text)&&!V.doc?.scan});}catch{}$('#vBanner').textContent=message;$('#vBanner').classList.toggle('show',!!message);
 
 }
 function sourceTexts(page=V.page){return activeEngine?.pages[page-1]?.texts||[];}

@@ -52,6 +52,7 @@
     if (!info) { ui()?.toast(t('ocrNoDocument')); return; }
     running = true; stopRequested = false; applied = 0; started = Date.now();
     const card = openCard();
+    ui().panel({ reset: true });
     card.actions.close.disabled = true;
     const pages = pageList(), failures = [];
     ui().setPage(pages.length > 1 ? t('ocrPageOf', { page: pages[0], total: pages.length }) : t('ocrPageOf', { page: pages[0], total: info.pages }));
@@ -74,6 +75,7 @@
         if (stopRequested) { canvas.width = canvas.height = 1; break; }
         if (error) { failures.push({ page, error: errorText(error) }); ui().log(t('ocrPageFailed', { page, reason: errorText(error) })); continue; }
         docs().apply(page, result);
+        ui().panel({ text: result.text, page, append: options.scope === 'all' && applied > 0 });
         applied++;
         ui().log(t('ocrPageDone', { page }));
         ui().progress((index + 1) / pages.length);
@@ -139,6 +141,7 @@
         rect: [rect[0] + box.rect[0] * (rect[2] - rect[0]), rect[1] + box.rect[1] * (rect[3] - rect[1]), rect[0] + box.rect[2] * (rect[2] - rect[0]), rect[1] + box.rect[3] * (rect[3] - rect[1])]
       }));
       docs().apply(info.page, { text: result.text, boxes });
+      ui().panel({ text: result.text, page: info.page, append: true });
       ui().finish({ kind: 'done', summary: t('ocrSumDone', { count: 1, pages: 1, seconds: seconds() }) });
       docs()?.refresh?.();
     } catch (error) {

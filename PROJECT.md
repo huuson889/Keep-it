@@ -1,7 +1,7 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.613**: OCR chạy trong Tài liệu với 3 engine (PP-OCR · Fusor · Tesseract), thẻ tiến độ có Dừng (giữ model) / ✕ (giải phóng), khoanh vùng; kết quả ghi thẳng vào lớp chữ của trang nên dịch/đọc to/ghi chú dùng được.
+- Version **3.5.614**: giao diện OCR trong Tài liệu **giống demo** — thẻ gợi ý ảnh quét + bóng đèn, popup giữa, panel phải “Văn bản nhận dạng”, thẻ tiến độ góc phải dưới; 3 engine, Dừng giữ model, ✕ giải phóng, kết quả ghi vào lớp chữ của trang.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -9,7 +9,7 @@
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### Đang mở
-- **OCR trong Tài liệu (3.5.613):** đã đủ 3 engine + thẻ tiến độ + khoanh vùng; còn phải kiểm trên Chromium thật (ảnh 1512/390 sáng/tối, PDF scan thật, tốc độ, vị trí chữ sau zoom, model Fusor tải từ Hugging Face) và chưa lưu kết quả OCR vào `keepit-documents` (mở lại tài liệu phải nhận dạng lại).
+- **OCR trong Tài liệu (3.5.614):** bố cục đã giống demo; còn phải kiểm trên Chromium thật (ảnh 1512/390 sáng/tối, PDF scan thật, tốc độ, vị trí chữ sau zoom, model Fusor tải từ Hugging Face, panel phải khi cửa sổ hẹp) và chưa lưu kết quả OCR vào `keepit-documents` (mở lại phải nhận dạng lại).
 - **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
 - **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
 - **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
@@ -163,6 +163,13 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-22 | v3.5.614 | Arena:**
+
+- Tóm tắt: Làm lại giao diện OCR trong Tài liệu cho **giống bản demo** thay vì hộp nhỏ tự chế ở 3.5.613: thêm **thẻ gợi ý ảnh quét** (thẻ vàng có bóng đèn, “Không hiện lại”, thu gọn thành nút bóng đèn), **popup giữa** `#kpOcrModal` + nền mờ `#kpOcrScrim` với 3 nhóm (Phạm vi trang · Cách nhận dạng · Kết quả trên tệp), **panel phải “Văn bản nhận dạng”** `#kpOcrPanel` (sao chép, xuất `.txt`, đóng), và **thẻ tiến độ góc phải dưới** `#kpOcrProg` (đồng hồ, tiến độ, 3 dòng nhật ký, tổng kết + cảnh báo, Dừng · Buộc dừng · Nhận dạng lại · Chọn vùng · ✕). Bỏ hoàn toàn hộp `.ocrDialog`/`.ocrCard` tự dựng bằng JS.
+- Giữ nguyên hành vi đã chốt: **Dừng** cắt việc và **giữ model Fusor trong RAM**; **✕** mới `release()`; một trang lỗi thử lại 1 lần rồi bỏ qua; kết quả ghi vào lớp chữ của trang nên Dịch/Đọc to/Ghi chú dùng ngay.
+- File: `pages/documents.html` (markup 5 khối), `css/dashboard/ocr.css` (viết lại theo bố cục demo, 78 rule), `js/ocr/ui.js` (viết lại: bám id thật, panel, banner/bóng đèn, toast, khoanh vùng), `js/ocr/run.js` (đổ văn bản vào panel), `js/dashboard/documents.js` (gọi `syncBanner` theo trạng thái trang), `js/core/languages.js` (14 khoá mới × en/vi/ko), `manifest.json` (3.5.614), `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: `node --check` 4 tệp; **28/28** test hành vi jsdom **trên chính `pages/documents.html`** (có đủ 5 khối như demo, thẻ gợi ý hiện → thu thành bóng đèn → mở lại, “Không hiện lại” tắt hẳn, popup giữa mở từ thẻ gợi ý, chạy ⇒ đóng popup + thẻ tiến độ + xanh “Đã nhận dạng xong”, panel phải hiện văn bản, áp dụng đúng trang, Dừng ⇒ cam “Đã dừng nhận dạng” + `stop` và **không** `release`, ✕ ⇒ `release`, đủ nhãn 3 ngôn ngữ, không lỗi runtime); **19/19** unit `core.js`; **30/30** kiểm dây + CSS parse sạch. **Chưa kiểm** trên Chromium (sandbox không có trình duyệt): chưa có ảnh 1512/390 sáng/tối, chưa chạy engine thật trên PDF scan, chưa kiểm panel khi cửa sổ hẹp.
 
 **2026-11-22 | v3.5.613 | Arena:**
 

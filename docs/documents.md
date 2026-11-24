@@ -61,3 +61,8 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 - `stop()` cắt việc đang chạy và **giữ** model Fusor trong RAM; chỉ `release()` (nút ✕) mới terminate worker + compute pool. Một trang lỗi được thử lại một lần rồi bỏ qua, không làm hỏng cả lượt.
 - Bộ xem cung cấp `LHN_DOCUMENTS_OCR` (`raster`, `apply`, `refresh`): `raster` ưu tiên chép canvas đang hiển thị nếu đủ nét, vẽ ảnh sang canvas, cuối cùng mới dựng lại trang ở ~2000px cạnh dài; `apply` ghi vào `activeEngine.pages[n-1].texts/paragraphs` và tạo span từng từ trong `.pdfTextLayer` (thêm `.ocrTextLayer`) để chọn chữ/dịch/đọc to/ghi chú dùng được ngay.
 - Khoanh vùng (`Chọn vùng`) nhận dạng riêng phần đã chọn rồi ghép toạ độ về trang. Kết quả OCR hiện **chưa** lưu vào `keepit-documents`, nên mở lại tài liệu phải nhận dạng lại.
+
+### Bố cục OCR (v3.5.614)
+
+- Giống bản demo: `#kpOcrBanner` (thẻ gợi ý ảnh quét, có “Không hiện lại”, thu gọn thành `#kpOcrBulb`), `#kpOcrModal` + `#kpOcrScrim` (popup giữa, 3 nhóm: Phạm vi trang · Cách nhận dạng · Kết quả trên tệp), `#kpOcrPanel` (panel phải “Văn bản nhận dạng”, sao chép/xuất `.txt`), `#kpOcrProg` (thẻ tiến độ góc phải dưới: Dừng · Buộc dừng · Nhận dạng lại · Chọn vùng · ✕).
+- Nhãn là markup `data-doc-label` nên `localize()` dịch cùng các nhãn Tài liệu khác; không dựng UI bằng chuỗi tiếng Việt trong JS.

@@ -1,130 +1,106 @@
-// OCR UI: the run dialog, the progress card and the region selector. Labels come from
-// languages.js (`ocr*` keys) so the same markup works in en/vi/ko. No engine code here.
+// OCR UI cho Tài liệu — dùng đúng các khối markup trong pages/documents.html để bố cục
+// giống bản demo: gợi ý ảnh quét (thẻ vàng + bóng đèn), popup giữa, panel phải
+// “Văn bản nhận dạng”, thẻ tiến độ góc phải dưới. Nhãn lấy từ languages.js.
 (() => {
   'use strict';
   if (globalThis.LHN_OCR_UI) return;
   const t = (key, params) => globalThis.LHN_LANGUAGES?.t?.(key, params, document.documentElement.lang) ?? key;
-  let card = null, dialog = null;
+  const $ = id => document.getElementById(id);
+  const NO_ASK = 'keepit-ocr-noask';
+  let card = null, dialogOpen = false;
 
-  function el(tag, className, text) {
+  const el = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) node.className = className;
     if (text != null) node.textContent = text;
     return node;
-  }
-  function mount(node) {
-    const host = document.getElementById('viewer') || document.body;
-    host.append(node);
-    return node;
-  }
+  };
+  const noAsk = () => { try { return localStorage.getItem(NO_ASK) === '1'; } catch { return false; } };
+  const setNoAsk = value => { try { localStorage.setItem(NO_ASK, value ? '1' : '0'); } catch { /* ignore */ } };
 
-  /* ---------- run dialog: mode + scope ---------- */
+  /* ---------- popup giữa ---------- */
   function openDialog({ mode = 'pp', scope = 'page', modes = ['pp', 'fusor', 'tess'], onRun, onCancel } = {}) {
-    closeDialog();
-    dialog = el('section', 'ocrDialog');
-    dialog.setAttribute('role', 'dialog');
-    dialog.setAttribute('aria-modal', 'false');
-    const head = el('header'), title = el('b', null, t('ocrTitle'));
-    const close = el('button', 'vbtn', '✕');
-    close.setAttribute('aria-label', t('ocrCancel'));
-    close.onclick = () => { closeDialog(); onCancel?.(); };
-    head.append(title, close);
-
-    const body = el('div', 'ocrBody');
-    body.append(el('div', 'ocrLabel', t('ocrMode')));
-    const modeRow = el('div', 'ocrChoices');
-    let pickedMode = mode;
-    const modeNames = { pp: 'ocrModePP', fusor: 'ocrModeFusor', tess: 'ocrModeTess' };
-    for (const value of modes) {
-      const label = el('label', 'ocrChoice');
-      const input = el('input');
-      input.type = 'radio'; input.name = 'ocrMode'; input.value = value;
-      input.checked = value === mode;
-      input.onchange = () => { pickedMode = value; };
-      label.append(input, el('span', null, t(modeNames[value] || value)));
-      modeRow.append(label);
+    const modal = $('kpOcrModal'), scrim = $('kpOcrScrim');
+    if (!modal || !scrim) return null;
+    dialogOpen = true;
+    const info = globalThis.LHN_DOCUMENTS_OCR?.info?.();
+    const scopeAll = $('kpOcrScopeAll');
+    if (scopeAll) scopeAll.textContent = t('ocrScopeAll', { count: info?.pages || 1 });
+    for (const input of modal.querySelectorAll('input[name="kpOcrMode"]')) {
+      input.checked = input.value === mode;
+      input.parentElement.hidden = !modes.includes(input.value);
     }
-    body.append(modeRow, el('div', 'ocrLabel', t('ocrScope')));
-    const scopeRow = el('div', 'ocrChoices');
-    let pickedScope = scope;
-    for (const [value, key] of [['page', 'ocrScopePage'], ['all', 'ocrScopeAll']]) {
-      const label = el('label', 'ocrChoice');
-      const input = el('input');
-      input.type = 'radio'; input.name = 'ocrScope'; input.value = value;
-      input.checked = value === scope;
-      input.onchange = () => { pickedScope = value; };
-      label.append(input, el('span', null, key === 'ocrScopeAll' ? t(key, { count: globalThis.LHN_DOCUMENTS_OCR?.info?.()?.pages || 1 }) : t(key)));
-      scopeRow.append(label);
-    }
-    body.append(scopeRow);
-
-    const foot = el('div', 'ocrFoot');
-    const cancel = el('button', null, t('ocrCancel'));
-    cancel.onclick = () => { closeDialog(); onCancel?.(); };
-    const run = el('button', 'primary', t('ocrRun'));
-    run.onclick = () => { const options = { mode: pickedMode, scope: pickedScope }; closeDialog(); onRun?.(options); };
-    foot.append(cancel, run);
-    dialog.append(head, body, foot);
-    mount(dialog);
-    run.focus?.();
-    return dialog;
+    for (const input of modal.querySelectorAll('input[name="kpOcrScope"]')) input.checked = input.value === scope;
+    const close = () => { closeDialog(); onCancel?.(); };
+    $('kpOcrCancel').onclick = close;
+    $('kpOcrCancel2').onclick = close;
+    scrim.onclick = close;
+    $('kpOcrRun').onclick = () => {
+      const pickedMode = modal.querySelector('input[name="kpOcrMode"]:checked')?.value || mode;
+      const pickedScope = modal.querySelector('input[name="kpOcrScope"]:checked')?.value || scope;
+      closeDialog();
+      onRun?.({ mode: pickedMode, scope: pickedScope });
+    };
+    scrim.classList.add('show');
+    modal.classList.add('show');
+    $('kpOcrRun').focus?.();
+    return modal;
   }
-  function closeDialog() { dialog?.remove(); dialog = null; }
+  function closeDialog() {
+    dialogOpen = false;
+    $('kpOcrScrim')?.classList.remove('show');
+    $('kpOcrModal')?.classList.remove('show');
+  }
+  const dialogVisible = () => dialogOpen;
 
-  /* ---------- progress card ---------- */
+  /* ---------- thẻ tiến độ ---------- */
   function openCard({ onStop, onForce, onAgain, onRegion, onClose } = {}) {
-    closeCard();
-    card = { started: Date.now(), timer: 0, stopRequested: false, closed: false };
-    const root = el('section', 'ocrCard');
-    root.setAttribute('aria-live', 'polite');
-    const head = el('header'), dot = el('span', 'dot'), title = el('b', null, t('ocrTitleRun'));
-    const page = el('span', 'pg', '');
-    const close = el('button', 'vbtn', '✕');
-    close.setAttribute('aria-label', t('ocrClose'));
-    close.onclick = () => { if (card.busy) return; onClose?.(); };
-    head.append(dot, title, page, close);
-
-    const body = el('div', 'ocrCardBody');
-    const top = el('div', 'ocrTop'), state = el('b', null, t('ocrPreparing')), clock = el('span', 'clock', '0.0');
-    top.append(state, clock);
-    const bar = el('progress'); bar.max = 1; bar.value = 0;
-    const logBox = el('div', 'ocrLog');
-    const done = el('div', 'ocrDone');
-    const sum = el('div', 'ocrSum'), warn = el('div', 'ocrWarn');
-    done.append(sum, warn);
-    const foot = el('div', 'ocrFoot');
-    const stop = el('button', 'primary', t('ocrStop'));
-    const force = el('button', null, t('ocrForce'));
-    const again = el('button', null, t('ocrAgain'));
-    const region = el('button', null, t('ocrRegion'));
-    force.hidden = true; again.hidden = true; region.hidden = true;
-    stop.onclick = () => { if (card.stopRequested) return; card.stopRequested = true; onStop?.(); };
-    force.onclick = () => onForce?.();
-    again.onclick = () => onAgain?.();
-    region.onclick = () => onRegion?.();
-    foot.append(stop, force, again, region);
-    body.append(top, bar, logBox, done, foot);
-    root.append(head, body);
-    mount(root);
-
-    card.root = root; card.title = title; card.pageLabel = page; card.state = state; card.clock = clock;
-    card.bar = bar; card.logBox = logBox; card.sum = sum; card.warn = warn; card.actions = { stop, force, again, region, close };
-    card.busy = true;
+    const root = $('kpOcrProg');
+    if (!root) return null;
+    card = { started: Date.now(), timer: 0, stopRequested: false, busy: true, root };
+    root.classList.add('show');
+    root.classList.remove('done', 'stopped', 'error');
+    card.title = $('kpOcrProgTitle'); card.pageLabel = $('kpOcrProgPage');
+    card.state = $('kpT'); card.clock = $('kpClock'); card.bar = $('kpBar'); card.logBox = $('kpLog');
+    card.doneBox = $('kpDone'); card.sum = $('kpSum'); card.warn = $('kpWarn');
+    card.actions = { stop: $('kpStop'), force: $('kpForce'), again: $('kpAgain'), region: $('kpRegion'), close: $('kpOcrProgClose') };
+    card.title.textContent = t('ocrTitleRun');
+    card.state.textContent = t('ocrPreparing');
+    card.clock.textContent = `0.0 ${t('ocrSeconds')}`;
+    card.bar.value = 0;
+    card.logBox.replaceChildren();
+    card.doneBox.classList.remove('show');
+    card.warn.textContent = '';
+    card.actions.stop.hidden = false;
+    card.actions.force.hidden = true;
+    card.actions.again.hidden = true;
+    card.actions.region.hidden = true;
+    card.actions.close.disabled = true;
+    card.actions.stop.onclick = () => { if (card.stopRequested) return; card.stopRequested = true; onStop?.(); };
+    card.actions.force.onclick = () => onForce?.();
+    card.actions.again.onclick = () => onAgain?.();
+    card.actions.region.onclick = () => onRegion?.();
+    card.actions.close.onclick = () => { if (card.busy) return; onClose?.(); };
+    clearInterval(card.timer);
     card.timer = setInterval(() => {
       if (!card) return;
-      clock.textContent = ((Date.now() - card.started) / 1000).toFixed(1);
+      card.clock.textContent = `${((Date.now() - card.started) / 1000).toFixed(1)} ${t('ocrSeconds')}`;
     }, 200);
     return card;
   }
   function closeCard() {
     if (!card) return;
     clearInterval(card.timer);
-    card.root?.remove();
+    card.root?.classList.remove('show');
     card = null;
   }
   const current = () => card;
-  function setPage(text) { if (card) card.pageLabel.textContent = text; }
-  function setState(main) { if (card && main) { card.state.textContent = main; log(main); } }
+  function setPage(text) { if (card && text != null) card.pageLabel.textContent = text; }
+  function setState(main) {
+    if (!card || !main) return;
+    card.state.textContent = main;
+    log(main);
+  }
   function log(line) {
     if (!card || !line) return;
     const text = String(line).trim();
@@ -132,7 +108,7 @@
     card.logBox.prepend(el('div', null, text));
     while (card.logBox.children.length > 3) card.logBox.lastElementChild.remove();
   }
-  function progress(value) { if (card) card.bar.value = Math.max(0, Math.min(1, value)); }
+  function progress(value) { if (card) card.bar.value = Math.max(0, Math.min(1, Number(value) || 0)); }
   function finish({ kind = 'done', summary = '', warning = '' } = {}) {
     if (!card) return;
     card.busy = false;
@@ -142,58 +118,122 @@
     card.title.textContent = kind === 'done' ? t('ocrTitleDone') : kind === 'error' ? t('ocrTitleError') : t('ocrTitleStopped');
     card.sum.textContent = summary;
     card.warn.textContent = warning;
-    card.warn.hidden = !warning;
+    card.doneBox.classList.add('show');
     card.actions.stop.hidden = true;
     card.actions.force.hidden = true;
     card.actions.again.hidden = false;
     card.actions.region.hidden = false;
+    card.actions.close.disabled = false;
   }
-  function busy(value) { if (card) card.busy = value; }
-  function toast(text) {
-    if (!text) return;
-    const host = document.getElementById('viewer') || document.body;
-    const node = el('div', 'ocrToast', text);
-    host.append(node);
-    setTimeout(() => node.classList.add('show'), 10);
-    setTimeout(() => { node.classList.remove('show'); setTimeout(() => node.remove(), 250); }, 2600);
+  function busy(value) { if (card) card.busy = !!value; }
+
+  /* ---------- panel phải “Văn bản nhận dạng” ---------- */
+  function panel({ text = '', page = 0, append = false, reset = false } = {}) {
+    const root = $('kpOcrPanel'), pre = $('kpOcrText'), empty = $('kpOcrEmpty');
+    if (!root || !pre || !empty) return;
+    if (reset) { pre.textContent = ''; pre.hidden = true; empty.hidden = false; }
+    const body = append && !pre.hidden && pre.textContent ? `${pre.textContent}\n\n` : '';
+    const value = String(text || '').trim();
+    if (value) {
+      pre.textContent = body + (page ? `— ${t('ocrPageLabel', { page })} —\n${value}` : value);
+      pre.hidden = false;
+      empty.hidden = true;
+    } else if (!pre.textContent) {
+      pre.hidden = true;
+      empty.hidden = false;
+    }
+    root.classList.add('show');
+    $('kpOcrPanelClose').onclick = () => root.classList.remove('show');
+    $('kpOcrCopy').onclick = () => {
+      const valueNow = pre.textContent || '';
+      const done = () => toast(t('ocrCopyDone'));
+      try { navigator.clipboard?.writeText(valueNow).then(done, () => toast(t('ocrCopyFail'))); }
+      catch { toast(t('ocrCopyFail')); }
+    };
+    $('kpOcrExport').onclick = () => {
+      const name = (globalThis.LHN_DOCUMENTS_OCR?.info?.()?.name || 'ocr').replace(/\.[^.]+$/, '');
+      const blob = new Blob([pre.textContent || ''], { type: 'text/plain;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${name}.txt`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+    };
+  }
+  function panelText() { return $('kpOcrText')?.textContent || ''; }
+  const closePanel = () => $('kpOcrPanel')?.classList.remove('show');
+
+  /* ---------- gợi ý ảnh quét ---------- */
+  function syncBanner({ needsOcr = false } = {}) {
+    const banner = $('kpOcrBanner'), bulb = $('kpOcrBulb');
+    if (!banner || !bulb) return;
+    if (!needsOcr || noAsk()) {
+      banner.classList.remove('show'); bulb.classList.remove('show');
+      if (!needsOcr) collapseTo(null);
+      return;
+    }
+    if (banner.dataset.collapsed === '1') { banner.classList.remove('show'); bulb.classList.add('show'); }
+    else { banner.classList.add('show'); bulb.classList.remove('show'); }
+    const checkbox = $('kpOcrNoAsk');
+    if (checkbox) checkbox.checked = noAsk();
+    $('kpOcrBannerClose').onclick = () => collapseTo('1');
+    bulb.onclick = () => collapseTo(null);
+    $('kpOcrBannerAct').onclick = () => { collapseTo(null); globalThis.LHN_OCR?.open?.(); };
+    if (checkbox) checkbox.onchange = event => { setNoAsk(event.target.checked); syncBanner({ needsOcr: true }); };
+  }
+  function collapseTo(state) {
+    const banner = $('kpOcrBanner'), bulb = $('kpOcrBulb');
+    if (!banner || !bulb) return;
+    if (state === null) { delete banner.dataset.collapsed; banner.classList.add('show'); bulb.classList.remove('show'); }
+    else { banner.dataset.collapsed = state; banner.classList.remove('show'); bulb.classList.add('show'); }
   }
 
-  /* ---------- region selector over the current page ---------- */
+  function toast(text) {
+    const node = $('kpToast');
+    if (!node || !text) return;
+    node.textContent = text;
+    node.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => node.classList.remove('show'), 2600);
+  }
+
+  /* ---------- khoanh vùng trên trang ---------- */
   function selectRegion({ label } = {}) {
     return new Promise(resolve => {
-      const stage = document.getElementById('stage');
-      const page = document.querySelector('#pageStack > [data-page] .docsSource');
-      if (!stage || !page) { resolve(null); return; }
-      const layer = el('div', 'ocrRegionLayer');
-      const hint = el('div', 'ocrRegionHint', label || t('ocrRegionHint'));
-      const box = el('div', 'ocrRegionBox');
+      const page = document.querySelector('#pageStack > [data-page] .docsSource') || document.querySelector('#pageStack [data-page] .docsSource');
+      if (!page) { resolve(null); return; }
+      const layer = el('div', 'kpOcrRegion');
+      const hint = el('div', 'hint', label || t('ocrRegionHint'));
+      const box = el('div', 'box');
       layer.append(hint, box);
       const rect0 = page.getBoundingClientRect();
       Object.assign(layer.style, { left: `${rect0.left}px`, top: `${rect0.top}px`, width: `${rect0.width}px`, height: `${rect0.height}px` });
       document.body.append(layer);
       let start = null;
-      const point = event => ({ x: Math.min(1, Math.max(0, (event.clientX - rect0.left) / rect0.width)), y: Math.min(1, Math.max(0, (event.clientY - rect0.top) / rect0.height)) });
+      const point = event => ({
+        x: Math.min(1, Math.max(0, (event.clientX - rect0.left) / Math.max(1, rect0.width))),
+        y: Math.min(1, Math.max(0, (event.clientY - rect0.top) / Math.max(1, rect0.height)))
+      });
       const draw = (a, b) => {
         box.style.left = `${Math.min(a.x, b.x) * 100}%`; box.style.top = `${Math.min(a.y, b.y) * 100}%`;
         box.style.width = `${Math.abs(a.x - b.x) * 100}%`; box.style.height = `${Math.abs(a.y - b.y) * 100}%`;
       };
-      layer.addEventListener('pointerdown', event => { start = point(event); draw(start, start); layer.setPointerCapture?.(event.pointerId); });
+      const stop = value => { layer.remove(); document.removeEventListener('keydown', escape); resolve(value); };
+      const escape = event => { if (event.key === 'Escape') stop(null); };
+      layer.addEventListener('pointerdown', event => { start = point(event); draw(start, start); });
       layer.addEventListener('pointermove', event => { if (start) draw(start, point(event)); });
       layer.addEventListener('pointerup', event => {
-        const end = point(event), rect = [Math.min(start.x, end.x), Math.min(start.y, end.y), Math.max(start.x, end.x), Math.max(start.y, end.y)];
-        layer.remove();
-        resolve(rect[2] - rect[0] > .01 && rect[3] - rect[1] > .01 ? rect : null);
+        if (!start) { stop(null); return; }
+        const end = point(event);
+        const rect = [Math.min(start.x, end.x), Math.min(start.y, end.y), Math.max(start.x, end.x), Math.max(start.y, end.y)];
+        stop(rect[2] - rect[0] > .01 && rect[3] - rect[1] > .01 ? rect : null);
       });
-      layer.addEventListener('keydown', event => { if (event.key === 'Escape') { layer.remove(); resolve(null); } });
-      document.addEventListener('keydown', function escape(event) {
-        if (event.key !== 'Escape') return;
-        document.removeEventListener('keydown', escape);
-        layer.remove(); resolve(null);
-      });
+      document.addEventListener('keydown', escape);
     });
   }
 
   globalThis.LHN_OCR_UI = Object.freeze({
-    openDialog, closeDialog, openCard, closeCard, current, setPage, setState, log, progress, finish, busy, toast, selectRegion
+    openDialog, closeDialog, dialogVisible, openCard, closeCard, current, setPage, setState, log, progress,
+    finish, busy, toast, selectRegion, panel, panelText, closePanel, syncBanner
   });
 })();
