@@ -90,7 +90,39 @@
 <div class="rail" id="rail"></div><div class="railResize" id="railResize" role="separator" aria-controls="rail" aria-orientation="vertical" tabindex="0" data-doc-aria="resize" data-doc-title="resize"></div>
 <div class="stageWrap">
 <div class="stage" id="stage"></div>
-<div class="kpOcrUi"><aside class="kpTranslation" id="kpOcrTrPanel">
+<div class="kpOcrUi"><section class="kpOcrProg" id="kpOcrOcrProg" aria-live="polite">
+    <header class="kpProgHead">
+      <span class="kpDot"></span>
+      <b id="kpOcrProgTitle">Đang nhận dạng chữ</b>
+      <span class="kpPg" id="kpOcrProgPage">Trang 1/1</span>
+      <button class="kpVbtn" id="kpOcrProgClose" aria-label="Đóng" style="min-width:28px;height:28px;padding:0">✕</button>
+    </header>
+    <div class="kpProgBody">
+      <div class="kpStTop"><b id="kpOcrPTitle">Đang chuẩn bị…</b><span class="kpClock" id="kpOcrPClock">0.0 giây</span></div>
+      <progress id="kpOcrProgress" max="1" value="0"></progress>
+      <div class="kpPLog" id="kpOcrPLog"></div>
+      <div class="kpPDone" id="kpOcrPDone">
+        <div class="kpSum" id="kpOcrPSum"></div>
+        <div class="kpWarn" id="kpOcrPWarn"></div>
+      </div>
+      <div class="kpProgFoot">
+        <button class="kpPrimary" id="kpOcrStop" disabled>Dừng</button>
+        <button id="kpOcrPForce" hidden>Buộc dừng</button>
+        <button id="kpOcrPAgain" hidden>Nhận dạng lại</button>
+        <button id="kpOcrPRegion" hidden>Chọn vùng</button>
+      </div>
+    </div>
+    <span id="kpOcrStatus" hidden></span>
+  </section><section class="kpRegionEditor" id="kpOcrRegionEditor" hidden>
+    <div class="kpReHead"><b>Bổ sung vùng</b><span>Chọn một hoặc nhiều vùng</span></div>
+    <label for="kpOcrRegionText">Chữ trong vùng đã chọn · mỗi dòng một hàng</label>
+    <textarea id="kpOcrRegionText" placeholder="Bấm “Nhận dạng vùng” hoặc nhập tay chữ cho vùng này…"></textarea>
+    <div class="kpRow">
+      <button id="kpOcrOcrRegion" disabled>Nhận dạng vùng</button>
+      <button id="kpOcrApplyRegion" disabled>Áp dụng</button>
+      <button id="kpOcrCancelRegion">Hủy</button>
+    </div>
+  </section><aside class="kpTranslation" id="kpOcrTrPanel">
       <div class="kpTrResize" id="kpOcrTrResize" title="Kéo để đổi độ rộng" role="separator" aria-label="Đổi độ rộng bảng"></div>
       <header>
         <b>Văn bản nhận dạng</b>
@@ -267,38 +299,6 @@
       <button id="kpOcrOcrCancel">Hủy</button>
       <button class="kpPrimary" id="kpOcrRun" disabled>Nhận dạng chữ</button>
     </footer>
-  </section><section class="kpOcrProg" id="kpOcrOcrProg" aria-live="polite">
-    <header class="kpProgHead">
-      <span class="kpDot"></span>
-      <b id="kpOcrProgTitle">Đang nhận dạng chữ</b>
-      <span class="kpPg" id="kpOcrProgPage">Trang 1/1</span>
-      <button class="kpVbtn" id="kpOcrProgClose" aria-label="Đóng" style="min-width:28px;height:28px;padding:0">✕</button>
-    </header>
-    <div class="kpProgBody">
-      <div class="kpStTop"><b id="kpOcrPTitle">Đang chuẩn bị…</b><span class="kpClock" id="kpOcrPClock">0.0 giây</span></div>
-      <progress id="kpOcrProgress" max="1" value="0"></progress>
-      <div class="kpPLog" id="kpOcrPLog"></div>
-      <div class="kpPDone" id="kpOcrPDone">
-        <div class="kpSum" id="kpOcrPSum"></div>
-        <div class="kpWarn" id="kpOcrPWarn"></div>
-      </div>
-      <div class="kpProgFoot">
-        <button class="kpPrimary" id="kpOcrStop" disabled>Dừng</button>
-        <button id="kpOcrPForce" hidden>Buộc dừng</button>
-        <button id="kpOcrPAgain" hidden>Nhận dạng lại</button>
-        <button id="kpOcrPRegion" hidden>Chọn vùng</button>
-      </div>
-    </div>
-    <span id="kpOcrStatus" hidden></span>
-  </section><section class="kpRegionEditor" id="kpOcrRegionEditor" hidden>
-    <div class="kpReHead"><b>Bổ sung vùng</b><span>Chọn một hoặc nhiều vùng</span></div>
-    <label for="kpOcrRegionText">Chữ trong vùng đã chọn · mỗi dòng một hàng</label>
-    <textarea id="kpOcrRegionText" placeholder="Bấm “Nhận dạng vùng” hoặc nhập tay chữ cho vùng này…"></textarea>
-    <div class="kpRow">
-      <button id="kpOcrOcrRegion" disabled>Nhận dạng vùng</button>
-      <button id="kpOcrApplyRegion" disabled>Áp dụng</button>
-      <button id="kpOcrCancelRegion">Hủy</button>
-    </div>
   </section></div>
 <div class="kpOcrUi"><div class="kpToast" id="kpOcrToast"></div></div>
 <script src="../js/core/browser-polyfill.js"></script><script src="../js/core/messaging.js"></script><script src="../js/core/defaults.js"></script><script src="../js/core/config.js"></script><script src="../js/core/settings.js"></script><script src="../js/core/languages.js"></script><script src="../js/core/shortcuts.js"></script><script src="../js/shared/theme-tokens.js"></script><script src="../js/content/keepit-bar-css.js"></script><script src="../js/shared/sheet-kit.js"></script><script src="../js/shared/selection-toolbar.js"></script><script src="../js/shared/search.js"></script><script src="../js/shared/icons.js"></script><script src="../js/shared/thumbnails.js"></script><script src="../js/shared/site-icons.js"></script><script src="../js/reader/tts-engine.js"></script><script src="../js/translate/study-translation.js"></script><script src="../js/translate/dictionary.js"></script><script src="../js/content/web-highlighter.js"></script><script src="../js/content/sentence-note.js"></script><script src="../js/content/ui-components.js"></script><script src="../js/content/page-layout.js"></script><script src="../js/content/sidebar.js"></script><script src="../js/content/note-composer.js"></script><script src="../js/content/annotation-restore.js"></script><script src="../js/ask-ai/sheet.js"></script><script src="../js/dashboard/documents-context.js"></script><script src="../js/shared/heart-effects.js"></script><script src="../js/content/content.js"></script><script src="../vendor/readability/Readability.js"></script><script src="../vendor/readability/Readability-readerable.js"></script><script src="../js/reader/bilingual-flags.js"></script><script src="../js/reader/reader-css.js"></script><script src="../js/reader/bilingual-reader.js"></script><script src="../js/word-class/core.js"></script><script src="../js/ocr/core.js"></script><script src="../js/dashboard/documents-store.js"></script><script src="../js/dashboard/documents-renderers.js"></script><script src="../js/content/keepit-bar.js"></script><script src="../js/dashboard/documents.js"></script><script type="module" src="../js/ocr/engine.js"></script><script src="../js/ocr/ui.js"></script><script src="../js/ocr/run.js"></script>

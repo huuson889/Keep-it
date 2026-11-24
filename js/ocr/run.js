@@ -73,7 +73,15 @@
           docs().raster(page, options.longSide || 2000),
           new Promise(resolve => setTimeout(() => resolve(null), 20000))
         ]);
-        if (!canvas) { failures.push({ page, error: t('ocrNoRaster') }); continue; }
+        if (!canvas) {
+          /* chẩn đoán: nói rõ vì sao không lấy được trang, thay vì im lặng */
+          let why = 'null';
+          try { const i2 = docs()?.info?.(); why = `info=${JSON.stringify(i2)}`; } catch (error) { why = `info lỗi: ${error?.message || error}`; }
+          ui().log(`raster: ${why}`);
+          failures.push({ page, error: t('ocrNoRaster') });
+          continue;
+        }
+        ui().log(`raster ${canvas.width}×${canvas.height} · ${options.mode} · ${options.langs || 'eng+vie+kor'}`);
         let result = null, error = null;
         try { result = await recognize(canvas, page); }
         catch (caught) { error = caught; }
