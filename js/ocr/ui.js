@@ -1053,7 +1053,17 @@ function localize() {
     const style = getComputedStyle(area);
     const lineHeight = parseFloat(style.lineHeight) || (parseFloat(style.fontSize) || 13) * 1.5;
     const padTop = parseFloat(style.paddingTop) || 0;
-    bar.style.top = `${padTop + lineIdx * lineHeight - area.scrollTop}px`;
+    const padLeft = parseFloat(style.paddingLeft) || 0;
+    const borderTop = parseFloat(style.borderTopWidth) || 0;
+    const borderLeft = parseFloat(style.borderLeftWidth) || 0;
+    /* v3.5.628: dải tô phải phủ hết bề ngang dòng đang trỏ (trước đây thiếu left/width nên chỉ còn 1 vạch dọc).
+       Toạ độ lấy theo khung chứa (giống glue.js của demo: #trHover nằm đè lên textarea). */
+    const rect = area.getBoundingClientRect();
+    const host = area.parentElement ? area.parentElement.getBoundingClientRect() : { left: 0, top: 0 };
+    const padRight = parseFloat(style.paddingRight) || 0;
+    bar.style.left = `${rect.left - host.left + borderLeft + padLeft - 4}px`;
+    bar.style.width = `${Math.max(0, rect.width - borderLeft * 2 - padLeft - padRight + 8)}px`;
+    bar.style.top = `${rect.top - host.top + borderTop + padTop + lineIdx * lineHeight - area.scrollTop}px`;
     bar.style.height = `${lineHeight}px`;
     bar.hidden = false;
   }

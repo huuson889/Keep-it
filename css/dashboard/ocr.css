@@ -515,3 +515,14 @@ html.dark .kpOcrUi .kpOcrErr{background:#3a1719;color:#ff9aa0}
    kết thúc lượt, run.js gọi scanMode(false) để trả lại đúng trạng thái người dùng. */
 html.kpOcrScan #zoomWrap{visibility:hidden;pointer-events:none}
 html.kpOcrScan #vFlow{pointer-events:none;opacity:.55}
+
+/* v3.5.628 — Keepit: lớp khung chữ/hover được gắn vào .docsSource trong #pageStack, tức NGOÀI .kpOcrUi,
+   nên toàn bộ quy tắc scope .kpOcrUi ở trên không khớp ⇒ khung vùng tàng hình (đo bằng Chromium thật mới thấy).
+   Bản dưới đây giữ nguyên giá trị của demo nhưng scope theo #pageStack. */
+#pageStack .kpBoxLayer{--boxLine:#1f9e7acc;--boxFill:#3fc79b1c;--boxHover:#7262df;position:absolute;inset:0;overflow:hidden;line-height:1;z-index:3;pointer-events:none}
+html.dark #pageStack .kpBoxLayer{--boxLine:#57dcb4d9;--boxFill:#57dcb421}
+#pageStack .kpBoxLayer>.kpOcrBox{position:absolute;white-space:pre;color:transparent;border-radius:2px;pointer-events:auto;cursor:text}
+#pageStack .kpBoxLayer.kpBoxes>.kpOcrBox{outline:1.5px solid var(--boxLine);background:var(--boxFill)}
+#pageStack .kpBoxLayer.kpBoxes>.kpOcrBox:hover{outline-color:var(--boxHover);background:#7262df1a}
+#pageStack .kpHoverLayer{position:absolute;inset:0;pointer-events:none;z-index:1}
+#pageStack .kpHoverBox{position:absolute;background:#7262df33;outline:1.5px solid var(--boxHover);border-radius:2px}
