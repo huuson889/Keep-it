@@ -1,0 +1,548 @@
+if (typeof importScripts === "function") {
+  importScripts("/js/core/browser-polyfill.js", "/js/core/messaging.js", "/js/core/error-logger.js", "/js/core/defaults.js", "/js/core/config.js", "/js/core/settings.js", "/js/core/cache.js", "/js/translate/translate.js", "/js/background/usage-limits.js", "/js/background/annotations.js", "/js/ask-ai/providers.js", "/js/ask-ai/prompt-format.js", "/js/ask-ai/service.js", "/js/shared/selection-toolbar.js", "/js/word-class/core.js");
+}
+const CONFIG = globalThis.LHN_CONFIG;
+const USAGE_LIMITS = globalThis.LHN_USAGE_LIMITS.create({ browser });
+const KEEPIT_ACTION = browser.action || browser.browserAction;
+function isPdfTabUrl(value, depth = 0) {
+  try {
+    const url = new URL(value);
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) return true;
+    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return false;
+    return ["src", "file", "url", "originalUrl"].some(key => {
+      const source = url.searchParams.get(key);
+      return !!source && isPdfTabUrl(source, depth + 1);
+    });
+  } catch { return false; }
+}
+async function syncPdfTabBadge(tabId, value) {
+  if (!Number.isInteger(tabId) || !KEEPIT_ACTION?.setBadgeText) return;
+  let url = value;
+  if (typeof url !== "string") { try { url = (await browser.tabs.get(tabId)).url || ""; } catch { url = ""; } }
+  const pdf = isPdfTabUrl(url);
+  try {
+    await KEEPIT_ACTION.setBadgeText({ tabId, text: pdf ? "PDF" : "" });
+    if (pdf) await KEEPIT_ACTION.setBadgeBackgroundColor?.({ tabId, color: "#d34858" });
+  } catch { /* restricted/internal tabs may not support a contextual badge */ }
+}
+function pdfTabSource(value, depth = 0) {
+  try {
+    const url = new URL(value);
+    if (["http:", "https:", "file:"].includes(url.protocol) && /\.pdf$/i.test(decodeURIComponent(url.pathname))) { url.hash=""; return url.href; }
+    if (depth >= 2 || !["chrome-extension:", "moz-extension:", "chrome:"].includes(url.protocol)) return "";
+    for (const key of ["src", "file", "url", "originalUrl"]) {
+      const source = url.searchParams.get(key);
+      const resolved = source && pdfTabSource(source, depth + 1);
+      if (resolved) return resolved;
+    }
+  } catch { /* not a PDF URL */ }
+  return "";
+}
+const PDF_HINT_PAGE=browser.runtime.getURL("pages/pdf-suggestion.html");
+const PDF_HINT_ORIGIN=new URL(PDF_HINT_PAGE).origin,PDF_HINT_FRAME_ID="keepit-pdf-suggestion-frame";
+let activePdfHintTabId=null;
+const pdfHintPending=new Set();
+async function removePdfHint(tabId){
+  if(!Number.isInteger(tabId))return;
+  try{await browser.scripting.executeScript({target:{tabId,frameIds:[0]},func:id=>{const frame=document.getElementById(id);if(!frame)return;const handler=window.__keepitPdfHintMessage;if(handler)window.removeEventListener("message",handler);delete window.__keepitPdfHintMessage;frame.remove();},args:[PDF_HINT_FRAME_ID]});}catch{}
+  if(activePdfHintTabId===tabId)activePdfHintTabId=null;
+}
+async function closeLegacyPdfHintWindows(){
+  try{const tabs=await browser.tabs.query({}),ids=[...new Set(tabs.filter(tab=>tab.url?.split(/[?#]/,1)[0]===PDF_HINT_PAGE&&Number.isInteger(tab.windowId)).map(tab=>tab.windowId))];await Promise.all(ids.map(id=>browser.windows.remove(id).catch(()=>{})));}catch{}
+}
+async function showPdfHint(tab,url=tab?.url||""){
+  const tabId=tab?.id,source=pdfTabSource(url);if(!Number.isInteger(tabId)||!tab.active||!source)return;
+  const pendingKey=`${tabId}:${source}`;if(pdfHintPending.has(pendingKey))return;pdfHintPending.add(pendingKey);
+  try{
+    const hintUrl=new URL(PDF_HINT_PAGE);hintUrl.searchParams.set("sourceTabId",String(tabId));hintUrl.searchParams.set("pdfUrl",source);
+    await browser.scripting.executeScript({target:{tabId,frameIds:[0]},func:(id,src,origin)=>{
+      let frame=document.getElementById(id);if(frame&&frame.tagName!=="IFRAME")return;
+      const previous=window.__keepitPdfHintMessage;if(previous)window.removeEventListener("message",previous);
+      if(!frame){frame=document.createElement("iframe");frame.id=id;frame.title="Keepit PDF suggestion";frame.setAttribute("aria-label","Keepit PDF suggestion");document.documentElement.append(frame);}
+      frame.style.cssText="position:fixed!important;z-index:2147483647!important;top:72px!important;right:18px!important;width:300px!important;height:84px!important;border:0!important;background:transparent!important;overflow:hidden!important;display:block!important;max-width:calc(100vw - 24px)!important;";
+      const handler=event=>{if(event.source!==frame.contentWindow||event.origin!==origin)return;const message=event.data;if(message?.type==="KEEPIT_PDF_HINT_RESIZE"){const collapsed=message.collapsed===true;frame.style.width=collapsed?"64px":"300px";frame.style.height=collapsed?"64px":"84px";}else if(message?.type==="KEEPIT_PDF_HINT_CLOSE"){window.removeEventListener("message",handler);delete window.__keepitPdfHintMessage;frame.remove();}};
+      window.__keepitPdfHintMessage=handler;window.addEventListener("message",handler);if(frame.src!==src)frame.src=src;
+    },args:[PDF_HINT_FRAME_ID,hintUrl.href,PDF_HINT_ORIGIN]});
+    activePdfHintTabId=tabId;
+  }catch(error){console.warn("Could not overlay the PDF suggestion on this tab",error);}
+  finally{pdfHintPending.delete(pendingKey);}
+}
+void closeLegacyPdfHintWindows();
+browser.tabs.onUpdated.addListener((tabId,changeInfo,tab)=>{
+  const url=changeInfo.url||tab?.url||"";
+  if(url.split(/[?#]/,1)[0]===PDF_HINT_PAGE){if(Number.isInteger(tab?.windowId))void browser.windows.remove(tab.windowId).catch(()=>{});return;}
+  if(changeInfo.url||changeInfo.status==="loading"||changeInfo.status==="complete")void syncPdfTabBadge(tabId,url);
+  const source=pdfTabSource(url);
+  if(source){if(changeInfo.status==="complete"&&tab?.active)void showPdfHint({...tab,id:tabId},url);}
+  else if(changeInfo.url||changeInfo.status==="loading")void removePdfHint(tabId);
+});
+browser.tabs.onActivated.addListener(async({tabId,previousTabId})=>{
+  const previous=Number.isInteger(previousTabId)?previousTabId:activePdfHintTabId;
+  if(Number.isInteger(previous)&&previous!==tabId)void removePdfHint(previous);
+  try{const tab=await browser.tabs.get(tabId);if(!tab.url||tab.url==="about:blank")return;void syncPdfTabBadge(tabId,tab.url);if(pdfTabSource(tab.url))void showPdfHint(tab,tab.url);else void removePdfHint(tabId);}catch{}
+});
+browser.tabs.onRemoved.addListener(tabId=>{void removePdfHint(tabId);});
+browser.tabs.query({}).then(tabs=>tabs.forEach(tab=>{if(Number.isInteger(tab.id)){void syncPdfTabBadge(tab.id,tab.url);if(tab.active&&pdfTabSource(tab.url))void showPdfHint(tab,tab.url);}})).catch(()=>{});
+async function resetLegacyDictationWrongWordStats() {
+  const storage = browser?.storage?.local;
+  if (!storage) return;
+  try {
+    // One-time upgrade migration: clear only the old error aggregates, preserving each session's notes/progress.
+    const allData = await storage.get(null);
+    const updates = {};
+    for (const [key, record] of Object.entries(allData || {})) {
+      if (!/^dictation:[A-Za-z0-9_-]{6,}$/.test(key)) continue;
+      const stats = record?.wrongWordStats;
+      if (!record || !stats || Number(stats.version) >= 3) continue;
+      updates[key] = { ...record, wrongWordStats: { version: 3, words: {} } };
+    }
+    if (Object.keys(updates).length) await storage.set(updates);
+  } catch (error) {
+    console.warn("Could not reset legacy Dictation error statistics", error);
+  }
+}
+async function migrateSelectionToolbarStyle() {
+  // v3.5.147: 8 toolbar styles (radial 1-4, bar 5-8) under the new key selectionToolbarStyleV2 (default "1"), so every user
+  // starts on style 1 (approved reset). Drop the old keys selectionToolbarStyle (v3.5.119) and translateIconStyle (older).
+  const storage = browser?.storage?.local;
+  const key = CONFIG?.STORAGE_KEYS?.SETTINGS;
+  if (!storage || !key) return;
+  const data = await storage.get(key);
+  const saved = data?.[key] && typeof data[key] === "object" && !Array.isArray(data[key]) ? data[key] : {};
+  if (!Object.hasOwn(saved, "selectionToolbarStyle") && !Object.hasOwn(saved, "translateIconStyle")) return;
+  const { selectionToolbarStyle, translateIconStyle, ...rest } = saved;
+  await storage.set({ [key]:rest });
+}
+async function seedArenaDisabledWebsite() {
+  const storage=browser.storage.local, key=CONFIG.STORAGE_KEYS.SETTINGS, marker="lhnArenaDisabledSeeded";
+  const data=await storage.get([key,marker]);
+  if(data[marker]===true)return;
+  const saved=data[key]&&typeof data[key]==="object"&&!Array.isArray(data[key])?data[key]:{};
+  const sites=Array.isArray(saved.disabledWebsites)?saved.disabledWebsites:[];
+  await storage.set({[key]:{...saved,disabledWebsites:[...new Set([...sites,"arena.ai"])]},[marker]:true});
+}
+browser.runtime.onInstalled.addListener(async details => {
+  if (details?.reason === "update") {
+    try { await migrateSelectionToolbarStyle(); }
+    catch (error) { console.warn("Could not migrate the selection toolbar style", error); }
+  }
+  try { await seedArenaDisabledWebsite(); }
+  catch (error) { console.warn("Could not initialize disabled website", error); }
+  try {
+    await cleanupAskAIStorage();
+  } catch (error) { console.warn("Could not clean expired or legacy Ask AI data", error); }
+  try { await USAGE_LIMITS.initialize(); }
+  catch (error) { console.warn("Could not initialize local usage trial", error); }
+  try { await ensureAIProviderFrameRule(true); }
+  catch (error) { console.warn("Could not configure the AI-provider iframe header rule", error); }
+  await ensureAskAIContextMenu();
+  await resetLegacyDictationWrongWordStats();
+});
+browser.runtime.onStartup?.addListener(() => {
+  Promise.all([clearExpiredAILinkPending(), ensureAskAIContextMenu()]).catch(error => console.warn("Could not clean expired Ask AI requests or register Firefox selection menu", error));
+  ensureAIProviderFrameRule().catch(error => console.warn("Could not configure the AI-provider iframe header rule", error));
+});
+// v3.5.215 Trang tối không nháy: khi Trang tối bật + Chủ đề Keepit tối, đăng ký sẵn (1) CSS lớp tối chạy trước lần vẽ đầu
+// cho mọi trang http(s) trừ các trang đã biết là vốn tối (`lhnPageDarkNative`, do js/content/page-dark.js báo), Chủ đề
+// Tự động thì CSS chỉ có tác dụng khi máy đang tối; (2) Chủ đề Tối: js/content/page-dark-main.js (world MAIN) báo cho trang
+// "máy đang tối" để trang có dark mode riêng tự bật. Tắt Trang tối / Chủ đề sáng → gỡ đăng ký.
+const PAGE_DARK_IDS = ["keepit-page-dark-early", "keepit-page-dark-main", "keepit-page-dark-native"];
+const PAGE_DARK_NATIVE_KEY = "lhnPageDarkNative", PAGE_DARK_NATIVE_MAX = 200;
+const pageDarkHostOk = host => typeof host === "string" && host.length <= 253 && /^[a-z0-9-]+(\.[a-z0-9-]+)*$/.test(host);
+let pageDarkSync = Promise.resolve(), pageDarkSig = null;
+function syncPageDarkScripts(force = false) {
+  pageDarkSync = pageDarkSync.then(async () => {
+    const api = browser.scripting;
+    if (!api?.registerContentScripts) return;
+    const got = await browser.storage.local.get(["lhnPageDark", CONFIG.STORAGE_KEYS.SETTINGS, PAGE_DARK_NATIVE_KEY]);
+    const raw = got[CONFIG.STORAGE_KEYS.SETTINGS] || {};
+    const theme = String((globalThis.LHN_SETTINGS?.resolve?.(raw) || raw).sidebarTheme || "");
+    const on = got.lhnPageDark === true && theme !== "light";
+    const native = (Array.isArray(got[PAGE_DARK_NATIVE_KEY]) ? got[PAGE_DARK_NATIVE_KEY] : []).filter(pageDarkHostOk);
+    const sig = JSON.stringify([on, theme === "dark", native]);
+    if (!force && sig === pageDarkSig) return;
+    const old = await api.getRegisteredContentScripts({ ids:PAGE_DARK_IDS }).catch(() => []);
+    if (old.length) await api.unregisterContentScripts({ ids:old.map(s => s.id) });
+    pageDarkSig = sig;
+    if (!on) return;
+    const matches = ["http://*/*", "https://*/*"];
+    const scripts = [{ id:PAGE_DARK_IDS[0], matches, css:[theme === "dark" ? "css/content/page-dark-early.css" : "css/content/page-dark-early-auto.css"], runAt:"document_start", allFrames:false, persistAcrossSessions:true }];
+    if (native.length) scripts[0].excludeMatches = native.map(h => `*://${h}/*`);
+    if (theme === "dark") scripts.push({ id:PAGE_DARK_IDS[1], matches, js:["js/content/page-dark-main.js"], runAt:"document_start", world:"MAIN", allFrames:false, persistAcrossSessions:true });
+    // v3.5.220: trang vốn tối (không có lớp nạp sẵn) — nền mặc định tối trước khi trang vẽ xong, không chớp trắng.
+    if (native.length) scripts.push({ id:PAGE_DARK_IDS[2], matches:native.map(h => `*://${h}/*`), css:[theme === "dark" ? "css/content/page-dark-native.css" : "css/content/page-dark-native-auto.css"], runAt:"document_start", allFrames:false, persistAcrossSessions:true });
+    await api.registerContentScripts(scripts);
+  }).catch(error => { pageDarkSig = null; console.warn("Could not register the dark-pages scripts", error); });
+  return pageDarkSync;
+}
+// page-dark.js báo trang này vốn tối (thêm vào danh sách, mới nhất trước) hoặc không còn tối (bỏ ra).
+async function notePageDarkNative(message, sender) {
+  let host = ""; try { host = new URL(sender?.tab?.url || "").hostname.toLowerCase(); } catch {}
+  if (!pageDarkHostOk(host) || sender?.frameId) return { ok:false };
+  const got = await browser.storage.local.get(PAGE_DARK_NATIVE_KEY);
+  const old = Array.isArray(got[PAGE_DARK_NATIVE_KEY]) ? got[PAGE_DARK_NATIVE_KEY] : [];
+  if ((message.dark === true) === (old[0] === host) && (message.dark === true || !old.includes(host))) return { ok:true };
+  const list = old.filter(h => h !== host);
+  if (message.dark === true) list.unshift(host);
+  await browser.storage.local.set({ [PAGE_DARK_NATIVE_KEY]:list.slice(0, PAGE_DARK_NATIVE_MAX) });
+  return { ok:true };
+}
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && (changes.lhnPageDark || changes[CONFIG.STORAGE_KEYS.SETTINGS] || changes[PAGE_DARK_NATIVE_KEY])) syncPageDarkScripts();
+});
+browser.runtime.onInstalled.addListener(() => { syncPageDarkScripts(true); });
+browser.runtime.onStartup?.addListener(() => { syncPageDarkScripts(true); });
+const ANNOTATIONS = globalThis.LHN_ANNOTATIONS;
+const ttsAudioRequests = new Map();
+async function fetchTtsAudio(message) {
+  const text = typeof message.text === "string" ? message.text.trim() : "";
+  const language = typeof message.language === "string" ? message.language.trim().toLowerCase() : "";
+  const voice = typeof message.voice === "string" ? message.voice.trim() : "";
+  if (!text || !language || !voice || text.length > 500) throw new Error("Invalid or unsupported TTS request");
+  const key = `${language}\n${voice}\n${text}`;
+  const pending = ttsAudioRequests.get(key);
+  if (pending) return pending;
+  const request = (async () => {
+    try { await LHN_CACHE.ensureTtsAudioCacheBudget(); }
+    catch (error) { console.warn("TTS audio cache budget check failed", error); }
+    try {
+      const cached = await LHN_CACHE.getCachedTtsAudio(key);
+      if (cached?.size) return { audioBase64: arrayBufferToBase64(await cached.arrayBuffer()), cached: true };
+    } catch (error) { console.warn("TTS cache read failed; requesting fresh audio", error); }
+
+    const usage = await USAGE_LIMITS.consume("googleTts");
+    if (!usage.allowed) throw new Error("Google TTS daily usage limit reached");
+
+    const params = new URLSearchParams({ ie: "UTF-8", q: text, tl: language, client: "tw-ob" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    let blob;
+    try {
+      const response = await fetch(`https://translate.google.com/translate_tts?${params}`, { signal: controller.signal, credentials: "omit" });
+      if (!response.ok) throw new Error(`Google TTS returned HTTP ${response.status}`);
+      blob = await response.blob();
+      if (!blob.size || (blob.type && !/^audio\//i.test(blob.type))) throw new Error("Google TTS returned no playable audio");
+    } finally { clearTimeout(timeout); }
+    try { await LHN_CACHE.cacheTtsAudio(key, blob); } catch (error) { console.warn("TTS audio cache write failed", error); }
+    return { audioBase64: arrayBufferToBase64(await blob.arrayBuffer()), cached: false };
+  })();
+  ttsAudioRequests.set(key, request);
+  try { return await request; }
+  finally { if (ttsAudioRequests.get(key) === request) ttsAudioRequests.delete(key); }
+}
+// v3.5.281: favorites = Keepit bar "Yêu thích" (YouTube) → Highlights & Notes, quick filter "Yêu thích" (hearted videos)
+async function openDashboard(openSettings = false, openAccount = false, settingsTab = "account", favorites = false) {
+  const dashboardUrl = browser.runtime.getURL("pages/dashboard.html");
+  const favoritesUrl = `${dashboardUrl}?openFavorites=1`;
+  const settingsUrl = `${dashboardUrl}?openSettings=1${openAccount ? "&openAccount=1" : ""}${settingsTab !== "account" ? `&openSettingsTab=${encodeURIComponent(settingsTab)}` : ""}`;
+  const [tabs, activeTabs] = await Promise.all([
+    browser.tabs.query({}),
+    browser.tabs.query({ active: true, currentWindow: true })
+  ]);
+  const existing = tabs.find(tab => tab.url?.split(/[?#]/, 1)[0] === dashboardUrl);
+  if (!existing) return browser.tabs.create({ url: openSettings ? settingsUrl : favorites ? favoritesUrl : dashboardUrl });
+  const activeTab = activeTabs[0];
+  if (activeTab?.id !== existing.id) {
+    await browser.tabs.update(existing.id, { active: true });
+  }
+  if (activeTab?.windowId !== existing.windowId) {
+    await browser.windows.update(existing.windowId, { focused: true });
+  }
+  if (openSettings) {
+    try { await browser.tabs.sendMessage(existing.id, { type: settingsTab === "bilingualReader" ? "OPEN_DASHBOARD_BILINGUAL_SETTINGS" : openAccount ? "OPEN_DASHBOARD_ACCOUNT" : "OPEN_DASHBOARD_SETTINGS" }); }
+    catch { return browser.tabs.update(existing.id, { url: settingsUrl, active: true }); }
+  }
+  if (favorites) {
+    try { await browser.tabs.sendMessage(existing.id, { type: "OPEN_DASHBOARD_FAVORITES" }); }
+    catch { return browser.tabs.update(existing.id, { url: favoritesUrl, active: true }); }
+  }
+  return existing;
+}
+async function openDashboardDocuments(sourceTabId = null, pdfUrl = "", fileAccessDenied = false) {
+  const dashboardUrl = browser.runtime.getURL("pages/dashboard.html"), target = new URL(`${dashboardUrl}?view=documents`);
+  const source = typeof pdfUrl === "string" ? pdfTabSource(pdfUrl) : "";
+  if (source) target.searchParams.set("openPdf", source);
+  if (fileAccessDenied && source.startsWith("file:")) target.searchParams.set("pdfHelp", "file-access");
+  const documentsUrl = target.href;
+  const [tabs, activeTabs, sourceTab] = await Promise.all([
+    browser.tabs.query({}), browser.tabs.query({ active:true, currentWindow:true }),
+    Number.isInteger(sourceTabId) ? browser.tabs.get(sourceTabId).catch(() => null) : Promise.resolve(null)
+  ]);
+  const existing = tabs.find(tab => tab.url?.split(/[?#]/, 1)[0] === dashboardUrl);
+  if (!existing) {
+    const created = await browser.tabs.create({ url:documentsUrl, ...(Number.isInteger(sourceTab?.windowId) ? { windowId:sourceTab.windowId } : {}) });
+    if (Number.isInteger(sourceTab?.windowId)) await browser.windows.update(sourceTab.windowId, { focused:true }).catch(() => {});
+    return created;
+  }
+  const activeTab = activeTabs[0];
+  if (existing.status !== "complete" || source || fileAccessDenied) return browser.tabs.update(existing.id, { url:documentsUrl, active:true });
+  if (activeTab?.id !== existing.id) await browser.tabs.update(existing.id, { active:true });
+  if (activeTab?.windowId !== existing.windowId) await browser.windows.update(existing.windowId, { focused:true });
+  try { await browser.tabs.sendMessage(existing.id, { type:"OPEN_DASHBOARD_DOCUMENTS" }); } catch { return browser.tabs.update(existing.id, { url:documentsUrl, active:true }); }
+  return existing;
+}
+// v3.5.282: Keepit bar Shorts / Kênh đăng ký / Bạn on www.youtube.com — YouTube's own in-page navigation (like its left column:
+// only the content changes) instead of a full reload. Runs in the YouTube page (world MAIN), sends nothing anywhere.
+const YT_SPA_PATHS = ["/shorts", "/feed/subscriptions", "/feed/you"];
+async function ytSpaNav(path, sender) {
+  const tabId = sender?.tab?.id;
+  if (!Number.isInteger(tabId) || !YT_SPA_PATHS.includes(path) || !/^https:\/\/www\.youtube\.com\//.test(sender?.tab?.url || sender?.url || "")) return { ok: false };
+  try {
+    const [res] = await browser.scripting.executeScript({ target: { tabId, frameIds: [0] }, world: "MAIN", func: ytNavigateInPage, args: [path] });
+    return { ok: res?.result === true };
+  } catch { return { ok: false }; }
+}
+function ytNavigateInPage(path) {
+  const app = document.querySelector("ytd-app");
+  if (!app) return false;
+  const urlOf = ep => ep?.commandMetadata?.webCommandMetadata?.url || "";
+  const same = url => url === path || url.startsWith(`${path}/`);
+  const entry = () => [...document.querySelectorAll("ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer")]
+    .find(el => same(urlOf(el.data?.navigationEndpoint || el.data?.serviceEndpoint)) && el.querySelector("a"));
+  // v3.5.283: YouTube's own left-column entry when it is there — a click = exactly what YouTube does (Shorts: YouTube first picks
+  // a Short, then opens /shorts/<id>; the bare Shorts endpoint alone gives an empty black /shorts/)
+  const hit = entry();
+  if (hit) { hit.querySelector("a").click(); return true; }
+  if (path === "/shorts") {
+    // Shorts with no left column on the page (video page): let YouTube build its left column (stays closed), then click its entry
+    app.renderGuide = true;
+    return new Promise(resolve => {
+      let n = 0;
+      const tick = () => { const el = entry(); if (el) { el.querySelector("a").click(); resolve(true); } else if (++n > 30) resolve(false); else setTimeout(tick, 100); };
+      tick();
+    });
+  }
+  const meta = (url, rootVe) => ({ webCommandMetadata: { url, webPageType: "WEB_PAGE_TYPE_BROWSE", rootVe, apiUrl: "/youtubei/v1/browse" } });
+  const endpoint = {
+    "/feed/subscriptions": { commandMetadata: meta("/feed/subscriptions", 96368), browseEndpoint: { browseId: "FEsubscriptions" } },
+    "/feed/you": { commandMetadata: meta("/feed/you", 6827), browseEndpoint: { browseId: "FElibrary", params: "KgN5b3U%3D" } }
+  }[path];
+  if (!endpoint) return false;
+  app.dispatchEvent(new CustomEvent("yt-navigate", { bubbles: true, composed: true, detail: { endpoint } }));
+  return true;
+}
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+// v3.5.160 touch bar: back / forward swipe past this tab's history → previous / next tab of the same window.
+// Only tab order (index, id) of the sender's window is used; nothing is stored or sent anywhere.
+async function tabNeighbors(message, sender) {
+  const tab = sender?.tab;
+  if (!tab || typeof tab.index !== "number") return { prev: false, next: false };
+  const tabs = await browser.tabs.query({ windowId: tab.windowId });
+  const prev = tabs.find(candidate => candidate.index === tab.index - 1), next = tabs.find(candidate => candidate.index === tab.index + 1);
+  if (message.type === "SWITCH_TAB") {
+    const target = message.dir < 0 ? prev : next;
+    if (!target?.id) return { ok: false };
+    await browser.tabs.update(target.id, { active: true });
+    return { ok: true };
+  }
+  return { prev: !!prev, next: !!next };
+}
+async function openHighlight(url, id) {
+  const ownedDocument=typeof url==="string"&&!/^https?:\/\//i.test(url)?globalThis.LHN_AI_PROVIDERS?.normalizeSourceUrl(url):"";
+  if (typeof url !== "string" || (!/^https?:\/\//i.test(url)&&!ownedDocument) || typeof id !== "string" || !id) return { found: false };
+  if(ownedDocument)url=ownedDocument;
+  const tabs = await browser.tabs.query({});
+  let tab = tabs.find(candidate => candidate.url === url || (ownedDocument && globalThis.LHN_AI_PROVIDERS?.normalizeSourceUrl(candidate.url) === ownedDocument));
+  if (tab) {
+    await browser.windows.update(tab.windowId, { focused: true });
+    tab = await browser.tabs.update(tab.id, { active: true });
+  } else {const target=new URL(url);if(ownedDocument)target.searchParams.set("highlight",id);tab=await browser.tabs.create({ url:target.href, active:true });}
+  if (!tab?.id) return { found: false };
+  for (let attempt = 0; attempt < 48; attempt++) {
+    try {
+      const result = await browser.tabs.sendMessage(tab.id, { type: "JUMP_TO_HIGHLIGHT", id });
+      if (result?.found) return result;
+    } catch { /* wait until the tab's content script is ready */ }
+    await delay(250);
+  }
+  return { found: false };
+}
+// v3.5.290 Loại từ (Word class): one on-device engine for all tabs (js/word-class/engine.js). Chrome = offscreen document
+// pages/word-class-engine.html, opened on demand and closed when the engine reports idle; Firefox = the engine module imported
+// into this background page. Status / delete work from the cache alone, so Settings never starts the engine just to look.
+const WC_ENGINE = "pages/word-class-engine.html", WC_CACHE = "transformers-cache";
+let wcCreating = null, wcModule = null;
+const wcOffscreen = () => !!globalThis.chrome?.offscreen;
+async function wcOpen() {
+  if (!wcOffscreen()) return !!wcModule;
+  const contexts = await chrome.runtime.getContexts({ contextTypes:["OFFSCREEN_DOCUMENT"], documentUrls:[chrome.runtime.getURL(WC_ENGINE)] });
+  return contexts.length > 0;
+}
+async function wcEngine() {
+  if (!wcOffscreen()) { wcModule ||= import(browser.runtime.getURL("js/word-class/engine.js")); return (await wcModule).handle; }
+  if (!(await wcOpen())) {
+    wcCreating ||= chrome.offscreen.createDocument({ url:WC_ENGINE, reasons:["WORKERS"], justification:"Runs the on-device word class (part of speech) model" }).finally(() => { wcCreating = null; });
+    await wcCreating;
+  }
+  // the new document registers its listener once its module has loaded: retry while nobody is listening yet
+  return async message => {
+    for (let i = 0; ; i++) {
+      try { const r = await chrome.runtime.sendMessage({ ...message, target:"lhn-word-class-engine" }); if (r !== undefined || i >= 50) return r; }
+      catch (error) { if (i >= 50 || !/receiving end|establish connection/i.test(String(error?.message || error))) throw error; }
+      await delay(100);
+    }
+  };
+}
+async function wcCached() {
+  const core = globalThis.LHN_WORD_CLASS_CORE;
+  try {
+    if (!core || !(await caches.has(WC_CACHE))) return false;
+    const cache = await caches.open(WC_CACHE);
+    for (const file of core.MODEL_FILES) if (!(await cache.match(core.MODEL_URL(file)))) return false;
+    return true;
+  } catch { return false; }
+}
+async function wcClose() { if (wcOffscreen() && await wcOpen()) await chrome.offscreen.closeDocument().catch(() => {}); }
+async function wordClassMessage(message) {
+  const type = message.type;
+  if (type === "WORD_CLASS_IDLE") { await wcClose(); return { ok:true }; }
+  if (type === "WORD_CLASS_STATUS") {
+    if (await wcOpen()) return (await wcEngine())({ op:"status" });
+    return { ok:true, downloaded:await wcCached(), loading:false, loaded:0, total:0, error:"" };
+  }
+  if (type === "WORD_CLASS_REMOVE") {
+    if (await wcOpen()) { await (await wcEngine())({ op:"remove" }); await wcClose(); }
+    try { await caches.delete(WC_CACHE); } catch {}
+    return { ok:true };
+  }
+  if (type === "WORD_CLASS_DOWNLOAD") return (await wcEngine())({ op:"download" });
+  if (type === "WORD_CLASS_TAG") {
+    const texts = Array.isArray(message.texts) ? message.texts.slice(0, 50).map(text => String(text || "").slice(0, 20000)) : [];
+    if (!(await wcOpen()) && !(await wcCached())) return { ok:false, needDownload:true };
+    return (await wcEngine())({ op:"tag", texts });
+  }
+  return { ok:false, error:"unknown word class message" };
+}
+LHN_MESSAGING.onMessage.addListener(async (message, sender) => {
+  if (!message || !message.type) return;
+  if (message.type === "LHN_ERROR_LOG") return globalThis.LHN_ERROR_LOGGER?.append(message.entry);
+  if (typeof message.type === "string" && message.type.startsWith("WORD_CLASS_")) return wordClassMessage(message);
+  if (message.type === "DETECT_READ_LANGUAGE") return LHN_TRANSLATE.detectReadLanguageRemote(message.text);
+  if (message.type === "BILINGUAL_TRANSLATE") { const targetLang = String(message.targetLang || "").trim(); return LHN_TRANSLATE.translateBilingual(String(message.text || ""), /^[a-z]{2,3}(?:-[a-z0-9]{2,8})*$/i.test(targetLang) ? targetLang : "en"); }
+  if (message.type === "BILINGUAL_CLEAR_CACHE") return LHN_CACHE.clearBilingualTranslationCache();
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_GET") return LHN_CACHE.getVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_SAVE") return LHN_CACHE.saveVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""), message.transcript);
+  if (message.type === "YOUTUBE_TRANSCRIPT_CACHE_TOUCH") return LHN_CACHE.touchVideoTranscript(String(message.videoId || ""), String(message.variantKey || ""));
+  if (message.type === "WEB_STUDY_CUE_CACHE_GET") return LHN_CACHE.getWebStudyCues(String(message.cacheKey || ""));
+  if (message.type === "WEB_STUDY_CUE_CACHE_SAVE") return LHN_CACHE.saveWebStudyCues(String(message.cacheKey || ""), message.sentences);
+  if (message.type === "WEB_STUDY_CUE_CACHE_TOUCH") return LHN_CACHE.touchWebStudyCues(String(message.cacheKey || ""));
+  if (message.type === "YOUTUBE_FETCH_TEXT") {
+    const url = String(message.url || "");
+    const allowed = /^https:\/\/(?:www\.)?youtube\.com\//.test(url) || /^https:\/\/translate\.googleapis\.com\//.test(url);
+    if (!allowed) return { ok:false, error:"URL không được phép" };
+    try {
+      const response = await fetch(url, { credentials:url.includes("youtube.com") ? "include" : "omit" });
+      if (!response.ok) return { ok:false, error:`HTTP ${response.status}` };
+      return { ok:true, text:await response.text() };
+    } catch (error) { return { ok:false, error:String(error?.message || error) }; }
+  }
+  // POST JSON tới API nội bộ của YouTube (get_transcript) — chỉ cho phép youtube.com.
+  if (message.type === "YOUTUBE_API") {
+    const url = String(message.url || "");
+    if (!/^https:\/\/(?:www\.)?youtube\.com\//.test(url)) return { ok:false, error:"URL không được phép" };
+    try {
+      const response = await fetch(url, { method:"POST", credentials:"include", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(message.body || {}) });
+      if (!response.ok) return { ok:false, error:`HTTP ${response.status}` };
+      return { ok:true, json:await response.json() };
+    } catch (error) { return { ok:false, error:String(error?.message || error) }; }
+  }
+  if (message.type === "USAGE_STATUS") return USAGE_LIMITS.status();
+  if (message.type === "USAGE_ACTIVATE_KEY") return USAGE_LIMITS.activate(message.key);
+  if (message.type === "USAGE_CONSUME") return USAGE_LIMITS.consume(message.service);
+  if (message.type === "FETCH_TTS_AUDIO") return fetchTtsAudio(message);
+  if (ASK_AI_MESSAGE_TYPES.has(message.type)) {
+    const askAIResult = await handleAskAIMessage(message, sender);
+    if (askAIResult !== ASK_AI_UNHANDLED) return askAIResult;
+  }
+  if (message.type === "OPEN_DASHBOARD") return openDashboard();
+  if (message.type === "OPEN_DASHBOARD_DOCUMENTS") {
+    const pdfUrl = typeof message.pdfUrl === "string" ? pdfTabSource(message.pdfUrl) : "";
+    return openDashboardDocuments(Number.isInteger(message.sourceTabId) ? message.sourceTabId : null, pdfUrl, message.fileAccessDenied === true);
+  }
+  if (message.type === "OPEN_DASHBOARD_SETTINGS") return openDashboard(true);
+  if (message.type === "OPEN_DASHBOARD_ACCOUNT") return openDashboard(true, true);
+  if (message.type === "OPEN_DASHBOARD_FAVORITES") return openDashboard(false, false, "account", true);
+  if (message.type === "YT_SPA_NAV") return ytSpaNav(message.path, sender);
+  // Keepit bar ☰ "Trang chủ": the browser's start page in the sender's tab (Firefox: the home page; Chromium/Edge: the new-tab page).
+  if (message.type === "OPEN_HOME") {
+    if (!Number.isInteger(sender?.tab?.id)) return { ok: false };
+    const url = browser.runtime.getURL("pages/home.html");   // v3.5.180: the Keepit home page (was the browser start page)
+    try { await browser.tabs.update(sender.tab.id, { url }); return { ok: true }; } catch (error) { return { ok: false, error: String(error?.message || error) }; }
+  }
+ if (message.type === "OPEN_DASHBOARD_BILINGUAL_SETTINGS") return openDashboard(true, false, "bilingualReader");
+  if (message.type === "OPEN_HIGHLIGHT") return openHighlight(message.url, message.id);
+  if (message.type === "TAB_NEIGHBORS" || message.type === "SWITCH_TAB") return tabNeighbors(message, sender);
+  // v3.5.208: ☰ → Cỡ chữ (như Cỡ chữ trang của APK) = mức thu phóng của trình duyệt cho chính tab đó (trình duyệt tự nhớ theo trang web), 50–200 %.
+  if (message.type === "PAGE_DARK_NATIVE") return notePageDarkNative(message, sender);
+  if (message.type === "PAGE_ZOOM_GET" || message.type === "PAGE_ZOOM_SET") {
+    const tabId = sender.tab?.id; if (typeof tabId !== "number" || !browser.tabs?.getZoom) return { ok:false };
+    try {
+      if (message.type === "PAGE_ZOOM_SET") { const pct = Math.min(200, Math.max(50, Math.round(Number(message.value) / 10) * 10 || 100)); await browser.tabs.setZoom(tabId, pct / 100); }
+      return { ok:true, value:Math.round((await browser.tabs.getZoom(tabId)) * 100) };
+    } catch (error) { return { ok:false, error:String(error?.message || error) }; }
+  }
+  if (message.type === "GET_ALL") return ANNOTATIONS.getAll();
+  if (message.type === "GET_BATCH") return ANNOTATIONS.getBatch(message);
+  if (message.type === "GET_PAGE") return ANNOTATIONS.getPage(message.url);
+  if (message.type === "GET_ONE") return ANNOTATIONS.getOne(message.id);
+  if (message.type === "ADD") { const saved = await ANNOTATIONS.addOne(message.item || {}); ANNOTATIONS.notifyAnnotationsChanged({ type: "upsert", item: saved }, message.origin); return saved; }
+  if (message.type === "UPDATE") { const saved = await ANNOTATIONS.updateOne(message.item); ANNOTATIONS.notifyAnnotationsChanged({ type: "upsert", item: saved }, message.origin); return saved; }
+  if (message.type === "REVIEW_ANNOTATION") {
+    if (typeof message.id !== "string" || !message.review || typeof message.review !== "object") return { updated: false };
+    const item = await ANNOTATIONS.updateReview(message.id, message.review);
+    if (item) ANNOTATIONS.notifyAnnotationsChanged({ type:"upsert", item }, message.origin);
+    return { updated: Boolean(item), item };
+  }
+  if (message.type === "RESET_STUDY_PROGRESS") {
+    const ids = new Set(Array.isArray(message.ids) ? message.ids.filter(id => typeof id === "string") : []);
+    if (!ids.size) return { updated: true, resetCount: 0 };
+    const resetCount = await ANNOTATIONS.resetReviews(ids);
+    if (resetCount) ANNOTATIONS.notifyAnnotationsChanged({ type:"refresh" }, message.origin);
+    return { updated: true, resetCount };
+  }
+  if (message.type === "DELETE") {
+    // Deleting a note moves it to the Trash for 30 days; only the Trash purges for real (or a caller that passes hard:true).
+    const result = message.hard ? await ANNOTATIONS.deleteOne(message.id) : await ANNOTATIONS.softDelete(message.id);
+    ANNOTATIONS.notifyAnnotationsChanged({ type: "delete", id: message.id }, message.origin);
+    return result;
+  }
+  if (message.type === "DELETE_PAGE") { const result = await ANNOTATIONS.softDeletePage(message.url); if (result.deletedCount) ANNOTATIONS.notifyAnnotationsChanged({ type: "deletePage", url: message.url }, message.origin); return result; }
+  if (message.type === "TRASH_NOTES_LIST") return ANNOTATIONS.listTrashed();
+  if (message.type === "TRASH_NOTES_RESTORE") {
+    const items = await ANNOTATIONS.restoreMany(message.ids);
+    if (items.length) ANNOTATIONS.notifyAnnotationsChanged({ type: "refresh" }, message.origin);
+    return { restored: items.length, items };
+  }
+  if (message.type === "TRASH_NOTES_PURGE") return { purged: await ANNOTATIONS.purgeMany(message.ids) };
+  if (message.type === "TRASH_NOTES_INSERT") { const written = await ANNOTATIONS.putMany(message.items); if (written) ANNOTATIONS.notifyAnnotationsChanged({ type: "refresh" }, message.origin); return { written }; }
+  if (message.type === "TRASH_NOTES_SWEEP") return { purged: await ANNOTATIONS.purgeExpiredTrashed() };
+  if (message.type === "IMPORT") return ANNOTATIONS.importItems(message.items, message.origin);
+  if (message.type === "SYNC_PAGE_ORDER") return ANNOTATIONS.syncPageOrder(message.url, message.ids);
+  if (message.type === "EXPORT") return ANNOTATIONS.getAll();
+});
+
+// Chrome only: request Google TTS từ extension bị 404 nếu thiếu Referer.
+// Thêm Referer giống trang Google, chỉ áp dụng cho translate_tts. Firefox không dùng rule này.
+(() => {
+  const isChrome = typeof chrome !== "undefined" && chrome.declarativeNetRequest && !/Firefox\//.test(navigator.userAgent);
+  if (!isChrome) return;
+  chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [9001],
+    addRules: [{
+      id: 9001,
+      priority: 1,
+      action: { type: "modifyHeaders", requestHeaders: [{ header: "Referer", operation: "set", value: "https://translate.google.com/" }] },
+      condition: { urlFilter: "||translate.google.com/translate_tts", resourceTypes: ["xmlhttprequest", "media", "other"] }
+    }]
+  }).catch(err => console.warn("TTS referer rule failed", err));
+})();
+
+// Chrome gửi message qua JSON nên ArrayBuffer bị mất; trả audio dạng base64 để dùng được trên cả hai trình duyệt.
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
+}
