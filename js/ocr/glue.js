@@ -3,13 +3,21 @@
 /* không dùng PDF.js của demo: trang do Keepit vẽ */
 const pdfjs = { GlobalWorkerOptions: {} };
 
-const __missOcr=new Set();
-const $ = id => document.getElementById(id) || (() => {
-  if (!__missOcr.has(id)) { __missOcr.add(id); console.warn('[ocr-glue] thiếu phần tử:', id); }
-  const d = /canvas/i.test(id) ? document.createElement('canvas') : document.createElement('div');
-  d.id = id; return d;
-})();
-
+/* ===== BIẾN THỂ "GIỐNG APP": chạy bằng khung của Keepit =====
+   4 id nối sang phần tử thật của khung đọc; 20 id khung demo bị tắt (không phần tử giả):
+   tính năng nào cần chúng thì tự bỏ qua. Bản này là nguồn để sinh mã cho app,
+   nên demo và app chạy cùng một logic. */
+/* viết dạng ghép chuỗi để bộ sinh id (kp…) không đổi tên các id thật của Keepit */
+const KP_ALIAS = { prev:'p'+'Prev', next:'p'+'Next', pageLabel:'p'+'Num', ofTotal:'p'+'Total',
+  /* sau khi bộ sinh đổi tên, các id này thành kp… — vẫn phải trỏ về id thật của Keepit */
+  'kpPPrev':'p'+'Prev', 'kpPNext':'p'+'Next', 'kpPNum':'p'+'Num', 'kpPTotal':'p'+'Total' };
+const KP_OFF_KEYS = (['kpBannerAct','kpBannerClose','kpBannerNoAsk','kpVBulb','kpSelectRegion','kpFileType',
+  'kpFilename','kpFolder','kpVersion','kpEmpty','kpEmptyOpen','kpMoreBoxes','kpMoreOcr','kpMoreOcrHint','kpMoreOpen',
+  'kpMoreResults','kpApplyRegion','kpAutoHint','kpLoopGuard','kpOcrRegion','kpOcrScopePick','kpRegionEditor','kpSavePdf']);
+const KP_OFF = { has: (id) => KP_OFF_KEYS.some(k => String(id).toLowerCase().endsWith(k.toLowerCase())) };
+const kpRaw$ = (id) => document.getElementById(id);
+const kpFake = (id) => { const d = document.createElement('div'); d.id = id; d.hidden = true; return d; };
+const $ = (id) => KP_OFF.has(id) ? kpFake(id) : (kpRaw$(KP_ALIAS[id] || id) || kpFake(id));
 const hook = () => window.keepitHook;
 const VER = 'v' + chrome.runtime.getManifest().version;
 
