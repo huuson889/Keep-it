@@ -1,7 +1,8 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- Version **3.5.611**: căn thanh phím tắt theo Reader tài liệu; giữ thanh dưới hiện khi menu Thêm hoặc sheet menu chính mở, tôn trọng chế độ Ẩn.
+- Version **3.5.617**: bỏ thanh gợi ý OCR trên PDF không có lớp chữ; vẫn giữ gợi ý riêng cho ảnh và DOCX/PPTX.
+- Kiểm mới v3.5.617: JS/manifest, kiểm logic tĩnh và ZIP CRC đạt; chưa chạy screenshot/Chromium vì sandbox không có Chromium/Playwright.
 - Dịch giữ popup; Từ điển cảm ứng là sheet dùng sheet-kit, hàng đầu scale 1,2; Tô sáng rộng tối đa 405px, ghi chú dài cuộn. Ba popup dùng kính, viền và shadow chung.
 - Overlay và Full Dictionary dùng `LHN_HEART_EFFECTS` chung, hướng dẫn không có vòng trắng; tim bấm nhanh và nút tim vẫn dùng luồng lưu thật. Các sheet dùng nền tay kéo như trước và giữ thanh cuộn ẩn.
 - Đã kiểm Chromium unpacked Tài liệu 1512/390 sáng/tối, ảnh 4× và chạm giả lập: tâm Reader/phím tắt, menu Thêm/sheet với Tự làm mờ, Tự ẩn, Ẩn; console/pageerror rỗng. Các kiểm thử khác xem nhật ký.
@@ -162,6 +163,12 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
 ## 5. Nhật ký
+
+**2026-11-25 | v3.5.617 | Arena.ai Agent sửa:**
+
+- Tài liệu: bỏ riêng thanh màu vàng gợi ý quét chữ cho PDF chưa có lớp chữ; giữ nguyên gợi ý ảnh và DOCX/PPTX, OCR và các điều khiển khác.
+- File: `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: `node --check js/dashboard/documents.js`, parse manifest, assertion nhánh scan đã bỏ nhưng `imageHint`/`officeHint` còn, `git diff --check`, ZIP 443 tệp / CRC và manifest gốc `3.5.617` đều đạt. Screenshot/Chromium chưa chạy vì sandbox không có Chromium/Playwright; chưa xác minh trực quan trên extension thật.
 
 **2026-11-17 | v3.5.611 | Arena:**
 
