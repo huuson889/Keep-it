@@ -99,7 +99,7 @@
 
   /* mở OCR: nút của chính demo (đã đổi tên) */
   document.addEventListener('click', async (e) => {
-    if (!e.target.closest?.('#kpOcrChip')) return;
+    if (!e.target.closest?.('#kpVOcr')) return;
     await mount();
     syncPaper();
     try { $('kpVOcr')?.click(); } catch (e) { console.warn('[ocr-host] openOcr lỗi:', e?.message); }
