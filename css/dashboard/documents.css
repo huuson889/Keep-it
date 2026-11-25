@@ -851,3 +851,9 @@ html.dash-embedded .seg{overflow:visible;max-width:none}
 /* v3.5.538: dòng footer chung cho mọi tab */
 .dash-footer{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-top:30px;padding:0 2px;color:#9da4b2;font-size:11px;line-height:14px}
 html.dark .dash-footer{color:#95959c}
+
+.kpOcrChip { position: fixed; right: 22px; bottom: 84px; z-index: 60; display: inline-flex; visibility: visible;
+  align-items: center; gap: 7px; height: 40px; padding: 0 16px; border-radius: 999px;
+  border: 1px solid var(--line, #333); cursor: pointer; background: var(--panel, #1b1b1b);
+  color: inherit; font: 600 14px/1 inherit; }
+.kpOcrChipDot { width: 8px; height: 8px; border-radius: 50%; background: #ffb020; box-shadow: 0 0 8px #ffb020; }

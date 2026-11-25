@@ -117,6 +117,8 @@ let pageObserver=null,thumbnailObserver=null,thumbnailJobs=new Map(),drawn=new M
    chưa được gắn → bôi đen không có thanh Tô sáng/Dịch/AI, phải reload mới được.
    Mọi lần mở tệp giờ đợi khung khởi tạo xong. */
 let bootResolve; const bootReady=new Promise(resolve=>{bootResolve=resolve;});
+/* cửa cho phần OCR (js/ocr-host.js): tài liệu đang mở */
+globalThis.KeepitViewerState=()=>V?.doc?{id:V.doc.id,name:V.doc.name,type:V.doc.type,page:V.page,pages:V.doc.pages}:null;
 async function openViewer(id,mode='orig',prepared=null){
  const cycle=++viewCycle;$('#viewer').dataset.nativeReady='false';LHN_READER_API.reset();LHN_CONTENT_TOOLS.close();ttsStop();hideSel();endPanelResize();setMore(false,false);resetPagerFade();
  try{
