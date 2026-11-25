@@ -97,17 +97,27 @@
   };
   window.onKeepitState = () => syncPaper();
 
-  /* mở OCR: nút của chính demo (đã đổi tên) */
+  /* mở OCR: nút của chính demo (đã đổi tên). Không gọi lại .click() để tránh đệ quy. */
+  let opening = false;
   document.addEventListener('click', async (e) => {
-    if (!e.target.closest?.('#kpVOcr')) return;
-    await mount();
-    syncPaper();
-    try { $('kpVOcr')?.click(); } catch (e) { console.warn('[ocr-host] openOcr lỗi:', e?.message); }
-    /* nếu glue chưa kịp mở (thiếu phần tử phụ của demo), mở đúng lớp như demo dùng */
-    if (!$('kpOcrModal')?.classList.contains('show')) {
-      $('kpOcrModal')?.classList.add('show');
-      $('kpOcrScrim')?.classList.add('show');
-    }
+    if (!e.target.closest?.('#kpVOcr') || opening) return;
+    opening = true;
+    e.preventDefault(); e.stopPropagation();
+    try {
+      await mount();
+      syncPaper();
+      const btn = $('kpVOcr');
+      const own = btn && btn.onclick;          /* openOcr của glue.js, gắn lúc nạp */
+      if (typeof own === 'function') {
+        try { own.call(btn, { type: 'click', target: btn }); }
+        catch (err) { console.warn('[ocr-host] openOcr lỗi:', err?.message); }
+      }
+      if (!$('kpOcrModal')?.classList.contains('show')) {
+        $('kpOcrModal')?.classList.add('show');
+        $('kpOcrScrim')?.classList.add('show');
+      }
+      $('kpTrPanel')?.classList.add('open');
+    } finally { opening = false; }
   }, true);
 
   setInterval(() => { if (mounted) { syncPaper(); syncEngine(); } }, 1200);
