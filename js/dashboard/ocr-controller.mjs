@@ -1,138 +1,210 @@
-/* Keepit · lớp giao diện nối với engine thật (app.js).
-   Không sửa engine: chỉ đọc trạng thái qua window.keepitHook + window.onKeepitState. */
-import * as pdfjs from './fusor/pdf.min.mjs';
-pdfjs.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('fusor/pdf.worker.min.mjs');
-
-const $ = id => document.getElementById(id);
-const hook = () => window.keepitHook;
-const VER = 'v' + chrome.runtime.getManifest().version;
-
-/* ---------- tiện ích ---------- */
-let toastT = 0;
-function toast(msg){
-  const t = $('toast'); if (!t) return;
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2800);
-}
-const waitFor = (fn, ms = 20000, step = 120) => new Promise(res => {
-  const t0 = Date.now();
-  const tick = () => {
-    let v = false; try { v = fn(); } catch { v = false; }
-    if (v) return res(true);
-    if (Date.now() - t0 > ms) return res(false);
-    setTimeout(tick, step);
-  };
-  tick();
-});
-
-/* ---------- sáng/tối ---------- */
-try { if (localStorage.getItem('keepit-theme') === 'dark') document.documentElement.classList.add('dark'); } catch {}
-$('vTheme').onclick = () => {
-  const dark = document.documentElement.classList.toggle('dark');
-  try { localStorage.setItem('keepit-theme', dark ? 'dark' : 'light'); } catch {}
+/* Clean integration: ONLY Keep-it 3.5.612 + approved OCR demo 2.9.7.33.
+ * Viewer/storage/tools belong to Keepit. OCR UI/hover/region behaviour comes from the demo. */
+import {bindOcrLocalization} from './ocr-localize.mjs';
+import {imageVariant,preprocessV6,mergeImage} from '../../vendor/ocr/image-preprocess.mjs';
+const host=globalThis.KeepitOcrDocumentHost,store=globalThis.KeepitDocumentsStore;
+let ocrText=text=>text;
+const asset=path=>new URL('../../vendor/ocr/'+path,import.meta.url).href;
+const parked=document.createElement('div');parked.hidden=true;parked.className='keepitOcr';document.body.append(parked);
+for(const name of ['regionSurface','regionMarks','regionRect','layer','hl']){const el=document.createElement('div');el.id='ko-'+name;parked.append(el);}
+const overlay=page=>host.source(page)?.querySelector('.ocrCanvasOverlay');
+const $=id=>{
+ if(id==='stage'||id==='paper')return document.getElementById('stage');
+ if(id==='pNum')return document.getElementById('pNum');
+ const dynamic={layer:'.layer',hl:'.hl',regionSurface:'.regionSurface',regionMarks:'.regionMarks',regionRect:'.regionRect'};
+ if(dynamic[id])return overlay(current)?.querySelector(dynamic[id])||document.getElementById('ko-'+id);
+ return document.getElementById('ko-'+id);
 };
-$('version').textContent = VER;
-$('ocrVer').textContent = VER;
-
-/* ---------- mở tệp ---------- */
-const pick = () => { if (!hook()?.isBusy()) $('file').click(); };
-$('moreOpen').onclick = () => { closeMore(); pick(); };
-$('emptyOpen').onclick = pick;
-$('vBack').onclick = () => toast('Bản này mở tệp bằng “Mở tệp” — chưa nối thư viện');
-
-const stage = $('stage');
-['dragenter','dragover'].forEach(ev => stage.addEventListener(ev, e => {
-  e.preventDefault(); stage.classList.add('dragover');
-}));
-['dragleave','drop'].forEach(ev => stage.addEventListener(ev, e => {
-  e.preventDefault();
-  if (ev === 'dragleave' && e.relatedTarget && stage.contains(e.relatedTarget)) return;
-  stage.classList.remove('dragover');
-}));
-stage.addEventListener('drop', e => {
-  const f = e.dataTransfer?.files?.[0]; if (!f) return;
-  const dt = new DataTransfer(); dt.items.add(f);
-  $('file').files = dt.files;
-  $('file').dispatchEvent(new Event('change'));
-});
-
-/* ---------- dải trang (ảnh thu nhỏ thật) ---------- */
-function markRail(cur){
-  cur = cur || hook()?.getCurrent() || 1;
-  [...$('rail').children].forEach(b => b.classList.toggle('on', Number(b.dataset.n) === cur));
+const makeCanvas=(w,h)=>Object.assign(document.createElement('canvas'),{width:w,height:h});
+let current=1,engineTotal=0,selectedFile=null,fileKind='',doc=null,busy=false,cancelled=false,mode='tess',tess=null,tessTerm=null,scanPage=0,job=0,abortJob=null,completion=Promise.resolve(),persistence=Promise.resolve();
+let clock=null,runStart=0,statusBase='',flowMode='single',flowPages=new Map(),regionHistory=new Map(),syncRegion=null,demoHover,demoLineForBox,demoLineMap,demoNotice;
+let results=new Map(),runStats={processed:0,failed:0},exporting=false;
+function nowSec(t0){return ((performance.now()-t0)/1000).toFixed(1)}
+function setStatus(s){statusBase=s;$('status').textContent=clock?`${s} · ${nowSec(runStart)} giây`:s;}
+function startClock(){runStart=performance.now();clearInterval(clock);clock=setInterval(()=>{if(busy)$('status').textContent=`${statusBase} · ${nowSec(runStart)} giây`;},200);}
+function stopClock(){clearInterval(clock);clock=null;}
+function controls(){
+ const has=!!selectedFile,can=has&&['pdf','image'].includes(fileKind);
+ $('run').disabled=busy||!can;$('stop').disabled=!busy;
+ document.querySelectorAll('#ko-ocrModal input,#ko-ocrModal select').forEach(e=>{e.disabled=busy;});
+ document.querySelectorAll('#ko-ocrModes input:not([value="tess"]),#ko-folder,#ko-optTiny,#ko-optLoop,#ko-ocrModal [data-for] input,#ko-ocrModal [data-for] select,#ko-ocrModal [data-for] button').forEach(e=>{e.disabled=true;});
+ $('copy').disabled=!results.get(current)?.text;$('save').disabled=busy||!results.size;$('savePdf').disabled=busy||!doc||!results.size;
+ $('selectRegion').disabled=busy||!can;$('ocrRegion').disabled=busy||!can;$('cancelRegion').disabled=busy;
+ $('applyRegion').disabled=busy||!String($('regionText').value).trim();
+ syncRegion?.();onState({busy:busy&&!exporting,current,total:engineTotal,has});
 }
-async function buildRail(){
-  const rail = $('rail'); rail.replaceChildren();
-  const h = hook(); if (!h || !h.getTotal()) return;
-  const total = h.getTotal(), doc = h.getDoc(), img = h.getImage();
-  $('ofTotal').textContent = total;
-  for (let n = 1; n <= total; n++){
-    const b = document.createElement('button');
-    b.dataset.n = n;
-    const box = document.createElement('span'); box.className = 'mini-pg';
-    const small = document.createElement('small'); small.textContent = n;
-    b.append(box, small);
-    b.onclick = () => hook()?.goTo(n);
-    rail.append(b);
-    try {
-      let c = null;
-      if (doc && doc === hook()?.getDoc()){
-        const page = await doc.getPage(n);
-        const v0 = page.getViewport({ scale: 1 });
-        const v = page.getViewport({ scale: Math.min(220 / Math.max(v0.width, v0.height), 1) });
-        c = document.createElement('canvas');
-        c.width = Math.max(1, Math.ceil(v.width)); c.height = Math.max(1, Math.ceil(v.height));
-        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
-        await page.render({ canvasContext: x, viewport: v }).promise; page.cleanup();
-      } else if (img){
-        const k = Math.min(220 / Math.max(img.width, img.height), 1);
-        c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
-        const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
-        x.drawImage(img, 0, 0, c.width, c.height);
-      }
-      if (c){
-        if (doc && doc !== hook()?.getDoc()) return;
-        box.replaceChildren(c);
-      } else box.textContent = 'SCAN';
-    } catch { box.textContent = '—'; }
+function grouped(result){
+ const groups=[];
+ for(const [index,box] of (result?.boxes||[]).entries()){
+  const [l,t,r,b]=box.rect,cy=(t+b)/2;
+  let line=groups.find(x=>Math.abs(x.cy-cy)<Math.max(.004,Math.min(x.height,b-t)*.55));
+  if(!line){line={cy,height:b-t,items:[]};groups.push(line);}line.items.push({box,index});
+ }
+ groups.sort((a,b)=>a.cy-b.cy);for(const g of groups)g.items.sort((a,b)=>a.box.rect[0]-b.box.rect[0]);
+ return groups;
+}
+function texts(page){const r=results.get(page);if(!r)return[];return r.edited?r.text.split(/\n+/).filter(Boolean):grouped(r).map(g=>g.items.map(i=>i.box.text).join(' '));}
+function changed(page,result){
+ results.set(page,result);
+ const documentId=host.state().document?.id;if(!documentId)return;
+ const row={id:`${documentId}:${page}`,documentId,page,schema:1,engine:'tesseract',result:structuredClone(result),updatedAt:Date.now()};
+ persistence=persistence.then(()=>store.put('ocr',row));
+ return persistence;
+}
+function paint(target,page){
+ if(!target||!target.isConnected||host.state().mode!=='orig')return;
+ let root=target.querySelector(':scope>.keepitOcr');
+ if(!root){root=document.createElement('div');root.className='keepitOcr';root.innerHTML='<div class="ocrCanvasOverlay paper"><div class="layer"></div><div class="ocrVisualSurface"><div class="scanFx fxDir"><i class="beam"><b class="tUp"></b><b class="tDn"></b><b class="ln"></b></i></div><div class="boxLayer" aria-hidden="true"></div><div class="hl" aria-hidden="true"></div><div class="regionSurface" hidden><div class="regionMarks"></div><div class="regionRect"></div></div></div></div>';target.append(root);bindRegionSurface(root.querySelector('.regionSurface'));}
+ const cover=root.firstElementChild;Object.assign(cover.style,{width:'100%',height:'100%',minHeight:'0',border:0,borderRadius:0,boxShadow:'none',background:'none',overflow:'hidden'});
+ cover.classList.toggle('scanning',busy&&scanPage===page);
+ const layer=cover.querySelector('.layer');layer.classList.toggle('boxes',$('showBoxes').checked&&$('trPanel').classList.contains('open'));
+ const r=results.get(page);if(layer._ocrResult===r)return;layer._ocrResult=r;layer.replaceChildren();const boxes=cover.querySelector('.boxLayer');boxes.replaceChildren();if(!r)return;
+ const native=!!host.state().engine?.pages[page-1]?.texts?.length;layer.classList.toggle('nativeText',native);
+ const grouping=grouped(r),mapping=new Map();grouping.forEach((g,line)=>g.items.forEach((item,i)=>mapping.set(item.index,{line,first:i===0})));
+ const w=target.clientWidth,h=target.clientHeight,measure=makeCanvas(1,1).getContext('2d');
+ for(const [i,box]of r.boxes.entries()){
+  const [x0,y0,x1,y1]=box.rect;if(!box.text?.trim()||x1<=x0||y1<=y0)continue;
+  const visibleBox=document.createElement('div');visibleBox.className='ocrWordBox';visibleBox.dataset.i=i;
+  Object.assign(visibleBox.style,{left:x0*100+'%',top:y0*100+'%',width:(x1-x0)*100+'%',height:(y1-y0)*100+'%'});boxes.append(visibleBox);
+  const span=document.createElement('span');span.dataset.i=i;
+  if(!native){const map=mapping.get(i);span.className='para';span.dataset.page=page;span.dataset.paragraphIndex=map?.line||0;if(map?.first)span.dataset.paragraphStart='true';const en=document.createElement('span');en.className='en';en.textContent=box.text+' ';span.append(en);}else{span.textContent=box.text+' ';span.setAttribute('aria-hidden','true');}
+  const height=Math.max(1,(y1-y0)*h),width=Math.max(1,(x1-x0)*w);measure.font=`${height}px sans-serif`;const raw=measure.measureText(box.text+' ').width||1;
+  Object.assign(span.style,{left:x0*100+'%',top:y0*100+'%',fontSize:height+'px',transform:`scaleX(${width/raw})`});layer.append(span);
+ }
+}
+function drawLayer(){
+ document.querySelectorAll('#pageStack .docsSource').forEach(target=>paint(target,+target.dataset.page));
+ const r=results.get(current);$('text').value=r?.text||'';controls();host.refresh();
+}
+async function renderFor(n){return host.canvas(n);}
+async function renderCanvas(n,longSide=2000){const c=await host.canvas(n),scale=Math.min(longSide/Math.max(c.width,c.height),1);if(scale===1)return c;const out=makeCanvas(Math.round(c.width*scale),Math.round(c.height*scale));out.getContext('2d').drawImage(c,0,0,out.width,out.height);c.width=c.height=1;return out;}
+async function newTess(langs){const token=job;const worker=await globalThis.Tesseract.createWorker(langs,1,{workerPath:asset('tess-v9/worker.min.js'),corePath:asset('tess-v9/core/'),langPath:asset('tess-v9-data/'),workerBlobURL:false,cacheMethod:'none',gzip:false,logger:m=>{if(m.status==='recognizing text'&&!cancelled)setStatus(`Tesseract đang nhận dạng: ${Math.round((m.progress||0)*100)}%.`);}});if(cancelled||token!==job){await worker.terminate();throw Error('Đã dừng');}return worker;}
+async function releaseEngines(){if(tess){const old=tess;tess=null;tessTerm=Promise.resolve(old.terminate()).catch(()=>{});await tessTerm;}}
+function stop(){cancelled=true;++job;abortJob?.(Error('Đã dừng'));abortJob=null;void releaseEngines();setStatus('Đã dừng; giữ phần đã xử lý.');}
+async function guarded(work){
+ let timer;const limit=$('optTime').checked?90000:0;
+ try{return await Promise.race([work,new Promise((_,reject)=>{abortJob=reject;if(limit)timer=setTimeout(()=>{reject(Error('Quá 90 giây'));void releaseEngines();},limit);})]);}finally{clearTimeout(timer);abortJob=null;}
+}
+async function run(){
+ if(busy||!selectedFile||!['pdf','image'].includes(fileKind))return;
+ const langs=[...document.querySelectorAll('.keepitOcr .lang:checked')].map(e=>e.value).join('+');if(!langs)return;
+ const scope=$('scope').value,first=scope==='all'?1:scope==='range'?Number($('from').value):current,last=scope==='all'?engineTotal:scope==='range'?Number($('to').value):current;
+ if(!Number.isInteger(first)||!Number.isInteger(last)||first<1||last<first||last>engineTotal){setStatus('Khoảng trang không hợp lệ.');return;}
+ if(Array.from({length:last-first+1},(_,i)=>first+i).some(n=>results.has(n))&&!confirm(ocrText('Nhận dạng lại sẽ thay kết quả của các trang được chọn. Tiếp tục?')))return;
+ let finish;completion=new Promise(resolve=>finish=resolve);const token=++job;busy=true;cancelled=false;runStats={processed:0,failed:0};startClock();$('progress').hidden=false;$('progress').value=0;controls();let done=0,firstFailure='';
+ try{
+  for(let n=first;n<=last;n++){
+   if(token!==job)break;await host.goTo(n);if(token!==job)break;current=n;scanPage=n;setScanEffect(true,n);controls();
+   setStatus(`Trang ${n}/${last}: đang chuẩn bị và nhận dạng…`);
+   let result,error;
+   // Approved demo retries a failed Tesseract page once, then continues the batch.
+   for(let attempt=0;attempt<2&&token===job;attempt++){
+    try{const canvas=await renderFor(n);try{result=await guarded(tessRun(canvas,langs,fileKind==='image'));}finally{canvas.width=canvas.height=1;}error=null;break;}
+    catch(failure){error=failure;if(token!==job)break;await releaseEngines();}
+   }
+   if(token!==job)break;
+   if(error){runStats.failed++;firstFailure ||= error?.message||String(error);}
+   else{await changed(n,{...result,mode:'tess'});done++;runStats.processed=done;regionHistory.delete(n);}
+   $('progress').value=(n-first+1)/(last-first+1);drawLayer();
   }
-  markRail();
+  stopClock();setStatus(cancelled?'Đã dừng; giữ phần đã xử lý.':runStats.failed?(done?`Xong ${done}/${last-first+1} trang · ${runStats.failed} trang chưa đọc được (đã bỏ qua): ${firstFailure}`:'Không hoàn tất: '+firstFailure):`Hoàn tất ${done} trang · ${nowSec(runStart)} giây. Kiểm tra nội dung và vị trí.`);
+ }catch(error){setStatus(cancelled?'Đã dừng; giữ phần đã xử lý.':'Không hoàn tất: '+(error?.message||String(error)));}
+ finally{await releaseEngines();stopClock();busy=false;scanPage=0;setScanEffect(false);controls();drawLayer();finish();}
 }
-
-/* ---------- trang có lớp chữ gốc? ---------- */
-const textCache = new Map();
-async function pageHasText(n){
-  if (textCache.has(n)) return textCache.get(n);
-  const doc = hook()?.getDoc();
-  if (!doc) return false;
-  try {
-    const page = await doc.getPage(n);
-    const tc = await page.getTextContent();
-    const has = tc.items.some(i => typeof i.str === 'string' && i.str.trim().length > 0);
-    textCache.set(n, has);
-    return has;
-  } catch { return false; }
+$('run').onclick=run;$('stop').onclick=stop;$('showBoxes').onchange=drawLayer;
+$('scope').onchange=()=>{};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('text').value);setStatus('Đã sao chép văn bản trang hiện tại.');}catch{$('text').select();setStatus('Nhấn Ctrl+C để sao chép.');}};
+function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);}
+$('save').onclick=()=>download(new Blob([[...results].sort((a,b)=>a[0]-b[0]).map(([n,r])=>`${ocrText(`--- Trang ${n} ---`)}\n${r.text}`).join('\n\n')],{type:'text/plain;charset=utf-8'}),'ket-qua-ocr.txt');
+function setScanEffect(active,page=scanPage){document.querySelectorAll('.ocrCanvasOverlay').forEach(el=>el.classList.toggle('scanning',!!active&&el===overlay(page)));}
+const hook=()=>({getCurrent:()=>current,getTotal:()=>engineTotal,getDoc:()=>doc,getResults:()=>results,getLayer:()=>overlay(current)?.querySelector('.layer'),getHighlightLayer:()=>overlay(current)?.querySelector('.hl'),getPaper:page=>overlay(page),isBusy:()=>busy,getMode:()=>mode,goTo:async n=>{await host.goTo(n);current=host.state().page;},releaseEngines,forceIdle:async()=>{stop();await completion;},applyText(n,text){
+ const result=results.get(n);if(!result)return false;
+ const stack=regionHistory.get(n)||[];stack.push(structuredClone(result));regionHistory.set(n,stack);
+ void changed(n,{...result,text:String(text),edited:true,info:`Đã sửa tay · ${result.boxes?.length||0} khung chữ trên trang.`});
+ drawLayer();return true;
+}});
+const closeMore=()=>host.closeMore();
+let toastT;function toast(text){const el=document.getElementById('toast');el.textContent=ocrText(text);el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);}
+function markRail(){for(const b of document.querySelectorAll('#rail [data-p]'))b.dataset.ocr=results.has(+b.dataset.p)?'done':'';}
+function setDialogInert(open){document.documentElement.classList.toggle('ocrDialogOpen',open);document.getElementById('viewer').inert=open;if(open){queueMicrotask(()=>{modal.tabIndex=-1;modal.style.outline='none';modal.focus();});}else{$('vOcr').focus({preventScroll:true});}}
+const textCache=new Map();async function pageHasText(n){return !!host.state().engine?.pages[n-1]?.texts?.length||!!results.get(n)?.text;}
+let onState=()=>{};
+function syncZoomControls(){}
+function refreshHint(){void refreshPageHint();}
+function boxRect(b,w,h){return [Math.max(0,b.x0/w),Math.max(0,b.y0/h),Math.min(1,b.x1/w),Math.min(1,b.y1/h)]}
+function tesseractWords(data){if(data.words)return data.words;let words=[];for(let b of data.blocks||[])for(let p of b.paragraphs||[])for(let l of p.lines||[])for(let w of l.words||[])words.push(w);return words}
+async function tessRun(c,langs,isImage=false){if(!tess){if(tessTerm){try{await tessTerm}catch{}tessTerm=null}tess=await newTess(langs,true)}await tess.setParameters({tessedit_pageseg_mode:'3'});let text,words;if(!isImage){let {data}=await tess.recognize(c,{}, {text:true,blocks:true});text=(data.text||'').trim();words=tesseractWords(data)}else{let attempts=[['raw','3'],['gray','11'],['mixed','3'],['v6','3']],outputs=[];for(let [i,[kind,psm]] of attempts.entries()){if(cancelled)break;setStatus(`Tesseract đang thử cách ${i+1}/4 cho ảnh…`);let v=kind==='v6'?await preprocessV6(c):imageVariant(c,kind);try{await tess.setParameters({tessedit_pageseg_mode:psm,preserve_interword_spaces:'1',user_defined_dpi:'300'});let data=(await tess.recognize(v,{}, {text:true,blocks:true})).data,sx=c.width/v.width,sy=c.height/v.height;data.words=tesseractWords(data).map(w=>({...w,bbox:{x0:w.bbox.x0*sx,y0:w.bbox.y0*sy,x1:w.bbox.x1*sx,y1:w.bbox.y1*sy}}));outputs.push(data)}finally{v.width=v.height=0}}if(cancelled)throw Error('Đã dừng.');let merged=mergeImage(outputs);text=merged.text;words=merged.words}let boxes=words.filter(w=>w.text&&w.bbox).map(w=>({text:w.text,rect:boxRect(w.bbox,c.width,c.height)}));return{text,boxes,info:`Tesseract · ${boxes.length} từ có vị trí. Kéo để chọn; vị trí có thể lệch.`}}
+async function renderRegion(n,side,reg,kind=null){let full=kind?await renderFor(n,kind):await renderCanvas(n,side);if(!reg)return full;let [l,t,r,b]=reg,x=Math.floor(l*full.width),y=Math.floor(t*full.height),w=Math.max(1,Math.ceil(r*full.width)-x),h=Math.max(1,Math.ceil(b*full.height)-y),crop=makeCanvas(w,h);crop.getContext('2d').drawImage(full,x,y,w,h,0,0,w,h);full.width=full.height=1;return crop}
+function mapRegion(box,reg){let [l,t,r,b]=reg,[x0,y0,x1,y1]=box.rect;return {...box,rect:[l+x0*(r-l),t+y0*(b-t),l+x1*(r-l),t+y1*(b-t)]}}
+let region=null,startRegion=null,regionResult=null;
+let regions=[],regionMarks=[],lastMergedText=null;
+function activeRegionSurface(){return flowMode==='single'?$('regionSurface'):flowPages.get(current)?.region||$('regionSurface')}
+function activeRegionRect(surface=activeRegionSurface()){return surface.querySelector('.regionRect')||$('regionRect')}
+function activeRegionMarks(surface=activeRegionSurface()){return surface.querySelector('.regionMarks')||$('regionMarks')}
+function markBox(r){let el=document.createElement('div');el.className='rMark';Object.assign(el.style,{left:r[0]*100+'%',top:r[1]*100+'%',width:(r[2]-r[0])*100+'%',height:(r[3]-r[1])*100+'%'});el.innerHTML='<i class="sw"><b class="ln"></b></i>';activeRegionMarks().append(el);regionMarks.push({r,el});return el}
+function markOf(r){let m=regionMarks.find(x=>x.r===r);return m?m.el:null}
+function dropMark(r){let el=markOf(r);if(el)el.remove();regionMarks=regionMarks.filter(x=>x.r!==r);regions=regions.filter(x=>x!==r)}
+function clearMarks(){regionMarks=[];regions=[];for(const rec of flowPages.values())rec.region.querySelector('.regionMarks')?.replaceChildren();const box=$('regionMarks');if(box)box.replaceChildren()}
+function pushRegionHistory(n){let prev=results.get(n),stack=regionHistory.get(n)||[];stack.push(prev?structuredClone(prev):null);regionHistory.set(n,stack)}
+function appendRegionText(old,addText){
+  const add=String(addText||'').trim();
+  if(!add)return;
+  const have=new Set(String(old.text||'').split('\n').map(x=>x.trim()).filter(Boolean));
+  const lines=add.split('\n').map(x=>x.trim()).filter(x=>x&&!have.has(x));
+  if(lines.length)old.text=[String(old.text||'').trim(),...lines].filter(Boolean).join('\n');
 }
+function mergeRegionBoxes(n,reg,r){let old=structuredClone(results.get(n))||{text:'',boxes:[],mode:'manual'},[x0,y0,x1,y1]=reg;old.boxes=old.boxes.filter(b=>{let x=(b.rect[0]+b.rect[2])/2,y=(b.rect[1]+b.rect[3])/2;return !(x>=x0&&x<=x1&&y>=y0&&y<=y1)});if(r?.boxes?.length)old.boxes.push(...r.boxes.map(b=>mapRegion(b,reg)));appendRegionText(old,r?.text);old.info=`Đã bổ sung ${r?.boxes?.length||0} khung chữ từ vùng đã chọn · ${old.boxes.length} khung trên trang.`;void changed(n,old)}
+function closeRegion(){$('regionText').value='';syncRegion?.();activeRegionSurface().hidden=true;$('regionSurface').hidden=true;$('regionEditor').hidden=true;$('cancelRegion').hidden=true;$('selectRegion').hidden=false;activeRegionRect().style.display='none';$('regionRect').style.display='none';clearMarks();lastMergedText=null;region=null;startRegion=null;regionResult=null}
+$('selectRegion').onclick=()=>{if(!selectedFile||busy)return;closeRegion();activeRegionSurface().hidden=false;$('cancelRegion').hidden=false;$('selectRegion').hidden=true;setStatus('Kéo trên trang để chọn vùng cần bổ sung chữ.')};$('cancelRegion').onclick=closeRegion;
+function pos(e,surface=e.currentTarget){let r=surface.getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
+function bindRegionSurface(surface){surface.addEventListener('pointerdown',e=>{startRegion=pos(e,surface);surface.setPointerCapture(e.pointerId);activeRegionRect(surface).style.display='block'});surface.addEventListener('pointermove',e=>{if(!startRegion)return;let p=pos(e,surface),l=Math.min(p.x,startRegion.x),t=Math.min(p.y,startRegion.y),w=Math.abs(p.x-startRegion.x),h=Math.abs(p.y-startRegion.y);Object.assign(activeRegionRect(surface).style,{left:l*100+'%',top:t*100+'%',width:w*100+'%',height:h*100+'%'})});surface.addEventListener('pointerup',e=>{if(!startRegion)return;let p=pos(e,surface),r=[Math.min(p.x,startRegion.x),Math.min(p.y,startRegion.y),Math.max(p.x,startRegion.x),Math.max(p.y,startRegion.y)];startRegion=null;if(r[2]-r[0]<.005||r[3]-r[1]<.005){activeRegionRect(surface).style.display='none';return}region=r;regionResult=null;lastMergedText=null;regions.push(r);markBox(r);activeRegionRect(surface).style.display='none';$('regionEditor').hidden=false;$('regionText').value='';$('regionText').focus();setStatus('Nhập chữ theo từng dòng rồi bấm Áp dụng vùng.')})}
+bindRegionSurface($('regionSurface'));
+$('ocrRegion').onclick=async()=>{
+  if(busy)return;
+  const queue=[...regions];
+  if(!queue.length){setStatus('Kéo trên trang để chọn ít nhất một vùng.');return}
+  let langs=[...document.querySelectorAll('.lang:checked')].map(e=>e.value);
+  if(mode==='tess'&&!langs.length){setStatus('Chọn ít nhất một ngôn ngữ.');return}
+  busy=true;cancelled=false;controls();startClock();
+  const start=performance.now();let texts=[],doneN=0,history=false;
+  try{
+    for(const reg of queue){
+      if(cancelled)break;
+      markOf(reg)?.classList.add('reading');
+      setStatus(`Đang nhận dạng vùng ${doneN+1}/${queue.length}…`);
+      let r;
+      if(mode==='fusor')throw Error('Deferred');
+      else{let c=await renderRegion(current,2000,reg,mode);try{r=await guarded(tessRun(c,langs.join('+'),true))}finally{c.width=c.height=1}}
+      if(cancelled&&!r?.boxes?.length)break;
+      if(!history){pushRegionHistory(current);history=true}
+      mergeRegionBoxes(current,reg,r);      // ghép xong là khung xanh hiện ra
+      dropMark(reg);                        // bỏ khung đỏ của vùng vừa đọc
+      texts.push((r?.text||'').trim());doneN++;
+      drawLayer();
+    }
+    lastMergedText=texts.join('\n');regionResult=null;
+    $('regionText').value=lastMergedText;
+    setStatus(cancelled?`Đã dừng sau ${doneN} vùng; phần đã đọc đã ghép vào lớp chữ.`:`Đã nhận dạng ${doneN} vùng · ${((performance.now()-start)/1000).toFixed(1)} giây. Khung xanh là chữ mới; gõ thêm nếu cần rồi bấm Áp dụng.`);
+  }catch(e){setStatus(cancelled?'Đã dừng nhận dạng vùng.':'Không nhận dạng được vùng: '+e.message)}
+  finally{if(tess){const d=tess;tess=null;try{tessTerm=Promise.resolve(d.terminate()).catch(()=>{})}catch{}}stopClock();busy=false;controls()}
+};
+$('applyRegion').onclick=()=>{
+  if(busy||!region)return;
+  const val=$('regionText').value;
+  if(lastMergedText!==null&&val.trim()===lastMergedText.trim()){closeRegion();setStatus('Đã bổ sung vùng xong.');return}
+  let lines=val.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!lines.length){setStatus('Nhập ít nhất một dòng chữ.');return}
+  let previous=results.get(current),stack=regionHistory.get(current)||[];stack.push(previous?structuredClone(previous):null);regionHistory.set(current,stack);
+  let old=structuredClone(previous)||{text:'',boxes:[],mode:'manual'},[x0,y0,x1,y1]=region;
+  old.boxes=old.boxes.filter(b=>{let x=(b.rect[0]+b.rect[2])/2,y=(b.rect[1]+b.rect[3])/2;return !(x>=x0&&x<=x1&&y>=y0&&y<=y1)});
+  let h=(y1-y0)/lines.length;lines.forEach((text,i)=>old.boxes.push({text,rect:[x0,y0+i*h,x1,y0+(i+1)*h]}));
+  appendRegionText(old,lines.join('\n'));
+  old.info=`Đã bổ sung vùng thủ công · ${old.boxes.length} khung chữ; vị trí dòng gần đúng.`;
+  void changed(current,old);closeRegion();drawLayer();setStatus('Đã bổ sung vào lớp chữ. Văn bản kết quả bên dưới không đổi.')
+};
 
-$('file').addEventListener('change', async () => {
-  const f = $('file').files?.[0]; if (!f) return;
-  setNoticeFileKey(f);
-  $('rail').replaceChildren();
-  textCache.clear();
-  runSeen = false; expectRun = false;
-  $('ocrProg').classList.remove('show');
-  $('paper').classList.remove('scanning');
-  $('trPanel').classList.remove('open');
-  $('fileType').textContent = (/pdf$/i.test(f.name) || f.type === 'application/pdf') ? 'PDF' : 'ẢNH';
-  const ok = await waitFor(() => hook() && hook().getTotal() > 0, 40000);
-  if (!ok) return toast('Không mở được tệp này');
-  $('from').value = 1; $('to').value = hook().getTotal();
-  await buildRail();
-  await refreshPageHint();
-  toast(`Đã mở ${hook().getTotal()} trang · bấm OCR để nhận dạng chữ`);
-});
-
+const rawRegionRun=$('ocrRegion').onclick;
+$('ocrRegion').onclick=()=>{completion=Promise.resolve(rawRegionRun());return completion;};
 /* ---------- Thông báo "chưa có lớp chữ": thu gọn thành nút đèn như Foxit ---------- */
 const NOTICE_KEY = 'keepit.ocrNoticeOff:';     // mỗi tệp một khoá riêng
 let noticeFileKey = '', noticeCollapsed = false, noticeForcedOpen = false, noticeWasExpanded = false;
@@ -294,7 +366,7 @@ $('run').onclick = ev => {
   /* kiểm tra như v3.5: thiếu ngôn ngữ thì báo, không đóng hộp thoại */
   if (currentMode() === 'tess' && !document.querySelector('.lang:checked'))
     return toast('Chọn ít nhất một ngôn ngữ');
-  if (!total()) return toast('Mở tệp trước đã');
+  if (!pageCount()) return toast('Mở tệp trước đã');
 
   expectRun = true;
   $('trPanel').classList.add('open');   // hiện thanh văn bản nhận dạng ngay khi bắt đầu
@@ -310,7 +382,7 @@ $('run').onclick = ev => {
   /* (1) đóng hộp thoại + HIỆN THẺ TIẾN ĐỘ ngay trong nhịp bấm */
   closeOcr(true);
   startRunUi();
-  $('progPage').textContent = `Trang ${hook()?.getCurrent?.() || 1}/${total()}`;
+  $('progPage').textContent = `Trang ${hook()?.getCurrent?.() || 1}/${pageCount()}`;
   $('progClose').disabled = true;
   /* (2) TẮT POPUP CHỌN VÙNG ngay trong nhịp bấm */
   killRegionNow();
@@ -333,7 +405,7 @@ $('run').onclick = ev => {
   if (!hook()?.isBusy()){
     runSeen = false; expectRun = false;
     $('ocrProg').classList.remove('show');
-    $('paper').classList.remove('scanning');
+    setScanEffect(false);
     $('progClose').disabled = false;
     $('pAgain').hidden = false;
     $('ocrModal').classList.add('show'); $('ocrScrim').classList.add('show');
@@ -347,14 +419,14 @@ $('run').onclick = ev => {
 };
 const engineRegionRun = $('ocrRegion').onclick;
 let regionRun = false;   // đang/đã chạy nhận dạng vùng → không hiện thẻ “Đã nhận dạng xong”
-$('ocrRegion').onclick = ev => { expectRun = true; regionRun = true; if (engineRegionRun) engineRegionRun(ev); };
+$('ocrRegion').onclick = ev => { expectRun = true; runSeen = true; regionRun = true; if (engineRegionRun) engineRegionRun(ev); };
 
 let statePage = 0;
-window.onKeepitState = st => {
+onState = st => {
   /* vừa bấm Dừng: giữ nguyên UI "Đã dừng", không để state nhả muộn bật lại thẻ đang chạy */
   if (stopHold && Date.now() < stopHold){
     wasBusy = false;
-    $('paper').classList.remove('scanning');
+    setScanEffect(false);
     const pg = $('ocrProg');
     pg.classList.add('show'); pg.classList.remove('done'); pg.classList.add('stopped');
     $('progTitle').textContent = 'Đã dừng nhận dạng';
@@ -364,20 +436,21 @@ window.onKeepitState = st => {
   }
   const done = wasBusy && !st.busy;
   wasBusy = !!st.busy;
-  if (!st.busy){ $('paper').classList.remove('scanning'); if (!runSeen) expectRun = false; }
+  if (!st.busy){ setScanEffect(false); if (!runSeen) expectRun = false; }
 
   if (st.current !== statePage){ statePage = st.current; clearHoverHighlight(); resetTextApply(); }
   markRail(st.current);
-  if (st.busy && expectRun && !runSeen) startRunUi();
+
+  if (st.busy && expectRun && !runSeen && !regionRun) startRunUi();
   /* Engine đang chạy mà thẻ còn tiêu đề “Đã nhận dạng xong / Đã dừng” của lượt trước
      → đưa thẻ về trạng thái đang chạy (tránh tiêu đề xanh mà dòng dưới vẫn “đang nhận dạng…”). */
-  if (st.busy && !stopRequested){
+  if (st.busy && !stopRequested && !regionRun){
     const pg0 = $('ocrProg');
     if (pg0.classList.contains('done') || pg0.classList.contains('stopped') || pg0.classList.contains('error')) startRunUi();
   }
-  if (st.busy) $('paper').classList.add('scanning');   // quét thật sự bắt đầu
+  if (st.busy && scanPage) setScanEffect(true, scanPage);   // quét trang hiện hành trong cả chế độ cuộn liên tục
   if (st.busy) syncCard();
-  if (st.busy && runSeen) $('ocrProg').classList.add('show');
+  if (st.busy && runSeen && !regionRun) $('ocrProg').classList.add('show');
   $('progPage').textContent = st.has ? `Trang ${st.current}/${st.total}` : 'Trang —/—';
   if (st.has) { $('pNum').max = st.total; $('ofTotal').textContent = st.total; }
 
@@ -390,7 +463,7 @@ window.onKeepitState = st => {
       $('ocrProg').classList.remove('done', 'stopped');
       $('progClose').disabled = false;
       $('stop').hidden = true;
-      $('paper').classList.remove('scanning');
+      setScanEffect(false);
       syncCard();
       return;
     }
@@ -398,7 +471,7 @@ window.onKeepitState = st => {
     const r = hook()?.getResults?.().get?.(st.current);
     /* có dòng “Không hoàn tất: …” (hoặc Lỗi) trong trạng thái/nhật ký → lượt này KHÔNG thành công */
     const errText = (($('status')?.textContent || '') + ' ' + ($('pTitle')?.textContent || '')).trim();
-    const hadError = /Không hoàn tất|Lỗi/i.test(errText);
+    const hadError = runStats.failed > 0 || /Không hoàn tất|Lỗi/i.test(errText);
     /* đã bấm Dừng (hoặc trạng thái engine ghi “Đã dừng”) ⇒ lượt này là DỪNG, không phải xong */
     const stoppedByUser = stopRequested || /Đã dừng|Đã buộc dừng/.test(errText);
     stopRequested = false;
@@ -421,7 +494,7 @@ window.onKeepitState = st => {
     const targets = sc === 'current' ? 1 : sc === 'range'
       ? Math.max(1, (Number($('to').value) || nTotal) - (Number($('from').value) || 1) + 1)
       : nTotal;
-    const doneN = ok ? targets : Math.min(targets, hook()?.getResults?.().size || 0);
+    const doneN = ok ? targets : Math.min(targets, runStats.processed);
     const sumWord = ok ? 'Hoàn tất' : (hadError ? 'Chưa hoàn tất' : 'Đã dừng');
     $('pSum').innerHTML = `${sumWord} <b>${ok ? targets : doneN}/${targets} trang</b>${clock ? ` · ${clock}` : ''}`;
     if (ok){ $('pWarn').style.display = 'none'; }
@@ -472,10 +545,10 @@ function resetDialog(){
   $('langSummary').textContent = picked.length ? picked.join(' + ') : 'chưa chọn';
   syncScopeRadios();
   syncModeRadios();
-  $('ofTotal').textContent = total();
-  $('from').max = $('to').max = total();
+  $('ofTotal').textContent = pageCount();
+  $('from').max = $('to').max = pageCount();
   clampPages(true);
-  $('run').disabled = !hook()?.getTotal() || !!hook()?.isBusy();
+  $('run').disabled = !hook()?.getTotal() || !!hook()?.isBusy() || !['pdf','image'].includes(fileKind);
 }
 
 function openOcr(){
@@ -486,7 +559,7 @@ function openOcr(){
   syncLayerBoxes();
   resetDialog(); refreshPageHint();
   snapshotOcr();                        // mốc để Hủy/✕ quay về
-  modal.classList.add('show'); scrim.classList.add('show');
+  modal.classList.add('show'); scrim.classList.add('show'); setDialogInert(true);
 }
 /* Ảnh chụp trạng thái hộp thoại lúc mở — Hủy/✕ phải trả lại ĐÚNG như lúc mở */
 let ocrSnap = null;
@@ -511,13 +584,13 @@ function restoreOcr(){
       if (r) r.checked = true;
       return;
     }
-    const el = $(k); if (!el) return;
+    const el = document.getElementById(k); if (!el) return;
     if (el.type === 'checkbox') el.checked = !!fields[k]; else el.value = fields[k];
   });
   renderLangs($('langSearch').value);
   syncScopeRadios(); syncModeRadios();
-  $('ofTotal').textContent = total();
-  $('from').max = $('to').max = total();
+  $('ofTotal').textContent = pageCount();
+  $('from').max = $('to').max = pageCount();
   clampPages(true);
   $('scope').dispatchEvent(new Event('change'));      // app.js ẩn/hiện hàng khoảng trang
   $('optBoxes').dispatchEvent(new Event('change'));   // vẽ lại lớp khung theo lựa chọn cũ
@@ -526,7 +599,7 @@ function restoreOcr(){
   $('langSummary').textContent = picked.length ? picked.join(' + ') : 'chưa chọn';
   if (typeof refreshPageHint === 'function') refreshPageHint();
   syncLayerBoxes();
-  $('run').disabled = !hook()?.getTotal() || !!hook()?.isBusy();
+  $('run').disabled = !hook()?.getTotal() || !!hook()?.isBusy() || !['pdf','image'].includes(fileKind);
 }
 /* Tắt chế độ chọn vùng NGAY LẬP TỨC: ẩn hộp + lớp chọn + khung đỏ trong cùng một nhịp,
    phần dọn sâu của app.js (xoá chữ, vẽ lại lớp khung) chạy ở nhịp sau để không chặn vẽ thẻ tiến độ */
@@ -544,7 +617,7 @@ function killRegionNow(){
 
 function closeOcr(commit){
   if (commit) ocrSnap = null; else restoreOcr();   // không bấm Nhận dạng chữ thì bỏ mọi thay đổi
-  modal.classList.remove('show'); scrim.classList.remove('show'); closePageMenus();
+  modal.classList.remove('show'); scrim.classList.remove('show'); setDialogInert(false); closePageMenus();
 }
 $('vOcr').onclick = openOcr;
 $('moreOcr').onclick = () => { closeMore(); openOcr(); };
@@ -564,7 +637,7 @@ function syncRegionButtons(){
   const hasText = !!String($('regionText')?.value || '').trim();
   /* kiểu nút chính do CSS (:has + :placeholder-shown) quyết định theo đúng nội dung ô;
      ở đây chỉ chặn bấm khi ô trống */
-  if ($('applyRegion')) $('applyRegion').disabled = !hasText;
+  if ($('applyRegion')) $('applyRegion').disabled = busy || !hasText;
   $('ocrRegion')?.classList.remove('primary');   // không dùng class nữa, tránh lệch trạng thái
 }
 function startRegionMode(){
@@ -584,7 +657,7 @@ function startRegionMode(){
 }
 $('pRegion').onclick = startRegionMode;
 /* gõ chữ trong ô → đổi nút chính ngay */
-window.__keepitSyncRegion = syncRegionButtons;
+syncRegion = syncRegionButtons;
 $('regionText').addEventListener('input', syncRegionButtons);
 $('regionText').addEventListener('change', syncRegionButtons);
 /* đóng bảng Bổ sung vùng → nếu trước đó có popup tiến độ thì hiện lại */
@@ -598,7 +671,7 @@ syncRegionButtons();
 $('trRegion').onclick = startRegionMode;
 /* ra khỏi chế độ sửa vùng (Đóng / Hủy chọn / Áp dụng / Esc) thì trả lại trạng thái ô khung vùng */
 document.addEventListener('click', e => {
-  if (e.target?.closest?.('#cancelRegion,#applyRegion')) forceRegionBoxes(false);
+  if (e.target?.closest?.('#ko-cancelRegion,#ko-applyRegion')) forceRegionBoxes(false);
 });
 $('ocrClose').onclick = () => closeOcr();
 $('ocrCancel').onclick = () => closeOcr();
@@ -608,7 +681,7 @@ scrim.onclick = () => closeOcr(true);
 /* phạm vi trang */
 function syncScopeRadios(){
   const v = $('scope').value;
-  [...$('ocrScopePick').querySelectorAll('input[name="scopePick"]')].forEach(r => {
+  [...$('ocrScopePick').querySelectorAll('input[name="ko-scopePick"]')].forEach(r => {
     r.checked = r.value === v;
     r.closest('label').classList.toggle('on', r.checked);
   });
@@ -619,14 +692,14 @@ function syncScopeRadios(){
   $('wrapTo').classList.toggle('disabled', (v !== 'range') || busy);
 }
 $('ocrScopePick').addEventListener('change', e => {
-  const r = e.target.closest('input[name="scopePick"]'); if (!r) return;
+  const r = e.target.closest('input[name="ko-scopePick"]'); if (!r) return;
   $('scope').value = r.value;
   $('scope').dispatchEvent(new Event('change'));   // app.js lo ẩn/hiện #rangeBox
   syncScopeRadios();
 });
 
 /* danh sách trang trong ô ▾ */
-const total = () => hook()?.getTotal() || 1;
+const pageCount = () => hook()?.getTotal() || 1;
 function closePageMenus(){
   ['menuFrom','menuTo'].forEach(id => { $(id).style.display = 'none'; $(id).replaceChildren(); });
 }
@@ -635,7 +708,7 @@ function openPageMenu(which){
   const input = from ? $('from') : $('to');
   const menu = from ? $('menuFrom') : $('menuTo');
   closePageMenus();
-  const n = total();
+  const n = pageCount();
   for (let i = 1; i <= n; i++){
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = i;
@@ -651,7 +724,7 @@ function openPageMenu(which){
   menu.style.display = 'flex';
 }
 function clampPages(fromChanged){
-  const n = total();
+  const n = pageCount();
   let a = Number($('from').value) || 1, b = Number($('to').value) || 1;
   a = Math.min(Math.max(1, a), n); b = Math.min(Math.max(1, b), n);
   if (fromChanged && a > b) b = a;
@@ -665,7 +738,7 @@ $('btnTo').onclick = e => { e.stopPropagation(); openPageMenu('to'); };
   const el = $(id);
   el.addEventListener('input', () => { if (!String(el.value).trim()) return; clampPages(from); });
   el.addEventListener('blur', () => {
-    const n = total() || 1;
+    const n = pageCount() || 1;
     if (!String(el.value).trim() || !Number.isFinite(Number(el.value))) el.value = from ? 1 : n;
     clampPages(from);
   });
@@ -674,14 +747,14 @@ $('btnTo').onclick = e => { e.stopPropagation(); openPageMenu('to'); };
 $('wrapFrom').addEventListener('pointerdown', e => {
   if (e.target.closest('.pgBtn') || e.target.tagName === 'INPUT') return;
   if ($('btnFrom').disabled) return;
-  const r = $('ocrScopePick').querySelector('input[name="scopePick"][value="range"]');
+  const r = $('ocrScopePick').querySelector('input[name="ko-scopePick"][value="range"]');
   r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true }));
   $('from').focus();
 });
 $('wrapTo').addEventListener('pointerdown', e => {
   if (e.target.closest('.pgBtn') || e.target.tagName === 'INPUT') return;
   if ($('btnTo').disabled) return;
-  const r = $('ocrScopePick').querySelector('input[name="scopePick"][value="range"]');
+  const r = $('ocrScopePick').querySelector('input[name="ko-scopePick"][value="range"]');
   r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true }));
   $('to').focus();
 });
@@ -730,6 +803,12 @@ function boxesForLine(text, boxes, lineIdx, ratio){
   if (direct.length) return direct;
   const part = boxes.filter(b => normText(b.text).includes(target));
   if (part.length) return part;
+  // Region OCR appends replacement boxes: resolve a complete visual line before
+  // the demo's character-offset fallback, which assumes the original box order.
+  for(const cluster of clustersOf(boxes)){
+    const indices=cluster.items.slice().sort((a,b)=>boxes[a].rect[0]-boxes[b].rect[0]);
+    if(normText(indices.map(i=>boxes[i].text||'').join(' '))===target)return indices.map(i=>boxes[i]);
+  }
   /* không khớp chữ: lấy mọi khung nằm cùng băng ngang với con trỏ (giống Paddle tô cả dòng) */
   if (typeof ratio === 'number'){
     const band = boxes.filter(b => {
@@ -860,6 +939,16 @@ function lineForBox(text, boxes, i){
   if (target){
     for (let li = 0; li < lines.length; li++) if (normText(lines[li]) === target) return li;
   }
+  // Region replacement appends boxes in the demo. Resolve by geometry before
+  // its character-offset fallback, so an appended title still maps to its title line.
+  const clusters = clustersOf(boxes), ci = clusters.findIndex(c => c.items.some(item => item === i));
+  if (ci >= 0){
+    const joined = clusters[ci].items.slice().sort((a,b)=>boxes[a].rect[0]-boxes[b].rect[0]).map(index => boxes[index]?.text || '').join(' ');
+    const exact = lines.findIndex(line => normText(line) === normText(joined));
+    if (exact >= 0) return exact;
+    const nonempty = lines.map((line,index)=>({line,index})).filter(item=>item.line.trim());
+    if (nonempty.length === clusters.length) return nonempty[ci].index;
+  }
   let acc = 0;
   for (let k = 0; k < i; k++) acc += String(boxes[k]?.text || '').length + 1;
   const src = String(text || '');
@@ -868,7 +957,8 @@ function lineForBox(text, boxes, i){
   return li;
 }
 function clearHoverHighlight(){
-  const hl = $('hl'); if (hl) hl.replaceChildren();
+  overlay(current)?.querySelectorAll('.ocrWordBox.hover').forEach(el=>el.classList.remove('hover'));
+  const hl = hook()?.getHighlightLayer?.() || $('hl'); if (hl) hl.replaceChildren();
   const line = $('trHover'); if (line) line.hidden = true;
 }
 function paintLineHover(ta, lineIdx){
@@ -888,12 +978,14 @@ function paintLineHover(ta, lineIdx){
 /* Sidebar văn bản nhận dạng: chỉ khi mở mới có khung xanh + tô sáng */
 function trOpen(){ return !!$('trPanel')?.classList.contains('open'); }
 function syncLayerBoxes(){
-  const layer = $('layer'); if (!layer) return;
+  const layer = hook()?.getLayer?.() || $('layer'); if (!layer) return;
   layer.classList.toggle('boxes', trOpen() && !!$('showBoxes')?.checked);
   if (!trOpen()) clearHoverHighlight();
 }
 function paintHoverHighlight(list){
-  const hl = $('hl'); if (!hl) return;
+  const active=new Set((list||[]).map(box=>box?.rect?.join(',')));
+  overlay(current)?.querySelectorAll('.ocrWordBox').forEach(el=>el.classList.toggle('hover',active.has(results.get(current)?.boxes[Number(el.dataset.i)]?.rect?.join(','))));
+  const hl = hook()?.getHighlightLayer?.() || $('hl'); if (!hl) return;
   hl.replaceChildren();
   /* mỗi khung chữ một khung tím ĐÚNG BẰNG khung xanh — không gộp thành khung bao */
   const seen = new Set();
@@ -978,11 +1070,10 @@ resultText.addEventListener('mousemove', e => {
 resultText.addEventListener('mouseleave', clearHoverHighlight);
 
 /* Trỏ khung chữ trên trang → sáng đúng dòng trong bảng và cuộn tới dòng đó */
-$('layer').addEventListener('mouseover', e => {
+function onLayerMouseover(e){
   const span = e.target?.closest?.('span[data-i]');
   const live = hook()?.getResults?.()?.get?.(hook()?.getCurrent?.());
   if (!trOpen() || !live?.boxes?.length) return clearHoverHighlight();
-  /* con trỏ đã ra khỏi khung chữ (nằm trên nền trang) → tắt ngay, không giữ khung cũ */
   if (!span) return clearHoverHighlight();
   const idx = Number(span.dataset.i);
   if (!Number.isFinite(idx)) return;
@@ -992,20 +1083,19 @@ $('layer').addEventListener('mouseover', e => {
   if (lineTop < ta.scrollTop || lineTop + lh > ta.scrollTop + ta.clientHeight)
     ta.scrollTop = Math.max(0, lineTop - Math.round(ta.clientHeight / 2));
   paintLineHover(ta, li);
-  /* tô ĐÚNG khung đang trỏ (bằng đúng khung xanh), không tô cả cụm */
   paintHoverHighlight([live.boxes[idx]]);
-});
+}
+$('layer').addEventListener('mouseover', onLayerMouseover);
 $('layer').addEventListener('mouseleave', clearHoverHighlight);
-$('layer').addEventListener('mouseout', e => {
-  const to = e.relatedTarget;
-  if (!to || !to.closest?.('span[data-i]')) clearHoverHighlight();
-});
+$('layer').addEventListener('mouseout', e => { const to=e.relatedTarget; if (!to || !to.closest?.('span[data-i]')) clearHoverHighlight(); });
+$('stage').addEventListener('mouseover',e=>{if(e.target?.closest?.('.keepitOcr .layer'))onLayerMouseover(e)});
+$('stage').addEventListener('mouseout',e=>{if(e.target?.closest?.('.keepitOcr .layer')&&!e.relatedTarget?.closest?.('.keepitOcr .layer'))clearHoverHighlight()});
 $('paper').addEventListener('mouseleave', clearHoverHighlight);
-window.__keepitHover = { clustersOf, clusterForLine, boxesOfCluster };
-window.__keepitLineForBox = lineForBox;
+demoHover = { clustersOf, clusterForLine, boxesOfCluster };
+demoLineForBox = lineForBox;
 resultText.addEventListener('scroll', clearHoverHighlight);
 $('stage')?.addEventListener('scroll', clearHoverHighlight, {passive:true});
-window.__keepitLineMap = boxesForLine;
+demoLineMap = boxesForLine;
 
 /* ---------- Sửa chữ trong bảng rồi Áp dụng ---------- */
 $('text').addEventListener('input', () => { $('textApply').disabled = false; });
@@ -1052,47 +1142,6 @@ $('run').addEventListener('click', () => {
   }, 350);
 });
 
-/* ---------- menu Thêm ---------- */
-function closeMore(){ $('vMorePanel').classList.remove('show'); $('moreScrim').classList.remove('show'); }
-$('vMore').onclick = () => { $('vMorePanel').classList.add('show'); $('moreScrim').classList.add('show'); };
-$('pageMenu').onclick = () => { $('vMorePanel').classList.add('show'); $('moreScrim').classList.add('show'); };
-$('moreClose').onclick = closeMore;
-$('moreScrim').onclick = closeMore;
-$('moreResults').onclick = () => { closeMore(); $('trPanel').classList.toggle('open'); };
-$('moreBoxes').onclick = () => {
-  const cb = $('showBoxes'); cb.checked = !cb.checked;
-  cb.dispatchEvent(new Event('change'));
-  toast(cb.checked ? 'Hiện khung chữ' : 'Ẩn khung chữ');
-  closeMore();
-};
-$('moreMode').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  [...$('moreMode').children].forEach(x => x.classList.toggle('on', x === b));
-  toast('Chế độ xem: ' + b.textContent + ' (bản này chỉ có lớp chữ)');
-});
-['vFlow','moreFlow'].forEach(id => $(id).addEventListener('change', e => {
-  toast('Cách xem: ' + e.target.options[e.target.selectedIndex].text + ' — chưa nối ở bản này');
-}));
-
-/* ---------- thu phóng / pager ---------- */
-function setZoom(z){
-  z = Math.min(2, Math.max(0.4, Number(z) || 0.86));
-  $('paper').style.setProperty('--z', z);
-  $('vZoom').value = [...$('vZoom').options].some(o => Number(o.value) === z) ? String(z) : $('vZoom').value;
-  $('moreZoom').value = [...$('moreZoom').options].some(o => Number(o.value) === z) ? String(z) : $('moreZoom').value;
-}
-$('vZoom').addEventListener('change', e => setZoom(e.target.value));
-$('moreZoom').addEventListener('change', e => { setZoom(e.target.value); closeMore(); });
-$('zIn').onclick = () => setZoom((parseFloat($('paper').style.getPropertyValue('--z')) || 0.86) + 0.14);
-$('zOut').onclick = () => setZoom((parseFloat($('paper').style.getPropertyValue('--z')) || 0.86) - 0.14);
-$('pNum').addEventListener('change', e => {
-  const n = Math.min(Math.max(1, Number(e.target.value) || 1), total());
-  e.target.value = n; hook()?.goTo(n);
-});
-$('pageFullscreen').onclick = () => {
-  if (document.fullscreenElement) document.exitFullscreen?.(); else document.documentElement.requestFullscreen?.();
-};
-$('vRailToggle').onclick = () => { const r = $('rail'); r.hidden = !r.hidden; };
 /* đóng bảng = bỏ mọi sửa chưa Áp dụng */
 function closeTrPanel(){
   const r = hook()?.getResults?.()?.get?.(hook()?.getCurrent?.());
@@ -1174,19 +1223,7 @@ if ($('ocrProg')) new MutationObserver(() => {
 /* vùng xem hẹp (panel phải mở rộng) → thu ngay, không đè lên nội dung */
 try { new ResizeObserver(() => refreshNotice(noticeNeeds)).observe($('stage')); } catch {}
 $('bannerNoAsk').addEventListener('change', e => setNoAsk(e.target.checked));
-window.__keepitNotice = { refreshNotice, collapseNotice, expandNotice, setNoAsk, setNoticeFileKey, noAskKey };
-
-/* thanh công cụ chưa nối */
-$('vTools').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  toast('Bản này mới nối OCR + lớp chữ; “' + b.textContent.trim() + '” chưa nối');
-});
-$('vMode').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  [...$('vMode').children].forEach(x => x.classList.toggle('on', x === b));
-  toast(b.dataset.m === 'read' ? 'Chế độ Đọc cần lớp chữ của app — chưa nối' : 'Chế độ Gốc');
-});
-
+demoNotice = { refreshNotice, collapseNotice, expandNotice, setNoAsk, setNoticeFileKey, noAskKey };
 /* ---------- canh gác: engine không phản hồi thì cho thoát ---------- */
 let lastSig = '', lastBeat = Date.now(), stalled = false;
 const stallMs = () => Number(window.__keepitStallMs) || 45000;
@@ -1208,7 +1245,7 @@ function markStopped(warn){
   runSeen = false; expectRun = false; stoppedFlag = false;
   lastBeat = Date.now();
   followLast = 0;
-  $('paper').classList.remove('scanning');
+  setScanEffect(false);
   const prog = $('ocrProg');
   prog.classList.add('show'); prog.classList.remove('done','error'); prog.classList.add('stopped');
   $('progTitle').textContent = 'Đã dừng nhận dạng';
@@ -1268,22 +1305,61 @@ $('progClose').onclick = () => {
   toast('Đã đóng thẻ và giải phóng engine khỏi RAM');
 };
 
-/* ---------- phím tắt ---------- */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape'){
-    if ($('menuFrom').style.display === 'flex' || $('menuTo').style.display === 'flex') return closePageMenus();
-    if (!$('regionEditor').hidden) return $('cancelRegion').click();
-    if (modal.classList.contains('show')) return closeOcr();
-    if ($('vMorePanel').classList.contains('show')) return closeMore();
-    if ($('trPanel').classList.contains('open')) return closeTrPanel();
-    if ($('ocrProg').classList.contains('show') && !hook()?.isBusy()) return $('ocrProg').classList.remove('show');
-    return;
-  }
-  if (e.target.matches?.('input,textarea,select')) return;
-  if (e.key === 'ArrowLeft') $('prev').click();
-  if (e.key === 'ArrowRight') $('next').click();
-});
+async function createPdf(bytes,overlays,outputKind='searchable'){
+ const P=globalThis.PDFLib;if(!P||!globalThis.fontkit)throw Error('Không nạp được bộ tạo PDF.');const doc=await P.PDFDocument.load(bytes);doc.registerFontkit(globalThis.fontkit);const fontBytes=await (await fetch(asset('font.ttf'))).arrayBuffer();const font=await doc.embedFont(fontBytes,{subset:true});let count=0;const renderMode=outputKind==='visible'?P.TextRenderingMode.Fill:P.TextRenderingMode.Invisible;
+ for(const [pageNo,overlay] of overlays){let page=doc.getPage(pageNo-1),key=page.node.newFontDictionary('OCR',font.ref);for(const m of overlay.matches){try{const [x,y]=m.p0,[xx,xy]=m.px,[yx,yy]=m.py;let wx=xx-x,wy=xy-y,hx=yx-x,hy=yy-y,width=Math.hypot(wx,wy),height=Math.hypot(hx,hy);if(width<=0||height<=0)continue;let size=height/font.heightAtSize(1),raw=font.widthOfTextAtSize(m.text+' ',size);if(!raw)continue;let sx=width/raw, ux=wx/width,uy=wy/width,vx=hx/height,vy=hy/height;page.pushOperators(P.pushGraphicsState(),P.beginText(),P.setTextRenderingMode(renderMode),P.setFontAndSize(key,size),P.setTextMatrix(ux*sx,uy*sx,vx,vy,x+hx*.15,y+hy*.15),P.showText(font.encodeText(m.text+' ')),P.endText(),P.popGraphicsState());count++}catch(e){throw Error('Không ghi được chữ vào PDF: '+e.message)}}}
+ return {bytes:await doc.save(),count};
+}
 
-/* ---------- khởi động ---------- */
-window.onKeepitState({ busy: false, current: 1, total: 0, has: false });
-$('ocrProg').classList.remove('show');
+$('savePdf').onclick=async()=>{
+ if(!doc||busy||!results.size)return;
+ const identity=host.state().document?.id;busy=true;exporting=true;cancelled=false;controls();
+ try{
+  const overlays=new Map();for(const [n,result]of results){
+   const page=await doc.getPage(n),tc=await page.getTextContent();if(tc.items.some(x=>x.str?.trim()))continue;
+   const v=page.getViewport({scale:1});overlays.set(n,{matches:result.boxes.map(box=>{const[l,t,r,b]=box.rect;return{text:box.text,p0:v.convertToPdfPoint(l*v.width,b*v.height),px:v.convertToPdfPoint(r*v.width,b*v.height),py:v.convertToPdfPoint(l*v.width,t*v.height)};})});
+  }
+  const file=await host.file();if(identity!==host.state().document?.id)return;
+  if(!overlays.size){setStatus('Không xuất: các trang có kết quả đều đã có lớp chữ gốc.');return;}
+  const out=await createPdf(await file.arrayBuffer(),overlays,$('ocrOutput').value);if(identity!==host.state().document?.id||cancelled)return;download(new Blob([out.bytes],{type:'application/pdf'}),host.state().document.name.replace(/\.pdf$/i,'')+'-co-lop-chu.pdf');setStatus(`Đã xuất PDF: ${out.count} khung chữ. Hãy kiểm tra vị trí.`);
+ }catch(error){setStatus('Không xuất được PDF: '+error.message);}finally{busy=false;exporting=false;controls();}
+};
+const exportPdf=$('savePdf').onclick;
+$('savePdf').onclick=()=>{completion=Promise.resolve(exportPdf());return completion;};
+async function reset(){
+ if(busy){stop();await completion;}await persistence.catch(()=>{});await releaseEngines();
+ closeRegion();closeOcr(true);closeTrPanel();clearTimeout(noticeTimer);setScanEffect(false);$('ocrProg').classList.remove('show','done','error','stopped');
+ stopHold=0;stopRequested=false;runSeen=false;expectRun=false;wasBusy=false;regionRun=false;stoppedFlag=false;followLast=0;statePage=0;results=new Map();engineTotal=0;selectedFile=null;fileKind='';doc=null;regionHistory.clear();textCache.clear();scanPage=0;setDialogInert(false);refreshNotice(false);controls();
+}
+async function open(){
+ const state=host.state();if(!state.document||!state.engine)return;
+ selectedFile=state.document;fileKind=state.document.type;doc=state.engine.sourceDocument||null;engineTotal=state.engine.pages.length;current=state.page;
+ const id=state.document.id;const rows=await store.all('ocr',id);if(host.state().document?.id!==id)return;
+ results=new Map(rows.filter(row=>row.schema===1).map(row=>[row.page,row.result]));
+ $('from').value='1';$('to').value=String(engineTotal);$('from').max=$('to').max=engineTotal;
+ setNoticeFileKey({name:id,size:state.document.bytes});refreshHint();controls();
+}
+function pageChanged(){
+ const state=host.state();if(!state.document)return;
+ if(current!==state.page){closeRegion();current=state.page;$('text').value=results.get(current)?.text||'';}
+ controls();refreshHint();
+}
+globalThis.KeepitOCR=Object.freeze({open,reset,paint,texts,pageChanged});
+new MutationObserver(()=>{document.querySelectorAll('.ocrCanvasOverlay .layer').forEach(el=>el.classList.toggle('boxes',$('trPanel').classList.contains('open')&&$('showBoxes').checked));}).observe($('trPanel'),{attributes:true,attributeFilter:['class']});
+$('moreResults').onclick=()=>{closeMore();$('trPanel').classList.toggle('open');};
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape')return;
+ if(!$('regionEditor').hidden){$('cancelRegion').click();event.stopImmediatePropagation();return;}
+ if(modal.classList.contains('show')){closeOcr();event.stopImmediatePropagation();return;}
+ if($('trPanel').classList.contains('open'))closeTrPanel();
+},true);
+const modalObserver=new MutationObserver(()=>setDialogInert(modal.classList.contains('show')));modalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
+$('ocrVer').textContent='v'+globalThis.browser.runtime.getManifest().version;
+controls();if(host.state().engine)await open();
+
+ocrText=bindOcrLocalization();
+
+new ResizeObserver(()=>{if(host.state().engine)host.resize();}).observe(document.querySelector("#viewer .stageWrap"));
+
+function syncOcrPanelTop(){const bar=document.getElementById('vBar'),viewer=document.getElementById('viewer');$('trPanel').style.setProperty('--ocr-body-top',Math.max(0,bar.getBoundingClientRect().bottom-viewer.getBoundingClientRect().top)+'px');}
+new ResizeObserver(syncOcrPanelTop).observe(document.getElementById('vBar'));syncOcrPanelTop();

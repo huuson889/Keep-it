@@ -79,9 +79,10 @@
 - Không sửa thư mục nguồn khi có zip mới đang được đồng bộ (chờ người dùng báo xong).
 - Không commit file tạm, file log, hay thư mục .git vào zip.
 
-## 6. Quy tắc riêng cho Arena.ai Agent
+## 6. Quy tắc riêng cho Arena.ai Agent làm việc workspace github
 Các quy tắc dưới đây **chỉ áp dụng khi tác nhân thực hiện là Arena.ai Agent** và ưu tiên hơn quy tắc chung nếu có mâu thuẫn:
-- Sau khi dùng xong tệp đính kèm, xóa toàn bộ tệp bên trong `/home/user/uploads` (kể cả thư mục con); chỉ xóa sau khi hoàn tất mọi thao tác cần chúng.
-- Trong `/home/user/Keepit-Zip`, chỉ giữ lại ZIP `Keepit - Optimize Test-v<version>.zip` có version cao nhất. Chỉ xóa các ZIP version cũ sau khi ZIP mới đã được đóng gói và xác minh thành công; nếu build mới lỗi thì giữ nguyên ZIP hiện có.
-- Harness kiểm thử hiện tại: `/home/user/qa/README.md`; file mới nhất `pager411.js` (layout/phân trang/checkbox), `boxzoom.js` (phóng 4× ô chọn). Sandbox reset thì phải cài lại `npm i playwright-core@1.55.0`, `npx playwright-core install chromium`, `apt-get install -y xvfb` + các lib của Chromium, và `git config user.name "Arena.ai Agent"` / `user.email "arena-agent@local.invalid"`.
-- Sandbox Arena chưa có khoá ký CRX (`/home/user/Keepit-key/*.pem` hoặc `KEEPIT_CRX_KEY`), nên chỉ đóng ZIP ở `/home/user/Keepit-Zip`; khi báo cáo phải nói rõ là không tạo CRX vì thiếu khoá, không được im lặng bỏ qua.
+- Code Keepit app lưu ở: `Workspace/Keep-it`
+- Code Keepit app thử nghiệm lưu ở: `Workspace/Keepit-Check`
+- File uploads lưu ở `Workspace/Upload`
+- File zip đóng gói Keepit test app lưu ở: `Workspace/Keepit-Check-Zip`
+- File zip demo lưu ở: `Workspace/Keepit-Demo-Zip`

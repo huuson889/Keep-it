@@ -99,3 +99,25 @@ Tách từ `PROJECT.md` mục 2 để mục 2 ngắn (quy định: tối đa ~20
 - **Đọc khi tắt màn hình (Reader / TTS):** extension không làm được. Khi khoá máy, Edge/Chrome Android dừng JavaScript và phần nền của tab nên không lấy được mẩu giọng tiếp theo; giọng trình duyệt (`speechSynthesis`) bị ngắt khi tab ẩn. Đã thử âm thanh im lặng chạy nền + Media Session ở v3.5.241–242: vừa rè vừa vẫn dừng, gỡ ở v3.5.243. Trong APK: dùng dịch vụ chạy nền của Android (foreground service + MediaSession, như app nghe nhạc) để đọc tiếp khi tắt màn hình và có nút trên màn hình khoá.
 - **Chặn quảng cáo:** uBlock Origin không chạy được trong WebView. Hướng A (đề xuất): tự chặn trong WebView bằng danh sách bộ lọc của uBO / EasyList (thư viện adblock-rust), có công tắc trong Cài đặt. Hướng B: chuyển sang GeckoView để cài đúng uBO (APK nặng thêm ~60–90 MB, sửa rất nhiều). Lưu ý giấy phép (uBO GPLv3, giấy phép các danh sách lọc), ghi máy chủ tải danh sách lọc vào tài liệu quyền riêng tư, không chặn quảng cáo YouTube.
 
+
+
+## Việc mở nguyên văn từ nền 3.5.612 trước dựng sạch OCR
+
+## 2. Việc đang mở / Tiếp theo (sửa đè)
+### Đang mở
+- **Thanh Keepit trên home/dashboard:** người dùng cần xác nhận pop-up giới thiệu thanh (hiện 1 lần ở dashboard) là giữ hay tắt riêng cho dashboard.
+- **Tài liệu:** đã về v30 ở 3.5.503. Việc cần làm: người dùng thử lại mở/nhập tệp và bôi đen trên bản 3.5.503; nếu ổn thì đóng hẳn nhóm lỗi 3.5.483–3.5.502.
+- **Tài liệu — kéo-thả tệp:** cần xác nhận lại trên 3.5.491+ (bản 3.5.488 làm hỏng, đã revert).
+### Tiếp theo (thứ tự đã chốt)
+- **Nói (Speaking)** vào cùng danh sách Thùng rác (sau Chép chính tả).
+- **Tài liệu — Batch 3:** dọn bridge (bỏ đo chiều cao + `KEEPIT_DOCUMENTS_VIEWPORT`, thêm `KEEPIT_DOCUMENTS_OPEN_RESULT`, chuyển `documents.html` → `dashboard.html`).
+### Chưa kiểm
+- **Tài liệu 3.5.597–611:** xác minh lưu ghi chú sau reload, dịch/đọc to, zoom/cuộn ngang hai trang, ảnh đơn và cảm ứng trên thiết bị thật; kiểm profile Windows, Android/Firefox và Office phức tạp.
+- **UI 3.5.593:** cần thử Android và profile thật, Overlay video thực, thao tác sheet Cài đặt/Đăng nhập/Reader và AI thực; favicon provider ngoài có 404/bị chặn trong môi trường thử, bản kiểm UI dùng ảnh fixture.
+- **Popup 3.5.586:** cần thử profile Chrome thật, website và tài liệu của người dùng; xác nhận Trang tối, cảm ứng và stacking context ngoài fixture.
+- Đã kiểm bằng ảnh 3.5.550: thanh ở 1512/390/384, sáng + tối, phóng 4×; đo 12 độ rộng (1512 → 320) × 3 nơi (web, home, dashboard) × 2 chế độ sáng/tối + bộ đo riêng với Chrome bật cỡ chữ tối thiểu 12px; `pageerror`/`console.error` rỗng. Chưa kiểm: profile Chrome thật, cảm giác dùng trên máy thật, tệp PDF/Office thật.
+- Ghi chú Chrome: nếu người dùng bật **"Cỡ chữ tối thiểu"** (Settings → Fonts) thì Chrome kéo mọi cỡ chữ dưới mức đó lên, `font-size` không còn tác dụng. Từ 3.5.548 thanh tự phát hiện và cho nhãn **xuống 2 dòng** nên không còn chồng chữ (thanh cao 72 → 78px trong trường hợp đó).
+- Chưa kiểm: buổi Chép chính tả thật do overlay ghi (YouTube/Web); trang có hơn 20 ghi chú.
+### Chưa triển khai
+- Highlight ẩn và điều hướng ↑/↓ trong danh sách xổ xuống: đã chốt phạm vi, chưa làm.
+- Hoàn thiện `LICENSE`/`PRIVACY-POLICY.md` trước khi phát hành.

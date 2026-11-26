@@ -199,7 +199,7 @@
     const url = URL.createObjectURL(blob), img = new Image(); img.src = url;
     try { await img.decode(); } catch (e) { URL.revokeObjectURL(url); throw new Error('documentsBadImage'); }
     const pages = [{ width:px(img.naturalWidth), height:px(img.naturalHeight), texts:[] }];
-    return { pages, kind:'image', image:true, async render(target) { const el = img.cloneNode(); el.className = 'actualImage'; el.draggable = false; target.replaceChildren(el); }, async thumbnail() { return drawImageThumb(img); }, dispose() { URL.revokeObjectURL(url); } };
+    return { pages, kind:'image', image:true, sourceImage:img, async ocrCanvas(){const c=window.document.createElement('canvas');const scale=Math.min(1,Math.sqrt(16000000/(img.naturalWidth*img.naturalHeight)));c.width=Math.max(1,Math.floor(img.naturalWidth*scale));c.height=Math.max(1,Math.floor(img.naturalHeight*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c;}, async render(target) { const el = img.cloneNode(); el.className = 'actualImage'; el.draggable = false; target.replaceChildren(el); }, async thumbnail() { return drawImageThumb(img); }, dispose() { URL.revokeObjectURL(url); } };
   }
   function drawImageThumb(img) {
     const canvas = document.createElement('canvas'), ratio = Math.min(240 / img.naturalWidth, 320 / img.naturalHeight, 1);
@@ -238,7 +238,14 @@
       canvas.style.width = spec.width + 'px'; canvas.style.height = spec.height + 'px';
       return canvas;
     }
-    return { kind:'pdf', pages, passwordProtected,
+    return { kind:'pdf', pages, passwordProtected, sourceDocument:document,
+      async ocrCanvas(number, shortSide=1280){
+        if(disposed)throw Error('cancelled');const page=await document.getPage(number),base=page.getViewport({scale:1});
+        const scale=Math.min(shortSide/Math.min(base.width,base.height),Math.sqrt(16000000/(base.width*base.height))),viewport=page.getViewport({scale});
+        const canvas=window.document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+        const render=page.render({canvasContext:canvas.getContext('2d'),viewport});jobs.add(render);
+        try{await render.promise;if(disposed)throw Error('cancelled');return canvas;}finally{jobs.delete(render);}
+      },
       async refreshRaster(target, number) {
         if (disposed || !target.isConnected) return;
         const old = target.querySelector(':scope > canvas:not(.pdfDetail)'), spec = pages[number - 1];

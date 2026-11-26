@@ -69,3 +69,5 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 - Viết tiếng Việt; link Markdown tương đối và symbol trong backticks; không dùng số dòng, không chép code dài, không lặp changelog hay trạng thái của `PROJECT.md`; code là nguồn sự thật khi docs mâu thuẫn.
 - Trước khi sửa code chỉ đọc trang module liên quan; cập nhật docs cùng thay đổi nếu đổi ranh giới/điểm vào/luồng/contract/storage/message/invariant/cách kiểm tra; cập nhật bảng mục lục khi thêm/xoá/đổi tên trang.
 
+
+OCR clean rebuild: xem mục OCR của `docs/documents.md`, `js/dashboard/ocr-controller.mjs`, `ocr-localize.mjs`, `css/dashboard/ocr-demo.css` và host getter ở `documents.js`.

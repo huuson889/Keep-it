@@ -1,7 +1,7 @@
 // Local document bytes and state. Separate stores keep progress writes from overwriting notes or files.
 (() => {
   'use strict';
-  const NAME = 'keepit-documents', VERSION = 2, CHANNEL = 'keepit-documents-updated';
+  const NAME = 'keepit-documents', VERSION = 3, CHANNEL = 'keepit-documents-updated';
   let opening;
   const changes = typeof BroadcastChannel === 'function' ? new BroadcastChannel(CHANNEL) : null;
   function open() {
@@ -11,10 +11,10 @@
         const db = request.result;
         /* v3.5.480: bản cũ có thể đã tạo kho rỗng (không store nào) → luôn tạo phần còn thiếu.
            Nâng lên 2 để kho rỗng v1 tự chữa lành lần mở kế tiếp. */
-        for (const name of ['meta', 'files', 'notes', 'translations']) {
+        for (const name of ['meta', 'files', 'notes', 'translations', 'ocr']) {
           if (db.objectStoreNames.contains(name)) continue;
           const store = db.createObjectStore(name, { keyPath:'id' });
-          if (name === 'notes' || name === 'translations') store.createIndex('document', 'documentId');
+          if (name === 'notes' || name === 'translations' || name === 'ocr') store.createIndex('document', 'documentId');
         }
       };
       request.onsuccess = () => { const db = request.result; db.onversionchange = () => { db.close(); opening = null; }; resolve(db); };
@@ -55,9 +55,11 @@
   const softDelete = id => patch(id, { deletedAt: Date.now() });
   const restore = id => patch(id, { deletedAt: null });
   function purge(id) {
-    return run(['meta', 'files', 'translations'], 'readwrite', tx => {
+    return run(['meta', 'files', 'translations', 'ocr'], 'readwrite', tx => {
       tx.objectStore('meta').delete(id);
       tx.objectStore('files').delete(id);
+      const ocrKeys = tx.objectStore('ocr').index('document').getAllKeys(id);
+      ocrKeys.onsuccess = () => { for (const key of ocrKeys.result || []) tx.objectStore('ocr').delete(key); };
       const keys = tx.objectStore('translations').index('document').getAllKeys(id);
       keys.onsuccess = () => { for (const key of keys.result || []) tx.objectStore('translations').delete(key); };
     }).then(() => { changes?.postMessage({ documentId:id }); return true; });

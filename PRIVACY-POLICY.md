@@ -116,3 +116,10 @@ Dữ liệu trong trình duyệt còn đến khi bạn xóa trong Dashboard, xó
 ### 7. Trẻ em, thay đổi và liên hệ
 
 **Trẻ em:** `[XÁC NHẬN CHÍNH SÁCH ĐỘ TUỔI TRƯỚC KHI ĐĂNG]`. Chúng tôi sẽ cập nhật chính sách này và phần khai báo trên cửa hàng trước khi thay đổi cách xử lý dữ liệu. Liên hệ: `[PRIVACY CONTACT EMAIL]`.
+
+
+## OCR — clean rebuild (not yet release-qualified)
+
+Tesseract uses packaged worker/WASM and eng/vie/kor language data locally. Recognition does not upload a document or request external models. Recognized text/boxes are stored per document/page in the local Documents database; permanent document deletion purges only that document's OCR rows. Soft deletion/restoration retains them. OCR results are not in the common notes JSON backup. Choosing translation, dictionary, speech or Ask AI uses Keepit's existing services and preferences; those tools may send the text you select to their existing providers.
+
+Tesseract nhận dạng cục bộ với worker/WASM và dữ liệu ngôn ngữ đóng gói. OCR không tải tài liệu lên hoặc lấy model ngoài. Chữ/khung được lưu theo tài liệu/trang; xóa vĩnh viễn tài liệu xóa đúng các hàng OCR đó. Xóa tạm/khôi phục giữ kết quả. Kết quả OCR không nằm trong JSON backup ghi chú chung. Các thao tác Dịch, Tra từ, Đọc to và Hỏi AI vẫn dùng dịch vụ/cài đặt có sẵn và có thể gửi phần chữ bạn chọn đến các nhà cung cấp tương ứng.

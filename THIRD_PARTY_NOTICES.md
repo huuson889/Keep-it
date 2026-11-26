@@ -28,3 +28,21 @@ The Twemoji Country Flags font is bundled locally at `assets/fonts/TwemojiCountr
 The web thumbnail photo is bundled locally at `assets/images/web-thumbnail-lofi.webp`; Keepit does not request it from Unsplash at runtime. The photographer's name was not recorded when the photo was first added; attribution is not required by the Unsplash License but will be added if the original photo page is identified.
 
 The Word class model (`jdp8/bert-english-uncased-finetuned-pos`, ONNX export of `vblagoje/bert-english-uncased-finetuned-pos`, file `onnx/model_quantized.onnx`) is not bundled: Keepit downloads it from huggingface.co only after the user agrees, and keeps it in the browser's cache. Neither model card declares a license; check the model's terms before a public release.
+
+## OCR integration from approved demo 2.9.7.33
+
+| Component | Source / verification | Use | License |
+| --- | --- | --- | --- |
+| Tesseract.js, Tesseract core | Approved demo `tess-v9/`; exact package versions not independently verified | Packaged worker and SIMD/non-SIMD LSTM WASM wrappers | Apache-2.0; `licenses/ocr-demo/LICENSE-tesseract.txt`, `LICENSE-core.txt` |
+| Tesseract language data | Approved demo `tess-v9-data/`, eng/vie/kor | Offline recognition; no model CDN | Apache-2.0; `licenses/ocr-demo/LICENSE-tessdata.txt` |
+| pdf-lib | 1.17.1, bundle byte-compared to npm package | Searchable PDF export | MIT; `licenses/ocr-demo/LICENSE-pdf-lib.txt` |
+| @pdf-lib/fontkit | 1.1.1, bundle byte-compared to npm package | Font subsetting for PDF export | MIT; `licenses/ocr-demo/LICENSE-fontkit.txt` (from npm package, https://github.com/Hopding/fontkit) |
+| Noto Sans KR Thin | Font metadata: 2.004-H2; approved demo `fusor/vendor/font.ttf` | Unicode PDF text | SIL OFL-1.1; `licenses/ocr-demo/LICENSE-NotoSansKR.txt` |
+
+OCR markup, scoped style declarations, hover/region helpers and image preprocessing are derived directly from the approved OCR demo, not rejected Keepit test builds. PP-OCR/Fusor runtimes/models are not bundled by this integration.
+
+Integration UI correction (3.5.615): scan and rectangle layers are rendered in display pixels independently of native document scale; selectable text remains in the app layer. No third-party runtime/model changes.
+
+Continuous OCR navigation correction (3.5.616) uses the browser’s native smooth scrolling; no additional runtime, animation library, model or third-party dependency is bundled.
+
+OCR sidebar width and progress-popup layering adjustment (3.5.617) changes first-party UI CSS only; no third-party dependency, runtime, model or license changes.

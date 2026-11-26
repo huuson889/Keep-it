@@ -16,6 +16,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 | [`responsive-nav.js`](../../js/dashboard/responsive-nav.js), [`responsive.css`](../../css/dashboard/responsive.css) | `.rn-*` | Điều hướng gọi route/action có sẵn; Tài liệu nằm trong Thêm trên điện thoại. |
 | [`settings-ui.js`](../../js/dashboard/settings-ui.js), [`settings.css`](../../css/dashboard/settings.css) | `LHN_SETTINGS_KIT`, `LHN_SETTINGS_PREVIEWS` | Cửa sổ/sheet, phụ thuộc master, reset/undo và preview. |
 | [`documents.js`](../../js/dashboard/documents.js), [`documents-context.js`](../../js/dashboard/documents-context.js), [`documents-store.js`](../../js/dashboard/documents-store.js), [`documents-renderers.js`](../../js/dashboard/documents-renderers.js) | `KeepitDocuments`, Reader adapter | Tệp, viewer, IndexedDB; PDF paragraphs/table rows, Reader adapter và speaker overlay. |
+| `ocr-controller.mjs`, `ocr-localize.mjs`, `ocr-demo.css` | `KeepitOcrDocumentHost`, `KeepitOCR` | OCR từ demo đã duyệt trên renderer/kho/công cụ app hiện hành; xem `docs/documents.md`. |
 | [`backup.js`](../../js/dashboard/backup.js), [`account.js`](../../js/dashboard/account.js) | `LHN_BACKUP`, `LHN_ACCOUNT` | Backup annotations web và hồ sơ cục bộ. |
 
 ## 3. Luồng chính
