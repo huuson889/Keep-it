@@ -59,7 +59,7 @@ Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, no
 
 ### Nguồn và ranh giới
 
-Chỉ sử dụng `Keep-it` gốc 3.5.612 và demo OCR đã duyệt. Không đọc/đối chiếu/tái dùng mã từ các bản OCR bị người dùng loại. Mã nguồn riêng ở `Workspace/Keepit-OCR`; manifest 3.5.617 tiếp tục bản test với giới hạn đã công khai, bản 3.5.614 trước đó được người dùng cho phép đóng gói dù chưa đủ QA unpacked/ảnh bắt buộc; không phải xác nhận đạt 100%.
+Chỉ sử dụng `Keep-it` gốc 3.5.612 và demo OCR đã duyệt. Không đọc/đối chiếu/tái dùng mã từ các bản OCR bị người dùng loại. Mã nguồn riêng ở `Workspace/Keepit-OCR`; manifest 3.5.618 tiếp tục bản test với giới hạn đã công khai, bản 3.5.614 trước đó được người dùng cho phép đóng gói dù chưa đủ QA unpacked/ảnh bắt buộc; không phải xác nhận đạt 100%.
 
 - `ocr-controller.mjs` lấy trực tiếp DOM/luồng OCR, hover, vùng và Tesseract preprocessing của demo, nhưng không nạp viewer hoặc các công cụ giả của demo. `ocr-demo.css` scope các declaration demo; đổi lớp tích hợp/stacking, fallback font thực tế và reset CSS gốc trùng tên. Vùng không nhận `margin-bottom:18px` của `.row` thư viện; notice không nhận căn giữa/font weight gốc. Thanh viewer dọc cao 52px theo demo; vẫn dùng các controller/nút app.
 - `KeepitOcrDocumentHost` trong `documents.js` cung cấp state/getters và cùng renderer đang mở. Renderer thêm `ocrCanvas` dùng PDFDocument/ảnh có sẵn; không fingerprint/import/parse tệp lần hai.
@@ -87,3 +87,5 @@ Harness mới nằm ngoài source: `/home/user/qa-clean`. Có 13/13 Node, 15/15 
 Trình duyệt công cụ từ chối `chrome://extensions/`: isolated browser context không cho mở và không nạp được unpacked. Chưa có bộ ảnh unpacked/PNG 4×, kiểm CSP/permission thực hoặc tệp/profile/thiết bị/voice/AI thật. Người dùng đã cho phép tăng version/commit/đóng ZIP bản test với giới hạn này. Không đánh dấu 100% hoặc coi là đã đạt nghiệm thu trước khi đủ điều kiện đó.
 
 3.5.617 chỉ sửa CSS OCR: sidebar ngang mặc định cùng chiều rộng popup (380px, giới hạn viewport), giữ `--trW`/resize và portrait toàn màn hình. Popup z-index2147483001 cao hơn host thanh2147483000, thấp hơn sheet đang mở2147483647; tọa độ không đổi. HTTP đối chiếu6/6 ở1512/800/390 sáng/tối, kéo/lưu/khôi phục500px và OCR ảnh đã chạy; chưa unpacked/ảnh/pixel QA.
+
+3.5.618 căn riêng popup tiến độ và sửa vùng OCR sát phải (right:0), giữ width/height/y/layer/resize; dọc popup tiến độ dùng left16px/right0 thay left8px/right8px để giữ bề rộng. Modal/menu/UI khác không đổi. HTTP trước/sau6/6 ở1512/800/390 sáng/tối: cả hai popup sát phải, không đổi width/height/y/sidebar, tiến độ vẫn trên Back to top. Chưa ảnh/unpacked/pixel QA.

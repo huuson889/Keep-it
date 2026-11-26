@@ -235,7 +235,7 @@ html.dark .keepitOcr .ocrFoot button{border-color:#41414d}
 .keepitOcr .ocrFoot button.primary:hover{background:var(--brand2)}
 .keepitOcr .ocrFoot button:disabled{opacity:.5;cursor:default}
 /* Above the Keepit bar host (2147483000), below its active sheet (2147483647). */
-.keepitOcr .ocrProg{position:fixed;right:12px;bottom:60px;z-index:2147483001;width:380px;max-width:calc(100vw - 24px);display:none;flex-direction:column;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);overflow:hidden}
+.keepitOcr .ocrProg{position:fixed;right:0;bottom:60px;z-index:2147483001;width:380px;max-width:calc(100vw - 24px);display:none;flex-direction:column;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);overflow:hidden}
 html.dark .keepitOcr .ocrProg{border-color:#3b3b46}
 .keepitOcr .ocrProg.show{display:flex}
 .keepitOcr .progHead{display:flex;align-items:center;gap:8px;padding:9px 8px 9px 12px;border-bottom:1px solid var(--line);flex:none}
@@ -327,8 +327,8 @@ html.dark .keepitOcr .selToolbar button:hover{background:#00000010}
 .keepitOcr .ocrHead{padding-top:18px}
 .keepitOcr .ocrFoot{border-radius:0}
 .keepitOcr .ocrFoot .footNote{display:none}
-.keepitOcr .ocrProg{left:8px;right:8px;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
-.keepitOcr .regionEditor{left:8px;right:8px;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
+.keepitOcr .ocrProg{left:16px;right:0;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
+.keepitOcr .regionEditor{left:16px;right:0;bottom:calc(var(--sideBottom,0px) + 8px);width:auto;max-width:none;border-radius:14px}
 .keepitOcr .morePanel{left:50%;right:auto;top:auto;bottom:8px;width:min(560px,calc(100vw - 16px));transform:translateX(-50%);border-radius:22px;max-height:85dvh}
 .keepitOcr .translation.open{position:absolute;inset:0;width:100%;z-index:70;border-left:0}
 .keepitOcr .readerBar{bottom:70px}
@@ -368,7 +368,7 @@ html.dark .keepitOcr .selToolbar button:hover{background:#00000010}
 .keepitOcr .translation .trBody{flex:1;min-height:0;padding:10px;display:flex;position:relative}
 .keepitOcr .translation .trBody textarea{flex:1;min-height:0;width:100%;resize:none;border:1px solid var(--line2);border-radius:10px;padding:10px;font:12.5px/1.55 system-ui,-apple-system,sans-serif;color:var(--ink2);background:var(--surface)}
 .keepitOcr .translation>header button:disabled{opacity:.4}
-.keepitOcr .regionEditor{position:fixed;right:12px;left:auto;transform:none;bottom:60px;z-index:79;width:min(380px,calc(100vw - 24px));max-height:min(64vh,540px);overflow:auto;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);padding:12px}
+.keepitOcr .regionEditor{position:fixed;right:0;left:auto;transform:none;bottom:60px;z-index:79;width:min(380px,calc(100vw - 24px));max-height:min(64vh,540px);overflow:auto;border:1px solid #d6d1ea;border-radius:16px;background:var(--surface);box-shadow:var(--shadowH);padding:12px}
 html.dark .keepitOcr .regionEditor{border-color:#3b3b46}
 .keepitOcr .regionEditor label{display:block;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:6px}
 .keepitOcr .regionEditor textarea{width:100%;min-height:76px;resize:vertical;border:1.5px solid #cdc8e4;border-radius:9px;padding:8px;font:12.5px/1.5 system-ui,sans-serif;color:var(--ink2);background:var(--soft)}

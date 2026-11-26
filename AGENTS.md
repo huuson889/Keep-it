@@ -67,7 +67,7 @@
   - Commit trong thư mục nguồn: "v<version>: <mô tả ngắn>".
 
 **4.4. Đóng gói ZIP**
-  - Tên bắt buộc đúng từng ký tự: `Keepit - Optimize Test-v<version>.zip` — giữ dấu cách và gạch ngang, version viết có dấu chấm; đặt vào thư mục zip (`D:\Keepit\Keepit - Optimize Test`; Arena: `/home/user/Keepit-Zip`).
+  - Tên bắt buộc đúng từng ký tự: `Keepit - Optimize Test-v<version>.zip` — giữ dấu cách và gạch ngang, version viết có dấu chấm; đặt vào thư mục zip (`D:\Keepit\Keepit - Optimize Test`; Arena: `Workspace/<thư-mục-nguồn>-Zip` trên GitHub `main`, ví dụ `Keepit-OCR` → `Keepit-OCR-Zip`; không chỉ lưu cache).
   - Nội dung: `manifest.json` ở gốc zip, không kèm thư mục `.git`; phải có `AGENTS.md` và `PROJECT.md` bản mới nhất; không gộp `sync-watch.ps1`, `sync-state.txt`, `sync-watch.log`.
 
 **4.5. Báo cáo**
@@ -86,3 +86,5 @@ Các quy tắc dưới đây **chỉ áp dụng khi tác nhân thực hiện là
 - File uploads lưu ở `Workspace/Upload`
 - File zip đóng gói Keepit test app lưu ở: `Workspace/Keepit-Check-Zip`
 - File zip demo lưu ở: `Workspace/Keepit-Demo-Zip`
+
+- Bản OCR riêng: nguồn `Workspace/Keepit-OCR`, ZIP `Workspace/Keepit-OCR-Zip`; mọi ZIP giao phải commit/push GitHub `main`, kiểm bản remote trước khi bỏ bản local. Quy tắc người dùng này ưu tiên hơn đường dẫn ZIP/nguồn chung ở trên.
