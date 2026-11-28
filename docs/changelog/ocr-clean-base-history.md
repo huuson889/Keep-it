@@ -1603,3 +1603,9 @@
 - Tóm tắt: Giảm một nửa khoảng trống dọc thanh trên tài liệu, giữ cỡ nút và thu gọn 80%.
 - File: `css/dashboard/documents.css`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
 - Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×; chuột 46/36,8px, cảm ứng giả lập 52/41,6px; menu Thêm và Đọc/Đọc to; console/pageerror rỗng. Chưa kiểm thiết bị thật, profile Windows, Android/Firefox và cảm giác dùng.
+
+**2026-11-17 | v3.5.606 | Arena:**
+
+- Tóm tắt: Thu gọn 80% cả thanh trên và dưới; dải trang kéo chỉnh rộng, ẩn/hiện, ghi nhớ và giới hạn theo màn hình; menu xổ vẫn cỡ thường.
+- File: `pages/documents.html`, `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh 4×; kéo chuột, bàn phím, ẩn/hiện và reload; giả lập cảm ứng 390; thanh dưới chuột 42/34px, cảm ứng 50/40,4px; menu bố cục, console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, profile Windows, Android/Firefox và PDF/Office của người dùng.

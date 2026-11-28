@@ -2,7 +2,7 @@
 
 ## 1. Mục đích và phạm vi
 
-Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và các action Flashcards/Settings/Account/Backup. H&N chạy cùng document; Tài liệu vẽ thư viện ngay trong document Dashboard (`documents-library.js`, token `--lhn-ui-*`) và giữ iframe cục bộ chỉ để cách ly bộ đọc khi mở tệp. Hợp đồng tài liệu chi tiết ở [luồng Tài liệu](../documents.md); quy tắc giao diện chung ở [ui-layout](../ui-layout.md).
+Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và các action Flashcards/Settings/Account/Backup. H&N chạy cùng document; Tài liệu hiện vẽ thư viện và bộ đọc trong iframe cục bộ; shell giữ header, route và scroll root. Hợp đồng tài liệu chi tiết ở [luồng Tài liệu](../documents.md); quy tắc giao diện chung ở [ui-layout](../ui-layout.md).
 
 ## 2. File chính và điểm vào
 
@@ -24,7 +24,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 
 1. `load()` lấy settings, favorites, annotations; cập nhật Overview và event snapshot H&N. Dữ liệu thật rỗng phải có empty state, không chèn mẫu.
 2. `setDashboardView()` đổi `overview`, `dictation`, `highlights-notes`, `documents`; route không active dùng `hidden`. Flashcards vẫn là action. `listening` cũ migrate sang `dictation`; lưu last-route/scroll theo tab.
-3. Overview/Dictation dùng viewport cuộn riêng; H&N dùng `#dashboardScroller`. Ba route cũ giữ một shared topbar. Chỉ Tài liệu ẩn portal đó và dùng topbar riêng trong iframe; khi viewer mở, bridge tin cậy phủ viewport và ẩn bottom nav. Rời route gửi suspend để dừng audio.
+3. Overview/Dictation dùng viewport cuộn riêng; H&N dùng `#dashboardScroller`. Các route cùng giữ một shared topbar ở shell, topbar riêng trong iframe Tài liệu bị ẩn khi nhúng; khi viewer mở, bridge tin cậy phủ viewport và ẩn bottom nav. Rời route gửi suspend để dừng audio.
 4. Dictation đối soát session index với record thật, khôi phục nguồn/tiêu đề/tổng câu từ cache. Continue YouTube mở thẳng Dictation khi captions đang tải; web giữ URL nguồn. Cards và continue-art dùng `LHN_THUMBNAILS`; favicon dùng `LHN_SITE_ICONS`.
 5. H&N nhận snapshot protocol `1` qua `keepit:highlights-notes-*`; CRUD/favorite/export/review/jump/speak quay lại handler Dashboard. Background IndexedDB là nguồn annotations web.
 6. Popup stats nhận OPEN/UPDATE/CLOSE cùng origin, theme từ parent; records schema v3 là nguồn chính, index chỉ bổ sung metadata. Chỉ reveal khi mở/đổi lọc, không khi snapshot refresh.
@@ -33,6 +33,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 
 - Không khôi phục Grammar/Library dự phòng hay route Flashcards. Sidebar chỉ chứa route/action thực; pin giữ 220px/56px và không tự bung khi hover.
 - Settings master tắt thì dependent `inert`; ba lựa chọn icon/popup độc quyền không bị khóa. Dịch tắt khóa Reader song ngữ. AI luôn còn một provider; auto-send mặc định tắt, user-written prompt không tự gửi.
+- Nền canvas638 dùng duy nhất `--lhn-dashboard-page-bg` trong shared/ui-tokens.css (#e9edf4 sáng/#000 tối). Shell alias `--dash-page-bg`, hostroute Documents và html/body `dash-embedded` dùng cùng token. Không lấy nền tím standalone --page cho iframe nhúng; không đổi nền card/headerglass/viewer. Theme hiện có đồng bộ class dark giữa hai document.
 - Nhãn mới nằm ở `languages.js`, đủ en/vi/ko. Theme theo `sidebarTheme` chung.
 - Reveal/counter dùng module chung, cycle guard và reduced motion; không tạo timer/observer presentation trùng ở consumer. Không animation giả số liệu.
 - H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
@@ -45,3 +46,5 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 ## 5. Kiểm tra và xác minh
 
 Chạy `node --check` file sửa, parse manifest/HTML refs, đối chiếu messages và `git diff --check`. Chromium extension thật kiểm bốn route, sidebar/pin/Thêm, theme/ngôn ngữ, reload/scroll và công cụ Tài liệu. Test mock không thay xác nhận giọng thật, AI đăng nhập, Firefox hay Edge Android. Các QA cũ chưa xác nhận vẫn được giữ trong `PROJECT.md` mục 2; không coi việc cập nhật tài liệu là đã hoàn tất chúng.
+
+QA638:123/123HTTP Chromium+API/protocol shim,1512/390 sáng-tối,5route và quay lại Documents; baseline637lệch#e9edf4/#f5f5ff đã đo,638đồng bộ. Parenterrors[];child2ResizeObserver deliverywarnings khi resize còn ghi raw. Đã nhìn browserHTTPsáng1280×813, chưa nghiệm thu ảnhpixel/crop4×/extension thật.

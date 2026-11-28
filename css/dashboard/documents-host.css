@@ -3,10 +3,7 @@
 body.dashboard-documents-active #dashboardScroller{overflow-y:auto!important}
 /* Same content box as the v3.5.379 Documents page: the route supplies the .main padding,
    so the library keeps its original width and breakpoints. */
-/* v3.5.527: vùng tab Tài liệu tô ĐÚNG hai giá trị nền mà các tab khác dùng
-   (sáng #f5f5ff, tối var(--lhn-ui-page) = #000) — trước đây để transparent nên khe trên/dưới khung
-   lộ nền của #dashboardScroller (#e9edf4 ở theme sáng) → thấy khác các tab. */
-/* v3.5.528: dùng CHUNG bộ biến --dash-page-bg của Dashboard (sáng #f5f5ff, tối #000). */
+/* Route canvas follows the shell; the embedded document uses the same shared token. */
 #dashboardScroller>#dashboardDocumentsView{display:block!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important;overflow:visible!important;background:var(--dash-page-bg,#f5f5ff)!important}
 #dashboardScroller>#dashboardDocumentsView[hidden]{display:none!important}
 #dashboardDocumentsFrame{display:block;width:100%;max-width:none;margin:0;height:0;min-height:420px;border:0;background:transparent;overflow:hidden;opacity:0;transition:opacity .14s ease}
