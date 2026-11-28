@@ -710,6 +710,15 @@ body{overflow:auto}
 .docsViewerBusy{padding:32px;text-align:center;color:var(--muted)}
 .docSurface{background:#fff;color:#1f2937;isolation:isolate;contain:layout paint style}
 .docsSource{position:absolute;left:0;top:0;transform:scale(var(--source-scale,1));transform-origin:0 0;color:#111;background:#fff;color-scheme:light;isolation:isolate}
+/* Native DOCX source surface; do not apply dashboard sizing to SVG textbox content. */
+@font-face{font-family:Carlito;font-weight:400;font-style:normal;src:url('../../assets/fonts/Carlito-Regular.ttf') format('truetype')}
+.docsSource section.docx{background:#fff!important;color:#000;margin:0!important;box-shadow:none!important;font:16px/normal "Times New Roman",serif}
+.docsSource section.docx *{box-sizing:content-box}
+.docsSource .kp-drawing div{box-sizing:content-box}
+.docsSource .kp-drawing [data-kp-text-line]{user-select:text;-webkit-user-select:text}
+.docsSource [data-kp-textbox] .para>.en{display:block;white-space:normal;font:inherit}
+.docsSource a{pointer-events:none}
+.officeMeasure.docsSource{transform:none;--source-scale:1}
 .docsSource .actualImage{display:block;width:100%;height:100%;object-fit:contain;user-select:none;-webkit-user-drag:none}
 .docsSource canvas{display:block;position:absolute;left:0;top:0}
 .imageMode .docSurface{background:repeating-conic-gradient(#f1f1f1 0% 25%,#fff 0% 50%) 0 0/16px 16px}

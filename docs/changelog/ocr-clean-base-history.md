@@ -1585,3 +1585,9 @@
 - Tóm tắt: thống nhất tên đầy đủ và rút gọn của Vừa rộng trong danh sách zoom và nút chọn: vi “Vừa rộng”, en “Fit width”, ko “너비 맞춤”; không thay logic zoom.
 - File: `js/core/languages.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
 - Kiểm tra: Chromium extension unpacked PDF mẫu, 1512/390 sáng/tối, ảnh chi tiết 4×; cả hai chỗ khớp vi/en/ko, nút/danh sách tiếng Việt 90/90px desktop và 97/97px mobile; chọn Vừa rộng, console/pageerror rỗng. Chưa kiểm thiết bị thật, Windows/profile thật và Android/Firefox.
+
+**2026-11-17 | v3.5.603 | Arena:**
+
+- Tóm tắt: thêm công tắc Thu gọn thanh trên trong Cài đặt Tài liệu; mặc định tắt, khi bật chỉ thanh trên thu về 60%, ghi nhớ và đồng bộ trực tiếp. Không thu thanh dưới, menu hay nội dung tài liệu.
+- File: `pages/dashboard.html`, `css/dashboard/documents.css`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, tài liệu.
+- Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh chi tiết 4×; bật/tắt, đồng bộ iframe và reload; thanh chuột 56→33,6px, chạm giả lập 60→36px, nút chạm 44→26,4px theo yêu cầu. Tên PDF dài, co giãn 320/390/1512, menu Thêm và đổi theme; console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, Windows/profile thật, Android/Firefox và Office thực; 60% khiến đích chạm nhỏ.

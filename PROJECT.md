@@ -1,19 +1,20 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.634:** áp dụng phương án B demo Trash icon v1 đã được người dùng duyệt trên nền632; bỏ qua633 (đã gỡ theo yêu cầu, lịch sử Git còn).
-- Trash dùng `LHN_ICONS.render(file-kind-*)`: PDF/Word/PPT/Ảnh giữ nguyên SVG đã duyệt; web/note/dictation/speak lấy nguyên SVG B. Icon22px trong ô34px, màu/nền tint theo demo; không đổi bố cục hàng hoặc dữ liệu/khôi phục/xoá.
-- Import/open/drag/drop, Documents/OCR/store/renderers và overlay632 không đổi. Người dùng đã xác nhận632 kéo thả bình thường; báo lỗi632 trước đó do thử nhầm. Speaking chỉ có glyph dự phòng, chưa tích hợp dữ liệu Thùng rác.
-- Kiểm mới: hai JS syntax + diff-check; 4 SVG cũ không đổi/4 SVG B khớp demo;22 kiểm tra Dashboard thật qua HTTP+API shim đạt (1512/390 sáng/tối, icon/màu, chọn/restore fixture). HTTP có2 pageerror ở Documents/OCR ngoài phạm vi; không gọi toàn app error-free. Chưa có unpacked/ảnh1512/390/crop4×/nghiệm thu extension634. Các thư mục QA cũ đã xoá theo yêu cầu, không còn là bằng chứng sẵn có.
+- **Bản test 3.5.635:** tích hợp DOCX Fidelity Lab v4 người dùng đã duyệt vào renderer thật, không mang shell/mẫu/PDF demo vào app. Trash B của634 và importer/controller/store/OCR/PDF/PPTX giữ nguyên.
+- DOCX dùng parser ESM local + factory layout riêng: DrawingML/group/textbox, alpha/theme/rounded border, đo co ngang/tracking/ngắt dòng, shared flow/cột/bảng/phân trang. Sanitizer chạy detached/in-place trước mount; foreignObject chỉ do adapter first-party tạo sau đó.
+- Chữ textbox vào `.para/.en` chung; không đổi DB schema, bytes hoặc controller Reader/Dịch/Notes/AI. Phân trang/block mới có thể ảnh hưởng anchors cũ; không tự sửa notes. HR app kiểm4trang cùng adapter, không giả app dùng worker v1 demo.
+- Kiểm mới: syntax3JS/diff-check;107check renderer thật/5mẫu/fixtures/security/PDF/PPTX/ảnh;19check controller/store HTTP+API/protocol shim (import/Read/Original/reopen,1512/390 sáng-tối nút app), console/pageerror cuối rỗng; chuột thật chọn Weekly trong block app. Chưa unpacked/CSP/ảnh/crop4×/OS drag/picker/notes thực hoặc fidelity pixel. Xem docs/documents.md và QA ngoài source.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.634: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.635: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
+- DOCX635: kiểm font/layout, chọn chữ + notes cũ/mới, dịch/TTS/AI trên extension thật; HTTP đã qua nhưng chưa có ảnh/crop4×/CSP/OS drop.
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
 ### Tiếp theo
 - Speaking vào danh sách Thùng rác sau Dictation; Documents Batch 3 bỏ VIEWPORT/đo cao, thêm OPEN_RESULT và chuyển entry sang dashboard.
@@ -34,6 +35,8 @@
 - Tuyệt đối không đặt ZIP, test, log, file tạm trong `Keep-it`; test chỉ chạy ngoài repo.
 
 ## 4. Cấu trúc và kiến trúc dự án
+
+DOCX: `documents-renderers.office()` → parser local `vendor/office/docx-preview-keepit.mjs` + `documents-docx.mjs:createDocxLayout`; secure detached DOM/CSS → measurement/layout → app `.para/.en`. Xem `docs/documents.md` cho lifecycle/guard/limits.
 
 ### 4.1. Bản đồ file
 ```text
@@ -180,6 +183,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.635 | Arena sửa:**
+
+- Tóm tắt: theo yêu cầu apply demo DOCX v4 đã duyệt vào Keepit; dùng chung quy tắc cho mọi tệp, không kiểm tên/hash, không PDF thay DOCX. Thêm parser ESM local và layout factory riêng; alpha/theme/roundRect/run scaling/tracking/textbox, group/anchor/cột/bảng/clip/phân trang giữ từ v4. Lọc library HTML/CSS detached/in-place để giữ ánh xạ XML; first-party DrawingML tạo bằng DOM API. CSS tách số đo source khỏi dashboard; block textbox nối `.para/.en` và giữ geometry sau wrap. Không thay importer/store/OCR/PDF/PPTX/controllers/Trash.
+- File: documents-renderers.js, documents-docx.mjs, vendor/office/docx-preview-keepit.mjs+README, Carlito/OFL, documents.css, manifest635, PROJECT/docs/documents/docs/INDEX/THIRD_PARTY_NOTICES và asset lock. Không copy shell hoặc dữ liệu mẫu vào app. Nền634, không hồi sinh633.
+- Kiểm tra: syntax3JS/diff-check;107/107renderer HTTP thật (Weekly3/Annual5/Book3/Quarterly6/HR4, native text/block/navigation/thumbnail, fixtures, DTD/traversal/external/oversize và PDF/PPTX/ảnh);19/19controller/store thật qua HTTP+API shim/protocol-gate bypass chỉ ở QA (import/Original/Read/close-reopen,1512/390 sáng/tối nút app); console/pageerror lượt cuối rỗng. Chuột thật chọn Weekly trả insideAppBlock=true. Lượt đầu shim thiếu getManifest, đã sửa shim/chạy lại, không sửa app né lỗi. chrome://extensions bị công cụ chặn; chưa unpacked/CSP/permission/ảnh/crop4×/OS drop/picker/notes migration/persistence/live dịch-TTS-AI, không coi HTTP là nghiệm thu extension/pixel. QA ngoài source `/home/user/qa-keepit-635`.
 
 **2026-11-26 | v3.5.634 | Arena sửa:**
 
@@ -353,9 +362,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: thu gọn thanh trên còn 80% thay vì 60%; chế độ Đọc chỉ đổi cách xem, không tự mở Đọc to; `arena.ai` được thêm một lần vào Tắt website, giữ danh sách cũ và cho xóa/bật lại.
 - File: `css/dashboard/documents.css`, `js/core/languages.js`, `js/dashboard/documents.js`, `js/background/background.js`, `manifest.json`, tài liệu.
 - Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh phóng 4×; thanh 56→44,8px chuột, 60→48px chạm giả lập; chọn Đọc và mở trực tiếp Đọc không bật giọng, nút Đọc to vẫn kích hoạt reader; trang HTML giả lập tại arena.ai thấy thanh ẩn, cài mới/di trú giữ sites cũ, xóa không bị thêm lại. Console/pageerror rỗng; chưa kiểm trang Arena thật/profile Windows, Android/Firefox, giọng và thiết bị thật.
-
-**2026-11-17 | v3.5.603 | Arena:**
-
-- Tóm tắt: thêm công tắc Thu gọn thanh trên trong Cài đặt Tài liệu; mặc định tắt, khi bật chỉ thanh trên thu về 60%, ghi nhớ và đồng bộ trực tiếp. Không thu thanh dưới, menu hay nội dung tài liệu.
-- File: `pages/dashboard.html`, `css/dashboard/documents.css`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, tài liệu.
-- Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh chi tiết 4×; bật/tắt, đồng bộ iframe và reload; thanh chuột 56→33,6px, chạm giả lập 60→36px, nút chạm 44→26,4px theo yêu cầu. Tên PDF dài, co giãn 320/390/1512, menu Thêm và đổi theme; console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, Windows/profile thật, Android/Firefox và Office thực; 60% khiến đích chạm nhỏ.

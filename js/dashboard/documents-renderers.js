@@ -26,8 +26,8 @@
     }
     return output.join('\n');
   }
-  function sanitizeOffice(html, purify) {
-    const fragment = purify.sanitize(html, { RETURN_DOM_FRAGMENT:true, ALLOW_DATA_ATTR:false, USE_PROFILES:{ html:true, svg:true, svgFilters:false }, FORBID_TAGS:['script','iframe','object','embed','link','meta','form','input','button','textarea','select','audio','video','foreignObject','style'], FORBID_ATTR:['srcdoc','action','formaction','autofocus'] });
+  function sanitizeOffice(html, purify, docxMarkers = false) {
+    const fragment = purify.sanitize(html, { RETURN_DOM_FRAGMENT:true, IN_PLACE:!!html?.nodeType, ALLOW_DATA_ATTR:false, ADD_ATTR:docxMarkers?['data-kp-p','data-kp-draw','data-kp-index','data-kp-columns']:[], USE_PROFILES:{ html:true, svg:true, svgFilters:false }, FORBID_TAGS:['script','iframe','object','embed','link','meta','form','input','button','textarea','select','audio','video','foreignObject','style'], FORBID_ATTR:['srcdoc','action','formaction','autofocus'] });
     for (const el of fragment.querySelectorAll('*')) {
       if (el.hasAttribute('style')) cleanDeclarations(el.style);
       el.removeAttribute('id');
@@ -40,7 +40,7 @@
     return fragment;
   }
   function attachBlocks(root, page, texts, edgePositions=[]) {
-    const candidates = [...root.querySelectorAll('p,td,h1,h2,h3,h4,h5,h6,li')].filter(el => !el.querySelector('p,td,li') && el.textContent.trim());
+    const candidates = [...root.querySelectorAll('p,td,h1,h2,h3,h4,h5,h6,li,[data-kp-textbox] > div > div')].filter(el => !el.querySelector('p,td,li') && el.textContent.trim());
     if (!candidates.length) for (const el of root.querySelectorAll('div')) if (!el.querySelector('div,p,table,svg,img') && el.textContent.trim()) candidates.push(el);
     const bounds=root.getBoundingClientRect(),height=Math.max(1,bounds.height);
     for (const el of candidates) {
@@ -336,21 +336,29 @@
     const lib = await officeLibrary(), zip = await checkedZip(blob, lib, kind); hooks.check?.(); hooks.progress?.(.35);
     if(kind==='pptx'){const {preparePptx}=await import('./documents-pptx.mjs');return preparePptx(zip,hooks,attachBlocks);}
     const holder = document.createElement('div'), styles = document.createElement('div'); holder.className = 'officeMeasure docsSource';
-    Object.assign(holder.style, { position:'fixed', left:'-100000px', top:'0', visibility:'hidden', zIndex:'-1' }); document.body.append(holder, styles);
+    Object.assign(holder.style, { position:'fixed', left:'-100000px', top:'0', visibility:'hidden', zIndex:'-1' }); // DOCX is sanitised while detached, before any document CSS/HTML is mounted.
     const pages = [], nodes = []; let styleNode;
     try {
       if (kind === 'docx') {
         if (!zip.file('word/document.xml')) throw new Error('documentsBadFile');
-        await lib.renderDocx(blob, holder, styles, { className:'keepitDocx', inWrapper:false, ignoreLastRenderedPageBreak:false, breakPages:true, useBase64URL:true, renderAltChunks:false, renderComments:false, experimental:false });
-        const cleanCss = [...styles.querySelectorAll('style')].map(el => safeStyles(el.textContent)).join('\n');
-        styles.replaceChildren(); styleNode = document.createElement('style'); styleNode.textContent = cleanCss; styles.append(styleNode);
-        for (const section of [...holder.querySelectorAll('section.keepitDocx')]) {
-          const clean = document.createElement('section'); clean.append(sanitizeOffice(section.outerHTML, lib.purify)); const page = clean.firstElementChild;
-          section.replaceWith(page);
+        const [{createDocxLayout}, docx] = await Promise.all([import('./documents-docx.mjs'),import('../../vendor/office/docx-preview-keepit.mjs')]);
+        const layout = createDocxLayout(docx, (root, sheets) => {
+          const cleanCss = [...sheets.querySelectorAll('style')].map(el => safeStyles(el.textContent)).join('\n');
+          // Preserve library-created paragraph identity/order; serialise/reparse can repair
+          // Word's nested inline DOM and break the XML-to-anchor index mapping.
+          sanitizeOffice(root, lib.purify, true);
+          sheets.replaceChildren(); const sheet = document.createElement('style'); sheet.textContent=cleanCss; sheets.append(sheet);
+          document.body.append(root, sheets); hooks.check?.();
+        });
+        const layoutReport = await layout.render(zip, holder, styles);
+        holder._layoutReport=layoutReport;
+        for (const section of [...holder.querySelectorAll('section.docx')]) {
+          // Library HTML was sanitised before layout. DrawingML nodes are created only by our adapter.
+          const page = section;
           await Promise.all([...page.querySelectorAll('img')].map(img=>img.decode?.().catch(()=>{})));
           await document.fonts.ready;hooks.check?.();
           const rect = page.getBoundingClientRect();
-          const spec = { width:px(rect.width || 794), height:px(Math.max(page.scrollHeight, rect.height, 1123)), texts:[], edgePositions:[] };
+          const spec = { width:px(rect.width || 794), height:px(rect.height || page.scrollHeight || 1123), texts:[], edgePositions:[] };
           attachBlocks(page, pages.length + 1, spec.texts, spec.edgePositions); pages.push(spec); nodes.push(page);
         }
       }
@@ -358,7 +366,7 @@
       hooks.progress?.(.95);
       const css = styles.textContent; holder.remove(); styles.remove();
       if (css) { styleNode = document.createElement('style'); styleNode.textContent = css; document.head.append(styleNode); }
-      return { kind, pages,
+      return { kind, pages, layoutReport:holder._layoutReport,
         async render(target, page) { target.replaceChildren(nodes[page - 1].cloneNode(true)); },
         async thumbnail(pageNumber = 1, {width=960,height=1320} = {}) {
           const spec=pages[Math.max(1,Math.min(pages.length,Math.round(+pageNumber)||1))-1]||pages[0];
