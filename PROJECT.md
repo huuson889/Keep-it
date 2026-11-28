@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.648:** bỏ pill Dữ liệu cục bộ trong shared header, thêm avatar32px cho5tab. Không thêm tên/nhãn gói cạnh avatar; nút Xuất toàn bộ giữ nguyên slot/hành vi. Nhãn Dữ liệu Keepit trang Notes chỉ thu gọn ở≤360px để tránh tràn, không ẩn nút chức năng.
-- Avatar header/sidebar render chung ảnh/chữ cái/khách; bấm dùng DUY NHẤT `#profileMenu` cũ, không clone menu/account handler. Header mở menu portalbody/fixed dưới avatar và clampviewport; sidebar giữ anchorcũ. Clickngoài/Escape/đổitab/cuộn/resize đóng; keyboard mở focus action và Escape trả focus.
-- Menu chứa tên/email/gói thực từ Settings plan controller, bỏ hardcodeKeepitPro. Khách hiển thị Miễn phí; không đổi auth/license/storage/schema. Giữ filter647/layoutcuộn645/barfooter644/Documents.
-- QA648:709matrixheader(5tab×1512/994/650/390/283 sángtối),25menuintegration,247notesregression đềuPASS HTTP/API/protocol/topframe shim/errors[]. Chuột thật390 mởmenu với tên/email/free; Escape→Enter mởlại. Profile/plan dùng presentation hook chỉởserverresponse, không xácnhậnlogin/license/storage;chưaunpacked/CSP/device/PNGcrop4×.
+- **Bản test 3.5.649:** bỏ cloud ở identity row menu tài khoản, chuyển nhãn gói từ dưới email sang bên phải (vị trí cloud cũ), áp dụng cùng một `#profileMenu` cho avatar header và sidebar.
+- Nhãn menu dùng `.kp-plan-badge` và chính rule Cài đặt trong `settings.css`, chung geometry/material/guest palette/Free/Trial/Pro/Ultra/icon. `PLAN.set` render chung SVG/label; đã xóa CSS nhãn menu/cloud riêng và code render cloud, không chỉẩn DOM.
+- Giữ tên/email, các mục Hồ sơ/Giao diện/Phím tắt/Đồng bộ/Trợ giúp/Đăng nhập/Đăng xuất, anchor header/sidebar648, avatar32 và export; không đổi auth/license/storage/Notes647/layoutscroll645/barfooter644/Documents.
+- QA649:654/654 actualDashboardHTTP/API/protocol/topframe shim,1512/994/650/390/283×696 sángtối,80biếnthểguest/signed×5planstate×haianchor(khôngsidebarẩntrênphone). BadgeCSS/markupicon/textkhớpSettings/vịtríbênphải/viewport/actions/en-vi-ko/errors[]. Pointerthật994darkcảhaimenuđãxemvàđo;chưaunpacked/CSP/device/PNGcrop4×/auth/license/storageacceptance.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.648: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.649: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
@@ -151,7 +151,7 @@ Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SIT
 Overlay Web + YouTube title bar ──> shared/site-icons.js (LHN_SITE_ICONS) ──> same origin favicon, 22×22 toolbar slot
 Dictation YouTube/Web + Dashboard Dictation + Highlights & Notes sources ──> shared/thumbnails.js (LHN_THUMBNAILS) ──> shared URL/fallback/load logic
 Dashboard sidebar: mặc định mở 220px; nút pin chuyển 220px/56px trong flex layout để vùng nội dung trượt theo; nút pin hiện khi hover lúc menu thu gọn, avatar popover và hai nút theme giữ luồng hiện có
-Dashboard shared header648: avatar32px chung renderer/sidebar; một `#profileMenu` cũ, `toggleDashboardProfileMenu` chọn anchorheader/sidebar. Headerportalbody/fixed/clampviewport, resize/cuộn/đổitabđóng;Settings plan.set đồngbộnhãnmụcaccount. Khôngthêmaccountstore/menu/authhandlerkhác.
+Dashboard shared header648: avatar32px chung renderer/sidebar; một `#profileMenu` cũ, `toggleDashboardProfileMenu` chọn anchorheader/sidebar. Headerportalbody/fixed/clampviewport, resize/cuộn/đổitabđóng;Settings plan.set đồngbộnhãnSVGgóitrongmenu,649dùngchungCSSbadgeSettingsởbênphảiidentity/thaycloud. Khôngthêmaccountstore/menu/authhandlerkhác.
 Dashboard Settings ── ô tìm (`initSettingsSearch`) ──> shared/search (`LHN_INDEX_SEARCH`, debounce 200 ms)
                       └──> chỉ bật/tắt class tạm (`is-searching`, `has-search-match`, `settings-search-hidden`)
                            trên hàng/nhóm/tab và bọc kết quả trong `mark.lhn-search-match` (cùng kiểu tô sáng Dashboard/sidebar);
@@ -190,6 +190,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.649 | Arena sửa:**
+
+- Tóm tắt: theo ảnh25, bỏ cloud ở đầu menu tài khoản và chuyển nhãn gói sang vị trí bên phải cloud cũ, không còn dưới email. Dùng cùng mộtmenu648choheader/sidebar, khôngclone. Giữ mục Đồng bộ dữ liệu và các accountactions;khôngđổiauth/license/storage.
+- File: `pages/dashboard.html` di chuyển badge thành sibling identitycopy, `.kp-plan-badge` và SVGshield mặcđịnh; `dashboard.js` xóa rendercloud/noderefs, đánhdấuguestidentity; `settings-ui.js` PLAN.set renderSVG+labelmenu giốngSettings; `css/dashboard/settings.css` mởrộngchínhselectorbadgeSettingssangidentitymenu(kểcảguest/free/trial/Pro/Ultra/dark),khôngchéppalette/ruleriêng. `dashboard.css` xóa CSScloud/nhãnmenu cũ; manifest/PROJECT/module docs. Chuyểnnguyênvănbảnghi618sanghistorygiữ30mục.
+- Kiểm tra:654/654 actualDashboardHTTP/API/protocol/topframeshim.5size1512/994/650/390/283×696sángtối,80biếnthểkháchfree/signedfree/trial/keyA/keyB×header/sidebar(trênphonekhôngtestsidebarẩn). MỗibiếnthểbắtcloudDOM/CSSnodekhôngcòn,badgeparent/vịtríbênphảicănggiữahàng,soexactcomputedstylesvàSVG/labelvớiSettings,height21/viewport/authactions/toggle;en-vi-ko vẫnSVG/actionsettings/errors[]. Profile/planhookschỉserverresponse,khôngauth/license/storageacceptance.
+- Kiểm tra: trustedpointer994dark mởheader→menu nhãnbênphải/tênemailkhôngcloud, bấmsidebar→cùngmenuvịtrímới;browserviewđãxem,mẫusốđobadgeCSSkhớpSettings. `qa-keepit-649/ui-final.json`, `pointer-header.json`, `pointer-sidebar.json`, `preserved.json`ngoàiapp. Node/diffcheck;Notes647/responsivenav/CSS/layout/bar/Documents/accountstoregiữnguyênbyte. Chưaextensionunpacked/CSP/device/PNGcrop4×/realprofile/license.
 
 **2026-11-26 | v3.5.648 | Arena sửa:**
 
@@ -373,9 +380,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: tích hợp standalone responsive demo v14 theo xác nhận người dùng; giữ native OCR mở cả bảng văn bản/cài đặt và đóng cài đặt không đóng bảng. OCR là nút dock bình thường sau Hỏi AI; bỏ nhóm OCR dư trong Thêm. Sheet dọc chung/rail trang thật, kính Settings và gợi ý tím-vàng, numeric input + native lists, phạm vi tự chọn range, dropdown đầu ra luôn xuống, đủ phần engine nhưng PP/Fusor vẫn tắt. Giữ hai nút mở lại kết quả và bản nháp theo trang; chỉ Apply ghi store. Không đổi runtime/model/renderer/schema/export/smooth-scroll engine.
 - File: `pages/documents.html`, `js/dashboard/documents.js`, `ocr-controller.mjs`, mới `ocr-controls.mjs`/`documents-sheets.mjs` và `css/dashboard/documents-responsive.css`; `ocr-demo.css`, `js/shared/theme-tokens.js`, `js/core/languages.js`, manifest/tài liệu. Gói ZIP đúng tên trong `Keepit-OCR-Zip` trên GitHub main.
 - Kiểm tra: HTTP trang app thật với shim extension API: 6 kích thước × sáng/tối, mở cả hai/dismiss/focus/draft/numeric/engine/rail; kiểm sâu bản nháp khác trang, store không tự ghi, Apply thật, field/popup/notice, ba ngôn ngữ và shared gestures. Tesseract thật trên PDF scan tổng hợp: current, all3 trang và range2–3, có chữ/lưu store/dọn scan; không dùng kết quả mô phỏng. Kết quả HTTP: 13 nhóm UI, 29 nhóm lifecycle/field, 14 nhóm sheet/ngôn ngữ, 2 lượt all/range đều không có cờ lỗi; current OCR có chữ/lưu1 bản ghi. Hover chuột thật5 mặt, mỗi mặt120 frame/0 dịch hình học; Escape thật đóng list trước rồi cài đặt, giữ result. Syntax6 file và unittest công cụ10/10 sạch; vendor220/220 hash khớp. Ảnh quan sát HTTP không phải ảnh extension. Chrome công cụ vẫn từ chối chrome://extensions; chưa unpacked/CSP/permission/PNG4×/pixel/profile/tệp người dùng/thiết bị thật; không nâng trạng thái nghiệm thu bắt buộc.
-
-**2026-11-26 | v3.5.618 | Arena sửa:**
-
-- Tóm tắt: theo yêu cầu mới, căn popup tiến độ OCR và sửa văn bản vùng chọn sát cạnh phải (right:0), không tăng sidebar. Giữ width/height/vị trí dọc/z-index; dọc dịch popup tiến độ8px, ngang12px; popup vùng chọn giữ width cũ. Không đổi engine, flow, dữ liệu, kéo resize, modal giữa màn hình hay menu khác.
-- File: `css/dashboard/ocr-demo.css`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`, `AGENTS.md` (đồng bộ quy tắc ZIP tương ứng); ZIP mới lưu `Keepit-OCR-Zip` trên GitHub main.
-- Kiểm tra: HTTP app với shim extension API, 6/6 ở1512/800/390 × theme app sáng/tối: right của cả hai popup bằng viewport, width/height/y và sidebar trước/sau không đổi; ngang popup tiến độ thẳng mép sidebar mặc định. Cuộn stage để Back to top hiện thật, hit-test vẫn trúng popup tiến độ6/6. OCR Tesseract ảnh tổng hợp hoàn tất, có chữ/lưu1 bản ghi/dọn scan; console.error/pageerror HTTP rỗng; công cụ workspace10/10. Chưa QA unpacked/PNG/crop4×/pixel/CSP/permission; không đánh dấu đạt nghiệm thu UI bắt buộc.

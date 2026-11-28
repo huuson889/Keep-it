@@ -335,7 +335,7 @@
           side.innerHTML = svg + `<span data-i18n="${key}">${label}</span>`;
           side.setAttribute("aria-label", t(key)); }
         const menuPlan = $("profileMenuPlan");
-        if (menuPlan) { menuPlan.dataset.plan = id; menuPlan.dataset.i18n = key; menuPlan.textContent = t(key); }
+        if (menuPlan) { menuPlan.dataset.plan = id; menuPlan.innerHTML = svg + `<span data-i18n="${key}">${label}</span>`; }
         document.querySelectorAll(".dashboard-reference-profile-wrap").forEach(wrap => { wrap.dataset.plan = id; });
       }
       $("settingsProfilePlan")?.closest(".settings-window-profile")?.setAttribute("data-plan", "free");
