@@ -9,7 +9,7 @@
   const aiSheet=globalThis.LHN_AI_SHEET.create({canOpen:()=>context.active(),t:key=>LHN_LANGUAGES.t('bar_'+key,{},document.documentElement.lang)});aiSheet.bindMessages();
   globalThis.LHN_SELECTION_TOOLBAR.installTouchSelectionBridge();
   for (const name of [
-    'url','title','hostname','thumbnail','sentenceContext','root','containsRange','anchorFor','findRanges','onAnnotations',
+    'url','title','hostname','thumbnail','sentenceContext','root','containsRange','selectionRects','anchorFor','findRanges','onAnnotations',
     'applyPageShrink','restorePageWidth','onSidebar','revealAnnotation','readerBlocks','readerBlocksForTarget','readerSpeakerGeometry','readerSpeakerHost','positionReaderSpeaker','readerText',
     'readerFontAllowed','readerSpeakersAllowed','readerCard','readerBlockForCard','mountReaderCard',
     'readerNextPage','onReaderBlock','onReaderState','readerTargetLanguage','openSettings'

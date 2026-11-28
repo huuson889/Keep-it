@@ -50,13 +50,10 @@
 
   // ---------- icons / flags / domains (same as the demo) ----------
   const P = {
-  lang:'<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
   para:'<path d="M4 6h16"/><path d="M4 10h16"/><path d="M4 14h10"/><path d="M4 18h7"/><path d="m15 15 3 6 3-6"/>',
   // v3.5.290 Loại từ: words with a short label under each · Loại từ đoạn: the same on one paragraph (+ the Dịch đoạn chevron)
-  wc:'<path d="M3 6h8"/><path d="M5 10h4"/><path d="M14 6h7"/><path d="M15.5 10h4"/><path d="M3 15h8"/><path d="M5 19h4"/><path d="M14 15h7"/><path d="M15.5 19h4"/>',
   wclegend:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M7 9h2"/><path d="M12 9h5"/><path d="M7 13h2"/><path d="M12 13h5"/><path d="M7 17h2"/><path d="M12 17h3"/>',
   wcpara:'<path d="M4 6h16"/><path d="M4 11h8"/><path d="M6 15h4"/><path d="M4 19h8"/><path d="m15 13 3 6 3-6"/>',
-  read:'<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
   overlay:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="m10 7 5 3-5 3z"/><path d="M8 21h8"/><path d="M12 17v4"/>',
   keyboard:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h.01M12 13h.01M16 13h.01M7 16h10"/>',
   notes:'<path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9.5 8h5M9.5 12H16M9.5 16H14"/>',
@@ -64,7 +61,6 @@
   menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
   captions:'<rect width="18" height="14" x="3" y="5" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/>',
   cap:'<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
-  sparkles:'<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/>',
   dashboard:'<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
   user:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/>',
   type:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',
@@ -72,7 +68,6 @@
   tsearch:'<path d="M21 6H3M10 12H3M10 18H3"/><circle cx="17" cy="15" r="3"/><path d="m21 19-1.9-1.9"/>',
   sticky:'<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',
   msgtext:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7M17 12H7"/>',
-  npen:'<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>',
   rotate:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="m9 15 3-6 3 6M10 13h4"/>',
   card:'<rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>',
   search:'<circle cx="11" cy="11" r="7.5"/><path d="m21 21-4.3-4.3"/>',
@@ -122,7 +117,8 @@
   const LOGO = '<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="kpLogoBar" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#kpLogoBar)" stroke="none"/><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg>'; // icon-v5 (assets/icons/icon.svg)
   const LEAF = '<svg viewBox="0 0 32 32" aria-hidden="true"><g transform="translate(32 0) scale(-1 1)"><g transform="translate(-4.187 -2.393) scale(0.299065)"><path fill="#fff" stroke="none" d="M 35 32 C 34 32 33.5 34 33.2 37 C 31.3 51 34.3 65 42 74 C 48.5 81.5 57 84.6 67 84.5 C 77.5 84.4 84.2 80.3 89.7 73.4 C 92.5 77.3 94.3 81.5 95.4 86.8 C 95.9 89.6 97.8 90.9 99.9 90.2 C 102.1 89.5 102.9 87.5 101.8 84.7 C 98.6 75.9 93.3 69.4 85.4 65.1 C 79.7 62 72.9 61.1 66.1 59.6 C 58.9 58 53.1 54.9 51.6 49.4 C 55.3 52.8 60.2 54.8 67.5 55.8 C 78.7 57.3 87.7 58.3 94.7 65 C 97.3 54.1 92 44.5 82.5 39.9 C 75.4 36.4 68 36.8 59.7 37.6 C 48.6 38.8 41.9 38.6 36.5 32.8 C 36 32.3 35.5 32 35 32 Z"/></g></g></svg>';
   // v3.5.542: icon tab Dashboard = nguồn chung js/shared/icons.js (menu trái dashboard cũng đọc từ đó)
-  const sharedIcon = n => (/^(nav-)/.test(n) || n === "settings") ? globalThis.LHN_ICONS?.render(n) : "";
+  const TOOL_ICON = {"lang": "tool-translate", "read": "tool-read", "wc": "tool-word-class", "npen": "tool-notes", "sparkles": "tool-ai", "ocr": "tool-ocr"};
+  const sharedIcon = n => TOOL_ICON[n] ? globalThis.LHN_ICONS?.render(TOOL_ICON[n]) : (/^(nav-)/.test(n) || n === "settings") ? globalThis.LHN_ICONS?.render(n) : "";
   const ic = n => n === "logo" ? LOGO : n === "leaf" ? LEAF : (sharedIcon(n) || `<svg viewBox="0 0 24 24" aria-hidden="true">${P[n] || ""}</svg>`);
   const FLAG = {
   en:'<svg class="flag" viewBox="0 0 30 20" preserveAspectRatio="none"><rect width="30" height="20" fill="#fff"/><g fill="#b22234">' + [0, 2, 4, 6, 8, 10, 12].map(i => `<rect y="${(i * 20 / 13).toFixed(2)}" width="30" height="1.54"/>`).join("") + '</g><rect width="12" height="10.77" fill="#3c3b6e"/><g fill="#fff">' + [[2, 2], [5, 2], [8, 2], [3.5, 4.5], [6.5, 4.5], [9.5, 4.5], [2, 7], [5, 7], [8, 7], [3.5, 9], [6.5, 9]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".6"/>`).join("") + '</g></svg>',
@@ -755,7 +751,12 @@
   const tile = (act, icon, label, on, tip, val, badge) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="q${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}><span class="ic">${ic(icon)}</span>${badge ? `<b class="qbadge">${esc(badge)}</b>` : ""}<span>${esc(label)}${val ? `<small>${esc(val)}</small>` : ""}</span></button>`; };
   const navTile = id => tile(id, NAVTILE[id][0], t(NAVTILE[id][1]), (id === "wc" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassOn?.() : wcOn())) || (id === "wclegend" && (S.documentsSheet ? !!globalThis.LHN_DOCUMENTS_MAIN_ACTIONS?.wordClassLegendOn?.() : !!globalThis.LHN_WORD_CLASS?.legendShown?.())), id === "wclegend" ? t("wcLegendTip") : undefined);
   // ☰ Công cụ: every tool that is not on the bar right now (v3.5.223)
-  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation", "block", "wcblock", "page", "reader"].includes(id))).map(navTile).join(""); };
+  const hiddenTools = () => { const on = new Set(S.documentsSheet ? [] : navLayout().flat()); return TOOLS[pageKind()].filter(id => !on.has(id) && toolOn(id) && !(S.documentsSheet && ["overlay", "dictation", "block", "wcblock", "page", "reader"].includes(id))).map(navTile).join("") + documentOcrTool(); };
+  const documentOcrTool = () => {
+    const actions = globalThis.LHN_DOCUMENTS_MAIN_ACTIONS;
+    if (!S.documentsSheet || !actions?.ocrAvailable?.()) return "";
+    return tile("doc:ocr", "ocr", t("ocr"), actions.ocrOn?.(), actions.ocrLabel?.());
+  };
   // v3.5.163: ☰ footer (fixed, never scrolls) — Cài đặt · Bật trang · Ẩn/Hiện thanh, icon + label like the tiles
   const foot = (act, icon, label, on, tip, disabled = false) => { const k = KEYS()[act], ttl = k ? `${tip || label} (${k})` : tip; return `<button class="fq${on ? " on" : ""}" type="button" data-q="${act}"${ttl ? ` title="${esc(ttl)}"` : ""}${on !== undefined ? ` aria-pressed="${!!on}"` : ""}${disabled ? " disabled aria-disabled=\"true\"" : ""}>${ic(icon)}<span>${esc(label)}</span></button>`; };
   const documentActionFooter = () => {

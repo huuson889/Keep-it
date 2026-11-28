@@ -1,0 +1,169 @@
+/* Documents/OCR responsive presentation approved in v14; no renderer or engine behavior here. */
+:root{--docs-sheet-height:min(92dvh,calc(100dvh - 16px));--docs-safe:env(safe-area-inset-bottom,0px)}
+.moreBody{min-height:0}.morePanel{overflow:hidden}
+#ko-trPanel:not(.open){border-left:0}#ko-trResize{touch-action:none}
+.keepitOcr .ocrProg,.keepitOcr .regionEditor{max-height:calc(100dvh - 72px)}
+.keepitOcr .ocrProg .progBody{overflow:auto;min-height:0}.keepitOcr .ocrProg .progHead{flex:none}.keepitOcr .regionEditor{z-index:2147483001}
+.keepitOcr .ocrProg .pLog{min-height:0;white-space:normal;margin-bottom:12px}
+#ko-ocrModes label:has(input:disabled){opacity:.4}#ko-ocrModal{max-height:calc(100dvh - 24px)}#ko-ocrModal .ocrBody{min-height:0}#ko-ocrModal .ocrFoot{flex:none;justify-content:flex-end}#ko-ocrModal .ver{font-size:9px}#ko-text{min-height:0}
+/* Keepit select models/list renderer, with an editable centered numeric face. */
+#ko-ocrScopePick .rangeRow{display:grid;grid-template-columns:max-content minmax(44px,112px) max-content minmax(44px,112px) max-content;justify-content:start;align-items:center;gap:6px;min-width:0;padding:4px 8px 4px 0}
+#ko-ocrScopePick .rangeRow .rlab{min-width:0;padding-right:0;white-space:nowrap;gap:7px}
+#ko-ocrScopePick .rangeRow .pageRangeSlot{display:block;min-width:0;width:100%;margin:0;padding:0}
+#ko-ocrScopePick .rangeRow .of{grid-column:auto;justify-self:start;margin:0;padding:0;white-space:nowrap;font-size:12px;font-weight:500}
+#ko-ocrScopePick .rangeRow .to{font-size:12px;white-space:nowrap}
+#ko-ocrScopePick .rangeRow.on{background:var(--soft)}
+#ko-ocrScopePick .flow-select{width:100%!important;max-width:100%}
+#ko-ocrScopePick .flow-select-trigger{width:100%;min-height:32px;height:32px;gap:4px;padding:0 8px;font-size:13px;border-radius:7px}
+#ko-ocrScopePick .flow-select-chevron{width:12px}
+#ko-ocrScopePick .flow-select-trigger:disabled{opacity:.45;cursor:default}
+.pageJump .flow-select{width:72px!important;flex:none}
+.pageJump .flow-select-trigger{width:100%;min-height:32px;height:32px;padding:0 6px;gap:4px;border:1px solid var(--line2);border-radius:7px;background:var(--soft);font-size:12px}
+.editablePage .flow-select-trigger>span{visibility:hidden;flex:1}
+.editablePage .flow-select-trigger .flow-select-chevron{margin-left:auto}
+.editablePage .editablePageInput{position:absolute;inset:0;z-index:1;width:100%;height:100%;min-width:0;padding:0 20px;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;text-align:center;font:inherit;font-size:13px;font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield;pointer-events:auto;box-shadow:none}
+.editablePage .editablePageInput::-webkit-inner-spin-button,.editablePage .editablePageInput::-webkit-outer-spin-button{appearance:none;margin:0}
+.editablePage .flow-select-trigger{position:relative}
+.editablePage .flow-select-trigger:after{content:"";position:absolute;right:0;top:0;bottom:0;width:24px;z-index:3}
+#ko-ocrModal .editablePageInput:focus-visible,.pager .editablePageInput:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+#ko-ocrScopePick .editablePage .flow-select-option,.pageJump .editablePage .flow-select-option{justify-content:center;text-align:center;padding-left:0;padding-right:0}
+#ko-ocrScopePick .editablePage .flow-select-option>span,.pageJump .editablePage .flow-select-option>span{text-align:center}
+.flow-select-list{box-sizing:border-box;min-width:100%}
+#ko-ocrScopePick .flow-select-list{max-height:224px}
+.keepitOcr .fRow .ocrResultSelect{flex:1;min-width:0;width:100%!important}
+.keepitOcr .fRow .ocrResultSelect>.flow-select-trigger{width:100%;min-width:0;min-height:34px;height:34px;font-size:12.5px;padding:0 10px;background:var(--soft);border-radius:9px}
+.keepitOcr .fRow .ocrResultSelect .flow-select-trigger>span{flex:1;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media(pointer:coarse){#ko-ocrScopePick .flow-select-trigger,.pageJump .flow-select-trigger,.keepitOcr .fRow .ocrResultSelect>.flow-select-trigger{height:44px;min-height:44px}}
+/* The chevron is its own real 24px button; numeric editing never lives inside a button. */
+.editablePage{height:32px;border:1px solid var(--line2);border-radius:7px;background:var(--soft)}
+.editablePage .editablePageInput{border:0;font-size:13px}
+#ko-ocrScopePick .editablePage>.flow-select-trigger,.pageJump .editablePage>.flow-select-trigger{position:absolute;inset:0 0 0 auto;width:24px;height:100%;min-height:0;padding:0 5px;border:0;background:transparent;border-radius:0 7px 7px 0;z-index:2}
+.editablePage>.flow-select-trigger>span{display:none}
+.editablePage>.flow-select-trigger:after{content:none}
+@media(pointer:coarse){.editablePage{height:44px}}
+/* Pager keeps a separate editing lane; old touch-input/button widths must not
+   squeeze the value or overlap the shared list chevron. OCR range is unchanged. */
+.pager .pageJump .editablePage{background:var(--kp-field);border-color:var(--kp-field-line)}
+.pager .pageJump .editablePageInput{inset:0 24px 0 0;width:calc(100% - 24px);height:100%;padding:0 3px;font-size:12px;background:transparent}
+.pager .pageJump .editablePage>.flow-select-trigger{min-width:0}
+
+
+.docsPageScrim,.docsSheetScrim{position:fixed;inset:0;background:#0006;backdrop-filter:blur(3px)}.docsPageScrim{z-index:2147483020}.docsSheetScrim{z-index:2147483000}.docsPagesSheet{position:fixed;z-index:2147483021;background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shadowH);color:var(--ink);border-radius:22px;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;overflow:hidden;max-height:var(--docs-sheet-height)}#docsPagesSheet[hidden]{display:none!important}.docsPagesSheet>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px 10px 16px;flex:none}.docsPagesSheet>header b{display:block;font-size:13px}.docsPagesSheet small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.docsPagesSheet .vbtn{height:36px}.docsPagesSheet{height:var(--docs-sheet-height);padding-bottom:var(--docs-safe)}#docsPageStrip{overflow-x:hidden;overflow-y:auto;min-height:0;flex:1;overscroll-behavior:contain}.docsPagesSheet #rail{width:100%;display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(82px,14vw,128px),1fr));align-content:start;gap:14px 12px;border:0;padding:4px 16px 16px;overflow:visible;background:none}.docsPagesSheet #rail button{width:100%;min-width:0;align-self:start}.docsPagesSheet #rail .mini-pg{min-height:0;height:auto}.docsPagesSheet #rail .mini-pg{aspect-ratio:720/1018}
+@media(orientation:portrait){
+#ko-ocrModal{left:8px;right:8px;bottom:8px;top:auto;width:auto;height:var(--docs-sheet-height);max-height:var(--docs-sheet-height);border-radius:22px;padding-bottom:var(--docs-safe)}#ko-ocrModal .ocrBody{flex:1}#ko-ocrModal .ocrFoot{display:grid;grid-template-columns:minmax(70px,.65fr) minmax(0,1.35fr);gap:8px;padding:12px 14px;border-radius:0}#ko-ocrModal .ocrFoot button{width:100%;height:44px;min-width:0;padding:0 10px}#ko-ocrModal .ocrFoot .footNote{display:none}
+#ko-trPanel.open{position:fixed;inset:auto 8px 8px!important;width:auto!important;height:var(--docs-sheet-height);max-height:var(--docs-sheet-height);border:1px solid var(--line2);border-radius:22px;z-index:2147483010;box-shadow:var(--shadowH);padding-bottom:var(--docs-safe)}#ko-trPanel>header{padding-top:12px;height:58px;min-height:58px}#ko-trPanel .trResize{display:none}#ko-trPanel .trBody{width:100%;max-width:704px;margin:auto}.ocrPanelFoot{padding-bottom:10px}
+.keepitOcr .ocrProg,.keepitOcr .regionEditor{left:8px;right:8px;bottom:8px;width:auto;max-width:none;max-height:var(--docs-sheet-height);border-radius:22px;box-shadow:var(--shadowH);padding-bottom:var(--docs-safe)}.keepitOcr .ocrProg .progHead{min-height:50px}.keepitOcr .ocrProg .progBody{padding:12px 14px 14px}.keepitOcr .ocrProg .progFoot button{min-height:44px}.keepitOcr .regionEditor{overflow:auto;padding:0 14px calc(14px + var(--docs-safe));gap:10px}.keepitOcr .regionEditor .row button{min-height:44px;flex:1;white-space:normal}.keepitOcr .regionEditor textarea{resize:none;min-height:100px;touch-action:pan-y}
+}
+@media(pointer:coarse){#ko-trPanel>header{height:58px;min-height:58px}#ko-trPanel>header .ibtn{width:36px;height:44px}.docsPagesSheet .vbtn{min-height:44px}.keepitOcr .ocrProg .progFoot button,.keepitOcr .regionEditor .row button{min-height:44px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* Shared sheet presentation adapter. Geometry, glass, easing and timing from Keepit's .panel/.sheet;
+   LHN_SHEET is the original shared gesture engine. One class applies to every portrait sheet. */
+@media(orientation:portrait){
+:is(#ko-ocrModal,#docsPagesSheet,#vMorePanel,#ko-trPanel,#trPanel,#ko-ocrProg,#ko-regionEditor).kpSheet{
+ z-index:2147483030!important;position:fixed!important;inset:auto 0 0!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%!important;max-width:none!important;margin:0!important;box-sizing:border-box;
+ display:flex!important;flex-direction:column;border:0!important;border-radius:22px 22px 0 0!important;
+ background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+ color:var(--ink);box-shadow:none!important;
+ transform:translateY(105%)!important;opacity:1!important;visibility:hidden;pointer-events:none;
+ transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s!important;
+ max-height:96dvh!important;overflow:hidden;isolation:isolate;padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html.dark :is(#ko-ocrModal,#docsPagesSheet,#vMorePanel,#ko-trPanel,#trPanel,#ko-ocrProg,#ko-regionEditor).kpSheet{background:transparent!important;box-shadow:none!important}
+:is(#ko-ocrModal,#docsPagesSheet,#vMorePanel,#ko-trPanel,#trPanel,#ko-ocrProg,#ko-regionEditor).kpSheet.kpSheetOpen{visibility:visible;pointer-events:auto;transform:none!important;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s!important}
+/* OCR and page grid use one height; other sheets size naturally to their contents. */
+#ko-ocrModal.kpSheet,#docsPagesSheet.kpSheet,#ko-trPanel.kpSheet,#trPanel.kpSheet{height:92dvh!important;max-height:92dvh!important}
+#vMorePanel.kpSheet{height:auto;max-height:85dvh!important}
+
+#ko-regionEditor.kpSheet{overflow-y:auto;padding-left:14px;padding-right:14px}
+#ko-trPanel.kpSheet .trBody{flex:1;min-height:0}
+.kpSheet :is(.ocrHead,.ocrBody,.ocrFoot,.progHead,.progBody,.trBody,.trToolbar,.moreHead,.moreBody,.ocrPanelFoot){background:transparent!important}
+
+
+.kpSheet,.kpSheet *{scrollbar-width:none}
+.kpSheet::-webkit-scrollbar,.kpSheet *::-webkit-scrollbar{display:none}
+:is(#ko-ocrScrim,#docsPageScrim,#moreScrim,#docsSheetScrim).kpScrim{z-index:2147483029!important;display:block!important;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:none;-webkit-backdrop-filter:none;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .2s,visibility 0s .26s}
+:is(#ko-ocrScrim,#docsPageScrim,#moreScrim,#docsSheetScrim).kpScrim.kpScrimOpen{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .2s,visibility 0s}
+}
+@media(prefers-reduced-motion:reduce){.kpSheet,.kpScrim{transition:none!important}}
+
+/* A scrim dims only. Blurring this document viewer corrupts its painted sidebar. */
+#ko-ocrScrim,#moreScrim,#docsPageScrim,#docsSheetScrim{backdrop-filter:none;-webkit-backdrop-filter:none}
+
+#ko-vOcr svg{flex:none}#ko-trPanel>header .ocrActionIcon{width:16px;height:16px;flex:none}
+.kpDragging,.kpDragging *{user-select:none!important;-webkit-user-select:none!important}
+
+/* Center desktop glass without translate(-50%): stable text rasterization on hover. */
+
+
+.kpGlass :is(.ocrHead,.ocrBody,.ocrFoot){background:transparent!important}
+.kpSheetGrip{display:none}
+@media(orientation:landscape){#ko-ocrModal.kpGlass{inset:0;margin:auto;height:fit-content;transform:none;transition:opacity .16s}}
+@media(orientation:portrait){
+.kpSheet>.kpSheetGrip{display:block;flex:none;position:relative;width:40px;height:4px;min-height:4px;border-radius:2px;background:rgba(148,163,184,.55);margin:10px auto 10px;touch-action:none;cursor:grab}
+.kpSheet>.kpSheetGrip::before{content:"";position:absolute;left:-80px;right:-80px;top:-10px;bottom:-10px}
+#vMorePanel.kpSheet .moreHead{padding-top:6px}
+#ko-trPanel.kpSheet>header{padding-top:6px;height:50px;min-height:50px}
+}
+/* Shared material roles: values missing from theme-tokens.js are shared with
+   Keepit settings.css. One backing layer, exactly as dashboardSettingsDialog. */
+ :root{--kp-glass:var(--kp-glass-l);--kp-tile:var(--kp-tile-l);--kp-line:var(--kp-settings-line-l);--kp-field:var(--kp-field-l);--kp-field-line:var(--kp-field-line-l);--kp-pop:var(--kp-pop-l);--kp-hover:var(--kp-hover-l);--kp-subtext:var(--kp-tx2-l)}
+html.dark{--kp-glass:var(--kp-glass-d);--kp-tile:var(--kp-tile-d);--kp-line:var(--kp-line-d);--kp-field:var(--kp-field-d);--kp-field-line:var(--kp-field-line-d);--kp-pop:var(--kp-pop-d);--kp-hover:var(--kp-hover-d);--kp-subtext:var(--kp-tx2-d)}
+.kpSurface{background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;isolation:isolate;border-color:var(--kp-line)!important;--brandSoft:color-mix(in srgb,var(--brand) 14%,transparent)}
+:is(#ko-ocrModal,#docsPagesSheet,#vMorePanel,#ko-trPanel,#trPanel,#ko-ocrProg,#ko-regionEditor,.pager,#ko-vBanner,#ko-vBulb).kpSurface::before{content:"";position:absolute;inset:0;width:auto;height:auto;transform:none;z-index:-1;border-radius:inherit;background:var(--kp-glass);-webkit-backdrop-filter:var(--kp-blur);backdrop-filter:var(--kp-blur);pointer-events:none}
+.kpSurface :is(.ocrHead,.ocrBody,.ocrFoot,.progHead,.progBody,.trBody,.trToolbar,.moreHead,.moreBody,.ocrPanelFoot,.transList,.transTip){background:transparent!important}
+/* Containers never add a second white/black film over their rows. */
+#ko-ocrModal :is(.fset,.langBox){background:transparent;border-color:var(--kp-line)}
+#ko-ocrModal :is(.radios label.on,.radios label:hover,.rangeRow.on){background:var(--kp-hover)}
+#ko-ocrScopePick .rangeRow.on{background:var(--kp-hover)}
+#ko-ocrModal .kpick:hover{background:var(--kp-hover)}
+#ko-ocrModal .kpick.on{background:var(--brandSoft);color:var(--brand)}
+/* One field surface per control. Editable picker input and arrow stay clear. */
+:is(#ko-ocrModal,#ko-regionEditor,#ko-trPanel,#trPanel,#vMorePanel) :is(.langSearch,.editablePage,.flow-select-trigger,textarea,select:not([hidden])){background:var(--kp-field);border-color:var(--kp-field-line)}
+#ko-ocrModal .fRow .ocrResultSelect>.flow-select-trigger{background:var(--kp-field);border-color:var(--kp-field-line)}
+#ko-ocrScopePick .editablePage>.flow-select-trigger,.kpSurface .editablePage>.flow-select-trigger,.kpSurface .editablePageInput,.kpSurface .langSearch input{background:transparent}
+.kpSurface :is(.vseg,.ocrPanelFoot button){background:var(--kp-tile);border-color:var(--kp-line)}
+.kpSurface .vseg button{background:transparent}#vMorePanel .vseg button.on{background:var(--kp-hover);box-shadow:none}
+.kpSurface button:not(.primary):not(.flow-select-option):hover{background-color:var(--kp-hover)}
+#ko-ocrModal .ocrFoot button:not(.primary),.kpSurface .progFoot button:not(.primary),.kpSurface.regionEditor .row button:not(.primary),#ko-folder{background:var(--kp-tile);border-color:var(--kp-line)}
+#ko-ocrModal .ocrFoot button:not(.primary):hover{background:var(--kp-field)}
+/* The settings popover surface is intentionally more legible than a field;
+   selected/hovered items remain translucent, not opaque black/white. */
+.flow-select .flow-select-list{background:var(--kp-pop);border-color:var(--kp-line);-webkit-backdrop-filter:var(--kp-blur);backdrop-filter:var(--kp-blur)}
+.flow-select .flow-select-option{background:transparent}
+.flow-select .flow-select-option:is(:hover,:focus-visible){background:var(--kp-hover)}
+.flow-select .flow-select-option[aria-selected=true]{background:color-mix(in srgb,var(--brand) 14%,transparent);color:var(--brand)}
+/* Same native OCR hint card, fitted to the available document area. */
+#ko-vBanner,#ko-vBulb{box-shadow:none;color:var(--ink);border-color:var(--kp-line)}
+#ko-vBanner{max-height:calc(100% - 24px);overflow-y:auto}
+#ko-vBanner .nicon{background:var(--kp-tile);color:var(--brand)}
+#ko-vBanner .blink,#ko-vBanner .bnoAsk input{color:var(--brand);accent-color:var(--brand)}
+#ko-vBanner .bhead button:hover{background:var(--kp-hover);color:var(--ink)}
+
+#ko-vBulb:hover{background:transparent;transform:none}
+/* Settings uses the same orientation-based dimming, never a blurred scrim. */
+:is(#ko-ocrScrim,#docsPageScrim,#moreScrim,#docsSheetScrim).kpScrim{background:rgba(0,0,0,.4)}
+@media(orientation:landscape){:is(#ko-ocrScrim,#docsPageScrim,#moreScrim,#docsSheetScrim).kpScrim{background:rgba(0,0,0,.16)}}
+
+.kpSurface :is(input,textarea)::placeholder{color:var(--kp-subtext);opacity:1}
+
+/* The notice is a semantic exception: native Keepit purple/amber tint on the same glass backing. */
+:is(#ko-vBanner,#ko-vBulb).kpSurface{border-color:var(--nt-line)!important}
+:is(#ko-vBanner,#ko-vBulb).kpSurface::before{background:color-mix(in srgb,var(--nt-bg) 78%,transparent)}
+#ko-vBanner .nicon{background:var(--nt-soft);color:var(--nt-ink)}
+#ko-vBanner .blink,#ko-vBulb{color:var(--nt-ink)}
+#ko-vBanner .bnoAsk input{accent-color:var(--nt-ink)}
+#ko-vBulb:hover::before{background:color-mix(in srgb,var(--nt-soft) 78%,transparent)}
+/* Settings is modal above the simultaneously-open result sheet, matching native openOcr(). */
+@media(orientation:portrait){
+ #ko-ocrModal.kpSheet{z-index:2147483032!important}
+ #ko-ocrScrim.kpScrim{z-index:2147483031!important}
+}
+/* Contextual re-entry only: no extra toolbar item or OCR action group in More. */
+#ko-ocrModal .ocrResultsEntry{flex:none;padding:8px 0 4px}
+#ko-openResults{display:flex;justify-content:flex-start;gap:8px;width:100%;background:var(--kp-tile);border-color:var(--kp-line)}
+#ko-openResults .resultArrow{margin-left:auto}
+#ko-ocrProg .progFoot{flex-wrap:wrap}
+#ko-pResults{white-space:nowrap}
+
+#docsPagesSheet .mini-pg{aspect-ratio:720/1018;overflow:hidden}#docsPagesSheet .mini-pg img{width:100%;height:100%;object-fit:contain}
+@media(orientation:portrait){#docsPageStrip #rail{height:auto;max-height:none;flex:none;transform:none;border:0}#ko-ocrModal.kpSheet{padding:0}#ko-regionEditor.kpSheet,#ko-ocrProg.kpSheet{z-index:2147483031!important}.kpSurface{box-shadow:none!important}#trPanel.kpSheet .transList{flex:1;min-height:0}#ko-ocrProg.kpSheet{height:auto;max-height:85dvh!important}}

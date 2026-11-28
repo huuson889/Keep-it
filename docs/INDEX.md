@@ -10,7 +10,7 @@
 | [Background](modules/background.md) | Service worker, runtime router, IndexedDB annotations, usage, TTS | Sửa router message, annotation storage, usage hoặc TTS. |
 | [Content](modules/content.md) | Tương tác trang: highlight, note, Sidebar trang, selection, restore | Sửa luồng website, DOM observer, sidebar trang hoặc annotation UI. |
 | [Core](modules/core.md) | Defaults, config, settings, messaging, languages, cache | Sửa nền tảng dùng chung hoặc thứ tự nạp. |
-| [Tài liệu cục bộ](documents.md) | PDF/Office/ảnh, IndexedDB, công cụ Dịch/TTS/POS/AI | Sửa import, viewer v13, lưu tệp, notes hoặc vòng đời công cụ Tài liệu. |
+| [Tài liệu cục bộ](documents.md) | PDF/Office/ảnh, IndexedDB, OCR responsive, công cụ Dịch/TTS/POS/AI | Sửa import, viewer v13, lưu tệp, notes hoặc vòng đời công cụ Tài liệu. |
 | [Dashboard](modules/dashboard.md) | Overview, Dictation, Highlights & Notes, Tài liệu, flashcards/settings | Sửa `pages/dashboard.html`, LR bridge hoặc chức năng Dashboard. |
 | [Overlay](modules/overlay.md) | Overlay Video/Web, tab Xem · Nói · Chép · Rạp, chấm điểm và lưu tiến độ Study (gộp `dictation.md` ở v3.5.199) | Sửa overlay, nguồn Video/Web, Nói/Chép, chấm điểm, tiến độ hoặc chế độ hiển thị. |
 | [Popup](modules/popup.md) | Popup settings và website controls | Sửa popup, shortcut/settings controls hoặc mở Dashboard. |
@@ -49,7 +49,8 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Icon trang web (Trang chủ + Dashboard) | `js/shared/site-brands.js` (`LHN_SITE_BRANDS`) |
 | Công cụ chung cho Tài liệu | `js/dashboard/documents-context.js`; `js/content/content.js`, `sidebar.js`, `note-composer.js`; `js/reader/bilingual-reader.js`; `js/ask-ai/sheet.js` |
-| Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`; `pages/documents.html`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
+| Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`, `documents-pptx.mjs`; `pages/documents.html`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
+| OCR: controller, numeric/list controls và sheet responsive | `js/dashboard/ocr-controller.mjs`, `ocr-controls.mjs`, `documents-sheets.mjs`; `css/dashboard/ocr-demo.css`, `documents-responsive.css`; [hợp đồng](documents.md) |
 | Popup PDF tự hiện + toolbar, mở đúng PDF trong Tài liệu | `js/background/background.js`, `pages/pdf-suggestion.html`, `js/popup/pdf-suggestion.js`, `js/popup/popup.js`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader, sheet overlay khi bật Hiệu ứng nền) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
@@ -70,4 +71,4 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 - Trước khi sửa code chỉ đọc trang module liên quan; cập nhật docs cùng thay đổi nếu đổi ranh giới/điểm vào/luồng/contract/storage/message/invariant/cách kiểm tra; cập nhật bảng mục lục khi thêm/xoá/đổi tên trang.
 
 
-OCR clean rebuild: xem mục OCR của `docs/documents.md`, `js/dashboard/ocr-controller.mjs`, `ocr-localize.mjs`, `css/dashboard/ocr-demo.css` và host getter ở `documents.js`.
+OCR clean rebuild: xem mục OCR của `docs/documents.md`, `js/dashboard/ocr-controller.mjs`, `ocr-localize.mjs`, `ocr-controls.mjs`, `documents-sheets.mjs`, `css/dashboard/ocr-demo.css`, `documents-responsive.css` và host getter ở `documents.js`.

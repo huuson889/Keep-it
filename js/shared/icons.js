@@ -1,4 +1,17 @@
 (() => {const ICON_PATHS = {
+  // Approved file-label demo v5, option 3.
+  "file-kind-pdf": "<path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\" fill=\"currentColor\" stroke=\"none\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\" fill=\"#fff\" fill-opacity=\".27\" stroke=\"none\"></path><path d=\"M6.4 17.5v-5h1.2a1.25 1.25 0 0 1 0 2.5H6.4m4.2 2.5v-5h.9c2.7 0 2.7 5 0 5h-.9m4.7 0v-5H18m-2.7 2.3h2.2\" stroke=\"#fff\" stroke-width=\"1.05\" transform=\"translate(12 15) scale(.88) translate(-12 -15)\"></path>",
+  "file-kind-docx": "<path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\" fill=\"currentColor\" stroke=\"none\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\" fill=\"#fff\" fill-opacity=\".27\" stroke=\"none\"></path><path d=\"M7.5 12l2 6 2.5-5 2.5 5 2-6\" stroke=\"#fff\" stroke-width=\"1.6\"></path>",
+  "file-kind-pptx": "<path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\" fill=\"currentColor\" stroke=\"none\"></path><path d=\"M14 2v4a2 2 0 0 0 2 2h4\" fill=\"#fff\" fill-opacity=\".27\" stroke=\"none\"></path><path d=\"M9 18v-7h3a2.25 2.25 0 0 1 0 4.5H9\" stroke=\"#fff\" stroke-width=\"1.6\"></path>",
+  "file-kind-image": "<rect fill=\"currentColor\" height=\"18\" rx=\"3\" stroke=\"none\" width=\"18\" x=\"3\" y=\"3\"></rect><circle cx=\"8\" cy=\"8\" fill=\"#fff\" r=\"1.5\" stroke=\"none\"></circle><path d=\"m4.5 16 3.2-3.2 3 3L16 10.5l3.5 3.5\" stroke=\"#fff\" stroke-width=\"1.5\"></path>",
+  // Documents toolbar and Keepit main tools sheet share these exact glyphs.
+  "tool-translate": '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>',
+  "tool-read": '<path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+  "tool-word-class": '<path d="M3 6h8"/><path d="M5 10h4"/><path d="M14 6h7"/><path d="M15.5 10h4"/><path d="M3 15h8"/><path d="M5 19h4"/><path d="M14 15h7"/><path d="M15.5 19h4"/>',
+  "tool-notes": '<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>',
+  "tool-ai": '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/>',
+  "tool-ocr": '<path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M7 8h8"></path><path d="M7 12h10"></path><path d="M7 16h6"></path>',
+
   "file-text": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2"/>',
   "file-spreadsheet": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M8 13h8M8 17h8M12 12v6"/>',
   "file-code": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v6h6M10 13l-2 2 2 2M14 13l2 2-2 2"/>',

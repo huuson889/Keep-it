@@ -75,7 +75,7 @@ html.dark .continue:after{background:#252443}
 html.dark .cEyebrow{color:#f08bab}
 .cBody h2{margin:6px 0 4px;font-size:18px;line-height:1.25}
 .cBody .desc{color:var(--muted);font-size:14px;margin-bottom:10px}
-.pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.pills{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 .pill{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--ink2);font-size:12px}
 .btnP{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 15px;border:0;border-radius:11px;background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;font-weight:600;font-size:13.5px;box-shadow:0 8px 18px #7262df40}
 .btnL{display:inline-flex;align-items:center;gap:4px;height:36px;padding:0 10px;border:0;background:none;color:var(--brand);font-weight:600;font-size:13.5px}
@@ -120,8 +120,18 @@ html.dark .thumb.docx{background:linear-gradient(135deg,#253a63,#2f4f8a 50%,#181
 html.dark .thumb.pptx{background:linear-gradient(135deg,#5c3a22,#7b4a26 50%,#3a2414)}
 .thumb .pg{width:62%;height:118px;border-radius:8px 8px 0 0;background:var(--paper);box-shadow:0 -4px 18px #00000026;overflow:hidden}
 .thumb.pptx .pg{width:76%;height:104px;border-radius:7px;margin-bottom:12px}
-.type{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:999px;background:var(--chip);font-size:11.5px;font-weight:700;color:var(--ink);backdrop-filter:blur(6px)}
-.type i{width:7px;height:7px;border-radius:50%}
+.type{position:absolute;left:10px;top:10px;display:inline-flex;padding:3px 8px 3px 4px;border-radius:9px;background:var(--chip);backdrop-filter:blur(6px)}
+.docFileLabel,[data-file-kind]{--file-solid:#df5865;--file-soft:#d64a5c0d;--file-edge:#c9465421}
+[data-file-kind="docx"]{--file-solid:#4a83d9;--file-soft:#4283de0e;--file-edge:#3874c921}
+[data-file-kind="pptx"]{--file-solid:#de814c;--file-soft:#dc7d350e;--file-edge:#bf632821}
+[data-file-kind="image"]{--file-solid:#329e7e;--file-soft:#2b9b720d;--file-edge:#23876421}
+html.dark [data-file-kind="pdf"]{--file-soft:#ff636916;--file-edge:#ff858921}
+html.dark [data-file-kind="docx"]{--file-soft:#629fff18;--file-edge:#81b4ff21}
+html.dark [data-file-kind="pptx"]{--file-soft:#ff995f16;--file-edge:#ffb07d21}
+html.dark [data-file-kind="image"]{--file-soft:#63d5a416;--file-edge:#78d7b021}
+.docFileLabel{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-size:11px;font-weight:600;line-height:1;white-space:nowrap;vertical-align:middle}
+.docFileMark{display:grid;place-items:center;width:28px;height:32px;flex:none;background:var(--file-soft);border:1px solid var(--file-edge);border-radius:5px 9px 5px 5px;color:var(--file-solid)}
+.docFileMark svg,.fIco svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
 .badge{position:absolute;right:10px;top:10px;height:22px;padding:0 8px;display:inline-flex;align-items:center;border-radius:999px;background:#1f2433b3;color:#fff;font-size:11px;font-weight:600}
 .cardBody{padding:12px 14px 13px;display:flex;flex-direction:column;gap:7px;flex:1}
 .cardBody h4{margin:0;font-size:14.5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -186,6 +196,7 @@ html[data-keepit-documents] #lhn-bilingual-reading-bar .lhn-br-kbd .lhn-br-sep{m
 .vbtn:hover{background:var(--soft)}
 .vbtn.on{background:var(--brandSoft);color:var(--brand);border-color:var(--line2)}
 html.dark .vbtn.on{background:#25264a;color:#c0c2ff;border-color:#3a3a6a}
+.vtitle .type{position:static;padding:0;background:none;backdrop-filter:none}
 .vtitle{display:flex;align-items:center;gap:8px;min-width:0;flex:1}
 .vtitle b{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vtools{display:flex;align-items:center;gap:3px;flex:none}
@@ -332,8 +343,8 @@ html.dark .sheet button.on{background:#25264a;color:#c0c2ff}
 .mHead{display:flex;gap:12px;align-items:center;margin-bottom:14px}
 .mHead b{display:block;font-size:14.5px;line-height:1.3;word-break:break-word}
 .mHead small{color:var(--muted);font-size:12.5px}
-.fIco{width:44px;height:52px;flex:none;border-radius:9px;display:grid;place-items:end center;padding-bottom:7px;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.4px;position:relative;overflow:hidden}
-.fIco:after{content:"";position:absolute;right:0;top:0;width:13px;height:13px;background:#ffffff70;border-bottom-left-radius:5px}
+.fIco{width:44px;height:52px;flex:none;display:grid;place-items:center;color:var(--file-solid)}
+.fIco svg{width:44px;height:52px}
 .steps{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:9px}
 .steps li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted)}
 .steps li i{width:20px;height:20px;flex:none;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--line2);font-style:normal;font-size:11px;font-weight:800}
@@ -373,8 +384,7 @@ html.dark .sheet button.on{background:#25264a;color:#c0c2ff}
 .pdfAccessModal #errChoose.btnG{height:38px}
 .pdfAccessModal #errOk.btnP{min-width:104px;height:38px;justify-content:center}
 /* ---------- viewer interactions ---------- */
-.vbanner{display:none;align-items:center;gap:8px;padding:9px 16px;background:var(--orangeSoft);color:var(--orange);font-size:13px;font-weight:600;border-bottom:1px solid var(--line);flex:none}
-.vbanner.show{display:flex}
+
 .para .en{display:inline}
 .shim{display:inline-block;width:70%;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--line) 0%,var(--surface) 50%,var(--line) 100%);background-size:200% 100%;animation:shim 1s linear infinite;color:transparent;vertical-align:middle}
 @keyframes shim{to{background-position:-200% 0}}
@@ -727,6 +737,10 @@ body{overflow:auto}
 .docsSource .para.speaking{outline:1px solid #a49cf7;outline-offset:2px;background:#bcb5ff44}
 .docsSource mark.hl{background:#ffed92a8;color:inherit;padding:0;border-radius:2px}
 .docsSource mark.hl.note{background:#90e6b388}
+@font-face{font-family:KeepitPangolin;src:url('../../assets/fonts/Pangolin-Regular.ttf') format('truetype');font-style:normal;font-weight:400;font-display:swap}
+.docsSource .docsPptx{display:block;width:100%;height:100%;overflow:hidden;isolation:isolate}
+.docsSource .docsPptx foreignObject{overflow:hidden}
+.docsSource .docsPptx .slide-text{user-select:text;-webkit-user-select:text}
 .docsSource .slide-container,.docsSource .slide{font-family:Arial,sans-serif}
 .docSurface>.surfaceError{position:absolute;inset:0;display:grid;place-items:center;padding:20px;font-size:13px;color:#64748b;text-align:center}
 .rail button .mini-pg img{display:block;width:100%;height:100%;object-fit:contain;background:#fff}

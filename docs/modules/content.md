@@ -21,7 +21,7 @@ Content là controller duy nhất cho chọn chữ, popup dịch/Full Dictionary
 ## 3. Luồng chính
 
 1. Manifest nạp core/helpers trước controller; cờ trên window chặn nạp lại. Source web mặc định `location.href/title`; owned context cung cấp tham chiếu tệp và root được phép chọn.
-2. Mouseup hoặc touch bridge chung lấy selection. `showOnSelect`, popup/icon, style/logo-action và các master quyết định đúng UI app. Toolbar chỉ dựng bằng shared builder; web không có context giữ đường cũ.
+2. Mouseup hoặc touch bridge chung lấy selection. `showOnSelect`, popup/icon, style/logo-action và các master quyết định đúng UI app. Toolbar chỉ dựng bằng shared builder; optional context.selectionRects(range) cho Documents cung cấp glyph-only PDF rects để tránh parent padding/transparent line filler làm neo sai. Null/không có hook giữ raw Range, không đổi selection hoặc layout/style; web không có context giữ đường cũ.
 3. Popup Ghi chú giữ quote/context/range trước khi preview thay DOM; gửi `ADD`/`UPDATE` tới annotations Background. File thêm `documentAnchor`, không gửi HTML. Lưu async của nguồn cũ không được commit preview/đóng popup mới.
 4. Restore web dùng quote/prefix/suffix; file dùng page/block/character anchors. Không tìm quote trùng lên trang khác hoặc thư viện. Response nguồn cũ bị bỏ khi source đã đổi.
 5. Sidebar đọc `GET_PAGE`, native card/edit/filter/tag/source actions dùng cùng kho ghi chú. `attachTouchSheet` là setup duy nhất cho Notes touch trên web và Documents; underlying behaviour vẫn là `LHN_SHEET`.
@@ -37,6 +37,8 @@ Content là controller duy nhất cho chọn chữ, popup dịch/Full Dictionary
 - `LHN_CONTENT_TOOLS` không dựng UI: toggleNotes/compose/askAI/dictionary/restore/refresh/close và dismiss dùng chính controller. Chỉ source adapter có hooks; web fallback và selector `lhn-*` không đổi.
 - Main sheet mở trong Documents đưa Dịch/Đọc to xuống footer cố định cạnh Cài đặt; dùng `LHN_DOCUMENTS_MAIN_ACTIONS` để gọi cùng viewer handlers, không route qua generic web `page`/`reader`. Ẩn điều khiển Ẩn/Hiện thanh chỉ trong Documents sheet.
 - Giữ keyboard/editable/composition, native Android selection-dismiss, site-disabled và source isolation; không chặn Ctrl+A hay tạo thêm cử chỉ riêng.
+
+- Lưới Công cụ Documents có `doc:ocr` khi facade `ocrAvailable()` đúng; đóng main sheet rồi gọi `ocr()` (native toolbar click), label/tooltip qua `bar_ocr` và `ocrLabel`, active qua `ocrOn`. Web/home/Reader không thêm OCR. Dùng các glyph chung `tool-*`, không giữ path bản sao.
 
 ## 5. Kiểm tra và xác minh
 

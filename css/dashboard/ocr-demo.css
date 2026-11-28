@@ -22,7 +22,7 @@ html.dark .keepitOcr{
 .keepitOcr ::-webkit-scrollbar-track{background:transparent}
 .keepitOcr ::-webkit-scrollbar-thumb{background:#9993c766;border-radius:999px}
 .keepitOcr ::-webkit-scrollbar-thumb:hover{background:#9993c7b3}
-@supports not selector(::-webkit-scrollbar){.keepitOcr .ocrBody,.keepitOcr .langBox,.keepitOcr .pgMenu,.keepitOcr .transList,.keepitOcr .rail{scrollbar-width:thin;scrollbar-color:#9993c7 transparent}
+@supports not selector(::-webkit-scrollbar){.keepitOcr .ocrBody,.keepitOcr .langBox,.keepitOcr .transList,.keepitOcr .rail{scrollbar-width:thin;scrollbar-color:#9993c7 transparent}
 }
 .keepitOcr .i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .keepitOcr .viewer{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--page);touch-action:pan-x pan-y}
@@ -44,8 +44,7 @@ html.dark .keepitOcr{
 .keepitOcr .vtools{display:flex;align-items:center;gap:2px;flex:none}
 .keepitOcr .vtools .vbtn{padding:0 8px;min-width:0;font-size:12.5px}
 .keepitOcr .vtools .vbtn .ic{font-size:14px;line-height:1}
-.keepitOcr #ko-vOcr{color:var(--brand);background:var(--brandSoft);border-color:var(--line2);position:relative}
-.keepitOcr #ko-vOcr .dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--surface)}
+
 .keepitOcr .vbanner,.keepitOcr .vbulb{--nt-bg:#fff8ec;--nt-line:#f3ddb8;--nt-soft:#fdeed2;--nt-ink:#a0601a}
 .keepitOcr .vbanner[data-nt="violet"],.keepitOcr .vbulb[data-nt="violet"]{--nt-bg:#eeeaff;--nt-line:#d6ccfa;--nt-soft:#e2dbff;--nt-ink:#5548cc}
 .keepitOcr .vbanner[data-nt="amber"],.keepitOcr .vbulb[data-nt="amber"]{--nt-bg:#fff8ec;--nt-line:#f3ddb8;--nt-soft:#fdeed2;--nt-ink:#a0601a}
@@ -187,24 +186,6 @@ html.dark .keepitOcr .fset{border-color:#3b3b46}
 .keepitOcr .radios .rangeRow .rlab{display:flex;align-items:center;gap:9px;padding-left:9px;font-size:13px;font-weight:500;cursor:pointer}
 .keepitOcr .radios .rangeRow .rlab input{accent-color:var(--brand);margin:0}
 .keepitOcr .radios .rangeRow>span:first-of-type{margin-right:1px}
-.keepitOcr .pgWrap{position:relative;display:inline-flex;align-items:center;width:112px;height:28px;border:1.5px solid #c9c4e0;border-radius:7px;background:var(--soft)}
-html.dark .keepitOcr .pgWrap{border-color:#41414d;background:#1b1b20}
-.keepitOcr .pgWrap:focus-within{border-color:var(--brand);background:var(--surface);box-shadow:0 0 0 3px #7262df1f}
-.keepitOcr .pgWrap.disabled{opacity:.5}
-.keepitOcr .pgWrap input{flex:1;min-width:0;height:100%;border:0;background:none;text-align:center;font-size:13px;font-weight:700;color:var(--ink);padding:0 0 0 8px;font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield}
-.keepitOcr .pgWrap input::-webkit-outer-spin-button,.keepitOcr .pgWrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.keepitOcr .pgWrap input:focus{outline:none}
-.keepitOcr .pgWrap input:disabled{color:var(--ink2)}
-.keepitOcr .pgBtn{flex:none;width:26px;height:100%;border:0;background:none;color:var(--ink2);font-size:9px;display:grid;place-items:center;border-left:1px solid #d6d1ea}
-html.dark .keepitOcr .pgBtn{border-left-color:#33333c}
-.keepitOcr .pgBtn:hover{color:var(--brand)}
-.keepitOcr .pgBtn:disabled{color:var(--muted)}
-.keepitOcr .pgMenu{position:absolute;top:calc(100% + 5px);left:0;min-width:100%;max-height:172px;overflow:auto;display:none;flex-direction:column;gap:1px;padding:4px;border:1.5px solid #d6d1ea;border-radius:9px;background:var(--surface);box-shadow:var(--shadowH);z-index:6}
-html.dark .keepitOcr .pgMenu{border-color:#3b3b46}
-.keepitOcr .pgMenu.show{display:flex}
-.keepitOcr .pgMenu button{height:28px;border:0;border-radius:6px;background:none;font-size:12.5px;font-weight:700;color:var(--ink2)}
-.keepitOcr .pgMenu button:hover{background:var(--soft)}
-.keepitOcr .pgMenu button.on{background:var(--brandSoft);color:var(--brand)}
 .keepitOcr .radios .rangeRow .to{font-size:12.5px;font-weight:600;color:var(--ink2)}
 .keepitOcr .radios .rangeRow .of{font-size:12.5px;font-weight:600;color:var(--ink2);white-space:nowrap}
 .keepitOcr .radios .rangeRow:not(.on) .of{color:var(--muted)}
@@ -323,7 +304,7 @@ html.dark .keepitOcr .selToolbar button:hover{background:#00000010}
 .keepitOcr .pager .docControls{overflow:hidden}
 .keepitOcr .ocrModal{left:0;right:0;bottom:0;top:auto;transform:translateY(10px);width:auto;max-width:none;max-height:90dvh;border-radius:22px 22px 0 0}
 .keepitOcr .ocrModal.show{transform:translateY(0)}
-.keepitOcr .ocrModal::before{content:"";position:absolute;top:7px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:9px;background:var(--line2)}
+
 .keepitOcr .ocrHead{padding-top:18px}
 .keepitOcr .ocrFoot{border-radius:0}
 .keepitOcr .ocrFoot .footNote{display:none}
@@ -398,10 +379,8 @@ html.dark .keepitOcr .regionEditor{border-color:#3b3b46}
 .keepitOcr .ocrWordBox.hover{outline-color:var(--brand);background:#7262df1a}
 .keepitOcr .trHover{position:absolute;border:1.5px solid var(--brand);background:#7262df1a;border-radius:6px;pointer-events:none;z-index:2}
 .keepitOcr .trHover[hidden]{display:none}
-.keepitOcr .regionEditor:has(#ko-regionText:placeholder-shown) #ko-ocrRegion{background:var(--brand);border-color:transparent;color:#fff}
 .keepitOcr .regionEditor:has(#ko-regionText:placeholder-shown) #ko-applyRegion{opacity:.45;pointer-events:none}
 .keepitOcr .regionEditor:not(:has(#ko-regionText:placeholder-shown)) #ko-applyRegion{background:var(--brand);border-color:transparent;color:#fff}
-.keepitOcr .regionEditor:not(:has(#ko-regionText:placeholder-shown)) #ko-ocrRegion:not(.primary){background:var(--surface);border-color:var(--line2);color:var(--ink2)}
 .keepitOcr .translation{position:relative}
 .keepitOcr .translation.resizing{transition:none}
 .keepitOcr .trResize{position:absolute;left:0;top:0;bottom:0;width:7px;cursor:col-resize;z-index:6;background:transparent}
@@ -451,7 +430,8 @@ html.ocrDialogOpen #lhn-sidebar-edge-toggle{visibility:hidden;pointer-events:non
 .keepitOcr .boxLayer{position:absolute;inset:0;pointer-events:none;display:none;z-index:3}
 .keepitOcr .layer.boxes+.ocrVisualSurface .boxLayer{display:block}
 .keepitOcr .ocrVisualSurface>.hl{position:absolute;inset:0;z-index:4;pointer-events:none}
-.keepitOcr .ocrCanvasOverlay>.layer{pointer-events:auto}
+.keepitOcr .ocrCanvasOverlay>.layer{pointer-events:none}
+.keepitOcr .ocrCanvasOverlay>.layer:not(:empty):not(.nativeText){pointer-events:auto}
 .keepitOcr .ocrCanvasOverlay>.layer.nativeText{pointer-events:none}
 .keepitOcr .layer>span>.en{position:static;font:inherit;line-height:inherit;color:inherit;white-space:inherit}
 .keepitOcr .ocrCanvasOverlay .regionSurface{position:absolute;inset:0;z-index:6;cursor:crosshair;touch-action:none;pointer-events:auto}

@@ -16,6 +16,15 @@
     "line-l":"rgba(15,23,42,.12)",       // viền ô — sáng
     "tile-d":"rgba(255,255,255,.08)",    // ô tính năng, ô nhập — tối
     "line-d":"rgba(255,255,255,.12)",
+    "settings-line-l":"rgba(0,0,0,.12)",
+    "field-l":"rgba(255,255,255,.6)",
+    "field-d":"rgba(255,255,255,.08)",
+    "field-line-l":"rgba(0,0,0,.14)",
+    "field-line-d":"rgba(255,255,255,.14)",
+    "pop-l":"rgba(255,255,255,.94)",
+    "pop-d":"rgba(38,38,43,.96)",
+    "hover-l":"rgba(0,0,0,.05)",
+    "hover-d":"rgba(255,255,255,.06)",
     "popup-line-d":"rgba(255,255,255,.24)",
     "popup-shadow-l":"0 2px 14px rgba(15,23,42,.5)",
     "popup-shadow-d":"0 8px 24px rgba(0,0,0,.48)"     // viền ô — tối

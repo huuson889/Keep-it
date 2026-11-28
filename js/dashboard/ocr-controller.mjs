@@ -1,3 +1,5 @@
+import {bindDocumentControls} from './ocr-controls.mjs';
+import {bindDocumentSheets} from './documents-sheets.mjs';
 /* Clean integration: ONLY Keep-it 3.5.612 + approved OCR demo 2.9.7.33.
  * Viewer/storage/tools belong to Keepit. OCR UI/hover/region behaviour comes from the demo. */
 import {bindOcrLocalization} from './ocr-localize.mjs';
@@ -18,6 +20,7 @@ const $=id=>{
 const makeCanvas=(w,h)=>Object.assign(document.createElement('canvas'),{width:w,height:h});
 let current=1,engineTotal=0,selectedFile=null,fileKind='',doc=null,busy=false,cancelled=false,mode='tess',tess=null,tessTerm=null,scanPage=0,job=0,abortJob=null,completion=Promise.resolve(),persistence=Promise.resolve();
 let clock=null,runStart=0,statusBase='',flowMode='single',flowPages=new Map(),regionHistory=new Map(),syncRegion=null,demoHover,demoLineForBox,demoLineMap,demoNotice;
+const drafts=new Map();
 let results=new Map(),runStats={processed:0,failed:0},exporting=false;
 function nowSec(t0){return ((performance.now()-t0)/1000).toFixed(1)}
 function setStatus(s){statusBase=s;$('status').textContent=clock?`${s} · ${nowSec(runStart)} giây`:s;}
@@ -31,7 +34,7 @@ function controls(){
  $('copy').disabled=!results.get(current)?.text;$('save').disabled=busy||!results.size;$('savePdf').disabled=busy||!doc||!results.size;
  $('selectRegion').disabled=busy||!can;$('ocrRegion').disabled=busy||!can;$('cancelRegion').disabled=busy;
  $('applyRegion').disabled=busy||!String($('regionText').value).trim();
- syncRegion?.();onState({busy:busy&&!exporting,current,total:engineTotal,has});
+ globalThis.KeepitDocumentControls?.refresh();syncRegion?.();onState({busy:busy&&!exporting,current,total:engineTotal,has});
 }
 function grouped(result){
  const groups=[];
@@ -45,7 +48,7 @@ function grouped(result){
 }
 function texts(page){const r=results.get(page);if(!r)return[];return r.edited?r.text.split(/\n+/).filter(Boolean):grouped(r).map(g=>g.items.map(i=>i.box.text).join(' '));}
 function changed(page,result){
- results.set(page,result);
+ drafts.delete(page);results.set(page,result);
  const documentId=host.state().document?.id;if(!documentId)return;
  const row={id:`${documentId}:${page}`,documentId,page,schema:1,engine:'tesseract',result:structuredClone(result),updatedAt:Date.now()};
  persistence=persistence.then(()=>store.put('ocr',row));
@@ -58,8 +61,9 @@ function paint(target,page){
  const cover=root.firstElementChild;Object.assign(cover.style,{width:'100%',height:'100%',minHeight:'0',border:0,borderRadius:0,boxShadow:'none',background:'none',overflow:'hidden'});
  cover.classList.toggle('scanning',busy&&scanPage===page);
  const layer=cover.querySelector('.layer');layer.classList.toggle('boxes',$('showBoxes').checked&&$('trPanel').classList.contains('open'));
- const r=results.get(page);if(layer._ocrResult===r)return;layer._ocrResult=r;layer.replaceChildren();const boxes=cover.querySelector('.boxLayer');boxes.replaceChildren();if(!r)return;
+ // Native text must bypass the OCR hit layer even before a result exists or on a cache hit.
  const native=!!host.state().engine?.pages[page-1]?.texts?.length;layer.classList.toggle('nativeText',native);
+ const r=results.get(page);if(layer._ocrResult===r)return;layer._ocrResult=r;layer.replaceChildren();const boxes=cover.querySelector('.boxLayer');boxes.replaceChildren();if(!r)return;
  const grouping=grouped(r),mapping=new Map();grouping.forEach((g,line)=>g.items.forEach((item,i)=>mapping.set(item.index,{line,first:i===0})));
  const w=target.clientWidth,h=target.clientHeight,measure=makeCanvas(1,1).getContext('2d');
  for(const [i,box]of r.boxes.entries()){
@@ -74,7 +78,7 @@ function paint(target,page){
 }
 function drawLayer(){
  document.querySelectorAll('#pageStack .docsSource').forEach(target=>paint(target,+target.dataset.page));
- const r=results.get(current);$('text').value=r?.text||'';controls();host.refresh();
+ const r=results.get(current);$('text').value=drafts.get(current)??r?.text??'';controls();host.refresh();
 }
 async function renderFor(n){return host.canvas(n);}
 async function renderCanvas(n,longSide=2000){const c=await host.canvas(n),scale=Math.min(longSide/Math.max(c.width,c.height),1);if(scale===1)return c;const out=makeCanvas(Math.round(c.width*scale),Math.round(c.height*scale));out.getContext('2d').drawImage(c,0,0,out.width,out.height);c.width=c.height=1;return out;}
@@ -126,7 +130,13 @@ const hook=()=>({getCurrent:()=>current,getTotal:()=>engineTotal,getDoc:()=>doc,
 const closeMore=()=>host.closeMore();
 let toastT;function toast(text){const el=document.getElementById('toast');el.textContent=ocrText(text);el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2500);}
 function markRail(){for(const b of document.querySelectorAll('#rail [data-p]'))b.dataset.ocr=results.has(+b.dataset.p)?'done':'';}
-function setDialogInert(open){document.documentElement.classList.toggle('ocrDialogOpen',open);document.getElementById('viewer').inert=open;if(open){queueMicrotask(()=>{modal.tabIndex=-1;modal.style.outline='none';modal.focus();});}else{$('vOcr').focus({preventScroll:true});}}
+function setDialogInert(open){
+ document.documentElement.classList.toggle('ocrDialogOpen',open);document.getElementById('viewer').inert=open;$('trPanel').inert=open;
+ if(open)requestAnimationFrame(()=>{if(modal.classList.contains('show'))$('ocrClose').focus({preventScroll:true});});
+ else if($('trPanel').classList.contains('open'))requestAnimationFrame(()=>{if(!modal.classList.contains('show'))$('text').focus({preventScroll:true});});
+ else{const button=$('vOcr');(button.getClientRects().length?button:document.getElementById('vMore')).focus({preventScroll:true});}
+}
+
 const textCache=new Map();async function pageHasText(n){return !!host.state().engine?.pages[n-1]?.texts?.length||!!results.get(n)?.text;}
 let onState=()=>{};
 function syncZoomControls(){}
@@ -205,7 +215,7 @@ $('applyRegion').onclick=()=>{
 
 const rawRegionRun=$('ocrRegion').onclick;
 $('ocrRegion').onclick=()=>{completion=Promise.resolve(rawRegionRun());return completion;};
-/* ---------- Thông báo "chưa có lớp chữ": thu gọn thành nút đèn như Foxit ---------- */
+/* ---------- Document hints and OCR suggestion share the native notice/bulb. ---------- */
 const NOTICE_KEY = 'keepit.ocrNoticeOff:';     // mỗi tệp một khoá riêng
 let noticeFileKey = '', noticeCollapsed = false, noticeForcedOpen = false, noticeWasExpanded = false;
 
@@ -218,7 +228,7 @@ function pickNoticeTheme(){
 }
 const NOTICE_AUTO_HIDE = 10000;   // tự thu thành nút đèn sau 10s không tương tác
 const NOTICE_NARROW = 640;        // vùng xem hẹp hơn mức này thì không bung popup
-let noticeTimer = null, noticeNeeds = null;
+let noticeTimer = null, noticeNeeds = null,noticeWasScheduled=false;
 
 function noticeNarrow(){ const st = $('stage'); return !!st && st.clientWidth > 0 && st.clientWidth < NOTICE_NARROW; }
 function scheduleNoticeHide(){
@@ -231,14 +241,26 @@ function refreshNotice(needsOcr){
   const banner = $('vBanner'), bulb = $('vBulb');
   if (!banner || !bulb) return;
   if (needsOcr !== undefined) noticeNeeds = !!needsOcr;
-  const needs = !!noticeNeeds;
-  /* đang nhận dạng / đã có lớp chữ / vùng xem hẹp / đã tự thu → không bung popup */
-  const expanded = needs && !noticeCollapsed && (noticeForcedOpen || !noAskOn()) && !noticeNarrow();
+  const active = !!selectedFile && host.state().document?.id === selectedFile.id;
+  const office = active && ['docx','pptx'].includes(fileKind);
+  const hintKey = active ? (fileKind === 'image' ? 'imageHint' : office ? 'officeHint' : '') : '';
+  const hint = $('fileHint');
+  hint.hidden = !hintKey;
+  if (hintKey) { hint.dataset.docLabel = hintKey; const text = LHN_LANGUAGES.t('docs_'+hintKey,{},document.documentElement.lang||'en'); if(hint.textContent!==text)hint.textContent=text; }
+  else { delete hint.dataset.docLabel; if(hint.textContent)hint.textContent=''; }
+  $('bannerText').hidden = !noticeNeeds;
+  const action = $('bannerAct'), actionLabel = ocrText(office ? 'Thu gọn' : 'Nhận dạng chữ');
+  action.hidden = !active || (!office && !noticeNeeds);
+  if(action.textContent!==actionLabel)action.textContent=actionLabel;
+  const needs = active && (!!noticeNeeds || !!hintKey);
+  /* Covered surfaces, narrow viewers and user preferences keep the same notice behavior. */
+  const covered=modal.classList.contains('show')||!document.getElementById('vMorePanel').hidden||!document.getElementById('docsPagesSheet').hidden||(matchMedia('(orientation:portrait)').matches&&($('trPanel').classList.contains('open')||!$('regionEditor').hidden));
+  const expanded = needs && !covered && !noticeCollapsed && (noticeForcedOpen || (!noAskOn()&&!noticeNarrow()));
   if (expanded && !noticeWasExpanded) pickNoticeTheme();   // mỗi lần hiện là một trong 2 màu
   noticeWasExpanded = expanded;
   banner.classList.toggle('show', expanded);
-  if (expanded) scheduleNoticeHide(); else clearTimeout(noticeTimer);
-  bulb.hidden = !(needs && !expanded);   // còn việc phải làm nhưng đang thu gọn / không tự hiện
+  if (expanded&&!noticeWasScheduled) scheduleNoticeHide(); else if(!expanded)clearTimeout(noticeTimer);noticeWasScheduled=expanded;
+  bulb.hidden = !(needs && !covered && !expanded);   // còn việc phải làm nhưng đang thu gọn / không tự hiện
   if ($('bannerNoAsk')) $('bannerNoAsk').checked = noAskOn();
 }
 /* rê chuột vào popup thì hoãn tự thu; ra khỏi thì đếm lại */
@@ -248,18 +270,18 @@ function holdNotice(hold){
 }
 function collapseNotice(){
   noticeCollapsed = true; noticeForcedOpen = false;
-  refreshNotice(true);
+  refreshNotice();
 }
 /* bấm nút đèn: LUÔN mở popup, kể cả tệp này đã tick “Không hiện lại” */
 function expandNotice(){
   noticeForcedOpen = true; noticeCollapsed = false;
-  refreshNotice(true);
+  refreshNotice();
 }
 function setNoAsk(on){
   try { on ? localStorage.setItem(noAskKey(), '1') : localStorage.removeItem(noAskKey()); } catch {}
   noticeForcedOpen = false;
   if (on) noticeCollapsed = true;
-  refreshNotice(true);
+  refreshNotice();
 }
 /* mở tệp khác: trạng thái thông báo tính lại theo tệp đó */
 function setNoticeFileKey(f){
@@ -276,12 +298,11 @@ async function refreshPageHint(){
   $('scopePage').textContent = `trang ${n}`;
   $('scopeAll').textContent = `${total} trang`;
   $('ofTotal').textContent = total;
-  $('moreOcrHint').textContent = `trang ${n}`;
+  const rangeTotal=$('rangeTotal'),totalLabel=LHN_LANGUAGES.t('ocr_rangeTotal',{total},'vi');rangeTotal.setAttribute('aria-label',totalLabel);rangeTotal.title=totalLabel;
+
   refreshNotice(!has);
-  const dot = $('vOcrDot');
-  dot.style.background = has ? 'var(--green)' : 'var(--red)';
   $('pNum').value = n;
-  $('moreOcrHint').textContent = has ? 'đã có lớp chữ' : `trang ${n}`;
+
 }
 
 /* ---------- trạng thái từ engine ---------- */
@@ -369,7 +390,7 @@ $('run').onclick = ev => {
   if (!pageCount()) return toast('Mở tệp trước đã');
 
   expectRun = true;
-  $('trPanel').classList.add('open');   // hiện thanh văn bản nhận dạng ngay khi bắt đầu
+  $('trPanel').classList.add('open');globalThis.KeepitDocumentSheets?.beforeOpen('progress');   // native result state; portrait progress gets its own sheet
   $('ocrBody').scrollTop = 0;
   $('progress').value = 0;
 
@@ -511,11 +532,7 @@ onState = st => {
     toast(r ? 'Xong · kéo chuột trên trang để chọn chữ'
             : isErr ? st2.slice(0, 140) : 'Đã dừng nhận dạng');
   }
-  const rng = $('scope').value === 'range';
-  $('from').disabled = $('to').disabled = !rng || !!st.busy;
-  $('btnFrom').disabled = $('btnTo').disabled = !rng || !!st.busy;
-  $('wrapFrom').classList.toggle('disabled', !rng || !!st.busy);
-  $('wrapTo').classList.toggle('disabled', !rng || !!st.busy);
+  $('from').disabled = $('to').disabled = !!st.busy;globalThis.KeepitDocumentControls?.refresh();
 };
 
 /* ---------- hộp thoại OCR ---------- */
@@ -555,11 +572,11 @@ function openOcr(){
   collapseNotice();   // bấm OCR là thu gợi ý thành bóng đèn
   if (!hook()?.getTotal()) return toast('Mở tệp trước đã');
   if (hook().isBusy() && !stalled) return toast('Đang nhận dạng, đợi lượt này xong');
-  $('trPanel').classList.add('open');   // mở sidebar văn bản nhận dạng bên phải
+  showTextResults(false);   // Keepit native flow opens BOTH the result panel and settings
   syncLayerBoxes();
   resetDialog(); refreshPageHint();
   snapshotOcr();                        // mốc để Hủy/✕ quay về
-  modal.classList.add('show'); scrim.classList.add('show'); setDialogInert(true);
+  modal.classList.add('show'); scrim.classList.add('show');$('ocrBody').scrollTop=0;setDialogInert(true);
 }
 /* Ảnh chụp trạng thái hộp thoại lúc mở — Hủy/✕ phải trả lại ĐÚNG như lúc mở */
 let ocrSnap = null;
@@ -620,7 +637,7 @@ function closeOcr(commit){
   modal.classList.remove('show'); scrim.classList.remove('show'); setDialogInert(false); closePageMenus();
 }
 $('vOcr').onclick = openOcr;
-$('moreOcr').onclick = () => { closeMore(); openOcr(); };
+
 $('pAgain').onclick = openOcr;
 let regionBoxPrev = null;
 function forceRegionBoxes(on){
@@ -647,7 +664,7 @@ function startRegionMode(){
   $('trPanel').classList.add('open');    // giữ thanh văn bản nhận dạng để xem chữ đã có
   if (!(hook()?.getTotal?.() > 0)) { toast('Mở tệp trước khi sửa vùng'); return; }
   if (hook()?.isBusy?.()) { toast('Đang nhận dạng — đợi xong rồi sửa vùng'); return; }
-  forceRegionBoxes(true);   // hiện hết khung đã nhận dạng để biết chọn chỗ nào
+  globalThis.KeepitDocumentSheets?.beforeOpen('region');forceRegionBoxes(true);   // hiện hết khung đã nhận dạng để biết chọn chỗ nào
   $('selectRegion').click();
   $('regionSurface').hidden = false;        // chắc chắn vào chế độ chọn vùng
   $('regionEditor').hidden = false;         // hiện bảng ngay để còn Hủy chọn / Đóng
@@ -686,10 +703,10 @@ function syncScopeRadios(){
     r.closest('label').classList.toggle('on', r.checked);
   });
   const busy = !!hook()?.isBusy();
-  [ $('from'), $('to') ].forEach(inp => inp.disabled = (v !== 'range') || busy);
-  [ $('btnFrom'), $('btnTo') ].forEach(b => b.disabled = (v !== 'range') || busy);
-  $('wrapFrom').classList.toggle('disabled', (v !== 'range') || busy);
-  $('wrapTo').classList.toggle('disabled', (v !== 'range') || busy);
+  [ $('from'), $('to') ].forEach(inp => inp.disabled = busy);
+  $('wrapFrom').classList.remove('disabled');$('wrapTo').classList.remove('disabled');
+  $('ocrScopePick').querySelector('.rangeRow').classList.toggle('on',v==='range');
+  globalThis.KeepitDocumentControls?.refresh();
 }
 $('ocrScopePick').addEventListener('change', e => {
   const r = e.target.closest('input[name="ko-scopePick"]'); if (!r) return;
@@ -698,70 +715,14 @@ $('ocrScopePick').addEventListener('change', e => {
   syncScopeRadios();
 });
 
-/* danh sách trang trong ô ▾ */
-const pageCount = () => hook()?.getTotal() || 1;
-function closePageMenus(){
-  ['menuFrom','menuTo'].forEach(id => { $(id).style.display = 'none'; $(id).replaceChildren(); });
-}
-function openPageMenu(which){
-  const from = which === 'from';
-  const input = from ? $('from') : $('to');
-  const menu = from ? $('menuFrom') : $('menuTo');
-  closePageMenus();
-  const n = pageCount();
-  for (let i = 1; i <= n; i++){
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = i;
-    if (i === Number(input.value)) b.classList.add('on');
-    b.onclick = ev => {
-      ev.stopPropagation();
-      input.value = i;
-      clampPages(from);
-      closePageMenus();
-    };
-    menu.append(b);
-  }
-  menu.style.display = 'flex';
-}
+/* Native list controls retain the existing numeric input models. */
+const pageCount=()=>hook()?.getTotal()||1;
+function closePageMenus(){globalThis.KeepitDocumentControls?.close();}
 function clampPages(fromChanged){
-  const n = pageCount();
-  let a = Number($('from').value) || 1, b = Number($('to').value) || 1;
-  a = Math.min(Math.max(1, a), n); b = Math.min(Math.max(1, b), n);
-  if (fromChanged && a > b) b = a;
-  if (!fromChanged && b < a) a = b;
-  $('from').value = a; $('to').value = b;
+ const n=pageCount();let a=Number($('from').value)||1,b=Number($('to').value)||1;
+ a=Math.min(Math.max(1,a),n);b=Math.min(Math.max(1,b),n);if(fromChanged&&a>b)b=a;if(!fromChanged&&b<a)a=b;
+ $('from').value=a;$('to').value=b;globalThis.KeepitDocumentControls?.refresh();
 }
-$('btnFrom').onclick = e => { e.stopPropagation(); openPageMenu('from'); };
-$('btnTo').onclick = e => { e.stopPropagation(); openPageMenu('to'); };
-/* Cho phép xoá trống rồi gõ số mới: chỉ chuẩn hoá khi ô có số; bỏ trống thì khôi phục khi rời ô */
-[['from', true], ['to', false]].forEach(([id, from]) => {
-  const el = $(id);
-  el.addEventListener('input', () => { if (!String(el.value).trim()) return; clampPages(from); });
-  el.addEventListener('blur', () => {
-    const n = pageCount() || 1;
-    if (!String(el.value).trim() || !Number.isFinite(Number(el.value))) el.value = from ? 1 : n;
-    clampPages(from);
-  });
-  el.addEventListener('keydown', e => { if (e.key === 'Enter'){ el.blur(); } });
-});
-$('wrapFrom').addEventListener('pointerdown', e => {
-  if (e.target.closest('.pgBtn') || e.target.tagName === 'INPUT') return;
-  if ($('btnFrom').disabled) return;
-  const r = $('ocrScopePick').querySelector('input[name="ko-scopePick"][value="range"]');
-  r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true }));
-  $('from').focus();
-});
-$('wrapTo').addEventListener('pointerdown', e => {
-  if (e.target.closest('.pgBtn') || e.target.tagName === 'INPUT') return;
-  if ($('btnTo').disabled) return;
-  const r = $('ocrScopePick').querySelector('input[name="ko-scopePick"][value="range"]');
-  r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true }));
-  $('to').focus();
-});
-$('ocrModal').addEventListener('pointerdown', e => { if (!e.target.closest('.pgWrap')) closePageMenus(); });
-$('from').addEventListener('keydown', closePageMenus);
-$('to').addEventListener('keydown', closePageMenus);
-
 /* ngôn ngữ: máy có 3 gói Tesseract */
 const LANGS = [
   { c: 'eng', n: 'Anh', native: 'English', on: true },
@@ -1098,16 +1059,16 @@ $('stage')?.addEventListener('scroll', clearHoverHighlight, {passive:true});
 demoLineMap = boxesForLine;
 
 /* ---------- Sửa chữ trong bảng rồi Áp dụng ---------- */
-$('text').addEventListener('input', () => { $('textApply').disabled = false; });
+$('text').addEventListener('input', () => {drafts.set(current,$('text').value); $('textApply').disabled = false; });
 $('textApply').onclick = () => {
   if (hook()?.isBusy?.()) return toast('Đang nhận dạng — đợi xong rồi lưu');
   const n = hook()?.getCurrent?.();
-  const ok = hook()?.applyText?.(n, $('text').value);
+  const edited=$('text').value;drafts.delete(n);const ok = hook()?.applyText?.(n,edited);if(!ok)drafts.set(n,edited);
   if (!ok) return toast('Trang này chưa có kết quả để sửa');
   $('textApply').disabled = true;
   toast(`Đã lưu chữ đã sửa cho trang ${n}`);
 };
-function resetTextApply(){ $('textApply').disabled = true; }
+function resetTextApply(){ $('textApply').disabled = !drafts.has(current); }
 
 /* ---------- Kết quả trên tệp: điều khiển hiển thị ↔ điều khiển engine ---------- */
 function syncFileOpts(){
@@ -1142,14 +1103,17 @@ $('run').addEventListener('click', () => {
   }, 350);
 });
 
-/* đóng bảng = bỏ mọi sửa chưa Áp dụng */
+/* A panel close hides the UI, not an unapplied draft. Drafts never write to the stored result. */
 function closeTrPanel(){
-  const r = hook()?.getResults?.()?.get?.(hook()?.getCurrent?.());
-  const ta = $('text');
-  if (ta && r && ta.value !== r.text){ ta.value = r.text; resetTextApply(); }
-  $('trPanel').classList.remove('open', 'resizing');
-  $('trResize').classList.remove('drag');
+ $('trPanel').classList.remove('open','resizing');$('trResize').classList.remove('drag');
+ const button=$('vOcr');(button.getClientRects().length?button:document.getElementById('vMore')).focus({preventScroll:true});
 }
+function showTextResults(focus=true){
+ closeMore();globalThis.KeepitDocumentSheets?.beforeOpen('results');$('trPanel').classList.add('open');
+ $('text').value=drafts.get(current)??results.get(current)?.text??'';resetTextApply();syncLayerBoxes();
+ if(focus)requestAnimationFrame(()=>{if(!modal.classList.contains('show'))$('text').focus({preventScroll:true});});
+}
+$('openResults').onclick=()=>{closeOcr();showTextResults();};$('pResults').onclick=()=>{ $('ocrProg').classList.remove('show');showTextResults();};
 $('trClose').onclick = closeTrPanel;
 
 /* hộp nổi phải: đáy 20px, thẻ tiến độ hiện thì hộp "Bổ sung vùng" xếp lên trên */
@@ -1209,7 +1173,7 @@ function trClampWidth(w){
 /* mở/đóng sidebar → bật/tắt khung xanh + tô sáng ngay */
 new MutationObserver(syncLayerBoxes).observe($('trPanel'), { attributes: true, attributeFilter: ['class'] });
 $('showBoxes').addEventListener('change', syncLayerBoxes);
-$('bannerAct').onclick = () => { collapseNotice(); openOcr(); };   // thu gợi ý thành bóng đèn
+$('bannerAct').onclick = () => { collapseNotice(); if(!['docx','pptx'].includes(fileKind))openOcr(); };
 $('bannerClose').onclick = () => collapseNotice();          // thu gọn thành nút đèn
 $('vBulb').onclick = () => expandNotice();                  // bấm đèn → bung lại thông báo
 ['mouseenter','focusin'].forEach(ev => $('vBanner').addEventListener(ev, () => holdNotice(true)));
@@ -1329,7 +1293,7 @@ $('savePdf').onclick=()=>{completion=Promise.resolve(exportPdf());return complet
 async function reset(){
  if(busy){stop();await completion;}await persistence.catch(()=>{});await releaseEngines();
  closeRegion();closeOcr(true);closeTrPanel();clearTimeout(noticeTimer);setScanEffect(false);$('ocrProg').classList.remove('show','done','error','stopped');
- stopHold=0;stopRequested=false;runSeen=false;expectRun=false;wasBusy=false;regionRun=false;stoppedFlag=false;followLast=0;statePage=0;results=new Map();engineTotal=0;selectedFile=null;fileKind='';doc=null;regionHistory.clear();textCache.clear();scanPage=0;setDialogInert(false);refreshNotice(false);controls();
+ stopHold=0;stopRequested=false;runSeen=false;expectRun=false;wasBusy=false;regionRun=false;stoppedFlag=false;followLast=0;statePage=0;results=new Map();drafts.clear();$('text').value='';engineTotal=0;selectedFile=null;fileKind='';doc=null;regionHistory.clear();textCache.clear();scanPage=0;setDialogInert(false);refreshNotice(false);controls();
 }
 async function open(){
  const state=host.state();if(!state.document||!state.engine)return;
@@ -1341,20 +1305,24 @@ async function open(){
 }
 function pageChanged(){
  const state=host.state();if(!state.document)return;
- if(current!==state.page){closeRegion();current=state.page;$('text').value=results.get(current)?.text||'';}
+ if(current!==state.page){closeRegion();current=state.page;$('text').value=drafts.get(current)??results.get(current)?.text??'';resetTextApply();}
  controls();refreshHint();
 }
 globalThis.KeepitOCR=Object.freeze({open,reset,paint,texts,pageChanged});
 new MutationObserver(()=>{document.querySelectorAll('.ocrCanvasOverlay .layer').forEach(el=>el.classList.toggle('boxes',$('trPanel').classList.contains('open')&&$('showBoxes').checked));}).observe($('trPanel'),{attributes:true,attributeFilter:['class']});
-$('moreResults').onclick=()=>{closeMore();$('trPanel').classList.toggle('open');};
+
 document.addEventListener('keydown',event=>{
  if(event.key!=='Escape')return;
+ if(event.target.closest?.('.flow-select')?.querySelector('.flow-select-list:not([hidden])'))return;
  if(!$('regionEditor').hidden){$('cancelRegion').click();event.stopImmediatePropagation();return;}
  if(modal.classList.contains('show')){closeOcr();event.stopImmediatePropagation();return;}
- if($('trPanel').classList.contains('open'))closeTrPanel();
+ if(!document.getElementById('docsPagesSheet').hidden){globalThis.KeepitDocumentSheets.closePages();event.preventDefault();event.stopImmediatePropagation();return;}
+ if($('ocrProg').classList.contains('show')){$('progClose').click();event.preventDefault();event.stopImmediatePropagation();return;}
+ if($('trPanel').classList.contains('open')){closeTrPanel();event.preventDefault();event.stopImmediatePropagation();}
 },true);
 const modalObserver=new MutationObserver(()=>setDialogInert(modal.classList.contains('show')));modalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
 $('ocrVer').textContent='v'+globalThis.browser.runtime.getManifest().version;
+bindDocumentControls({total:pageCount,clamp:clampPages});bindDocumentSheets({closeResults:closeTrPanel,closeSettings:closeOcr,closeMore,closeRegion:()=>$('cancelRegion').click(),refreshNotice:()=>refreshNotice()});
 controls();if(host.state().engine)await open();
 
 ocrText=bindOcrLocalization();

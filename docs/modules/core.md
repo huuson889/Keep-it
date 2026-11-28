@@ -36,6 +36,10 @@
 - Polyfill không làm API đồng nhất hoàn toàn ở mọi ngữ cảnh; kiểm tra nơi chạy và browser target trước khi dùng API mới.
 - Cache schema/version/TTL và event subscription có thể ảnh hưởng dữ liệu lưu cũ; giữ migration và cleanup tương thích. Web cue cache dùng khóa băm từ URL + content fingerprint và TTL trượt 7 ngày; mục không được dùng lại trong thời hạn sẽ bị dọn. Thay đổi sentence splitting phải tăng schema key.
 
+- `bar_ocr` có ở en/vi/ko, nhãn ngắn OCR cho tile Công cụ Documents; tooltip tái dùng nhãn OCR có sẵn của controller, không thêm storage key.
+
+- `docs_suggestions/docs_suggestionsOpen` là title/tooltip popup và bulb gợi ý tài liệu, có en/vi/ko. File hint tái dùng docs_officeHint/docs_imageHint; không đổi nội dung OCR hoặc chuỗi tệp gốc.
+
 ## 5. Kiểm tra và xác minh
 
 - Static: `for f in js/core/*.js; do node --check "$f" || exit; done`; parse `manifest.json`; kiểm tra script order trong manifest, `pages/popup.html`, `pages/dashboard.html` và `importScripts`.

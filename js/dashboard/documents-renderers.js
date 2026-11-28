@@ -188,10 +188,23 @@
       return { itemIndex, paragraphIndex };
     });
   }
-  async function checkedZip(blob, lib) {
+  async function checkedZip(blob, lib, kind) {
+    if(!blob.size||blob.size>50*1024*1024)throw new Error('documentsArchiveLimit');
     const zip = await lib.JSZip.loadAsync(await blob.arrayBuffer()); let expanded = 0, count = 0;
     for (const item of Object.values(zip.files)) {
       if (++count > 12000 || (expanded += Number(item._data?.uncompressedSize) || 0) > MAX_EXPANDED || Number(item._data?.uncompressedSize) > 50 * 1024 * 1024) throw new Error('documentsArchiveLimit');
+      const name=item.unsafeOriginalName||item.name;
+      if(name.startsWith('/')||name.includes('\\')||name.split('/').includes('..'))throw new Error('documentsBadFile');
+      if(/\.(xml|rels)$/i.test(name)){
+        if(Number(item._data?.uncompressedSize)>8*1024*1024)throw new Error('documentsArchiveLimit');
+        const text=await item.async('string');if(/<!DOCTYPE|<!ENTITY/i.test(text))throw new Error('documentsBadFile');
+        if(kind==='docx'&&/\.rels$/i.test(name)){
+          const doc=new DOMParser().parseFromString(text,'application/xml');
+          if(doc.querySelector('parsererror'))throw new Error('documentsBadFile');
+          for(const r of doc.documentElement.children)if(r.getAttribute('TargetMode')?.toLowerCase()==='external'&&!r.getAttribute('Type')?.endsWith('/hyperlink'))throw new Error('documentsBadFile');
+        }
+      }
+
     }
     return zip;
   }
@@ -202,7 +215,7 @@
     return { pages, kind:'image', image:true, sourceImage:img, async ocrCanvas(){const c=window.document.createElement('canvas');const scale=Math.min(1,Math.sqrt(16000000/(img.naturalWidth*img.naturalHeight)));c.width=Math.max(1,Math.floor(img.naturalWidth*scale));c.height=Math.max(1,Math.floor(img.naturalHeight*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c;}, async render(target) { const el = img.cloneNode(); el.className = 'actualImage'; el.draggable = false; target.replaceChildren(el); }, async thumbnail() { return drawImageThumb(img); }, dispose() { URL.revokeObjectURL(url); } };
   }
   function drawImageThumb(img) {
-    const canvas = document.createElement('canvas'), ratio = Math.min(240 / img.naturalWidth, 320 / img.naturalHeight, 1);
+    const canvas = document.createElement('canvas'), ratio = Math.min(960 / img.naturalWidth, 1320 / img.naturalHeight, 1);
     canvas.width = Math.max(1, Math.round(img.naturalWidth * ratio)); canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height); return canvas.toDataURL('image/png');
   }
@@ -315,19 +328,13 @@
           }
         } finally { jobs.delete(render); jobs.delete(textLayer); }
       },
-      async thumbnail(pageNumber = 1) { const index=Math.max(1,Math.min(pages.length,Math.round(+pageNumber)||1))-1,page=await document.getPage(index+1),spec=pages[index],vp=page.getViewport({scale:Math.min(120/spec.width,160/spec.height,1)}),c=window.document.createElement('canvas');c.width=Math.max(1,Math.ceil(vp.width));c.height=Math.max(1,Math.ceil(vp.height));const render=page.render({canvasContext:c.getContext('2d'),viewport:vp});jobs.add(render);try{await render.promise;return c.toDataURL('image/png');}finally{jobs.delete(render);} },
+      async thumbnail(pageNumber = 1, {width=960,height=1320} = {}) { const index=Math.max(1,Math.min(pages.length,Math.round(+pageNumber)||1))-1,page=await document.getPage(index+1),spec=pages[index],vp=page.getViewport({scale:Math.min(width/spec.width,height/spec.height)}),c=window.document.createElement('canvas');c.width=Math.max(1,Math.ceil(vp.width));c.height=Math.max(1,Math.ceil(vp.height));const render=page.render({canvasContext:c.getContext('2d'),viewport:vp});jobs.add(render);try{await render.promise;return c.toDataURL('image/png');}finally{jobs.delete(render);} },
       dispose() { disposed = true; for (const job of jobs) { try { job.cancel(); } catch {} } jobs.clear(); void document.destroy(); }
     };
   }
-  async function speakerNotes(zip, presentationXml) {
-    const parse=text=>new DOMParser().parseFromString(text,'application/xml'), resolve=(dir,target)=>{if(!target||/^[a-z]+:/i.test(target))return '';const parts=[];for(const p of (target.startsWith('/')?target.slice(1):dir+'/'+target).split('/')){if(p==='..')parts.pop();else if(p&&p!=='.')parts.push(p);}return parts.join('/');};
-    const relFile=zip.file('ppt/_rels/presentation.xml.rels'), paths=[];
-    if(relFile){const rels=parse(await relFile.async('string'));for(const id of presentationXml.getElementsByTagNameNS('*','sldId')){const rid=id.getAttribute('r:id'),rel=[...rels.getElementsByTagNameNS('*','Relationship')].find(x=>x.getAttribute('Id')===rid);if(rel&&rel.getAttribute('TargetMode')!=='External')paths.push(resolve('ppt',rel.getAttribute('Target')));}}
-    if(!paths.length)paths.push(...Object.keys(zip.files).filter(x=>/^ppt\/slides\/slide\d+\.xml$/.test(x)).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})));
-    const out=[];for(const path of paths){const dir=path.slice(0,path.lastIndexOf('/')),rels=zip.file(dir+'/_rels/'+path.slice(path.lastIndexOf('/')+1)+'.rels');let text='';if(rels){const xml=parse(await rels.async('string')),ref=[...xml.getElementsByTagNameNS('*','Relationship')].find(x=>x.getAttribute('Type')?.endsWith('/notesSlide')&&x.getAttribute('TargetMode')!=='External'),note=ref&&zip.file(resolve(dir,ref.getAttribute('Target')));if(note){const doc=parse(await note.async('string'));text=[...doc.getElementsByTagNameNS('*','sp')].filter(sp=>sp.getElementsByTagNameNS('*','ph')[0]?.getAttribute('type')==='body').map(sp=>[...sp.getElementsByTagNameNS('*','p')].map(p=>[...p.getElementsByTagNameNS('*','t')].map(t=>t.textContent).join('')).join('\n')).join('\n').trim().slice(0,20000);}}out.push(text);}return out;
-  }
   async function office(blob, kind, hooks) {
-    const lib = await officeLibrary(), zip = await checkedZip(blob, lib); hooks.check?.(); hooks.progress?.(.35);
+    const lib = await officeLibrary(), zip = await checkedZip(blob, lib, kind); hooks.check?.(); hooks.progress?.(.35);
+    if(kind==='pptx'){const {preparePptx}=await import('./documents-pptx.mjs');return preparePptx(zip,hooks,attachBlocks);}
     const holder = document.createElement('div'), styles = document.createElement('div'); holder.className = 'officeMeasure docsSource';
     Object.assign(holder.style, { position:'fixed', left:'-100000px', top:'0', visibility:'hidden', zIndex:'-1' }); document.body.append(holder, styles);
     const pages = [], nodes = []; let styleNode;
@@ -339,19 +346,12 @@
         styles.replaceChildren(); styleNode = document.createElement('style'); styleNode.textContent = cleanCss; styles.append(styleNode);
         for (const section of [...holder.querySelectorAll('section.keepitDocx')]) {
           const clean = document.createElement('section'); clean.append(sanitizeOffice(section.outerHTML, lib.purify)); const page = clean.firstElementChild;
-          section.replaceWith(page); const rect = page.getBoundingClientRect();
+          section.replaceWith(page);
+          await Promise.all([...page.querySelectorAll('img')].map(img=>img.decode?.().catch(()=>{})));
+          await document.fonts.ready;hooks.check?.();
+          const rect = page.getBoundingClientRect();
           const spec = { width:px(rect.width || 794), height:px(Math.max(page.scrollHeight, rect.height, 1123)), texts:[], edgePositions:[] };
           attachBlocks(page, pages.length + 1, spec.texts, spec.edgePositions); pages.push(spec); nodes.push(page);
-        }
-      } else {
-        const presentation = zip.file('ppt/presentation.xml'); if (!presentation) throw new Error('documentsBadFile');
-        const xml = new DOMParser().parseFromString(await presentation.async('string'), 'application/xml'), size = xml.getElementsByTagNameNS('*', 'sldSz')[0];
-        const width = 960, height = Math.round(960 * ((Number(size?.getAttribute('cy')) || 5143500) / (Number(size?.getAttribute('cx')) || 9144000)));
-        const notes = await speakerNotes(zip, xml);
-        const html = await lib.pptxToHtml(await blob.arrayBuffer(), { width, height, scaleToFit:true, letterbox:false });
-        for (const source of html) {
-          hooks.check?.(); const page = document.createElement('div'); page.append(sanitizeOffice(source, lib.purify)); holder.append(page);
-          const spec = { width, height, texts:[], notes:notes[pages.length]||'', edgePositions:[] }; attachBlocks(page, pages.length + 1, spec.texts, spec.edgePositions); pages.push(spec); nodes.push(page);
         }
       }
       if (!pages.length || pages.length > MAX_PAGES) throw new Error('documentsPageLimit');
@@ -360,11 +360,11 @@
       if (css) { styleNode = document.createElement('style'); styleNode.textContent = css; document.head.append(styleNode); }
       return { kind, pages,
         async render(target, page) { target.replaceChildren(nodes[page - 1].cloneNode(true)); },
-        async thumbnail(pageNumber = 1) {
+        async thumbnail(pageNumber = 1, {width=960,height=1320} = {}) {
           const spec=pages[Math.max(1,Math.min(pages.length,Math.round(+pageNumber)||1))-1]||pages[0];
-          const canvas = document.createElement('canvas'); canvas.width = 120; canvas.height = kind === 'pptx' ? 68 : 160; const ctx = canvas.getContext('2d');
+          const canvas = document.createElement('canvas'); const scale=Math.min(width/120,height/(kind==='pptx'?68:160));canvas.width=Math.ceil(120*scale);canvas.height=Math.ceil((kind==='pptx'?68:160)*scale);const ctx=canvas.getContext('2d');ctx.scale(scale,scale);const logicalHeight=kind==='pptx'?68:160;
           ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle = '#374151'; ctx.font = '6px sans-serif';
-          let y = 11; for (const text of spec.texts) { let line = ''; for (const word of text.split(/\s+/)) { if (ctx.measureText(line + ' ' + word).width > 104) { ctx.fillText(line,8,y); y += 8; line = word; } else line += (line ? ' ' : '') + word; if (y > canvas.height - 10) break; } ctx.fillText(line,8,y); y += 10; if (y > canvas.height - 10) break; }
+          let y = 11; for (const text of spec.texts) { let line = ''; for (const word of text.split(/\s+/)) { if (ctx.measureText(line + ' ' + word).width > 104) { ctx.fillText(line,8,y); y += 8; line = word; } else line += (line ? ' ' : '') + word; if (y > logicalHeight - 10) break; } ctx.fillText(line,8,y); y += 10; if (y > logicalHeight - 10) break; }
           return canvas.toDataURL('image/png');
         },
         dispose() { styleNode?.remove(); nodes.length = 0; }
@@ -376,5 +376,5 @@
     if (kind === 'pdf') return pdf(blob, hooks);
     return office(blob, kind, hooks);
   }
-  globalThis.KeepitDocumentRenderers = Object.freeze({ prepare });
+  globalThis.KeepitDocumentRenderers = Object.freeze({ prepare, thumbnailVersion:2 });
 })();

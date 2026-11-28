@@ -37,6 +37,10 @@ Shared giữ UI/helper dùng nhiều bề mặt: selection toolbar, touch select
 - Favicon chỉ request chính origin, không dịch vụ favicon ngoài; thumbnail data URL ảnh được phép, nội dung tệp không gửi tới máy chủ để tạo ảnh.
 - `custom-font` bỏ website disabled; theme đổi ở token chung. File original do renderer quyết định font/hình học.
 
+- `tool-translate/read/word-class/notes/ai/ocr` là nguồn glyph chung cho toolbar Documents (`applyIcons`) và thanh/main sheet (`render` qua alias). Nạp icons trước keepit-bar; thay glyph tại đây, giữ kích thước/stroke theo control native, không copy path về consumer.
+
+- `file-kind-pdf/docx/pptx/image` giữ đúng glyph đã duyệt trong demo nhãn v5 option3, kể cả PDF scale88% và ảnh núi ngắn. `render` trả SVG thuần; consumer Documents sở hữu màu đặc, nền nhạt, kích thước và nhãn i18n, không đặt màu toàn cục cho mọi lucide.
+
 ## 5. Kiểm tra và xác minh
 
 Syntax/dependency refs và guard; Chromium thật kiểm toolbar/styles, touch bridge, Notes/AI sheets, native Reader và source isolation. Sau thay đổi helper phải thử web và homepage, không chỉ Documents. Cảm ứng/UA mô phỏng không thay Firefox hoặc Edge Android thật; các QA cũ chưa xác nhận giữ trong `PROJECT.md`.

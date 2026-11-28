@@ -1,18 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.618**, chỉ căn popup OCR góc dưới sát cạnh phải theo yêu cầu mới; bản gốc không đổi. Chưa nghiệm thu 100%.
-- Popup tiến độ và sửa vùng chọn dùng right:0; giữ nguyên độ rộng, vị trí dọc, layer và sidebar/resize. Dọc giữ bề rộng popup cũ bằng cách dịch ngang, không kéo rộng.
-- Engine Tesseract/eng/vie/kor cục bộ, dữ liệu và flow không đổi; PP/Fusor hoãn. Hộp thoại giữa màn hình, menu và UI khác không đổi.
-- QA HTTP: 6/6 trường hợp 1512/800/390 × theme app sáng/tối; cả hai popup sát phải, width/height/y và sidebar không đổi; popup tiến độ vẫn che Back to top đang hiện. Đây là DOM/số đo HTTP, không phải ảnh extension.
-- **Giới hạn:** chưa unpacked/CSP/permission/PNG/crop4×/pixel/profile/tệp/thiết bị thật do môi trường chặn chrome://extensions. Không dùng QA HTTP thay nghiệm thu ảnh extension; giới hạn cuộn/scan bản trước vẫn giữ.
+- **Bản test 3.5.630:** đọc DOCX/PPTX trực tiếp trong extension, không backend chuyển PDF/LibreOffice. PDF/ảnh/OCR và UI/controller hiện tại giữ nguyên.
+- PPTX thay nhánh pptx-to-html bằng module first-party XML→SVG/chữ chọn được: custom paths/group, một số preset, raster images, layout/master/theme, notes. Metadata đủ slide; dựng hình lazy. DOCX giữ docx-preview, thêm chờ ảnh/phông và ZIP/XML guard. Đóng gói Pangolin OFL cục bộ.
+- QA32 nhóm HTTP+API/protocol shim trên mã app: dựng đủ92 slide thật; DOCX2 trang/bảng, PPTX khác/ảnh/ellipse, PDF regression, guard và original/read/paging/theme/width; chuột thật chọn chữ DOCX/PPTX, có launcher Keepit. Xem `/home/user/qa-keepit-630`.
+- **Giới hạn:** chưa unpacked630/ảnh extension/pixel/crop4×/CSP/permission/thiết bị; không chứng nhận fidelity mọi Office hoặc gọi dịch/TTS/AI/notes persistence. Office thumbnails vẫn text approximation; anchor PPTX cũ cần kiểm lại. Giữ guard không suy nghiệm thu từ HTTP.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.618: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.630: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP.
-- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors, dịch/TTS/AI và Office phức tạp. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
+- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp với630. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
@@ -106,7 +105,11 @@ Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser 
 - Blob/metadata/progress ở `keepit-documents`. Notes/Flashcards mới ở annotations chung; legacy v314 migration giữ nội dung/ngày/anchor, idempotent và không tái tạo note đã xóa. JSON backup có Notes nhưng không blob; import rewrite đúng owned extension origin.
 - `LHN_SELECTION_TOOLBAR.installTouchSelectionBridge` là bridge touch duy nhất. `LHN_SIDEBAR.attachTouchSheet` dùng chung setup grow/scroll/drag. `js/ask-ai/sheet.js` là AI sheet đã chuyển nguyên component từ web bar, dùng cho web và Documents; parent Dashboard chuyển message top-frame cho source active.
 - `LHN_READER_API` chỉ facade của Reader gốc: không queue/UI khác; host cung cấp chữ tệp/chuyển trang/vị trí native card, pager nhường khi bar mở. AI dùng native panel/sheet và Send policy hiện có, không upload/read toàn bộ file tự động.
-- Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks chia sẻ handler với viewer topbar. Điều khiển Ẩn/Hiện thanh không hiện riêng ở sheet này.
+- Floating selection anchor: Documents context.selectionRects(range) optional cung cấp glyph-only rects cho Original PDF; content positionTranslateIcon dùng hook hoặc raw Range fallback, không sửa selection source.
+- Thumbnail: renderer thumbnail(page,bounds) raster PDF/text Office theo backing resolution; library mặc định960×1320, ảnh không upscale. documents.js quản lý lazy cache-version2/queue upgrade và rail theo DPR/resize/scroll, không schema migration.
+- Gợi ý theo tệp/trang: OCR controller gộp officeHint/imageHint vào notice/bulb chung, không còn vBanner strip trong viewer. Body OCR chỉ hiện khi needsOcr; CTA Office là Thu gọn, CTA ảnh/PDF thiếu chữ là Nhận dạng chữ; hint/reset có gate selectedFile đúng ID.
+- Nhãn loại tệp Documents dùng `fileLabel(type)` → `LHN_ICONS.render(file-kind-*)`; bốn glyph option3 demo v5 dùng chung cho thư viện/viewer/import, token màu scoped trong documents.css. Viewer gọi `fileLabel(type,true)` chỉ hiện icon với aria-label/title; supported types giữ pills chữ622.
+- Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks chia sẻ handler với viewer topbar. Điều khiển Ẩn/Hiện thanh không hiện riêng ở sheet này. OCR là tile trong lưới Công cụ, dùng facade `ocr/ocrAvailable/ocrLabel/ocrOn` gọi nút native; chỉ có khi viewer đang mở. Sáu glyph `tool-*` chia sẻ từ `LHN_ICONS` với toolbar.
 - Renderer/vendored licences/giới hạn v314 giữ nguyên; details ở `docs/documents.md` và trang module tương ứng.
 
 ### 4.2. Luồng tương tác giữa các module
@@ -131,7 +134,7 @@ Content/commands ── AI provider route workflow ──> Background exact-URL 
 Content selection ── generic page ──> popup/dictionary unchanged; video overlay ── primary transcript only ──> translation/Full Dict
 Dashboard ── Overview / Dictation / Highlights & Notes (LR) / Documents / Flashcards / Settings / Account / Backup ──> giao diện quản lý
 Browser PDF tab (`file:`/HTTP(S) `.pdf`, kể cả URL nguồn bọc trong viewer) ──> Background đặt badge `PDF` + inject iframe overlay (20px dưới viewer bar) và action popup card ──> X thu icon/mở lại; cả hai CTA gửi `OPEN_DASHBOARD_DOCUMENTS` với source URL ──> Dashboard Documents fetch/import/mở PDF; local file cần Allow access to file URLs và picker fallback; không redirect tab
-Documents main sheet ── `doc:translate` / `doc:read` ──> `LHN_DOCUMENTS_MAIN_ACTIONS` ──> same `setPanel('translation')` / `startNativeReader()` used by viewer topbar
+Documents main sheet ── `doc:translate` / `doc:read` / `doc:ocr` ──> `LHN_DOCUMENTS_MAIN_ACTIONS` ──> same `setPanel('translation')` / `startNativeReader()` / native OCR button used by viewer topbar
 Dictation title observer ──> debounced session-index title update ──> popup bridge storage listener ──> live `context-source` refresh; popup fixed-height body scrolls at 3px
 Dictation detailed-stats button ──> same-origin popup bridge ──> local Dictation schema v3 (per-attempt category + example context) ──> approved v7 global / critical / per-web views
 Highlights & Notes + Dictation stats popup ──> shared/site-icons.js (LHN_SITE_ICONS) ──> origin-based browser.storage.local favicon cache
@@ -157,13 +160,93 @@ Sidebar trang giữ tab Highlight; Alt+X mở/toggle browser-native AI panel; H�
 
 Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện được đọc/ghi trực tiếp qua `browser.storage`; không phải mọi luồng đều đi qua Background. Trong Dashboard, `dashboard.js` điều phối Overview, Dictation và Highlights & Notes dưới một `#dashboardScroller`, shared theme và topbar; mỗi route giữ content/logic riêng, vị trí cuộn được lưu độc lập theo tab và restore cùng route cuối sau reload. Highlights & Notes chạy trong cùng document qua event bus nội bộ, nhận snapshot annotations/favorites từ Dashboard; mọi ghi/xuất/review/action quay lại handler hiện có, không thêm API/backend hoặc nguồn lưu annotation thứ hai. Dictation dùng route `dictation`; phiên và tiến độ lấy từ `js/overlay/study/shared/session-index.js`, được đối soát với record thật `dictation:<sourceId>` để phục hồi mục thiếu; YouTube/Web sessions giữ source ID và URL tương ứng, thống kê lỗi đọc từ dữ liệu đã lưu, còn tab hiển thị empty state khi chưa có dữ liệu. Hai route dự phòng Grammar/Library và code riêng chỉ phục vụ chúng đã bị xóa; các route còn lại không đổi.
 
+### OCR responsive — module trình bày dùng chung
+
+`ocr-controller.mjs` giữ engine/state, nhập `ocr-controls.mjs` (mặt nhập số trên input gốc + createFlowSelect, danh sách đầu ra) và `documents-sheets.mjs` (sheet/portal/grip/scrim/cử chỉ/rail dọc). `documents.js` vẫn sở hữu docking, điều hướng, bản dịch, rail ngang và các công cụ thật. `documents-responsive.css` chỉ trình bày các mặt đã duyệt, dùng token chung `theme-tokens.js`. Không có engine, viewer hay storage giả. `drafts` trong OCR controller chỉ là Map theo trang của tài liệu đang mở, xóa khi reset/chuyển tệp; không ghi store trước Áp dụng.
+
 ### OCR clean rebuild — ranh giới module mới
 
 `documents.js` → getter host `KeepitOcrDocumentHost` → `ocr-controller.mjs`; canvas dùng `ocrCanvas` trên renderer hiện tại, không viewer/file-store song song. `vendor/ocr` chứa Tesseract worker/core/data, preprocessing demo và PDF exporter deps. `ocr-localize.mjs` dùng catalogue `languages.js`; theme theo setting app. Store `ocr` trong DB Documents v3; purge theo index document. Lớp `.para`/`.en` quay lại controller app. CSS demo scope dưới `.keepitOcr`; chặn root ẩn bắt pointer, reset xung đột `.row`/`.vbanner`, thanh viewer dọc cao 52px theo demo. Không bê toolbar/Reader/Notes giả của demo. Tesseract retry trang lỗi một lần rồi đi tiếp; kết quả một phần đếm đúng lượt hiện tại. Đóng tài liệu đợi PDF export cleanup và chặn tải muộn; ảnh OCR tối đa 16 megapixel. Harness, bằng chứng và script tạm ngoài source. Từ 3.5.615: `.layer` chữ vẫn ở native page units; `.ocrVisualSurface` giãn kích thước và inverse-scale theo `--source-scale` để scan/word/hover/region được vẽ bằng display pixels. `.ocrWordBox` lấy rect chuẩn hóa, không outline text span đã transform; không style nested `.en`. Overlay reset padding/min-width của `.paper` app. Reverse hover khớp cụm geometry/text trước fallback offset để không sai sau vùng append. Từ 3.5.616: host `goTo` riêng OCR truyền `smooth` vào `setPage`; `scrollToPage` giữ đích tạm trong hai flow cuộn, bỏ lệnh trùng cùng đích/pixel, retarget khi resize đổi hình học. Scroll observer không đổi current về trang đi ngang qua; input người dùng nhả đích. `sizePages` không gán scrollTop đè native animation. Điều hướng khác và kiểu xem rời giữ mặc định auto.
 
+### Office trực tiếp — ranh giới renderer630
+
+`documents-renderers.js` sở hữu PDF/DOCX/ảnh và preflight ZIP, lazy-import `documents-pptx.mjs` cho PPTX. Module nhận ZIP đã kiểm, hooks và callback attachBlocks, trả contract pages/render/thumbnail/dispose cũ. XML→SVG/chữ do first-party tạo bằng DOM API, không nới sanitizer của HTML Office. Metadata/text order và render dùng cùng traversal; images theo relationship từng part, cache có giới hạn. `documents.js`, context, Reader, tools, annotation store và OCR không bị thay renderer/UI giả. Font Pangolin có face riêng và OFL trong licenses. Giới hạn/fidelity/anchor cũ xem docs/documents.md.
+
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.630 | Arena sửa:**
+
+- Tóm tắt: theo lựa chọn người dùng, tích hợp đọc DOCX/PPTX trực tiếp, không convert PDF/server. PPTX mới đọc OOXML slide/layout/master/theme, custom path/group/preset/raster/notes và lớp chữ DOM chọn được; metadata toàn bộ slide, dựng hình lazy, cache bounded và cancel/dispose. Giữ attachBlocks/controller Dịch/Reader/Notes, file IDs/store/UI/pager/OCR và text thumbnails628. DOCX giữ local docx-preview, thêm chờ ảnh/phông và ZIP/XML/External guard. Không thay HTML sanitizer hoặc nới CSP. Đóng gói Pangolin OFL; cập nhật gợi ý Office en/vi/ko. Không nhúng mẫu/tệp người dùng vào app.
+- File: `documents-pptx.mjs` mới, `documents-renderers.js`, `documents.css`, `languages.js`, font/OFL, manifest và tài liệu. Giữ các bản ZIP trước.
+- Kiểm tra:32 nhóm HTTP app+extension API/protocol shim, PPTX gốc92slide dựng đủ; độc lập2slide có ảnh/ellipse, DOCX2trang/bảng, PDF1trang gốc, malformed/DTD/External/traversal/literal markup/soft break; native viewer, original/read/paging và1512/900/390 sáng/tối. Chuột thật chọn PPTX “Worksho” và DOCX “English text: Keep your ideas…”, launcher hiện. Không gọi mạng dịch/TTS/AI hoặc xác nhận notes persistence/anchor cũ. JS syntax, vendor220hash và tools10tests; console/pageerror rỗng trong QA. Chưa unpacked630/extension screenshots/crop4×/pixel/CSP/permission/touch/profile; không chứng nhận92slide fidelity. QA ngoài source: `/home/user/qa-keepit-630`.
+
+**2026-11-26 | v3.5.629 | Arena sửa:**
+
+- Tóm tắt: theo ảnh43/PDF trích upload thật, sửa selection launcher lấy last raw Range rect có thể là transparent filler/parent padded paragraph: cùng câu Pam...filter., text endpoint neo759.70 nhưng parent endpoint neo1317.94 (lệch558.23px). Bổ sung owned-context selectionRects do documents.selectedPdfTextRects cung cấp: cắt range vào text nodes .pdfTextLayer .en, bỏ filler/aria-hidden/empty, lấy glyph rect sau transform. Content positionTranslateIcon ưu tiên hook/null fallback, giữ native placement/clamp/flip/styles/actions và timers. Không sửa selection/endpoint guard/filler geometry, pager/layout/scroll/navigation/OCR/glyphs/thumbnail628/store. Người dùng xác nhận thumbnail628 ổn.
+- File: `js/dashboard/documents.js`, `documents-context.js`, `js/content/content.js`, manifest và tài liệu; ZIP629 riêng không đổi ZIP cũ.
+- Kiểm tra: HTTP thật+API shim, dùng chính PDF1 trang trích của người dùng. Before/after controlled parent vs text endpoint trên cùng câu:before759.703 vs1317.938;after cả2 759.703 so text end759.711. Chuột thật chọn đúng 2 dòng PDF sau sửa; Word “Keepit file-label chec” và PPT “Keepit file” vẫn chọn, native overlaypointer-none.95 nhóm:72 width1512/900/390 ×sáng/tối ×fit/50/150 ×text/parent/partial/reverse; nested mark3textnodes;18 style0–8 ×2boundaries; scroll follows; bottom padded selection không đổi scroll;2 Office adapter null. Narrow radial safety clamp được tách khỏi lỗi anchor (vẫn giữ nút trên màn hình); không coi clamp hợp lệ là lỗi. Syntax3file/diff, vendor220hash, tools10/10; console.error/pageerror rỗng. Không phải95manual drags. Chưa unpacked629/extension screenshot/crop4×/pixel/CSP/permission/touch/profile/full78page PDF. Không test network translate/AI/notes-saving hoặc OCR engine lại; chỉ floating launcher anchor.
+
+**2026-11-26 | v3.5.628 | Arena sửa:**
+
+- Tóm tắt: theo ảnh41/42, sửa thumbnail rail/library/Continue mờ vì backing120×160 hoặc100px rồi phóng lớn. Renderer PDF/Office nhận bounds, mặc định960×1320; Office giữ text-preview logical geometry nhưng scale context trước khi vẽ text, không upscale raster120px. Ảnh downsample từ nguồn tối đa960×1320 không upscale nguồn nhỏ. Rail yêu cầu width×DPR2–3 (min240), bỏ fallback100px, kiểm backing/cycle/engine, giữ IntersectionObserver khi reentry và cập nhật visible khi rail resize/pending resize. Library cache-version2 lazy1-at-a-time với pending/failed sets, visible-only/skip viewer, mở source cũ tạo lại preview; import ghi marker; patch chỉ thumbnail/version. PDF mật khẩu không hỏi nền và không cache giải mã. Giữ layout/CSS/glyphs/selection/OCR627/store schema/import navigation.
+- File: `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, manifest và tài liệu; ZIP mới riêng, không đổi ZIP cũ.
+- Kiểm tra: HTTP app thật + API shim,32 nhóm thumbnail:5 renderers tăng resolution thực,5 cache cũ tự nâng giữ bytes/progress,16 rail DOCX/PPTX/native PDF/scan ×1512/390 ×sáng/tối,2 wide-rail/scroll-last,4 cards. Raster đo PDF/Word120×160→960×1280, PPT120×68→960×544; ảnh240×180→800×600 đúng nguồn. Card332/226 CSS px dùng960px; rail333 dùng666/667+px.3 edge:import ảnh80×100 không upscale/version2, PDF khóa seed thật không hỏi password/cache/marker, cache version2 tái dùng.44 regression notice627 chạy lại sạch. Đã xem raster DOCX960px thật qua viewer; PNG QA là raster thumbnail, không phải ảnh chụp extension. Syntax2JS/diff, vendor220 hash, tools10/10; console.error/pageerror rỗng. Lượt đầu640px chưa đủ2× standalone card332px nên tăng960; test ban đầu tính cả offscreen rail nên tách visible và thêm scroll-last/reentry. Chưa unpacked/extension screenshot/crop4×/pixel/CSP/permission/device/user files/PDF lớn-xoay; không chạy OCR engine hoặc drag lại.
+
+**2026-11-26 | v3.5.627 | Arena sửa:**
+
+- Tóm tắt: sửa hiểu sai nút ở626 theo người dùng: DOCX/PPTX phải có nút Thu gọn tại vị trí Nhận dạng chữ, không ẩn CTA. Chọn label qua ocrText/cataloque cũ Thu gọn/Collapse/접기, click chỉ collapseNotice với Office, không gọi openOcr. Ảnh/PDF thiếu chữ giữ Nhận dạng chữ và both-open. Không đổi popup warning/timer/noAsk/bulb/labels/layout/selection/engine/store.
+- File: `js/dashboard/ocr-controller.mjs`, manifest và tài liệu; ZIP mới đúng thư mục, giữ mọi ZIP cũ.
+- Kiểm tra: HTTP app thật + shim,44 nhóm không cờ lỗi:36 DOCX/PPTX ×vi/en/ko ×1512/673/390 ×sáng/tối, CTA hiện/đúng chữ/nằm trong popup, bấm thu→bóng đèn/không settings/không result, mở lại;6 CTA ảnh/PDF scan ×3 ngôn ngữ vẫn mở cả2;noAsk lưu/thu và reset không rò. Chuột thật bấm nút Thu gọn trong Office popup. Node syntax/diff sạch, tools10/10, vendor220 hash; console.error/pageerror rỗng. Chưa unpacked/ảnh extension627/crop4×/pixel/CSP/permission/device/tệp người dùng; không chạy OCR engine hoặc drag selection lại vì không đổi các luồng đó.
+
+**2026-11-26 | v3.5.626 | Arena sửa:**
+
+- Tóm tắt: theo ảnh40, bỏ thanh vàng cố định vBanner ở Word/PPT/ảnh (DOM, CSS và applyTools), chuyển đúng officeHint/imageHint vào popup notice native. Đổi tên popup/bulb thành Gợi ý với en/vi/ko, thêm fileHint bên cạnh body OCR; chỉ hiện OCR body/action khi thật sự thiếu chữ. Giữ lifecycle/timer/noAsk/semantic glass/mở lại bằng đèn. Các nút collapse/expand/noAsk refresh trạng thái hiện tại thay ép needsOcr=true; gate selectedFile/document ID không rò hint khi đóng/đổi tệp. Không đổi glyphs/engine/store/navigation/OCR hit-test625.
+- File: `pages/documents.html`, `css/dashboard/documents.css`, `js/dashboard/documents.js`, `ocr-controller.mjs`, `js/core/languages.js`, manifest và tài liệu; ZIP riêng đúng thư mục, giữ ZIP cũ.
+- Kiểm tra: HTTP app thật + shim:71 nhóm notice trên DOCX/PPTX2 trang/slide, PNG, native PDF và scan PDF;1512×900/673×696/390×844 ×sáng-tối. Không còn DOM/thanh vàng/khoảng trống; đúng nội dung Office/ảnh/OCR, popup absolute không đẩy trang, bật/tắt body/CTA đúng, bounds/palette/close/bulb/noAsk/force-open và reset library; i18n3 ngôn ngữ; timeout10giây thực (đợi11s) và OCRboth-open/covered. Chuột thật kéo Word “Keepit file-label chec” và PPT “Keepit file” sau đổi; overlay native vẫn pointer-none. Syntax3 file, diff, vendor220 hash và tools10/10 kiểm lại; console.error/pageerror rỗng. Chưa unpacked/ảnh extension626/pixel/crop4×/CSP/permission/device/tệp người dùng; ảnh40 là625, không coi là nghiệm thu626; không chạy nhận dạng lại.
+
+**2026-11-26 | v3.5.625 | Arena sửa:**
+
+- Tóm tắt: người dùng báo Word/PPT không chọn chữ; QA623/624 chỉ mở/render/nhãn đã bỏ sót kéo chọn. Tái hiện624 với locked=false/inert=false, elementFromPoint trả div.layer trống pointer:auto. paint() return khi `_ocrResult===undefined` hoặc không có r trước khi gắn nativeText, nên lớp OCR phủ chữ thật. Truy nguồn archive614 commit6584dc4 đã có cùng thứ tự/cache và CSS pointer:auto; chưa runtime-bisect mọi phiên bản. Dời phân loại nativeText trước cache/return; CSS overlay mặc định none, chỉ nonempty + không native bắt pointer. Giữ lớp OCR scan có chữ tương tác, không phá renderer/engine/region/scan/store/UI624.
+- File: `js/dashboard/ocr-controller.mjs`, `css/dashboard/ocr-demo.css`, manifest và tài liệu. ZIP mới đúng tên trong `Keepit-OCR-Zip`, giữ mọi ZIP cũ.
+- Kiểm tra: HTTP app thật + shim, DOCX/PPTX2 trang/slide và PDF native2 trang tổng hợp. Chuột thật kéo Word trước rỗng/sau “Keepit file-label chec”, PPT trước rỗng/sau “Keepit file”; toolbar native hiện. 48 nhóm hit-test ở1512/900/390/320 × sáng/tối ×2 trang, nativeText/pointer-none/hit-chữ/unlocked đều đúng; đó là phép đo hit-test, không giả là48 lượt drag. Nhận dạng Tesseract thật trên PDF scan tổng hợp để kiểm lớp OCR có chữ vẫn bắt pointer/chọn được; trạng thái cụ thể ở QA report. Syntax/diff và tools10/10, vendor hash220 kiểm lại. Chưa unpacked/ảnh extension625/crop4×/pixel/permission/profile/device/tệp người dùng; không dùng QA HTTP thay nghiệm thu.
+
+**2026-11-26 | v3.5.624 | Arena sửa:**
+
+- Tóm tắt: theo hai ảnh extension623, trả riêng vùng kéo-thả `.types` về markup pills chữ đúng622 (PDF/DOCX/PPTX/Ảnh) và rule căn hàng gốc; bỏ hook hydrate supported-type623. Tiêu đề viewer gọi `fileLabel(type,true)` chỉ giữ icon, có aria-label/title được localize khi đổi ngôn ngữ; giữ nguyên tên tài liệu và native compact hide. Cards/Đọc tiếp/import, glyph option3 v5, engine/store/navigation/OCR/pager không đổi.
+- File: `pages/documents.html`, `js/dashboard/documents.js`, `css/dashboard/documents.css`, manifest và tài liệu; ZIP mới riêng trong `Keepit-OCR-Zip`, giữ mọi ZIP cũ.
+- Kiểm tra: so markup supported types trực tiếp với nguồn622, syntax/diff sạch. HTTP shim app dùng4 tệp PDF/DOCX/PPTX/PNG tổng hợp đã import thật ở623:48 nhóm (32 viewer4 loại ×4 sizes × sáng/tối;12 library6 sizes × sáng/tối;3 i18n;OCR both-open). Viewer không text node nhãn, một SVG đúng glyph, title/aria-label đúng; compact hide native, tên tài liệu/canvas còn. Pills không SVG/mark mới,4 nhãn đúng, cards/Đọc tiếp vẫn icon+chữ; library320–1512 không tràn. Không dùng ảnh extension623 của người dùng làm nghiệm thu624; chưa unpacked/ảnh extension624/crop4×/pixel/CSP/permission/device thật; không chạy nhận dạng lại.
+
+**2026-11-26 | v3.5.623 | Arena sửa:**
+
+- Tóm tắt: áp dụng demo nhãn loại tệp v5 option3 đã duyệt: icon đặc màu, PDF chữ thu88%, Word W, PowerPoint P, Ảnh dùng geometry ngắn của option2. Chuyển đúng4 SVG sang shared/icons, dùng `fileLabel()` cho library cards, supported types, Đọc tiếp và vType; import dùng cùng glyph, bỏ fold pseudo/text cũ. Nhãn chữ trung tính, mark28×32/icon18, nền/viền nhạt sáng-tối theo demo; backing kính trên thumbnail giữ tương phản, viewer không backing và giữ compact hide native. Giữ filters/search/navigation/engine/model/import/store và OCR/pager622.
+- File: `js/shared/icons.js`, `js/dashboard/documents.js`, `css/dashboard/documents.css`, `pages/documents.html`, manifest và tài liệu; ZIP mới đúng thư mục, không sửa ZIP cũ.
+- Kiểm tra: HTTP app thật với shim extension API; PDF scan3 trang, DOCX2 trang, PPTX2 slide và PNG mẫu được parser/import thật. 48 nhóm:32 viewer (4 loại ×1512/900/390/320 × sáng/tối),12 library (6 kích thước × sáng/tối), both-open OCR và3 ngôn ngữ. Geometry/attrs4 SVG bằng demo v5, màu đặc đúng, mark28×32/icon18 trong control hiện; viewer compact giữ ẩn như622, không gọi 0×0 là lỗi. Hình học tolerance0.1px do reveal animation subpixel. Library không tràn320–1512, loại/nhãn en/vi/ko đúng. Syntax/diff, vendor220 hash và test công cụ kiểm lại; không dùng HTTP thay unpacked/ảnh extension/pixel/crop4×/CSP/permission/device thật; không chạy lại nhận dạng engine.
+
+**2026-11-26 | v3.5.622 | Arena sửa:**
+
+- Tóm tắt: thêm một tile OCR vào đúng lưới Công cụ trong main sheet Documents, sau các tools hiện có; không thêm nhóm More riêng, không rò sang web/home/Reader. Gate viewer đang mở và OCR controller riêng với gate có chữ của Dịch/Đọc, nên ảnh/PDF scan vẫn dùng được. Reuse dispatcher doc: đóng sheet rồi gọi nút OCR thật để giữ both-open, active state và bản nháp. Chuyển5 glyph sheet và glyph OCR sang shared/icons,6 nút toolbar hydrate từ cùng nguồn, không CSS/layout/handler mới. Giữ pager621 và engine/model/renderer/navigation/store/export.
+- File: `js/shared/icons.js`, `js/content/keepit-bar.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `pages/documents.html`, manifest và tài liệu liên quan; gói mới đúng tên trong `Keepit-OCR-Zip`, không đổi ZIP cũ.
+- Kiểm tra: HTTP app thật + shim extension API, PDF scan3 trang tổng hợp và PNG thật:54 nhóm ở1512×900/1233×696/900×600/673×696/390×844/320×640 × sáng/tối. Sáu bộ SVG paths giống nhau, một tile native trong grid, mở cả2/đóng main sheet/không tự run, active và draft giữ khi vào lại; en/vi/ko đúng label/tooltip; ảnh không có lớp chữ vẫn hiện/mở, thư viện không tile. Quan sát desktop HTTP và chuột thật bấm OCR tile mở cả2. Website HTTP riêng không OCR, glyph native vẫn có; syntax/diff và vendor220 hash kiểm lại. Chưa unpacked/ảnh extension622/crop4×/pixel/CSP/permission/profile/thiết bị; không dùng HTTP thay nghiệm thu. Không chạy lại nhận dạng vì engine không đổi.
+
+**2026-11-26 | v3.5.621 | Arena sửa:**
+
+- Tóm tắt: chỉ sửa UI số trang ở pager theo ảnh người dùng, phần620 khác giữ nguyên. Tái hiện pointer:coarse thật qua Chrome device toolbar: input44px + padding20px mỗi bên chỉ còn4px chữ, chevron bị min-width44px; nền wrapper rgb(21,21,23) quá đen. CSS riêng pager chia lane nhập/mũi tên24px, wrapper72px, input full-height/không chồng arrow và fill/line theo shared Settings field; OCR range không đổi. Không đổi JS/engine/navigation/storage.
+- File: `css/dashboard/documents-responsive.css`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`; ZIP mới đúng thư mục `Keepit-OCR-Zip` trên main, giữ nguyên các ZIP trước.
+- Kiểm tra: HTTP với shim API extension, PDF tổng hợp16 trang thật. 84 nhóm coarse (Chrome device toolbar, matchMedia xác nhận) +84 fine, mỗi nhóm viewport1233×696/1512×900/900×600/673×696/390×844/320×640 × sáng/tối: các giá trị1/5/16, text content40px > chữ2000~31.2px, input/arrow không chồng, chiều cao30/42 bên trong32/44, list lên/có16 mục, prev/next và chọnlist5 đổi native state. Dark fill rgba255,255,255,.08 thay nền đen, light .6. Chuột thật mở/cuộn list/chọn16 và quan sát đủ16/16. Không tuyên bố nhập liên tiếp nhiều chữ số đã nghiệm thu: một lượt tool gõ16 trả1, cần kiểm riêng cơ chế cập nhật có sẵn; bản này không sửa logic. Console.error/pageerror HTTP rỗng, vendor hash220/220; cú pháp/diff sạch. Chưa unpacked/ảnh extension621/pixel/crop4×/permission/thiết bị thật; không chạy lại OCR vì không đổi engine/JS.
+
+**2026-11-26 | v3.5.620 | Arena sửa:**
+
+- Tóm tắt: người dùng gửi sáu ảnh extension 619 và báo chưa khớp v14. Đối chiếu trực tiếp tìm wrapper .pgWrap cũ đè input mới (nền/viền kép, font700/padding lệch/height28), tổng còn dài, sáu SVG cũ, chấm OCR/CSS riêng, sheet chỉ hiện nhãn đơn vị “trang”. Thay đúng nguồn markup/CSS, xóa rule số cũ thay vì thêm lớp vá. Thêm tiêu đề Danh sách trang/tổng thật + en/vi/ko. Người dùng xác nhận hàng vùng đã giống demo nhưng yêu cầu Nhận dạng vùng giống Hủy: bỏ fill tự đổi tím/đen riêng, dùng neutral shared tile và giữ Apply tím/disabled logic; layer vùng lại trên bottom bar. Không đổi engine/model/data flow/docking/native navigation/export/schema.
+- File: `pages/documents.html`, `css/dashboard/ocr-demo.css`, `documents-responsive.css`, `js/dashboard/ocr-controller.mjs`, `documents.js`, `js/core/languages.js`; manifest/tài liệu, ZIP mới `Keepit-OCR-Zip`. Không sửa demo hoặc ZIP619/618.
+- Kiểm tra: đối chiếu trực tiếp HTTP app/v14 trên PDF scan16 trang:58 trạng thái ở1512×900/604×696/673×696/390×844/320×640 × sáng/tối; slot/field range và6SVG hết lệch đã nêu. Không giả đồng nhất toàn trang: font/docking theo trạng thái toolbar thật, version, summary thật và footer mô phỏng khác có chủ đích; max-height vùng còn theo giới hạn toolbar app. Kiểm sửa lỗi51 nhóm (neutral button trống/có chữ/sáng/tối, no dot, title/count3 ngôn ngữ, field widths112/94.5/59.5) không có cờ lỗi. Hồi quy UI13, lifecycle29, shared gestures/ngôn ngữ14 và OCR batch2 đều không cờ lỗi; current/all/range3 trang Tesseract thật thành công, scan dọn, có store. Chuột thật chọn vùng tiêu đề→Nhận dạng vùng trả chữ thật→Apply đóng; quan sát nút Nhận dạng vùng/Hủy cùng nền kính ở sáng/tối, Apply tím. Syntax5 file, vendor220/220, tools10/10, duplicate IDs/console.error/pageerror rỗng. Bộ QA619 đã bỏ sót lỗi hình thức; không dùng các số này thay nghiệm thu unpacked/ảnh extension620/crop4×/pixel/CSP/permission/thiết bị thật.
+
+**2026-11-26 | v3.5.619 | Arena sửa:**
+
+- Tóm tắt: tích hợp standalone responsive demo v14 theo xác nhận người dùng; giữ native OCR mở cả bảng văn bản/cài đặt và đóng cài đặt không đóng bảng. OCR là nút dock bình thường sau Hỏi AI; bỏ nhóm OCR dư trong Thêm. Sheet dọc chung/rail trang thật, kính Settings và gợi ý tím-vàng, numeric input + native lists, phạm vi tự chọn range, dropdown đầu ra luôn xuống, đủ phần engine nhưng PP/Fusor vẫn tắt. Giữ hai nút mở lại kết quả và bản nháp theo trang; chỉ Apply ghi store. Không đổi runtime/model/renderer/schema/export/smooth-scroll engine.
+- File: `pages/documents.html`, `js/dashboard/documents.js`, `ocr-controller.mjs`, mới `ocr-controls.mjs`/`documents-sheets.mjs` và `css/dashboard/documents-responsive.css`; `ocr-demo.css`, `js/shared/theme-tokens.js`, `js/core/languages.js`, manifest/tài liệu. Gói ZIP đúng tên trong `Keepit-OCR-Zip` trên GitHub main.
+- Kiểm tra: HTTP trang app thật với shim extension API: 6 kích thước × sáng/tối, mở cả hai/dismiss/focus/draft/numeric/engine/rail; kiểm sâu bản nháp khác trang, store không tự ghi, Apply thật, field/popup/notice, ba ngôn ngữ và shared gestures. Tesseract thật trên PDF scan tổng hợp: current, all3 trang và range2–3, có chữ/lưu store/dọn scan; không dùng kết quả mô phỏng. Kết quả HTTP: 13 nhóm UI, 29 nhóm lifecycle/field, 14 nhóm sheet/ngôn ngữ, 2 lượt all/range đều không có cờ lỗi; current OCR có chữ/lưu1 bản ghi. Hover chuột thật5 mặt, mỗi mặt120 frame/0 dịch hình học; Escape thật đóng list trước rồi cài đặt, giữ result. Syntax6 file và unittest công cụ10/10 sạch; vendor220/220 hash khớp. Ảnh quan sát HTTP không phải ảnh extension. Chrome công cụ vẫn từ chối chrome://extensions; chưa unpacked/CSP/permission/PNG4×/pixel/profile/tệp người dùng/thiết bị thật; không nâng trạng thái nghiệm thu bắt buộc.
 
 **2026-11-26 | v3.5.618 | Arena sửa:**
 
@@ -271,93 +354,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: danh sách bố cục rộng bằng nút, giữ thanh hiển thị khi danh sách mở; menu zoom dùng cùng kiểu bo góc và cuộn trong vùng có chỗ. Giữ điều khiển/lưu zoom và sở thích tài liệu, tiếp tục cho ảnh Vừa ảnh.
 - File: `js/shared/icons.js`, `js/dashboard/documents.js`, `pages/documents.html`, `css/dashboard/documents.css`, `manifest.json`, tài liệu.
 - Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh phóng 4×; danh sách/nút 144/144px desktop, 344/344px mobile; zoom desktop 114px, mobile 260px, chạm giả lập 244px với menu cuộn trong sheet. Rê và mở list 2,5s khi Tự làm mờ/Tự ẩn, đóng và rời đi mờ/ẩn lại; zoom PDF 200/6400, ảnh Vừa ảnh, file một trang khóa 3 mục, phím mũi tên/Escape, console/pageerror rỗng. Chưa kiểm profile Windows thật, cảm ứng thật, Android/Firefox và file Office thật.
-
-**2026-11-17 | v3.5.599 | Arena:**
-
-- Tóm tắt: vẽ lại bốn icon theo ảnh mẫu và hiển thị bên cạnh từng lựa chọn trong danh sách kiểu trang của viewer; Cài đặt giữ danh sách cũ theo trao đổi. Giữ đồng bộ, nhớ lựa chọn và khóa lựa chọn không hợp lệ cho file một trang.
-- File: `js/shared/icons.js`, `js/content/content.js`, `js/dashboard/documents.js`, `pages/documents.html`, `css/dashboard/documents.css`, `manifest.json`, tài liệu.
-- Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh chi tiết phóng 4×; PDF mẫu 1 và 5 trang, chọn kiểu bằng chuột và chạm giả lập 390, đồng bộ hai chiều với Cài đặt, khóa 3 mục khi một trang; bàn phím mũi tên/Enter/Escape và reload nhớ kiểu. Danh sách đo 200×154 px chuột, 200×186 px chạm; console/pageerror rỗng. Chưa kiểm profile Windows thật, cảm ứng thiết bị thật, Android/Firefox và tài liệu Office thực. Icon được dựng lại từ ảnh nhỏ, không có file vector gốc.
-
-**2026-11-17 | v3.5.598 | Arena:**
-
-- Tóm tắt: thay icon Cài đặt tự vẽ bằng icon chung; dùng nguồn chung ở dashboard, menu, popup và các nút cài đặt liên quan. Nút Cài đặt trên viewer và trong menu tài liệu mở thẳng tab Tài liệu. File một trang hiển thị Từng trang, khóa ba kiểu khác ở viewer và cài đặt mở từ file, không ghi đè lựa chọn cho file nhiều trang.
-- File: `js/shared/icons.js`, `js/content/keepit-bar.js`, `js/dashboard/documents.js`, `js/dashboard/dashboard.js`, `js/dashboard/responsive-nav.js`, `js/popup/popup.js`, `pages/documents.html`, `pages/dashboard.html`, `pages/popup.html`, `manifest.json`, tài liệu.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối và icon phóng 4×; file PDF mẫu 1 và 5 trang, lựa chọn và các option disabled, file nhiều trang khôi phục Hai trang, nút menu và nút trên mở tab Tài liệu desktop/mobile, viewer độc lập mobile, popup có icon chung. Nút trên 40×36 px; console/pageerror rỗng. Chưa kiểm profile Windows thật, cảm ứng thật, Android/Firefox, file Office một trang và trang web thực.
-
-**2026-11-17 | v3.5.597 | Arena:**
-
-- Tóm tắt: thêm tab Cài đặt Tài liệu, bốn bố cục trang và bốn trạng thái thanh dưới; mặc định Liên tục/Tự làm mờ, lưu và đồng bộ viewer-dashboard; khi ẩn thanh có nút mở đúng tab cài đặt. Giữ hai trang trên màn hình hẹp, ảnh đơn không ghép. Không thêm trang bìa riêng.
-- File: `js/dashboard/documents.js`, `css/dashboard/documents.css`, `pages/documents.html`, `js/dashboard/dashboard.js`, `pages/dashboard.html`, `js/core/languages.js`, `manifest.json`, tài liệu liên quan.
-- Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh chi tiết 4×; PDF 5 trang bốn kiểu, cặp 1–2/3–4/trang 5, chọn chữ và lưu ghi chú trang 2 bằng chuột; DOCX/PPTX ba trang ghép và chuyển trang; nút cài đặt desktop/mobile, đồng bộ hai chiều, reload nhớ, tự ẩn với chuột và chạm giả lập. Console/pageerror rỗng ở các lượt chính; lượt ghi chú có lỗi HTTP 429 từ tài nguyên ngoài chưa xác định. Chưa xác minh ghi chú sau reload, dịch/đọc to trong bố cục mới, zoom và cuộn ngang hai trang bằng thao tác thực, ảnh đơn và cảm ứng thiết bị thật, Windows/profile thật, Android/Firefox, Office phức tạp.
-
-**2026-11-17 | v3.5.596 | Arena:**
-
-- Tóm tắt: mở ảnh mặc định Vừa rộng, giữ Vừa ảnh riêng với cách giới hạn theo chiều cao và kích thước ảnh cũ; hỗ trợ các mức zoom đến 6400% cho ảnh, DOCX, PPTX như PDF, nút + không nhảy nhỏ khi từ Vừa rộng. Dùng nhãn vi/en/ko đã có; không đổi khởi tạo Vừa rộng của định dạng tài liệu khác.
-- File: `js/dashboard/documents.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối và ảnh chi tiết phóng 4×; ảnh người dùng, PNG dọc 120×400, DOCX/PPTX mẫu, PDF scan thật; Vừa rộng/Vừa ảnh, +, 6400%, về Vừa rộng; chọn chuột text Office, PDF zoom/cuộn; nhãn vi/en/ko; console/pageerror rỗng. Chưa kiểm Windows/profile thật, Android/Firefox, Office phức tạp và hiệu năng ảnh/tài liệu lớn ở zoom tối đa. Phóng ảnh không tăng chi tiết gốc; zoom lớn có thể chậm.
-
-**2026-11-17 | v3.5.595 | Arena:**
-
-- Tóm tắt: zoom PDF tối thiểu tới 6400%, mức trần tự tăng nếu Vừa rộng lớn hơn; nút + tăng từ mức thực và bước tăng theo tỉ lệ ở mức lớn; thêm các mức zoom PDF trong danh sách. Giữ canvas nền giới hạn và vẽ canvas chi tiết riêng cho phần đang nhìn khi phóng vượt độ phân giải nền, cập nhật khi cuộn/zoom; không thay text layer.
-- File: `js/dashboard/documents.js`, `js/dashboard/documents-renderers.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chromium unpacked headless 1512/390 sáng/tối và ảnh chi tiết phóng 4×; PDF scan người dùng: Vừa rộng 760px → nút + 835px (1512), 6400% 3686px, vẽ vùng thấy, cuộn và về Vừa rộng; PDF hai trang có text và PDF lớp chữ người dùng chọn chuột, text còn sau 6400%; console/pageerror rỗng. Chưa kiểm Windows/profile thật, Android/Firefox, hiệu năng PDF nhiều trang nặng và màn hình DPR cao.
-
-**2026-11-17 | v3.5.594 | Arena:**
-
-- Tóm tắt: sửa PDF scan mờ do vẽ canvas theo kích thước trang PDF gốc nhỏ; vẽ theo cỡ hiển thị và DPR, cập nhật sau zoom/resize, giữ nguyên text layer; giới hạn khoảng 3,5 triệu pixel / cạnh 8192, chỉ vẽ lại trang gần vùng nhìn.
-- File: `js/dashboard/documents-renderers.js`, `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chromium unpacked, PDF scan người dùng và PDF 2 trang có text; ảnh sáng/tối 1512/390, canvas 760×1014 và 370×494 cho scan; zoom PDF text lên 200% và 400%, canvas giới hạn ~3,5 triệu pixel, chọn text bằng Selection API, console/pageerror rỗng. Chưa kiểm Windows/profile thật, Android/Firefox, thao tác chọn bằng chuột, hiệu năng tài liệu lớn.
-
-**2026-11-17 | v3.5.593 | Arena:**
-
-- Tóm tắt: sau khi mở rồi đóng Overlay, chỉ dùng selection Shadow DOM khi anchor thật sự thuộc shadow root; nếu không dùng selection của trang, khôi phục thanh logo chọn chữ.
-- File: `js/content/content.js`, `manifest.json`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh trước/sau hai lần mở đóng Overlay; chọn phụ đề trong Overlay mở từ điển và chọn bằng chuột 1512 sáng. Fixture favicon giả lập để tránh 404, console/pageerror rỗng; chưa kiểm profile, trang, thiết bị thật.
-
-
-**2026-11-17 | v3.5.592 | Arena:**
-
-- Tóm tắt: tách đường viền popup Tô sáng và chừa vị trí chân tam giác theo neo, không còn đường viền chạy qua phần giao; giữ màu kính và tương tác.
-- File: `css/content/content-theme.css`, `js/content/content.js`, `manifest.json`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh/crop 4× và số đo tại giữa, hai mép, lật popup lên; chọn màu, nhập và lưu ghi chú thật trong IndexedDB; console/pageerror rỗng. Chưa kiểm thiết bị, trang và tài liệu của người dùng.
-
-
-**2026-11-17 | v3.5.591 | Arena:**
-
-- Tóm tắt: sửa tam giác ô Tô sáng bị chồng nền kính thành hình thoi, giữ màu kính chung; loại lớp đậm–mờ ở tay kéo các sheet, giữ cuộn ẩn thanh.
-- File: `css/content/content-theme.css`, `css/content/content.css`, `css/content/notes.css`, `css/dashboard/settings.css`, `js/ask-ai/sheet.js`, `js/content/keepit-bar-css.js`, `js/overlay/ui/overlay-css.js`, `js/reader/reader-css.js`, `js/shared/theme-tokens.js`, `docs/ui-layout.md`, `manifest.json`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×, đo tam giác và màu kính popup so với thanh; sheet menu, tìm kiếm, Ghi chú, Từ điển, Cài đặt và kéo/cuộn mô phỏng; hồi quy popup và PDF fixture, console/pageerror rỗng. Chưa kiểm thiết bị, website và tệp của người dùng; không kiểm tất cả sheet trong lượt này.
-
-
-**2026-11-17 | v3.5.590 | Arena:**
-
-- Tóm tắt: áp dụng demo v18 vào ba popup và các sheet; dùng logo app cho Từ điển, hiệu ứng tim và hướng dẫn chung với Overlay, bỏ gợn trắng của hướng dẫn; giữ luồng dữ liệu/lưu hiện hữu.
-- File: `css/content/content.css`, `css/content/content-theme.css`, `css/content/notes.css`, `css/dashboard/settings.css`, `js/content/content.js`, `js/content/keepit-bar-css.js`, `js/ask-ai/sheet.js`, `js/reader/reader-css.js`, `js/overlay/ui/overlay-css.js`, `js/overlay/ui/overlay-ui.js`, `js/shared/heart-effects.js`, `js/shared/theme-tokens.js`, `manifest.json`, `pages/documents.html`, `docs/ui-layout.md`, `docs/modules/shared.md`.
-- Kiểm tra: Chromium 159 unpacked 1512/390 sáng/tối, ảnh/crop 4× và số đo; kiểm popup, note dài, scrollbar, logo, tim Từ điển (ba lần và toggle), Overlay với video fixture, sheet menu/tìm kiếm/Ghi chú/Từ điển/Reader/Cài đặt/Đăng nhập/AI; kéo Ghi chú/menu/Từ điển/AI, ưu tiên cuộn Ghi chú; console/pageerror rỗng trong các ca UI (AI dùng favicon fixture vì các endpoint bên ngoài trả 404/bị chặn). Chưa kiểm thiết bị thật, provider AI thực, toàn bộ sheet và dữ liệu người dùng.
-
-
-**2026-11-17 | v3.5.589 | Arena:**
-
-- Tóm tắt: gỡ giao diện và mã ghi log chọn chữ thử nghiệm; giữ nguyên dự phòng 900 ms của 3.5.588 đã được người dùng xác nhận.
-- File: `pages/popup.html`, `js/popup/popup.js`, `js/core/languages.js`, `js/content/content.js`, `js/shared/selection-toolbar.js`, `manifest.json`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh popup + crop 4×, đo không còn phần log; mô phỏng chọn chữ và hồi quy sheet, console/pageerror rỗng. Chưa kiểm bản này trên Android thật.
-
-**2026-11-17 | v3.5.588 | Arena:**
-
-- Tóm tắt: dự phòng 900 ms sau touchcancel cho vùng chọn một từ không khoảng trắng, hủy khi vùng chọn thay đổi hoặc có chạm mới; giữ luồng nhiều chữ, có nguy cơ hiện sớm khi giữ tay bất động.
-- File: `js/shared/selection-toolbar.js`, `manifest.json`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×; mô phỏng touchcancel, thay đổi vùng chọn, chạm mới, touchend, contextmenu; hồi quy sheet, popup và PDF fixture, console/pageerror rỗng. Chưa kiểm thiết bị Android thật.
-
-**2026-11-17 | v3.5.587 | Arena:**
-
-- Tóm tắt: bản thử ghi log chọn chữ chỉ khi bật, xem và sao chép trong popup; không thu chữ hoặc URL, chưa thay đổi xử lý chọn chữ.
-- File: `js/shared/selection-toolbar.js`, `js/content/content.js`, `pages/popup.html`, `js/popup/popup.js`, `js/core/languages.js`, `manifest.json`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh + crop 4×, sự kiện cảm ứng mô phỏng và sao chép log; không lỗi console/pageerror, hồi quy sheet cảm ứng mô phỏng đạt. Chưa thử thiết bị cảm ứng thật.
-- **3.5.586:** tính phần dưới cùng của cả cụm chọn chữ khi xét tràn và khi lật; neo lên trên dòng đầu vùng chọn nhiều dòng. Kiểm Chromium unpacked 1512/390 sáng/tối, cụm tròn 1–4, thanh/icon, ảnh và crop 4×, đo lật lên và đủ chỗ phía dưới; hồi quy popup, Trang tối, sheet cảm ứng đạt, không ghi nhận lỗi console/pageerror trong các ca kiểm. Chưa kiểm mọi số lượng nút, trang/profile và thiết bị thật.
-
-
-**2026-11-17 | v3.5.585 | Arena.ai Agent sửa:**
-
-- Tóm tắt: tam giác `#lhn-panel` dịch theo tâm vùng chữ sau khi hộp đã được đẩy ngang; giới hạn 20 px bên trong cạnh hộp để tránh góc bo. Khi lật lên, tam giác ở cạnh dưới và vẫn trỏ về chữ. Không đổi vị trí, kích thước, cách đẩy của hộp hoặc Trang tối.
-- File: `js/content/content.js`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: extension unpacked Chromium 159, 1512/390 sáng/tối, hai mép, ảnh + crop 4× (`qa/v585-edges.log`): tâm chữ/tam giác 60,16/60,16 px bên trái và 1451,84/1451,84 px bên phải tại 1512; chữ ngắn sát mép dừng trước góc bo (`qa/v585-short.log`). Sát đáy lật lên, tâm chữ/tam giác khớp trong 0,02 px (`qa/v585-bottom.log`); bộ 4 kịch bản 72 ảnh + crop (`qa/v585-regression.log`); Trang tối bật/tắt vùng màu rực (`qa/v585-toggle.log`); console.error/pageerror rỗng. Chưa kiểm profile Chrome thật, Wikipedia trên máy người dùng, các website khác và cảm ứng trên thiết bị thật.

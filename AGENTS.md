@@ -29,6 +29,8 @@
 - UI/label: theo thiết kế hiện có; nhãn mới ngắn gọn, phù hợp UI/UX, dịch đủ mọi ngôn ngữ app hỗ trợ.
 - Quy tắc code (tìm file, cây thư mục, nhãn i18n, màu theme, không khối vá, không `legacy`, cách tách file): `docs/code-rules.md`.
 - Làm sai thì quay về bản gốc trước lần sửa sai rồi sửa lại từ đó — không vá chồng lên bản sai, không chỉ xoá dòng sai.
+- OCR responsive đã duyệt ở demo v14: nút OCR phải mở đồng thời cài đặt và bảng văn bản; đóng cài đặt giữ bảng. Không tự thay thế một mặt bằng mặt kia. Dùng module sheet/list chung, không tạo engine/storage/công cụ giả; bản nháp theo trang không tự ghi trước Apply. Giữ hai nút mở lại kết quả, PP/Fusor không bật. Kiểm từng đường thao tác thật, không dùng helper mở một mặt thay kiểm nút toolbar/Thêm.
+- Sau tích hợp responsive, phải so hình học/material/SVG trực tiếp với demo, không chỉ test class/open/enabled: slot số không giữ wrapper .pgWrap cũ, tổng `/ N`; đúng sáu icon v14, OCR không dot riêng; sheet trang có tiêu đề/tổng thật. Theo yêu cầu mới, Nhận dạng vùng dùng neutral glass như Hủy, không fill đen/tím riêng theo placeholder; không đổi engine/Apply/disabled.
 - Demo: cùng tên gốc thì tăng hậu tố version (`-demo-v14.html` → `-demo-v15.html`), không ghi đè hay tái dùng tên đã giao; chỉ giữ bản mới nhất, xoá bản trước.
 
 **3.2. Cách thức trả lời trên khung chat**
