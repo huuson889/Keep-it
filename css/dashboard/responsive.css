@@ -1,7 +1,6 @@
-/* Responsive Dashboard layer (phone < 600px, tablet portrait 600–899px).
-   Desktop (≥ 900px) keeps the existing layout: every rule below is inside a max-width query,
-   except the new elements (tab bar, sheet, tooltip) which stay hidden on desktop.
-   Markup for .rn-* elements is created by js/dashboard/responsive-nav.js. */
+/* Responsive Dashboard layer. Fallback navigation keeps phone <600px / rail <900px.
+   Highlights & Notes list → detail follows portrait (height > width), independently
+   of navigation density. Markup for .rn-* is created by responsive-nav.js. */
 
 .rn-tabbar, .rn-sheet, .rn-backdrop, .rn-tip, .rn-back, .rn-set-group, .rn-set-back { display: none; }
 
@@ -30,9 +29,35 @@
 /* Notes uses the existing list → detail controller for every portrait viewport,
    independently of the fallback navigation's width breakpoints. */
 @media (aspect-ratio < 1/1) {
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView { grid-template-rows:auto auto!important; }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace { grid-row:1!important; }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .dash-footer { grid-row:2; }
+  /* The detail screen fills the usable viewport, not the balanced library frame.
+     Keep header/filter rows intrinsic; only the cards consume the remaining space. */
+  body.rn-hn-detail #dashboardScroller { overflow-anchor:none; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView {
+    height:calc(100dvh - var(--keepit-dashboard-bottom,var(--rn-notes-bottom,0px)))!important;
+    min-height:0!important;grid-template-rows:minmax(0,1fr) auto!important;
+  }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace { grid-row:1!important;height:100%!important; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .dash-footer { grid-row:2;margin-top:0; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader {
+    display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;
+    flex:0 0 auto;min-height:0;padding:12px;align-items:start;
+  }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader > .rn-back { grid-column:1;grid-row:1;margin:0; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader > .page-actions {
+    grid-column:2;grid-row:1;justify-self:end;min-width:0;gap:7px;
+  }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader .icon-button { width:36px;height:36px; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader > .selected-page-info { grid-column:1/-1;grid-row:2;display:block; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #selectedFavicon { display:none; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #selectedTitle { line-height:1.35; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #selectedUrl { max-width:100%; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #selectedMeta { overflow-wrap:anywhere; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #noteColorFilters { flex:0 0 auto; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesList { overscroll-behavior-y:contain!important; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesList.is-grid-view {
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
+    width:100%;max-width:680px;align-self:center;
+  }
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace { display: block !important; }
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel { width: auto !important; max-width: none !important; }
   body:not(.rn-hn-detail) #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel { display: none !important; }
@@ -59,6 +84,8 @@
   #dashboardScroller { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; scroll-padding-bottom: 80px; }
   /* The fallback tabs need 72px; Keepit publishes its actual shown/folded clearance. */
   html.keepit-bar-on #dashboardScroller { padding-bottom:var(--keepit-dashboard-bottom,0px)!important; scroll-padding-bottom:var(--keepit-dashboard-bottom,0px); }
+
+  body.rn-hn-detail { --rn-notes-bottom:calc(72px + env(safe-area-inset-bottom,0px)); }
 
   /* compact shared top bar */
   #dashboardSharedTopbarSlash, #dashboardSharedTopbarStatus { display: none !important; }

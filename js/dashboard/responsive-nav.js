@@ -121,16 +121,20 @@
     back.addEventListener("click", () => closeNotesDetail(true));
     notesHeader.prepend(back);
   }
-  let notesDetailState = false;
+  let notesDetailState = false, notesSourceScrollTop = 0;
   function openNotesDetail() {
     if (!NOTES_SINGLE.matches || document.body.classList.contains("rn-hn-detail")) return;
-    document.body.classList.add("rn-hn-detail"); scroller.scrollTop = 0; showTabbar();
+    notesSourceScrollTop = scroller.scrollTop;
+    document.body.classList.add("rn-hn-detail"); scroller.scrollTop = 0;
+    const cards = document.getElementById("notesList"); if (cards) cards.scrollTop = 0;
+    showTabbar();
     try { history.pushState({ rnDetail:true }, ""); notesDetailState = true; } catch { notesDetailState = false; }
   }
   function closeNotesDetail(viaBack) {
     if (!document.body.classList.contains("rn-hn-detail")) return;
     if (viaBack && notesDetailState) { history.back(); return; }   // popstate finishes the close
     document.body.classList.remove("rn-hn-detail"); notesDetailState = false;
+    if (sidebar.querySelector('[data-dashboard-view].is-active')?.dataset.dashboardView === "highlights-notes") scroller.scrollTop = notesSourceScrollTop;
   }
   document.getElementById("sourceList")?.addEventListener("click", event => { if (event.target.closest(".source-item")) openNotesDetail(); });
   document.getElementById("sourceList")?.addEventListener("keydown", event => { if ((event.key === "Enter" || event.key === " ") && event.target.closest(".source-item")) openNotesDetail(); });
@@ -226,7 +230,7 @@
   window.addEventListener("popstate", () => {
     if (ignorePop) { ignorePop = false; return; }
     if (settingsPanelState || settingsDialog?.classList.contains("rn-set-panel") && settingsDialog.open) { settingsPanelState = false; settingsDialog.classList.remove("rn-set-panel"); return; }
-    if (document.body.classList.contains("rn-hn-detail")) { notesDetailState = false; document.body.classList.remove("rn-hn-detail"); }
+    if (document.body.classList.contains("rn-hn-detail")) closeNotesDetail(false);
   });
 
   // ---------- Review: tap the card to reveal the answer (phone) ----------

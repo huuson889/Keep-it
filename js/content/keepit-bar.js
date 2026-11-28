@@ -364,10 +364,17 @@
     const value = `${px}px`, style = document.documentElement.style;
     if (style.getPropertyValue("--keepit-dashboard-bottom") === value) return;
     const bottom = page.scrollTop > 0 && page.scrollHeight - page.clientHeight - page.scrollTop < 2;
+    // Portrait Notes detail also consumes this clearance inside a fixed-height view.
+    const notes = document.body.classList.contains("rn-hn-detail") ? document.getElementById("notesList") : null;
+    const notesBottom = notes && notes.scrollTop > 0 && notes.scrollHeight - notes.clientHeight - notes.scrollTop < 2;
     style.setProperty("--keepit-dashboard-bottom", value);
     // Padding changes can clamp scrollTop; do not interpret that as an upward gesture.
     if (bottom) page.scrollTop = Math.max(0, page.scrollHeight - page.clientHeight);
     lastTop.set(page, page.scrollTop);
+    if (notes) {
+      if (notesBottom) notes.scrollTop = Math.max(0, notes.scrollHeight - notes.clientHeight);
+      lastTop.set(notes, notes.scrollTop);
+    }
   }
   // v8: back-to-top — shows after scrolling past one screen (also while scrolling down; flat when the bar is hidden)
   let scroller = null;
@@ -1431,7 +1438,9 @@
     scroller = target;
     const y = scrollTopOf(target), dy = y - (lastTop.get(target) ?? y);
     if (dy && !onHome()) scrollOff(dy, y);
-    lastTop.set(target, DASHBOARD && target === document.getElementById("dashboardScroller") ? scrollTopOf(target) : y);
+    const dashboardLayoutScroll = DASHBOARD && (target === document.getElementById("dashboardScroller") ||
+      document.body.classList.contains("rn-hn-detail") && target === document.getElementById("notesList"));
+    lastTop.set(target, dashboardLayoutScroll ? scrollTopOf(target) : y);
     updBtop();
     if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; checkOverlap(); });
   }

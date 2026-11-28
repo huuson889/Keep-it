@@ -1,5 +1,11 @@
 # Nhật ký nền giữ nguyên văn trước OCR clean rebuild
 
+**2026-11-17 | v3.5.611 | Arena:**
+
+- Tóm tắt: Căn thanh phím tắt cùng tâm Reader trong vùng xem, giới hạn theo vùng và giữ nút đóng ở màn hẹp; giữ pager hiện khi menu Thêm hoặc sheet menu chính mở, sau đóng tiếp tục mờ/ẩn theo cài đặt; chế độ Ẩn hẳn vẫn giữ.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked dashboard 1512/390 sáng/tối, ảnh và crop 4×, chạm giả lập; tâm khớp khi hiện/ẩn dải trang và mở dịch; Tự làm mờ/Tự ẩn sáng khi menu mở và trở về sau đóng, Ẩn vẫn ẩn; console/pageerror rỗng. Chưa kiểm profile Windows, thiết bị cảm ứng thật, Android/Firefox và tệp người dùng.
+
 **2026-11-17 | v3.5.610 | Arena:**
 
 - Tóm tắt: Sửa ô chọn tùy biến trong menu Thêm không giãn theo hàng khiến nhãn thu phóng bị cắt; khôi phục bố cục rộng của 3.5.595, giữ bốn kiểu trang, icon và menu mới.
