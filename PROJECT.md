@@ -1,17 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.632:** lấy trực tiếp ZIP630 đã commit (SHA90247597…), giải nén419 file gốc rồi chỉ sửa UI vùng kéo thả theo yêu cầu người dùng. Không tiếp tục code631.
-- `documents.js` toàn bộ (kể cả drag/import/open), store, renderers, PPTX engine, HTML/i18n và vendor giống từng byte630. Chỉ CSS + adapter hiển thị trong dashboard.js vẽ bản sao inert/pointer-none; không di chuyển target/drop/FileList, không thêm handler drag/drop.
-- Dashboard chừa sidebar/header; viewer chừa vBar, phủ cả rail/pager. Bản sao hiển thị đo theo viewport cha, original event target nằm nguyên trong iframe; fullscreen giữ bản gốc. Các hành vi import của630 không thay đổi.
-- Tệp người dùng262475byte (bỏ .html) được nhận là DOCX thật; renderer630 đọc được nội dung. QA52 kiểm tra HTTP+shim qua; browser upload vào input gốc mở đúng tệp/ảnh; UI1512/900/390 sáng/tối; chưa thay nghiệm thu extension/OS drag.631 bị người dùng báo mọi tệp lỗi dù UI đúng, không dùng kết quả QA631 chứng minh mở tệp thực.
+- **Bản test 3.5.633:** người dùng xác nhận632 chỉ lỗi kéo thả từ Dashboard; trong viewer kéo thả được và picker được.633 chỉ sửa adapter nhận drop ở document Dashboard, không thay receiver trong iframe/viewer hoặc picker.
+- Khung Dashboard là receiver thật khi ở thư viện: chụp File từ DataTransfer.items/getAsFile trước thay UI, fallback files, đóng gói File cục bộ và postMessage same-origin qua IMPORT_FILES630. Không giữ FileList qua event/await, không gọi importer trực tiếp xuyên realm. Viewer preview vẫn inert/pointer-none như632.
+- `documents.js` toàn bộ (kể cả viewer drop/import/picker), store/renderers/PPTX/HTML/i18n/vendor vẫn byte-identical630. Không đổi giới hạn kích thước hoặc coi tệp rỗng là hợp lệ. Giữ UI đã duyệt.
+- QA HTTP+shim kiểm riêng drop parent Dashboard→bridge, iframe fallback, viewer direct drop và picker;39 checks qua với DOCX người dùng262475byte; serialized receiver local File, không gửi trùng. Chưa OS Downloads drag/unpacked/extension screenshot/crop4×, cần người dùng xác nhận đường Dashboard633.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.632: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.633: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP.
-- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và kéo thả/picker extension632; ưu tiên xác nhận hết lỗi mở tệp631. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
+- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp; ưu tiên kéo thả Dashboard633 trên Chrome Downloads/Explorer.632 viewer drop và picker đã được người dùng xác nhận hoạt động, không sửa chúng. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
@@ -176,9 +176,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 `watchDashboardDocumentDropUi` trong dashboard.js chỉ observe trạng thái gốc, clone nội dung sang bản sao trình bày inert/pointer-events:none và đo header/sidebar/viewport. Không adopt/move/drop target gốc và không nhận drag/drop/FileList. documents.js cùng toàn bộ renderer/store/HTML/i18n giữ nguyên byte630. CSS chỉ ẩn paint gốc khi có mirror, giữ node/event path; trong fullscreen hiển thị gốc. Không đưa pipeline xử lý tệp631 vào bản632. Baseline/audit chi tiết ngoài app: `/home/user/qa-keepit-632/baseline630.json`.
 
+### Dashboard-only drop633
+
+`watchDashboardDocumentDropUi` sở hữu receiver ở parent Dashboard khi libraryActive. Capture Files trong callback trước UI reset, dựng File snapshot rồi structured-clone bằng message IMPORT_FILES sẵn có của630; source/origin kiểm trong handler630. Không gắn drop listener vào iframe; viewer receiver/picker/importer vẫn nguyên630. CSS chỉ bật pointer-events cho preview library, viewer vẫn inert/pointer-none. Events AbortController được hủy khi UI rebind, route khác không nhận và viewer thật không bị reset source class. Baseline/audit và QA ngoài app `/home/user/qa-keepit-633`.
+
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.633 | Arena sửa:**
+
+- Tóm tắt: theo xác nhận mới của người dùng, chỉ Dashboard632 kéo thả lỗi, viewer drop/picker đang được. Sửa riêng receiver thư viện tại parent Dashboard: nhận drop ngay vùng phủ (trước632 chỉ là lớp nhìn xuyên), lấy File từ items trước đổi UI/fallback FileList, snapshot File rồi gửi IMPORT_FILES630 bằng structured clone cùng origin. Không giữ DataTransfer/FileList qua await, không gọi importer qua object khác realm. Viewer không nhận bridge/drop mới; CSS viewer vẫn pointer-none/inert.
+- File: `dashboard.js`, `documents-host.css`, manifest633 và docs; `documents.js`, picker, renderer/store/OCR/HTML/i18n/vendor nguyên630. Không đổi giới hạn/chấp nhận tệp rỗng, không sửa đường viewer đang hoạt động.
+- Kiểm tra:39 checks HTTP app+API shim, parent drop với File từ cửa sổ khác mở DOCX người dùng và ảnh, một bridge/local realm/đúng262475byte; FileList placeholder0 nhưng item thật vẫn giữ đủ byte, revoke store ngay sau dispatch; iframe fallback, viewer direct drop không bridge, picker độc lập;1512/900/390 sáng/tối, sidebar, route guard, geometry/hit-path. Browser.upload vào input gốc cũng mở được; JS syntax/vendor220hash/tools10test/diff-check qua; không có app error được ghi trong phiên QA cuối. Các drop này là synthetic; browser mouse HTML drag chỉ ghi trusted start, chưa chứng minh native file drop. Chưa OS Downloads/Explorer, unpacked633/ảnh extension/crop4×/pixel/CSP/permission; không tuyên bố hết lỗi trên máy người dùng. QA `/home/user/qa-keepit-633`.
 
 **2026-11-26 | v3.5.632 | Arena sửa:**
 
@@ -352,9 +362,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: thêm công tắc Thu gọn thanh trên trong Cài đặt Tài liệu; mặc định tắt, khi bật chỉ thanh trên thu về 60%, ghi nhớ và đồng bộ trực tiếp. Không thu thanh dưới, menu hay nội dung tài liệu.
 - File: `pages/dashboard.html`, `css/dashboard/documents.css`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, tài liệu.
 - Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh chi tiết 4×; bật/tắt, đồng bộ iframe và reload; thanh chuột 56→33,6px, chạm giả lập 60→36px, nút chạm 44→26,4px theo yêu cầu. Tên PDF dài, co giãn 320/390/1512, menu Thêm và đổi theme; console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, Windows/profile thật, Android/Firefox và Office thực; 60% khiến đích chạm nhỏ.
-
-**2026-11-17 | v3.5.602 | Arena:**
-
-- Tóm tắt: thống nhất tên đầy đủ và rút gọn của Vừa rộng trong danh sách zoom và nút chọn: vi “Vừa rộng”, en “Fit width”, ko “너비 맞춤”; không thay logic zoom.
-- File: `js/core/languages.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
-- Kiểm tra: Chromium extension unpacked PDF mẫu, 1512/390 sáng/tối, ảnh chi tiết 4×; cả hai chỗ khớp vi/en/ko, nút/danh sách tiếng Việt 90/90px desktop và 97/97px mobile; chọn Vừa rộng, console/pageerror rỗng. Chưa kiểm thiết bị thật, Windows/profile thật và Android/Firefox.
