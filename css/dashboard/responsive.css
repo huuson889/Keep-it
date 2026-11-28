@@ -26,18 +26,19 @@
   #profileMenu.dashboard-avatar-popover { left: 76px !important; }
 }
 
+/* This visibility rule must outrank the shared .icon-button display rule. */
+#dashboardHighlightsNotesView #notesHeader > .rn-back { display:none!important; }
+
 /* Notes uses the existing list → detail controller for every portrait viewport,
    independently of the fallback navigation's width breakpoints. */
 @media (aspect-ratio < 1/1) {
   /* Detail follows the same outer page scroll as the source library.
      The floating Keepit bar never participates in page/footer layout. */
   body.rn-hn-detail #dashboardScroller { overflow-anchor:none; }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView {
-    height:auto!important;min-height:100dvh!important;grid-template-rows:minmax(0,1fr) auto!important;
-  }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace { grid-row:1!important;height:auto!important; }
+  /* Only swap the workspace panels. Intro, stats, search and shared topbar
+     remain in their normal rows, reachable by scrolling up in detail too. */
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace { height:auto!important; }
   body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel { height:auto!important;overflow:visible!important; }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .dash-footer { grid-row:2;margin-top:20px; }
   body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader {
     display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;
     flex:0 0 auto;min-height:0;padding:12px;align-items:start;
@@ -64,13 +65,9 @@
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace { display: block !important; }
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel { width: auto !important; max-width: none !important; }
   body:not(.rn-hn-detail) #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel { display: none !important; }
-  body.rn-hn-detail #dashboardHighlightsNotesView .lhn-intro-row,
-  body.rn-hn-detail #dashboardHighlightsNotesView .library-demo-stats,
-  body.rn-hn-detail #dashboardHighlightsNotesView .demo-library-toolbar,
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel,
-  body.rn-hn-detail #dashboardSharedTopbarPortal { display: none !important; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel { display:none!important; }
   body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel { display: flex !important; flex-direction:column; margin-top: 0 !important; }
-  body.rn-hn-detail .rn-back { display: grid; }
+  body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader > .rn-back { display:grid!important; }
   .rn-back { flex: none; width: 36px; height: 36px; place-items: center; border: 0; border-radius: 18px; background: #f1f5f9; color: #334155; cursor: pointer; margin-right: 4px; }
   .rn-back svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   #notesHeader { align-items: center; }

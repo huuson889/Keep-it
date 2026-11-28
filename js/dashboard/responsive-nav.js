@@ -125,7 +125,10 @@
   function openNotesDetail() {
     if (!NOTES_SINGLE.matches || document.body.classList.contains("rn-hn-detail")) return;
     notesSourceScrollTop = scroller.scrollTop;
-    document.body.classList.add("rn-hn-detail"); scroller.scrollTop = 0;
+    document.body.classList.add("rn-hn-detail");
+    const workspace = notesHeader.closest(".workspace");
+    const cover = document.getElementById("dashboardSharedTopbar")?.getBoundingClientRect().height || 0;
+    scroller.scrollTop = Math.max(0, scroller.scrollTop + workspace.getBoundingClientRect().top - scroller.getBoundingClientRect().top - cover - 12);
     const cards = document.getElementById("notesList"); if (cards) cards.scrollTop = 0;
     showTabbar();
     try { history.pushState({ rnDetail:true }, ""); notesDetailState = true; } catch { notesDetailState = false; }

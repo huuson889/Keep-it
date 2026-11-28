@@ -1,5 +1,11 @@
 # Nhật ký nền giữ nguyên văn trước OCR clean rebuild
 
+**2026-11-26 | v3.5.614 | Arena sửa:**
+
+- Tóm tắt: **bản test 3.5.614; người dùng đồng ý đóng gói với giới hạn QA, không tuyên bố 100%**. Bỏ toàn bộ nền OCR bị loại, sao lại nguồn gốc 3.5.612 và chỉ lấy UI/engine từ demo 2.9.7.33. Không tham khảo các bản OCR bị loại. Dùng Tesseract trước, hoãn PP/Fusor; giữ luồng vùng và khung OCR khi sửa text của demo; sửa hover sau merge bằng geometry, root ẩn chặn pointer, CSS kế thừa gây dư 18px ở hộp vùng/co thông báo/lệch 6px trên màn dọc; retry trang lỗi một lần, tiếp tục batch và đếm đúng phần đã xử lý; chặn PDF export tải muộn khi đóng/chuyển tài liệu, không bật nhầm progress OCR khi xuất.
+- File: `manifest.json`, `pages/documents.html`, `css/dashboard/ocr-demo.css`, `js/dashboard/{documents.js,documents-store.js,documents-renderers.js,ocr-controller.mjs,ocr-localize.mjs}`, `js/core/languages.js`, `vendor/ocr/`, `licenses/ocr-demo/`, README/privacy/notices và docs. Không sửa `Keep-it` gốc.
+- Kiểm tra: QA mới `qa-clean`, không tái dùng test/kết quả bản bị loại: 13/13 Node migration/logic/source parity, 15/15 regression, 13/13 current/range/native PDF, 14/14 export/Office tổng hợp, 9/9 retry/partial; OCR thật HTTP, bốn flow/cancel, persist/edit/hover, region bằng chuột, pypdf đọc PDF chữ ẩn. DOM 7 component khớp và 976 mẫu style/20 trạng thái ở 1512/390 sáng/tối không lệch thuộc tính đang đo; đây không phải ảnh. Cùng PNG đầu vào cho text/boxes Việt/Hàn trùng demo; mẫu Hàn vẫn sai một phần như demo. PDF raster trực tiếp khác đường resample canvas của demo nên không hứa byte-identical OCR trên PDF. **Chưa chạy unpacked và chưa có ảnh bắt buộc/crop 4×/pixel diff; bị chặn bởi isolated browser context. Chưa thể nghiệm thu 100%. Người dùng đã chọn cho phép tăng version một lần, commit và ZIP bản test với giới hạn được ghi rõ; tên ZIP `Keepit - Optimize Test-v3.5.614.zip`, thư mục `Workspace/Keepit-Check-Zip` theo quy tắc Arena. Kho nguồn mới khởi tạo Git vì bản sao gốc không có metadata Git; không dựng lại lịch sử giả.**
+
 **2026-11-25 | v3.5.612 | dựa trên 3.5.611, không OCR:**
 
 - Tài liệu: ẩn gợi ý quét/nhận dạng chữ; giữ gợi ý dành cho ảnh và DOCX/PPTX. Không thêm chức năng OCR.
