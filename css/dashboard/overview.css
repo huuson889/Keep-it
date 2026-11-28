@@ -589,13 +589,18 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#000000);color:var(-
   padding:0 var(--dash-page-pad,clamp(16px,3vw,32px)) 20px!important;background:transparent!important;color:inherit;
 }
 #dashboardOverviewView .ov-content { padding-top:0!important; }
+#dashboardScroller:has(> #dashboardDictationView:not([hidden])) { display:flex;flex-direction:column; }
+#dashboardScroller:has(> #dashboardDictationView:not([hidden])) > #dashboardSharedTopbarPortal { flex:0 0 auto; }
 #dashboardScroller > #dashboardDictationView {
+  display:flex!important;flex:1 0 auto!important;flex-direction:column;
   height:auto!important;min-height:0!important;overflow:visible!important;
   padding:0 clamp(16px,3vw,32px) 20px!important;background:transparent!important;color:inherit;
 }
-/* v3.5.539: dòng footer chung luôn sát đáy khung, cách đáy 20px ở mọi tab */
-#dashboardDictationView .dictation-root .app{display:flex;flex-direction:column;min-height:100%}
-#dashboardDictationView .dictation-root .content{flex:1 1 auto;display:flex;flex-direction:column}
+#dashboardScroller > #dashboardDictationView[hidden] { display:none!important; }
+/* Grow the active route through each wrapper; keep the footer in normal flow.
+   The scroller owns viewport height and existing bottom-navigation/safe-area padding. */
+#dashboardDictationView .dictation-root,#dashboardDictationView .dictation-root .app{display:flex;flex:1 0 auto;flex-direction:column;min-height:0}
+#dashboardDictationView .dictation-root .content{flex:1 0 auto;display:flex;flex-direction:column;margin:0 auto}
 #dashboardDictationView .dictation-root .footer{margin-top:auto;padding-top:30px}
 #dashboardScroller > #dashboardDictationView::before { display:none!important;height:0!important; }
 #dashboardScroller > #dashboardHighlightsNotesView { background:transparent!important; }

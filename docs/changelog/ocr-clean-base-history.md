@@ -1609,3 +1609,9 @@
 - Tóm tắt: Thu gọn 80% cả thanh trên và dưới; dải trang kéo chỉnh rộng, ẩn/hiện, ghi nhớ và giới hạn theo màn hình; menu xổ vẫn cỡ thường.
 - File: `pages/documents.html`, `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
 - Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh 4×; kéo chuột, bàn phím, ẩn/hiện và reload; giả lập cảm ứng 390; thanh dưới chuột 42/34px, cảm ứng 50/40,4px; menu bố cục, console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, profile Windows, Android/Firefox và PDF/Office của người dùng.
+
+**2026-11-17 | v3.5.607 | Arena:**
+
+- Tóm tắt: Tay kéo trái đồng kiểu panel phải; dải trang ẩn/hiện chuyển động 250ms, tôn trọng giảm chuyển động, giữ trạng thái và kéo.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×; nét hai tay kéo 2×32px, ẩn/hiện, đóng/mở nhanh, phím và reload đạt; chạm và kéo giả lập riêng đạt, nhưng click giả lập sau kéo CDP chưa xác minh; console/pageerror rỗng. Chưa kiểm cảm ứng thật, profile Windows, Android/Firefox và tài liệu người dùng.

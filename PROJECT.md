@@ -1,19 +1,20 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.638:** đồng bộ nền tab Tài liệu với nền Dashboard mới. Đo637qua HTTP: scroller#e9edf4, route/iframe#f5f5ff;638dùng token chung `--lhn-dashboard-page-bg` (#e9edf4 sáng/#000 tối) ở ui-tokens.css cho shell, route và html/body khung nhúng.
-- Không đổi JS/layout/thẻ nội dung/scroll/router/theme sync, không đổi nền thư viện standalone hoặc viewer. Sửa nút cạnh637 và chú thích636/DOCX635 giữ nguyên. Người dùng đã xác nhận nút cạnh637 trên SlidesCarnival bình thường.
-- QA638:123/123check Chromium HTTP+API/protocol shim,1512/390 sáng-tối,5route và quay lại Documents, nền scroller/route/root/bodyframe, header chung, card hiện, cuộn và kiểm token propagation. Parenterrors[]; child có2cảnh báo `ResizeObserver loop completed with undelivered notifications.` khi resize, giữ nguyên báo cáo không gọi errors rỗng. Đã xem trực tiếp sáng1280×813HTTP sau đóng intro; không phải screenshot pixel/extension acceptance.
-- Chưa kiểm extension unpacked/CSP/thiết bị/ảnhcrop4×; QA `/home/user/qa-keepit-638` ngoài source. Không suy ra123check là nghiệm thu extension thật.
+- **Bản test 3.5.639:** sửa min-height chuỗi footer Dictation khi nội dung ngắn. Scroller active Dictation dùng flex-column, portal không co, route/root/app/content cùng grow, footer margin-top:auto trong normal flow; explicit [hidden] giữ route không active ẩn. Không thay fixed/sticky/footer label/màu/nav/JS.
+- QA639:162/162check Chromium HTTP+API/protocol shim,533×696/994×696/390×844/768×1024/1512×850 sáng-tối, normal/short/long fixture và5route. Empty-short baseline footer cách đáy554px ở533→97px và577px ở994→20px. Parent/baseline errors[]. Rootpage không scroll/không trànngang, long scroll kéo footer,1route active; ngoài Dictation scroller giữ computed display baseline.
+- Giới hạn quan trọng: với normal/long data ảnh gần tương ứng, footer bottomgap baseline vàfixed KHÔNG đổi; mobile vẫn72pxnavreserve + routepadding25px≈97px. Không gọi đây là đã loại khoảngtrống dưới footer trong ảnh user khi thanh Keepit thu thành vạch. Chưa sửa đồng bộ reserve theo trạng thái thu thanh; cần người dùng xác nhận mục tiêu gap đó. Short/long là fixture layout, không phải dữ liệu sessions thật.
+- Nền638, nút637 đãuserxácnhận và chúthích636/DOCX635 giữ. Không kiểmunpacked/CSP/device/pixelcrop4×. QA `/home/user/qa-keepit-639`; cleanup trước đã giữ report635–638+ZIP638 ở `/home/user/Important`, demo125nguồn đãlưuGitHub, không được mất bảnchưa backup.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.638: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.639: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
+- Footer639: kiểm nội dung ngắn/dài khi resize trên extension thật;72pxreserve mobile còn nguyên nên khoảngtrống dướifooter khi thanh thu vạch trong ảnh chưa bị loại. Không coi162check là sửađúng toàn bộ hiện tượngảnh.
 - Nền638: kiểm tab Tài liệu đồng bộ vùng trên khi đổi tab/theme trên extension thật; HTTP đã đối chiếu màu, chưa ảnhcrop4×.
 - Chú thích636: kiểm hover/chạm/kéo, sáng-tối và vị trí trên extension thật; HTTP mới là kiểm UI có fixture, chưa ảnh/crop4×.
 - DOCX635: kiểm font/layout, chọn chữ + notes cũ/mới, dịch/TTS/AI trên extension thật; HTTP đã qua nhưng chưa có ảnh/crop4×/CSP/OS drop.
@@ -188,6 +189,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 
+**2026-11-26 | v3.5.639 | Arena sửa:**
+
+- User yêu cầu fix footer responsive qua ảnh533×696 và994×696. Sửa chuỗi flex chỉ khi activeDictation bằng :has; portal flexnone, route flexgrow, root/app/content flexgrow minheight0 thay100% qua chaauto, margin content0auto, footer giữ auto-top/normal flow. Thêm route[hidden] explicit do display!important. Không thay nav/theme/layoutcards/JS.
+-162/162HTTP Chromium actualDashboard+API/protocolshim:5size533×696/994×696/390×844/768×1024/1512×850 ×sángtối ×normal/short/longQAfixture; footer gap=routepadding+navpadding, khôngfixed, khôngtrànngang/page-root scroll, short khôngscrollthừa, long thựcscrollvàfootertheo,5route displaybaseline/1active. Errorsbaseline/after[]. Test đầu phát hiện thiếu hidden rule đã sửa; testtrash expectationblock sai vìtrash vốnflex, đốichiếu baseline thật thay épblock.
+- Đo short ở533:baselinegap554→97px;994:577→20px. **Normal/long của baseline/fixed hầu như cùng gap**;533/390 vẫnnavreserve72px +routepadding25px≈97px. Không loại khoảngtrống mobile khi thanh Keepit cuộnthu thànhvạch như ảnhuser; không tuyên bố162check là nghiệmthuảnh/đãfixmọihiệntượng. Đãbáo chat còn72pxnavreserve. Chưa extensionunpacked/CSP/thiếtbị/pixelcrop4×. QA `/home/user/qa-keepit-639/results.json`.
+
 **2026-11-26 | v3.5.638 | Arena sửa:**
 
 - Theo ảnh image9, tab Tài liệu còn nền tím cũ không đồng bộ nền trên mới. Baseline637HTTP đo shellscroller rgb233,237,244 (#e9edf4), route+html/bodyiframe rgb245,245,255 (#f5f5ff). Thêm token `--lhn-dashboard-page-bg` sáng#e9edf4/tối#000 trong shared/ui-tokens.css; --dash-page-bg và scroller dùng token đó, embedded Documents html/body cũng dùng token. Host route đã dùng --dash-page-bg nên tự đồng bộ; bỏ comment cũ sai màu. Chỉ đổi paint, không đổi geometry/JS hoặc standalone/viewer.
@@ -360,9 +367,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: Chuyển động trượt 0,26s cubic-bezier(.2,.8,.2,1) cùng thanh Ghi chú cho dải trang và bảng dịch Tài liệu, cùng hai cột Nói/Chép Overlay; vùng giữa co giãn đồng bộ, màn dọc bảng dịch giữ kiểu sheet; hỗ trợ giảm chuyển động.
 - File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/overlay/ui/overlay-css.js`, `js/overlay/ui/overlay-ui.js`, `manifest.json`, `docs/documents.md`, `docs/modules/overlay.md`, `PROJECT.md`.
 - Kiểm tra: extension Chromium unpacked, ảnh 1512/390 sáng/tối và crop 4×; tài liệu PDF fixture và Overlay trang web fixture, đo vị trí lúc chuyển động, ẩn/hiện và mở lại hai cột; console/pageerror rỗng. Màn dọc Overlay không có hai cột theo thiết kế. Chưa kiểm profile Windows, cảm ứng thật, video/phụ đề thực, Android/Firefox và tài liệu của người dùng.
-
-**2026-11-17 | v3.5.607 | Arena:**
-
-- Tóm tắt: Tay kéo trái đồng kiểu panel phải; dải trang ẩn/hiện chuyển động 250ms, tôn trọng giảm chuyển động, giữ trạng thái và kéo.
-- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×; nét hai tay kéo 2×32px, ẩn/hiện, đóng/mở nhanh, phím và reload đạt; chạm và kéo giả lập riêng đạt, nhưng click giả lập sau kéo CDP chưa xác minh; console/pageerror rỗng. Chưa kiểm cảm ứng thật, profile Windows, Android/Firefox và tài liệu người dùng.

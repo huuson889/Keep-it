@@ -34,6 +34,7 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 - Không khôi phục Grammar/Library dự phòng hay route Flashcards. Sidebar chỉ chứa route/action thực; pin giữ 220px/56px và không tự bung khi hover.
 - Settings master tắt thì dependent `inert`; ba lựa chọn icon/popup độc quyền không bị khóa. Dịch tắt khóa Reader song ngữ. AI luôn còn một provider; auto-send mặc định tắt, user-written prompt không tự gửi.
 - Nền canvas638 dùng duy nhất `--lhn-dashboard-page-bg` trong shared/ui-tokens.css (#e9edf4 sáng/#000 tối). Shell alias `--dash-page-bg`, hostroute Documents và html/body `dash-embedded` dùng cùng token. Không lấy nền tím standalone --page cho iframe nhúng; không đổi nền card/headerglass/viewer. Theme hiện có đồng bộ class dark giữa hai document.
+- Footer Dictation639: khi route active, scroller flex-column có chiều cao viewport, portal flexnone, route/root/app/content grow qua các lớp minheight0; footer auto-top trong normalflow. Có rule route[hidden] explicit. Không dùng minheight100% qua chaauto hoặc fixedfooter; không tác động display các route khác. Navreserve mobile72px/safearea giữ nguyên, nên không tự loại gap khi thanh thu thànhvạch.
 - Nhãn mới nằm ở `languages.js`, đủ en/vi/ko. Theme theo `sidebarTheme` chung.
 - Reveal/counter dùng module chung, cycle guard và reduced motion; không tạo timer/observer presentation trùng ở consumer. Không animation giả số liệu.
 - H&N giữ source selection khi đổi note; workspace có hai vùng cuộn, không thêm scroll root cấp trang. Rule `display:…!important` phải có `[hidden]` tương ứng.
@@ -48,3 +49,5 @@ Dashboard quản lý Overview, Dictation, Highlights & Notes, Tài liệu và c�
 Chạy `node --check` file sửa, parse manifest/HTML refs, đối chiếu messages và `git diff --check`. Chromium extension thật kiểm bốn route, sidebar/pin/Thêm, theme/ngôn ngữ, reload/scroll và công cụ Tài liệu. Test mock không thay xác nhận giọng thật, AI đăng nhập, Firefox hay Edge Android. Các QA cũ chưa xác nhận vẫn được giữ trong `PROJECT.md` mục 2; không coi việc cập nhật tài liệu là đã hoàn tất chúng.
 
 QA638:123/123HTTP Chromium+API/protocol shim,1512/390 sáng-tối,5route và quay lại Documents; baseline637lệch#e9edf4/#f5f5ff đã đo,638đồng bộ. Parenterrors[];child2ResizeObserver deliverywarnings khi resize còn ghi raw. Đã nhìn browserHTTPsáng1280×813, chưa nghiệm thu ảnhpixel/crop4×/extension thật.
+
+QA639:162/162HTTP+API/protocolshim,5size sángtối normal/short/longfixture và5route. Shortfooter xuống đáy trừpadding, longscroll theo; errors[]. Normal/longgap khôngđổi, mobile vẫn72pxnavreserve+25pxroutepad≈97px; chưa xácnhậnảnhuser hoặcextensionunpacked/CSP/pixel/device.
