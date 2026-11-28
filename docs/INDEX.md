@@ -54,6 +54,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Popup PDF tự hiện + toolbar, mở đúng PDF trong Tài liệu | `js/background/background.js`, `pages/pdf-suggestion.html`, `js/popup/pdf-suggestion.js`, `js/popup/popup.js`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |
 | Màu kính sáng/tối (thanh, ☰, Reader, sheet overlay khi bật Hiệu ứng nền) | `js/shared/theme-tokens.js` (biến `--kp-…`) |
+| Chú thích Loại từ trên web và trong tệp | `js/word-class/legend.js`; lifecycle ở `js/word-class/page.js`, `js/dashboard/documents.js` |
 | Nhãn en/vi/ko | `js/core/languages.js` — mọi nhãn ở đây. Khoá: thanh Keepit `bar_<tên>`, overlay `ov_<tên>` (`T('<tên>')` trong `overlay-ui.js`), trang offline `off_<tên>` |
 | Cài đặt mặc định, khoá lưu trữ | `js/core/defaults.js`, `js/core/config.js` |
 | Thứ tự nạp script | `manifest.json` (`content_scripts`, `background`) |

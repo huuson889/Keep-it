@@ -4,7 +4,7 @@
 
 ## 1. Mục đích và phạm vi
 
-"Loại từ" (Word class / 품사) hiện loại từ viết tắt dưới mỗi từ tiếng Anh trên trang web: gạch chân màu rồi nhãn 12px (N, V, Adj…), danh từ liền nhau hoặc nối gạch (Notre-Dame; kèm PART dính sau, như "City’s") chung một cột, một gạch N; tiểu từ dính sau giữ gạch và nhãn riêng ("N · Part"). Nhãn do mô hình `jdp8/bert-english-uncased-finetuned-pos` (q8, ~110 MB) gán theo ngữ cảnh, không danh sách từ; tải từ huggingface.co khi người dùng đồng ý, rồi chạy trên máy. Chỉ web, khung trên cùng.
+"Loại từ" (Word class / 품사) hiện loại từ viết tắt dưới mỗi từ tiếng Anh trên trang web: gạch chân màu rồi nhãn 12px (N, V, Adj…), danh từ liền nhau hoặc nối gạch (Notre-Dame; kèm PART dính sau, như "City’s") chung một cột, một gạch N; tiểu từ dính sau giữ gạch và nhãn riêng ("N · Part"). Nhãn do mô hình `jdp8/bert-english-uncased-finetuned-pos` (q8, ~110 MB) gán theo ngữ cảnh, không danh sách từ; tải từ huggingface.co khi người dùng đồng ý, rồi chạy trên máy. Phần bọc từ áp dụng trên web, khung trên cùng; Documents dùng overlay riêng, cùng bảng chú thích.
 
 ## 2. File chính và điểm vào
 
@@ -14,7 +14,8 @@
 | [`js/word-class/engine.js`](../../js/word-class/engine.js) | ES module `handle({op})` | Chạy Transformers.js: `status`, `download`, `tag` (≤50 đoạn), `remove`. Cache `transformers-cache`; rảnh 3 phút thì giải phóng. |
 | [`pages/word-class-engine.html`](../../pages/word-class-engine.html) | offscreen document | Chrome chạy engine ở đây. |
 | [`js/background/background.js`](../../js/background/background.js) | `wordClassMessage` | Router `WORD_CLASS_*`; TAG khi chưa có mô hình → `{needDownload:true}`. |
-| [`js/word-class/page.js`](../../js/word-class/page.js) | `LHN_WORD_CLASS{enabled, pageOn, togglePage, toggleAt}` | Content script: cả trang, từng đoạn, thẻ thông báo, bảng chú thích, bọc/gỡ từ. |
+| [`js/word-class/legend.js`](../../js/word-class/legend.js) | `LHN_WORD_CLASS_LEGEND.create({onClose,bounds})` | Shadow panel/tooltip/kéo/lưu vị trí dùng chung cho web và Documents; phải nạp sau core, trước owner. |
+| [`js/word-class/page.js`](../../js/word-class/page.js) | `LHN_WORD_CLASS{enabled, pageOn, togglePage, toggleAt}` | Content script: tagging/lifecycle trang và đoạn; gọi component chú thích chung. |
 | [`vendor/transformers/`](../../vendor/transformers/) | `transformers.min.js`, `ort-wasm-simd-threaded.{mjs,wasm}` | Transformers.js 3.8.1 + ONNX Runtime Web (WASM CPU); không tải code từ xa. |
 
 ## 3. Luồng chính
@@ -29,6 +30,7 @@
 
 ## 4. Hợp đồng và quy tắc cần giữ
 
+- Chú thích dùng chung `legend.js`, không sao chép CSS/markup. Owner truyền tokens/meaning/definition/theme/title/closeText; giữ chính sách auto-show/đóng/mở tay. Documents thêm bounds dưới toolbar, không scale panel theo zoom nguồn. `show`/`hide`/`shown`/`reposition` không gọi model hoặc sửa chữ. Tooltip hover/chạm và kéo lưu `lhnWordClassLegend`; drag dọn cả lost-capture/blur.
 - Nhãn chỉ từ đầu ra mô hình. Bảng viết tắt và nghĩa (`wc_<UPOS>` trong `languages.js`) là quy ước hiển thị.
 - Chữ trang chỉ được bọc: nhãn trong shadow đóng nên không bị đọc, dịch, chọn, sao chép. Reader bỏ `lhn-wc`/`lhn-wcu` khỏi `isTextBlock`.
 - `wordClassEnabled` tắt là tắt mọi nơi (ô ☰, Alt+G / Alt+J, gỡ nhãn). Giữ Alt: tạm gỡ accesskey G/J của trang (Wikipedia). Website đã tắt Keepit, YouTube: không chạy.
@@ -39,4 +41,5 @@
 
 - Static: `node --check` `js/word-class/*`.
 - Extension thật: Cài đặt → Tải → xem trước có nhãn; Alt+G gắn đoạn tiếng Anh, bỏ đoạn khác, `innerText`/vùng chọn không đổi, tắt → HTML như cũ; Alt+J chỉ một đoạn; công tắc tổng tắt → gỡ nhãn, ẩn ô ☰, phím không tác dụng.
+- QA636:41check HTTP UI có API/protocol/top-frame shim và POS fixture, so styles app/web1512/390 sáng-tối,3ngôn ngữ, lifecycle; chuột thật hover/kéo có ghi storage. Không phải accuracy, screenshot/pixel hay unpacked acceptance.
 - Firefox: thử bản build thật.

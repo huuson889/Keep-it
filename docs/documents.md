@@ -69,6 +69,12 @@ Tài liệu dùng bố cục demo v13 nhưng phải gọi module app có sẵn c
 
 `documents.js` và mọi xử lý drag/import/render/store giữ nguyên byte630. Adapter `watchDashboardDocumentDropUi` ở dashboard.js chỉ observe class gốc, clone nội dung sang `.documents-drop-preview` inert/pointer-none; CSS trong documents-host.css trình bày theo viewport cha/header/sidebar. Không move/adopt phần tử nhận drop, không lắng nghe drag/drop, không đọc/đổi FileList. CSS documents.css ẩn paint gốc khi mirror hoạt động nhưng giữ node/event path, fullscreen vẫn dùng gốc. Điều kiện632 là bảo toàn hành vi630, không nâng cấp importer. QA/hash/audit ở `/home/user/qa-keepit-632`; HTTP không chứng minh OS Downloads drag.631 đã bị người dùng báo mọi file lỗi, không dùng66test631 làm nghiệm thu.
 
+## Chú thích Loại từ dùng chung (3.5.636)
+
+`documents.js` gọi `LHN_WORD_CLASS_LEGEND.create` từ `js/word-class/legend.js`, cùng component mà web `page.js` dùng, thay markup/CSS panel cũ. Shadow đóng cách ly UI khỏi CSS và zoom nguồn. Giữ nguyên classifier/overlay và model messages; component chỉ nhận tokens/nhãn/định nghĩa/theme. Dùng wc_legend/wc_close/wc_def_* có sẵn en/vi/ko. Auto-show theo setting;×ẩn đến lượt bật công cụ sau, repaint/đổi chế độ không tự mở lại; menu mở tay vẫn dùng được khi tắt auto-show. Đóng/chuyển tệp hoặc tắt công cụ ẩn panel và tooltip.
+
+Documents cung cấp bounds dưới vBar; ResizeObserver dời/clamp khi viewer/toolbar thay kích thước. Dùng cùng CSS kính, row hover, tooltip, header drag và lưu normalized position lhnWordClassLegend như web. Không sửa nhãn chồng dưới chữ tài liệu khi zoom. QA636 ngoài source:41check HTTP styles/state/language, POS responses là fixture chỉ cho UI; real mouse hover/kéo đã kiểm. Chưa unpacked/screenshot/crop4×/touch-device/pixel acceptance.
+
 ## Xác minh
 
 Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, notes/anchor/reopen/migration/deep link/backup, Reader native/thay trang/card, touch selection/sheet/AI và regression web/home. AI chưa đăng nhập có thể báo lỗi nhúng; UI không chứng minh phiên AI thật. Firefox, Edge Android và giọng đọc thực cần xác nhận riêng.

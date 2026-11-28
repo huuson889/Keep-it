@@ -1591,3 +1591,9 @@
 - Tóm tắt: thêm công tắc Thu gọn thanh trên trong Cài đặt Tài liệu; mặc định tắt, khi bật chỉ thanh trên thu về 60%, ghi nhớ và đồng bộ trực tiếp. Không thu thanh dưới, menu hay nội dung tài liệu.
 - File: `pages/dashboard.html`, `css/dashboard/documents.css`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, tài liệu.
 - Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối, ảnh chi tiết 4×; bật/tắt, đồng bộ iframe và reload; thanh chuột 56→33,6px, chạm giả lập 60→36px, nút chạm 44→26,4px theo yêu cầu. Tên PDF dài, co giãn 320/390/1512, menu Thêm và đổi theme; console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, Windows/profile thật, Android/Firefox và Office thực; 60% khiến đích chạm nhỏ.
+
+**2026-11-17 | v3.5.604 | Arena:**
+
+- Tóm tắt: thu gọn thanh trên còn 80% thay vì 60%; chế độ Đọc chỉ đổi cách xem, không tự mở Đọc to; `arena.ai` được thêm một lần vào Tắt website, giữ danh sách cũ và cho xóa/bật lại.
+- File: `css/dashboard/documents.css`, `js/core/languages.js`, `js/dashboard/documents.js`, `js/background/background.js`, `manifest.json`, tài liệu.
+- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh phóng 4×; thanh 56→44,8px chuột, 60→48px chạm giả lập; chọn Đọc và mở trực tiếp Đọc không bật giọng, nút Đọc to vẫn kích hoạt reader; trang HTML giả lập tại arena.ai thấy thanh ẩn, cài mới/di trú giữ sites cũ, xóa không bị thêm lại. Console/pageerror rỗng; chưa kiểm trang Arena thật/profile Windows, Android/Firefox, giọng và thiết bị thật.

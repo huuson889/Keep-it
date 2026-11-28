@@ -1,19 +1,20 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.635:** tích hợp DOCX Fidelity Lab v4 người dùng đã duyệt vào renderer thật, không mang shell/mẫu/PDF demo vào app. Trash B của634 và importer/controller/store/OCR/PDF/PPTX giữ nguyên.
-- DOCX dùng parser ESM local + factory layout riêng: DrawingML/group/textbox, alpha/theme/rounded border, đo co ngang/tracking/ngắt dòng, shared flow/cột/bảng/phân trang. Sanitizer chạy detached/in-place trước mount; foreignObject chỉ do adapter first-party tạo sau đó.
-- Chữ textbox vào `.para/.en` chung; không đổi DB schema, bytes hoặc controller Reader/Dịch/Notes/AI. Phân trang/block mới có thể ảnh hưởng anchors cũ; không tự sửa notes. HR app kiểm4trang cùng adapter, không giả app dùng worker v1 demo.
-- Kiểm mới: syntax3JS/diff-check;107check renderer thật/5mẫu/fixtures/security/PDF/PPTX/ảnh;19check controller/store HTTP+API/protocol shim (import/Read/Original/reopen,1512/390 sáng-tối nút app), console/pageerror cuối rỗng; chuột thật chọn Weekly trong block app. Chưa unpacked/CSP/ảnh/crop4×/OS drag/picker/notes thực hoặc fidelity pixel. Xem docs/documents.md và QA ngoài source.
+- **Bản test 3.5.636:** sửa chú thích Loại từ trong tệp cho giống web theo ảnh người dùng. Web và Documents cùng dùng `word-class/legend.js`, tách nguyên CSS/markup/tooltip từ web635; không tạo bản sao giao diện riêng.
+- Dùng chung font/kính/màu/dòng/nút×, hover/chạm định nghĩa, kéo header và storage vị trí `lhnWordClassLegend`. Documents neo dưới thanh công cụ, clamp theo viewer; đóng× không bị repaint mở lại, tuân thủ auto-show setting và menu mở tay.
+- DOCX v4 của635, classifier/model/core, overlay nhãn, importer/store/OCR/PDF/PPTX/Trash không đổi. Chữ/zoom/flow tài liệu giữ đường cũ; không xử lý nhãn chồng khi zoom vì ngoài yêu cầu chú thích.
+- QA mới:41check UI nguồn thật HTTP+API/protocol/top-frame shim,1512/390 sáng-tối và en/vi/ko, đối chiếu computed styles; chuột thật hover Prep/kéo panel và thấy ghi vị trí. POS responses là fixture chỉ để kiểm UI, không giả là chạy mô hình. Thêm19check hồi quy import/Gốc-Đọc/đóng-mở lại qua controller thật HTTP+shim đạt. Console/pageerror cuối rỗng; chưa ảnh/unpacked/CSP/crop4×/touch-device hoặc nghiệm thu pixel extension.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.635: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.636: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
+- Chú thích636: kiểm hover/chạm/kéo, sáng-tối và vị trí trên extension thật; HTTP mới là kiểm UI có fixture, chưa ảnh/crop4×.
 - DOCX635: kiểm font/layout, chọn chữ + notes cũ/mới, dịch/TTS/AI trên extension thật; HTTP đã qua nhưng chưa có ảnh/crop4×/CSP/OS drop.
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
 ### Tiếp theo
@@ -37,6 +38,8 @@
 ## 4. Cấu trúc và kiến trúc dự án
 
 DOCX: `documents-renderers.office()` → parser local `vendor/office/docx-preview-keepit.mjs` + `documents-docx.mjs:createDocxLayout`; secure detached DOM/CSS → measurement/layout → app `.para/.en`. Xem `docs/documents.md` cho lifecycle/guard/limits.
+
+Chú thích Loại từ: `js/word-class/legend.js:LHN_WORD_CLASS_LEGEND.create` dùng chung cho `page.js` và `documents.js`; owner giữ tokens/đóng-mở/settings, component giữ shadow UI/tooltip/drag/storage. Documents thêm bounds dưới vBar và ResizeObserver.
 
 ### 4.1. Bản đồ file
 ```text
@@ -183,6 +186,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.636 | Arena sửa:**
+
+- Tóm tắt: theo hai ảnh người dùng, thay panel chú thích Documents riêng bằng component dùng chung với web. Tách nguyên CSS/markup/tooltip/drag web635 sang legend.js; web gọi cùng component, không đổi tagging/model code ngoài khối UI. Documents dùng cùng title wc_legend, row style và định nghĩa en/vi/ko, close, kéo/lưu vị trí; đặt dưới vBar/clamp theo viewer, theo ResizeObserver khi thu hẹp. Bỏ markup/CSS/handler legend cũ và ngăn repaint mở lại sau×; auto-show theo setting, vẫn mở tay được. Không sửa nhãn dưới từ, renderer DOCX635 hoặc bố cục nội dung.
+- File: js/word-class/legend.js+page.js, js/dashboard/documents.js, pages/documents.html, css/dashboard/documents.css, manifest636 và PROJECT/docs/documents/docs/modules/word-class/docs/INDEX. Cờ model/core/importer/store/OCR/PDF/PPTX/Trash không đổi.
+- Kiểm tra: syntax3JS/diff-check; CSS legend byte-identical web635 và phần page.js ngoài block tách UI nguyên vẹn.41/41check nguồn UI thật HTTP+API/protocol/top-frame shim:1512/390 sáng-tối nút app,112computed properties mỗi trạng thái app/web, label/definition/live en-vi-ko, X/menu/repaint/off/auto-show/close file. POS outputs deterministic fixture để kiểm UI, chưa chạy accuracy/model. Chuột thật hover Prep hiện định nghĩa, kéo panel từ(888,60)→(688,130) và storage nhận tọa độ chuẩn hóa; log cuối rỗng. Chưa ảnh/unpacked/CSP/crop4×/thiết bị touch/Firefox hay pixel extension; công cụ vẫn chặn chrome://extensions. 19/19 hồi quy controller import/Original/Read/reopen IndexedDB cũng qua HTTP+shim, errors[]. QA `/home/user/qa-keepit-636` ngoài source.
 
 **2026-11-26 | v3.5.635 | Arena sửa:**
 
@@ -356,9 +365,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: Giảm một nửa khoảng trống dọc thanh trên tài liệu, giữ cỡ nút và thu gọn 80%.
 - File: `css/dashboard/documents.css`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
 - Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×; chuột 46/36,8px, cảm ứng giả lập 52/41,6px; menu Thêm và Đọc/Đọc to; console/pageerror rỗng. Chưa kiểm thiết bị thật, profile Windows, Android/Firefox và cảm giác dùng.
-
-**2026-11-17 | v3.5.604 | Arena:**
-
-- Tóm tắt: thu gọn thanh trên còn 80% thay vì 60%; chế độ Đọc chỉ đổi cách xem, không tự mở Đọc to; `arena.ai` được thêm một lần vào Tắt website, giữ danh sách cũ và cho xóa/bật lại.
-- File: `css/dashboard/documents.css`, `js/core/languages.js`, `js/dashboard/documents.js`, `js/background/background.js`, `manifest.json`, tài liệu.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh phóng 4×; thanh 56→44,8px chuột, 60→48px chạm giả lập; chọn Đọc và mở trực tiếp Đọc không bật giọng, nút Đọc to vẫn kích hoạt reader; trang HTML giả lập tại arena.ai thấy thanh ẩn, cài mới/di trú giữ sites cũ, xóa không bị thêm lại. Console/pageerror rỗng; chưa kiểm trang Arena thật/profile Windows, Android/Firefox, giọng và thiết bị thật.

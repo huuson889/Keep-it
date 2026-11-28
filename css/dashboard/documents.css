@@ -391,13 +391,6 @@ html.dark .sheet button.on{background:#25264a;color:#c0c2ff}
 .w.cur{background:var(--brand);color:#fff;border-radius:3px;box-shadow:0 0 0 2px var(--brand)}
 .wcl .w.cur,.wcl .w{background:none;box-shadow:none;color:inherit}
 .ttsOn .pager{display:none}
-.legend{position:absolute;right:16px;top:14px;z-index:4;display:none;min-width:250px;padding:8px 10px 10px;border:1px solid var(--line);border-radius:14px;background:var(--chip);backdrop-filter:blur(16px);box-shadow:var(--shadowH);font-size:12.5px;color:var(--ink2);white-space:nowrap}
-.wcOn .legend.on{display:block}
-.legend header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;cursor:grab;font-weight:700;color:var(--ink);font-size:12.5px;user-select:none;touch-action:none}
-.legend header button{width:24px;height:24px;border:0;border-radius:7px;background:none;display:grid;place-items:center;color:var(--muted)}
-.legend header button:hover{background:var(--soft)}
-.legend div{line-height:1.8}
-.legend b{font-weight:700}
 .side2{--panel-base:480px;width:480px;flex:none;border-left:1px solid var(--line);background:var(--surface);display:none;flex-direction:column;min-height:0}
 .side2 header{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 12px 16px;border-bottom:1px solid var(--line);font-weight:700}
 .side2 header small{display:block;font-weight:500;color:var(--muted);font-size:12px}
@@ -418,7 +411,6 @@ html.dark .tour .tBar{background:#0000001a}
 html.dark .tour button{background:#0000000f}
 @media  (orientation:portrait){.demoStrip .btnP{margin-left:0;width:100%;justify-content:center}
 .side2{position:fixed;left:8px;right:8px;bottom:8px;top:auto;width:auto;max-height:66vh;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadowH);z-index:55}
-.legend{left:10px;right:auto;top:10px;min-width:0}
 .tour{left:8px;right:8px;width:auto;bottom:auto;top:8px}}
 /* ---------- document view controls ---------- */
 /* Document navigation is separate from the learning tools above. */
@@ -631,9 +623,7 @@ html.dark .tour button{background:#0000000f}
 .transList{max-height:48dvh}
 .pageFrame{margin-bottom:17px}
 .toast{top:148px}
-.legend{min-width:0;max-width:calc(100% - 20px);font-size:12px}
 .reflow{font-size:16px}
-.legend{left:auto;right:10px;top:10px}
 .tour{top:8px;bottom:auto;left:8px;right:8px;width:auto}
 .tour.show~.toast{top:150px}}
 @media  (pointer:coarse){.vbar{height:52px}
@@ -651,7 +641,6 @@ html.dark .tour button{background:#0000000f}
 @media  (max-height:500px) and (orientation:landscape){.vbar{padding:0 8px;gap:5px}
 .stage{padding-top:10px}
 .side2{--panel-base:390px;position:relative;left:auto;right:auto;bottom:auto;top:auto;border-radius:0;max-height:none;width:390px}
-.legend{font-size:11px}
 .tour{top:auto;bottom:8px;left:8px;right:auto;width:300px}}
 /* Resizable side panels retain the portrait sheet layout. */
 .side2 header>div{min-width:0}
@@ -764,7 +753,6 @@ body{overflow:auto}
 .trText{white-space:pre-wrap}
 .trError{color:var(--muted);font-size:12px}
 .trRetry{border:0;background:none;color:var(--brand);padding:4px;font:inherit;font-size:12px;cursor:pointer}
-#wordClassLegend{display:flex;flex-direction:column;gap:5px;white-space:nowrap}
 .reflow .para{margin:0 0 18px}
 .reflow .en{white-space:pre-wrap}
 .reflow .tr{display:none}
@@ -779,7 +767,7 @@ body{overflow:auto}
 .pdfTextLayer .kp-wc-a span{color:inherit}
 @media (orientation:portrait){.main{padding:0 12px 24px}
 .topbar{margin-top:10px}
-.legend{max-width:calc(100% - 16px)}}
+}
 @media (pointer:coarse){.fileSelectButton{min-height:44px}}
 /* POS is a geometric overlay: source text, font runs and page layout are never rewritten. */
 .docsWcOverlay{position:absolute;inset:0;pointer-events:none;z-index:8;overflow:hidden}
