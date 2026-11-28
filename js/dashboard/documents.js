@@ -5,6 +5,7 @@ if(EMBEDDED){document.documentElement.classList.add('dash-embedded','dash-embedd
 (() => {
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], api=globalThis.browser, Store=KeepitDocumentsStore;
+const dropAll=$('#dropAll');
 const PREF_KEY='lhnDocumentsPrefs', FLOW_KEY='lhnDocumentsFlow', PAGER_KEY='lhnDocumentsPager', TOP_COMPACT_KEY='lhnDocumentsCompactTop', RAIL_KEY='lhnDocumentsRail', FLOWS=['continuous','single','facing','facingContinuous'], PAGER_MODES=['dim','show','auto','hide'], MB=1048576;
 let settings={},lang='en',docs=[],filter='all',q='',sort='recent',activeEngine=null,viewCycle=0,importCycle=0,loading=false;
 const panelPrefs={widths:{},follow:true,language:'vi'};
@@ -32,7 +33,7 @@ function watchPdfAccessPermission(){clearTimeout(pdfAccessWatchTimer);const watc
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&pdfAccessWatchId)void checkPdfAccessPermission(pdfAccessWatchId);});
 $('#errOk').onclick=async()=>{if(!$('#errModal').classList.contains('pdfAccessModal')){showModal('#errWrap',false);return;}if(pdfAccessOpening)return;pdfAccessOpening=true;try{await api.tabs.create({url:`chrome://extensions/?id=${encodeURIComponent(api.runtime.id)}`});watchPdfAccessPermission();}catch{pdfAccessOpening=false;toast(t('pdfAccessOpenFailed'));}};$('#errChoose').onclick=()=>{showModal('#errWrap',false);$('#file').click();};
 async function savePanelPrefs(){try{await api.storage.local.set({[PREF_KEY]:{...panelPrefs,flow:lastFlow}});}catch{toast(t('storageFailed'));}}
-function localize(){document.documentElement.lang=lang;document.title='Keepit — '+t('title');for(const el of $$('[data-doc-label]'))el.textContent=t(el.dataset.docLabel);for(const [attr,key]of[['title','docTitle'],['aria-label','docAria'],['placeholder','docPlaceholder']]){const selector='[data-'+key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+']';for(const el of $$(selector))el.setAttribute(attr,t(el.dataset[key]));}if(V.doc)$('#vType').innerHTML=fileLabel(V.doc.type,true);$('#q').placeholder=t('search');$('#sort option[value="recent"]').textContent=t('recent');$('#sort option[value="name"]').textContent=t('sortName');$('#sort option[value="progress"]').textContent=t('progress');$('#vBack').setAttribute('aria-label',t('back')+' Keepit');updateDocLabels();updateTranslationControls();updateFullscreenButton();}
+function localize(){document.documentElement.lang=lang;document.title='Keepit — '+t('title');for(const el of new Set([...$$('[data-doc-label]'),...dropAll.querySelectorAll('[data-doc-label]')]))el.textContent=t(el.dataset.docLabel);for(const [attr,key]of[['title','docTitle'],['aria-label','docAria'],['placeholder','docPlaceholder']]){const selector='[data-'+key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())+']';for(const el of $$(selector))el.setAttribute(attr,t(el.dataset[key]));}if(V.doc)$('#vType').innerHTML=fileLabel(V.doc.type,true);$('#q').placeholder=t('search');$('#sort option[value="recent"]').textContent=t('recent');$('#sort option[value="name"]').textContent=t('sortName');$('#sort option[value="progress"]').textContent=t('progress');$('#vBack').setAttribute('aria-label',t('back')+' Keepit');updateDocLabels();updateTranslationControls();updateFullscreenButton();}
 async function syncSettings(){const data=await api.storage.local.get('lhnSettings');settings={...LHN_CONFIG.DEFAULT_SETTINGS,...(data.lhnSettings||{})};lang=LHN_LANGUAGES.languageFor(settings);const dark=settings.sidebarTheme==='dark'||(!['light','dark'].includes(settings.sidebarTheme)&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',dark);for(const sel of['#vThemeIco','#libraryTheme svg'])$(sel).innerHTML=ICON[dark?'sun':'moon'];localize();if(V.doc){applyTools();paintPanels();if(settings.translateEnabled===false){V.tools.delete('translate');if(V.panel==='translation')V.panel=null;paintPanels();$('#viewer').classList.remove('translate');}}renderLibrary();}
 async function toggleTheme(){const data=await api.storage.local.get('lhnSettings');await api.storage.local.set({lhnSettings:{...(data.lhnSettings||{}),sidebarTheme:document.documentElement.classList.contains('dark')?'light':'dark'}});await syncSettings();}
 $('#vTheme').onclick=$('#libraryTheme').onclick=()=>void toggleTheme();
@@ -149,7 +150,67 @@ async function importFiles(files){
  function check(){if(cycle!==importCycle)throw new Error('cancelled');}
 }
 $('#oCancel').onclick=()=>{++importCycle;finishPassword(null);showModal('#openWrap',false);};$('#file').onchange=e=>{const files=[...e.target.files];e.target.value='';void importFiles(files);};
-let dragN=0;addEventListener('dragenter',e=>{if(![...(e.dataTransfer?.types||[])].includes('Files'))return;e.preventDefault();dragN++;$('#dropAll').classList.add('show');});addEventListener('dragover',e=>e.preventDefault());addEventListener('dragleave',()=>{if(--dragN<=0){dragN=0;$('#dropAll').classList.remove('show');}});addEventListener('drop',e=>{e.preventDefault();dragN=0;$('#dropAll').classList.remove('show');if(e.dataTransfer?.files?.length)void importFiles(e.dataTransfer.files);});
+// Library drag UI belongs to the dashboard viewport, not its tall/clipped iframe.
+// Keep one original element and the existing importer. Portal above the host chrome,
+// but stay in the fullscreen document. Only the same-origin dashboard is allowed.
+const dropHome=document.createComment('Document drop home');dropAll.before(dropHome);
+let dropHost=null;
+try{if(EMBEDDED&&parent.document.getElementById('dashboardDocumentsFrame')?.contentWindow===window)dropHost=parent;}catch{}
+const dragWindows=dropHost?[window,dropHost]:[window],dragDepth=new Map();
+let dragHideFrame=0,dropLayoutFrame=0;const dropEvents=new AbortController();
+function documentDropHost(){return dropHost&&!document.fullscreenElement;}
+function dropAllowed(w){return w===window||!!(documentDropHost()&&dropHost.document.body.classList.contains('dashboard-documents-active'));}
+function layoutDocumentDrop(){
+ if(!dropAll.classList.contains('show'))return;
+ const hosted=documentDropHost(),viewer=$('#viewer').classList.contains('show'),w=hosted?dropHost:window,d=w.document;
+ const bar=viewer?$('#vBar'):hosted?d.getElementById('dashboardSharedTopbar'):$('.topbar');
+ const area=hosted&&!viewer?d.getElementById('dashboardScroller'):null;
+ const left=Math.max(0,Math.min(w.innerWidth,area?.getBoundingClientRect().left||0));
+ const offset=hosted&&viewer?(dropHost.document.getElementById('dashboardDocumentsFrame')?.getBoundingClientRect().top||0):0;
+ const top=Math.max(0,Math.min(w.innerHeight,(bar?.getBoundingClientRect().bottom||0)+offset));
+ if(dropAll.parentElement!==d.body||dropAll!==d.body.lastElementChild)d.body.append(dropAll);
+ Object.assign(dropAll.style,{left:left+'px',top:top+'px',width:Math.max(0,w.innerWidth-left)+'px',height:Math.max(0,w.innerHeight-top)+'px'});
+}
+function clearDocumentDrop(){
+ cancelAnimationFrame(dragHideFrame);cancelAnimationFrame(dropLayoutFrame);dragDepth.clear();dropAll.classList.remove('show');
+ if(dropAll.ownerDocument!==document)dropHome.after(dropAll);
+}
+function hideDocumentDropWhenOutside(){
+ cancelAnimationFrame(dragHideFrame);dragHideFrame=requestAnimationFrame(()=>{if(![...dragDepth.values()].some(n=>n>0))clearDocumentDrop();});
+}
+for(const w of dragWindows){
+ w.addEventListener('dragenter',e=>{
+  if(!dropAllowed(w)||![...(e.dataTransfer?.types||[])].includes('Files'))return;
+  e.preventDefault();cancelAnimationFrame(dragHideFrame);dragDepth.set(w,(dragDepth.get(w)||0)+1);dropAll.classList.add('show');layoutDocumentDrop();
+ },{signal:dropEvents.signal});
+ w.addEventListener('dragover',e=>{
+  if(!dropAllowed(w)||![...(e.dataTransfer?.types||[])].includes('Files'))return;
+  e.preventDefault();e.dataTransfer.dropEffect='copy';
+ },{signal:dropEvents.signal});
+ w.addEventListener('dragleave',e=>{
+  dragDepth.set(w,Math.max(0,(dragDepth.get(w)||0)-1));
+  // Leaving the OS/browser viewport may omit intermediate element leave events.
+  if(!e.relatedTarget&&(e.clientX<=0||e.clientY<=0||e.clientX>=w.innerWidth||e.clientY>=w.innerHeight))dragDepth.set(w,0);
+  hideDocumentDropWhenOutside();
+ },{signal:dropEvents.signal});
+ w.addEventListener('drop',e=>{
+  if(!dropAllowed(w)){clearDocumentDrop();return;}
+  e.preventDefault();const files=e.dataTransfer?.files;clearDocumentDrop();if(files?.length)void importFiles(files);
+ },{signal:dropEvents.signal});
+ w.addEventListener('dragend',clearDocumentDrop,{signal:dropEvents.signal});w.addEventListener('blur',clearDocumentDrop,{signal:dropEvents.signal});
+ w.addEventListener('resize',layoutDocumentDrop,{passive:true,signal:dropEvents.signal});w.addEventListener('scroll',layoutDocumentDrop,{passive:true,capture:true,signal:dropEvents.signal});
+ w.document.addEventListener('visibilitychange',()=>{if(w.document.hidden)clearDocumentDrop();},{signal:dropEvents.signal});
+ w.document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dropAll.classList.contains('show')){e.preventDefault();e.stopImmediatePropagation();clearDocumentDrop();}},{capture:true,signal:dropEvents.signal});
+}
+addEventListener('pagehide',()=>{clearDocumentDrop();dropEvents.abort();});
+if(dropHost){
+ const observer=new dropHost.MutationObserver(()=>{if(!dropHost.document.body.classList.contains('dashboard-documents-active'))clearDocumentDrop();else layoutDocumentDrop();});
+ observer.observe(dropHost.document.body,{attributes:true,attributeFilter:['class']});
+ const resize=new dropHost.ResizeObserver(()=>{cancelAnimationFrame(dropLayoutFrame);dropLayoutFrame=requestAnimationFrame(layoutDocumentDrop);});for(const id of ['dashboardScroller','dashboardSharedTopbar']){const el=dropHost.document.getElementById(id);if(el)resize.observe(el);}
+ addEventListener('pagehide',()=>{clearDocumentDrop();observer.disconnect();resize.disconnect();});
+}
+new MutationObserver(()=>{clearDocumentDrop();}).observe($('#viewer'),{attributes:true,attributeFilter:['class']});
+
 let pageObserver=null,thumbnailObserver=null,thumbnailJobs=new Map(),drawn=new Map(),noteList=[],savePositionTimer=0;
 /* v3.5.483: mở tệp quá sớm (lúc boot() còn đang chạy) làm bộ công cụ chọn chữ trong khung
    chưa được gắn → bôi đen không có thanh Tô sáng/Dịch/AI, phải reload mới được.

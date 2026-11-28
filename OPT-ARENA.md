@@ -7,6 +7,17 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
+## 2026-11-26 | Khung kéo thả Tài liệu
+
+**Trạng thái:** Thiết kế đã chốt với người dùng.
+
+- Dashboard: chừa sidebar trái và thanh trên cùng, phủ hết vùng bên phải xuống đáy, gồm cả thanh công cụ nổi.
+- Trình xem: chừa thanh công cụ trên cùng, phủ hết bên dưới gồm cả cột thumbnail/rail và pager.
+- Viền tím nét đứt bo góc, inset12–16px; nền mờ nhẹ, icon tải lên cùng “Thả tệp để mở” và dòng riêng tư giữa vùng phủ; toàn vùng nhận thả.
+- Không chọn phương án phủ cả sidebar Dashboard; không để khung bị giới hạn/cắt trong ô nội dung hoặc căn giữa theo tài liệu dài.
+
+---
+
 ## 2026-11-17 | Thanh Keepit trên Home + Dashboard (bản chốt v4)
 
 **Trạng thái:** Thiết kế đã chốt; làm ở v3.5.542.

@@ -49,7 +49,7 @@ Tên file là đường dẫn từ gốc repo. "(nền)" = chạy trong service 
 | Trang chủ Keepit / trang offline | `js/home/home-ui.js` + `pages/home.html` / `js/content/offline-page.js` |
 | Icon trang web (Trang chủ + Dashboard) | `js/shared/site-brands.js` (`LHN_SITE_BRANDS`) |
 | Công cụ chung cho Tài liệu | `js/dashboard/documents-context.js`; `js/content/content.js`, `sidebar.js`, `note-composer.js`; `js/reader/bilingual-reader.js`; `js/ask-ai/sheet.js` |
-| Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`, `documents-pptx.mjs`; `pages/documents.html`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
+| Tài liệu: import, thư viện, viewer | `js/dashboard/documents.js`, `documents-store.js`, `documents-renderers.js`, `documents-pptx.mjs`; `pages/documents.html`, `css/dashboard/documents-drop.css`, `css/dashboard/documents.css`; nối route ở `dashboard.js` |
 | OCR: controller, numeric/list controls và sheet responsive | `js/dashboard/ocr-controller.mjs`, `ocr-controls.mjs`, `documents-sheets.mjs`; `css/dashboard/ocr-demo.css`, `documents-responsive.css`; [hợp đồng](documents.md) |
 | Popup PDF tự hiện + toolbar, mở đúng PDF trong Tài liệu | `js/background/background.js`, `pages/pdf-suggestion.html`, `js/popup/pdf-suggestion.js`, `js/popup/popup.js`, `js/dashboard/dashboard.js`, `js/dashboard/documents.js` |
 | Dashboard / popup | `js/dashboard/` + `pages/dashboard.html` / `js/popup/popup.js` + `pages/popup.html` |

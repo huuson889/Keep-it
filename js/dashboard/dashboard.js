@@ -3673,7 +3673,7 @@ window.addEventListener("message", event => {
 });
 /* Documents renders as flat content inside this scroller, so the frame reports its own height
    instead of owning a second scrollbar; it also follows the dashboard theme. */
-let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardViewerReadyTimer = 0;
+let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardDocumentsResizeFrame = 0, dashboardViewerReadyTimer = 0;
 function dashboardDocumentsContentDoc() {
   const frame = $("dashboardDocumentsFrame");
   try { return frame?.contentDocument || null; } catch { return null; }
@@ -3713,10 +3713,15 @@ function syncDashboardDocumentsTheme() {
 function watchDashboardDocumentsFrame() {
   syncDashboardDocumentsTheme();
   dashboardDocumentsObserver?.disconnect();
+  cancelAnimationFrame(dashboardDocumentsResizeFrame);
   dashboardDocumentsObserver = null;
   const doc = dashboardDocumentsContentDoc();
   if (!doc || typeof ResizeObserver !== "function") return;
-  dashboardDocumentsObserver = new ResizeObserver(() => resizeDashboardDocumentsFrame());
+  dashboardDocumentsObserver = new ResizeObserver(() => {
+    // Write iframe height outside the observer delivery cycle (drag portal/width changes).
+    cancelAnimationFrame(dashboardDocumentsResizeFrame);
+    dashboardDocumentsResizeFrame = requestAnimationFrame(resizeDashboardDocumentsFrame);
+  });
   dashboardDocumentsObserver.observe(doc.documentElement);
   if (doc.body) dashboardDocumentsObserver.observe(doc.body);
 }
