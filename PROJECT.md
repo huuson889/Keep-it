@@ -1,19 +1,21 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.650:** đổi glyph Tổng quan sang4ôvuôngđều7×7,radius1,đúngSVGnútMởbảngquảnlýtrongpopupảnh26. Chỉđổi `nav-overview` trong `js/shared/icons.js`.
-- SidebarDashboard/thanhKeepitDashboard+Home/fallbacknavđọccùngglyphchung;khôngđổimàu/kíchthước/stroke/CSS/label/điềuhướng,khôngđổiiconkhác. Popup thamchiếugiữnguyênbyte,khôngsửatoolDashboardkhácngoàiphạmviiconTổngquan.
-- Giữmenuavatar/plan649,header648,Notes647/layoutscroll645/barfooter644/Documents;khôngđổiauth/storage/CRUD.
-- QA650:122/122actualDashboard+Home+KeepitbarHTTP/API/protocol/topframeshim,baseline649glyphkhácpopup,5size1512/994/650/390/283×696sángtối.4vịtríkhớpexactpopupSVG/styletrước-sau,sidebar/bar/fallbackclickvềOverview,5iconnavkhácnguyênbyte/errors[]. Pointer994darkđãclicksidebar/thấyTổngquan;chưaunpacked/CSP/device/PNGcrop4×.
+- **Bản test 3.5.651:** giảm chi phí cuộn Tổng quan bằng cách bỏ đúng 4 khai báo backdrop-filter blur16/saturate180% trên các card trong hai theme; không thay layout, màu/alpha/border/shadow/reveal hay JavaScript.
+- A/B651 actual Dashboard HTTP: 10 card blur → 0; header blur12, today-card blur5, Keepitbar và các tab khác giữ nguyên. Chỉ bỏ reveal will-change/transform không giúp trong chẩn đoán nên không sửa phần đó.
+- Giữ glyph650, menuavatar/plan649, header648, Notes647/layoutscroll645/barfooter644/Documents; không đổi auth/storage/CRUD.
+- QA651:171/171 DOM/computed-style/scroll/navigation, 1512/994/650/390/283×696 sáng/tối; manual994 cuộn chuột trusted20events tới đáy và đầu/errors[]. A/B rAF994 ba vòng đảo thứ tự:43→10 frame>25ms/354frame,12→0 frame>40ms; chỉ số sandbox, không FPS thiết bị người dùng.
+- Chưa unpacked/CSP/ảnh PNG crop4×/so pixel/hardware; cần người dùng xác nhận Tổng quan cuộn liên tục trên extension thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.650: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.651: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
+- 651: thử cuộn Tổng quan lặp lại sau tải, sáng/tối trên thiết bị thật; A/B HTTP giảm frame chậm, chưa xác nhận cảm giác/hiệu năng thiết bị.
 - ScrollTàiliệu641: thửHome→Documents,resize/cuộnđáy,mở/đóngfile trên extensionthật;HTTPđãcoframeđúnglibrary,chưaunpacked/ảnhpixel.
 - 644thayquyếtđịnhđáy640:Keepitoverlaymọitabkhôngđẩyfooter,cầnuserxácnhậnextensionthật;chưahardware/crop4×.
 - Nền638: kiểm tab Tài liệu đồng bộ vùng trên khi đổi tab/theme trên extension thật; HTTP đã đối chiếu màu, chưa ảnhcrop4×.
@@ -190,6 +192,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.651 | Arena sửa:**
+
+- Tóm tắt: xử lý báo cáo Tổng quan luôn giật khi vuốt sau tải, các tab khác bình thường. Chẩn đoán A/B trên cùng Dashboard sau reveal ổn định: bỏ blur cải thiện, bỏ riêng will-change/transform không cải thiện; chỉ bỏ 4 khai báo backdrop-filter blur16/saturate180% của card sáng/tối. Giữ opacity/màu/border/shadow/reveal, header/todaycard/Keepitbar glass, icon650 và các route/controller.
+- File: `css/dashboard/overview.css`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`.
+- Kiểm tra:171/171 actualDashboard HTTP/API/protocol/topframeshim,5size1512/994/650/390/283×696 sáng/tối:10cardblur→0, cardgeometry/materialkhácthuộctínhblurkhôngđổi,headerblur12/todaycardblur5/barstylegiữ,1outerroot/scrollđầuđáy/footerinvariant/reveal/routes/errors[]. Manual994 chuột trusted20events xuốngđáy793/lênđầu0/errors[]. Chẩnđoán12lượtCSSon/off; đo product/baseline6lượt3vòngđảothứtự:354framemỗinhánh,frame>25ms43→10,>40ms12→0; p95mỗilượtbảnmới16.8ms vs33.3–50msbảncũ. ChỉlàsandboxrAFvớiHTTPemptydata,khôngđồngnghĩaFPSthiếtbị. SourceexactCSSonly4linesdeleted/gitdiffcheck. Chưaunpacked/CSP/PNGcrop4×/pixel/hardware/useracceptance.
 
 **2026-11-26 | v3.5.650 | Arena sửa:**
 
@@ -375,9 +383,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: chỉ sửa UI số trang ở pager theo ảnh người dùng, phần620 khác giữ nguyên. Tái hiện pointer:coarse thật qua Chrome device toolbar: input44px + padding20px mỗi bên chỉ còn4px chữ, chevron bị min-width44px; nền wrapper rgb(21,21,23) quá đen. CSS riêng pager chia lane nhập/mũi tên24px, wrapper72px, input full-height/không chồng arrow và fill/line theo shared Settings field; OCR range không đổi. Không đổi JS/engine/navigation/storage.
 - File: `css/dashboard/documents-responsive.css`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`; ZIP mới đúng thư mục `Keepit-OCR-Zip` trên main, giữ nguyên các ZIP trước.
 - Kiểm tra: HTTP với shim API extension, PDF tổng hợp16 trang thật. 84 nhóm coarse (Chrome device toolbar, matchMedia xác nhận) +84 fine, mỗi nhóm viewport1233×696/1512×900/900×600/673×696/390×844/320×640 × sáng/tối: các giá trị1/5/16, text content40px > chữ2000~31.2px, input/arrow không chồng, chiều cao30/42 bên trong32/44, list lên/có16 mục, prev/next và chọnlist5 đổi native state. Dark fill rgba255,255,255,.08 thay nền đen, light .6. Chuột thật mở/cuộn list/chọn16 và quan sát đủ16/16. Không tuyên bố nhập liên tiếp nhiều chữ số đã nghiệm thu: một lượt tool gõ16 trả1, cần kiểm riêng cơ chế cập nhật có sẵn; bản này không sửa logic. Console.error/pageerror HTTP rỗng, vendor hash220/220; cú pháp/diff sạch. Chưa unpacked/ảnh extension621/pixel/crop4×/permission/thiết bị thật; không chạy lại OCR vì không đổi engine/JS.
-
-**2026-11-26 | v3.5.620 | Arena sửa:**
-
-- Tóm tắt: người dùng gửi sáu ảnh extension 619 và báo chưa khớp v14. Đối chiếu trực tiếp tìm wrapper .pgWrap cũ đè input mới (nền/viền kép, font700/padding lệch/height28), tổng còn dài, sáu SVG cũ, chấm OCR/CSS riêng, sheet chỉ hiện nhãn đơn vị “trang”. Thay đúng nguồn markup/CSS, xóa rule số cũ thay vì thêm lớp vá. Thêm tiêu đề Danh sách trang/tổng thật + en/vi/ko. Người dùng xác nhận hàng vùng đã giống demo nhưng yêu cầu Nhận dạng vùng giống Hủy: bỏ fill tự đổi tím/đen riêng, dùng neutral shared tile và giữ Apply tím/disabled logic; layer vùng lại trên bottom bar. Không đổi engine/model/data flow/docking/native navigation/export/schema.
-- File: `pages/documents.html`, `css/dashboard/ocr-demo.css`, `documents-responsive.css`, `js/dashboard/ocr-controller.mjs`, `documents.js`, `js/core/languages.js`; manifest/tài liệu, ZIP mới `Keepit-OCR-Zip`. Không sửa demo hoặc ZIP619/618.
-- Kiểm tra: đối chiếu trực tiếp HTTP app/v14 trên PDF scan16 trang:58 trạng thái ở1512×900/604×696/673×696/390×844/320×640 × sáng/tối; slot/field range và6SVG hết lệch đã nêu. Không giả đồng nhất toàn trang: font/docking theo trạng thái toolbar thật, version, summary thật và footer mô phỏng khác có chủ đích; max-height vùng còn theo giới hạn toolbar app. Kiểm sửa lỗi51 nhóm (neutral button trống/có chữ/sáng/tối, no dot, title/count3 ngôn ngữ, field widths112/94.5/59.5) không có cờ lỗi. Hồi quy UI13, lifecycle29, shared gestures/ngôn ngữ14 và OCR batch2 đều không cờ lỗi; current/all/range3 trang Tesseract thật thành công, scan dọn, có store. Chuột thật chọn vùng tiêu đề→Nhận dạng vùng trả chữ thật→Apply đóng; quan sát nút Nhận dạng vùng/Hủy cùng nền kính ở sáng/tối, Apply tím. Syntax5 file, vendor220/220, tools10/10, duplicate IDs/console.error/pageerror rỗng. Bộ QA619 đã bỏ sót lỗi hình thức; không dùng các số này thay nghiệm thu unpacked/ảnh extension620/crop4×/pixel/CSP/permission/thiết bị thật.
