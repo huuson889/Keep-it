@@ -29,15 +29,15 @@
 /* Notes uses the existing list → detail controller for every portrait viewport,
    independently of the fallback navigation's width breakpoints. */
 @media (aspect-ratio < 1/1) {
-  /* The detail screen fills the usable viewport, not the balanced library frame.
-     Keep header/filter rows intrinsic; only the cards consume the remaining space. */
+  /* Detail follows the same outer page scroll as the source library.
+     The floating Keepit bar never participates in page/footer layout. */
   body.rn-hn-detail #dashboardScroller { overflow-anchor:none; }
   body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView {
-    height:calc(100dvh - var(--keepit-dashboard-bottom,var(--rn-notes-bottom,0px)))!important;
-    min-height:0!important;grid-template-rows:minmax(0,1fr) auto!important;
+    height:auto!important;min-height:100dvh!important;grid-template-rows:minmax(0,1fr) auto!important;
   }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace { grid-row:1!important;height:100%!important; }
-  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .dash-footer { grid-row:2;margin-top:0; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace { grid-row:1!important;height:auto!important; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel { height:auto!important;overflow:visible!important; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView > .dash-footer { grid-row:2;margin-top:20px; }
   body.rn-hn-detail #dashboardHighlightsNotesView #notesHeader {
     display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 12px;
     flex:0 0 auto;min-height:0;padding:12px;align-items:start;
@@ -53,7 +53,10 @@
   body.rn-hn-detail #dashboardHighlightsNotesView #selectedUrl { max-width:100%; }
   body.rn-hn-detail #dashboardHighlightsNotesView #selectedMeta { overflow-wrap:anywhere; }
   body.rn-hn-detail #dashboardHighlightsNotesView #noteColorFilters { flex:0 0 auto; }
-  body.rn-hn-detail #dashboardHighlightsNotesView #notesList { overscroll-behavior-y:contain!important; }
+  body.rn-hn-detail #dashboardScroller > #dashboardHighlightsNotesView #notesList {
+    flex:0 0 auto!important;height:auto!important;max-height:none!important;
+    overflow:visible!important;overscroll-behavior:auto!important;
+  }
   body.rn-hn-detail #dashboardHighlightsNotesView #notesList.is-grid-view {
     grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
     width:100%;max-width:680px;align-self:center;
@@ -82,10 +85,8 @@
   #dashboardSidebar.dashboard-reference-sidebar,
   body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { display: none !important; }
   #dashboardScroller { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; scroll-padding-bottom: 80px; }
-  /* The fallback tabs need 72px; Keepit publishes its actual shown/folded clearance. */
-  html.keepit-bar-on #dashboardScroller { padding-bottom:var(--keepit-dashboard-bottom,0px)!important; scroll-padding-bottom:var(--keepit-dashboard-bottom,0px); }
-
-  body.rn-hn-detail { --rn-notes-bottom:calc(72px + env(safe-area-inset-bottom,0px)); }
+  /* Keepit overlays every tab; only the fixed fallback navigation reserves space. */
+  html.keepit-bar-on #dashboardScroller { padding-bottom:0!important;scroll-padding-bottom:0; }
 
   /* compact shared top bar */
   #dashboardSharedTopbarSlash, #dashboardSharedTopbarStatus { display: none !important; }

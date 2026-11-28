@@ -117,7 +117,7 @@
   const notesHeader = document.getElementById("notesHeader");
   if (notesHeader) {
     const back = document.createElement("button");
-    back.type = "button"; back.className = "rn-back"; back.innerHTML = svg(SVG.back);
+    back.type = "button"; back.className = "rn-back icon-button"; back.innerHTML = svg(SVG.back);
     back.addEventListener("click", () => closeNotesDetail(true));
     notesHeader.prepend(back);
   }

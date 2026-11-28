@@ -1,5 +1,10 @@
 # Nhật ký nền giữ nguyên văn trước OCR clean rebuild
 
+**2026-11-25 | v3.5.612 | dựa trên 3.5.611, không OCR:**
+
+- Tài liệu: ẩn gợi ý quét/nhận dạng chữ; giữ gợi ý dành cho ảnh và DOCX/PPTX. Không thêm chức năng OCR.
+- Kiểm tra: `node --check js/dashboard/documents.js`, xác nhận nhánh `scan` không còn trong banner nhưng `imageHint`/`officeHint` vẫn còn; ZIP không chứa tệp OCR và CRC hợp lệ. Chưa chạy UI Chromium trong lượt này.
+
 **2026-11-17 | v3.5.611 | Arena:**
 
 - Tóm tắt: Căn thanh phím tắt cùng tâm Reader trong vùng xem, giới hạn theo vùng và giữ nút đóng ở màn hẹp; giữ pager hiện khi menu Thêm hoặc sheet menu chính mở, sau đóng tiếp tục mờ/ẩn theo cài đặt; chế độ Ẩn hẳn vẫn giữ.

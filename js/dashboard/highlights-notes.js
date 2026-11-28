@@ -87,7 +87,7 @@ function queueInitialLhnItems(){
  if(lhnItemsEntranceQueued)return;lhnItemsEntranceQueued=true;queueMicrotask(()=>{lhnItemsEntranceQueued=false;const sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel'),sourceAt=lhnPanelRevealTimes.get(sourcesPanel),notesAt=lhnPanelRevealTimes.get(notesPanel);if(!Number.isFinite(sourceAt)||!Number.isFinite(notesAt))return;lhnItemsEntranceReady=true;queueNewLhnItems()});
 }
 function queueNewLhnItems(){
- if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const {sources,notes}=collectLhnItemGroups(),sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel');watchLhnItemGroup(sources,sourceList,sourcesPanel,'sources');watchLhnItemGroup(notes,notesList,notesPanel,'notes')});
+ if(!lhnItemsEntranceReady||lhnDynamicItemsQueued)return;lhnDynamicItemsQueued=true;queueMicrotask(()=>{lhnDynamicItemsQueued=false;if(!lhnItemsEntranceReady)return;const {sources,notes}=collectLhnItemGroups(),sourcesPanel=document.querySelector('#dashboardHighlightsNotesView .sources-panel'),notesPanel=document.querySelector('#dashboardHighlightsNotesView .notes-panel');watchLhnItemGroup(sources,sourceList,sourcesPanel,'sources');watchLhnItemGroup(notes,$('dashboardScroller'),notesPanel,'notes')});
 }
 function handleLhnPanelReveal(event){
  const {target,revealAt}=event.detail||{};if(!target||!Number.isFinite(revealAt))return;lhnPanelRevealTimes.set(target,revealAt);

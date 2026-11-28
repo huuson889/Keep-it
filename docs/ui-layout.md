@@ -24,6 +24,7 @@
 | Reader | Thanh full | Đảo nổi |
 | Dashboard | Tab dưới đáy | Thanh bên |
 
+- Dashboard: thanh Keepit là lớp nổi đè lên trang, không đổi chiều cao/khoảng đệm hoặc đẩy footer của bất kỳ tab nào khi ẩn/hiện. Footer cuộn theo nội dung bình thường. Chi tiết Ghi chú dọc dùng cuộn trang giống Trang nguồn; header/bộ lọc không bị khóa trong một khung cuộn riêng.
 - Ba popup Dịch, Tô sáng và Từ điển dùng nền kính, viền và shadow chung; ô Tô sáng rộng tối đa 405px, ghi chú dài cuộn riêng. Sheet không hiện scrollbar nhưng vẫn cuộn; vùng tay kéo dùng nền sheet như trước.
 - Quy tắc áp dụng trên mọi trang web, không chỉ trong Overlay/thanh Keepit.
 
