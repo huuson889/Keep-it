@@ -631,9 +631,12 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#000000);color:var(-
 #dashboardSharedTopbar .ov-brand img { display:block;width:26px;height:26px;flex:none; }
 #dashboardSharedTopbar .ov-crumb { min-width:0;display:flex;align-items:center;gap:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8790a4;font-size:15px; }
 #dashboardSharedTopbar .ov-crumb span { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-#dashboardSharedTopbar .ov-demo { flex:none;display:flex;align-items:center;gap:7px;height:34px;padding:0 14px;border:1px solid #e4e2f0;border-radius:999px;background:#fbfaff;color:#7262df;font-size:11px;font-weight:700;letter-spacing:.2px; }
-#dashboardSharedTopbar .ov-demo svg { width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
 #dashboardSharedTopbar .dashboard-shared-topbar-right { min-width:0;margin-left:auto;display:flex;align-items:center;gap:10px; }
+#dashboardSharedTopbar .dashboard-header-profile-toggle { appearance:none;display:grid;place-items:center;flex:none;width:36px;height:36px;padding:2px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer; }
+#dashboardSharedTopbar .dashboard-header-profile-toggle:hover { background:var(--lhn-ui-subtle,#f1f5f9);filter:none; }
+#dashboardSharedTopbar .dashboard-header-profile-toggle:focus-visible { outline:2px solid var(--lhn-ui-accent,#7262df);outline-offset:2px; }
+#dashboardSharedTopbar #dashboardHeaderProfileAvatar { width:32px;height:32px;font-size:14px; }
+
 #dashboardSharedTopbarActionsSlot:not([hidden]) { min-width:0;display:flex;align-items:center; }
 #dashboardSharedTopbarActionsSlot .demo-topbar-actions { display:flex;align-items:center;gap:9px; }
 #dashboardSharedTopbarActionsSlot .demo-badge { display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #eee9ff;border-radius:24px;background:#faf8ff;color:#7566bf;font-size:11px;font-weight:800;letter-spacing:.25px;white-space:nowrap; }
@@ -644,7 +647,6 @@ html.dark #dashboardScroller { background:var(--lhn-ui-page,#000000);color:var(-
 html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTopbar { border-color:var(--lhn-ui-border,#2b2b30);background:var(--lhn-ui-surface,#0d0d0f);box-shadow:0 9px 25px rgba(0,0,0,.2); }
 html.dark #dashboardSharedTopbar .ov-brand { color:var(--lhn-ui-text,#e0e0e4); }
 html.dark #dashboardSharedTopbar .ov-crumb { color:var(--lhn-ui-muted,#8a8a91); }
-html.dark #dashboardSharedTopbar .ov-demo { border-color:#2b2b30;background:#151517;color:#8f86f2; }
 html.dark #dashboardSharedTopbarActionsSlot .demo-badge { border-color:#39365e;background:#252443;color:#c0c2ff; }
 html.dark #dashboardSharedTopbarActionsSlot .demo-export-all { border-color:#39365e;background:#252443;color:#c0c2ff; }
 html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:#302d54; }
@@ -684,6 +686,7 @@ html.dark #dashboardSharedTopbarActionsSlot .demo-export-all:hover { background:
   #dashboardSharedTopbarActionsSlot .demo-export-all span { display:none; }
 }
 @media(max-width:480px) { #dashboardScroller > #dashboardOverviewView { padding:0 16px 30px!important; } }
+@media(max-width:360px) { #dashboardSharedTopbarActionsSlot .demo-badge { display:none; } }
 
 
 /* H&N export controls are portaled into the shared topbar, outside the route-local stylesheet scope. */

@@ -23,7 +23,7 @@
   #dashboardSidebarTooltip { display: none !important; }
   .rn-tip { display: block; position: fixed; z-index: 2000; left: 80px; top: 0; padding: 6px 10px; border-radius: 8px; background: #1e293b; color: #fff; font: 600 12.5px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; white-space: nowrap; pointer-events: none; opacity: 0; transform: translateX(-4px); transition: opacity .12s, transform .12s; box-shadow: 0 8px 22px rgba(0, 0, 0, .25); }
   .rn-tip.show { opacity: 1; transform: none; }
-  #profileMenu.dashboard-avatar-popover { left: 76px !important; }
+  #profileMenu.dashboard-avatar-popover:not(.is-header-menu) { left: 76px !important; }
 }
 
 /* This visibility rule must outrank the shared .icon-button display rule. */
@@ -86,7 +86,7 @@
   html.keepit-bar-on #dashboardScroller { padding-bottom:0!important;scroll-padding-bottom:0; }
 
   /* compact shared top bar */
-  #dashboardSharedTopbarSlash, #dashboardSharedTopbarStatus { display: none !important; }
+  #dashboardSharedTopbarSlash { display: none !important; }
   #dashboardSharedTopbarLabel { font-size: 16px; font-weight: 600; color: inherit; }
   #dashboardSharedTopbar .ov-crumb { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 

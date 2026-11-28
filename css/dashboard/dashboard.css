@@ -1026,6 +1026,7 @@ body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { wi
 #dashboardSidebar .dashboard-reference-user-copy span[hidden], #profileMenu .dashboard-avatar-identity-copy > span[hidden], #profileMenu .dashboard-reference-plan[hidden], #profileMenu .dashboard-avatar-item[hidden], #profileMenu .dashboard-avatar-sync-button[hidden] { display:none !important; }
 #dashboardSidebar .dashboard-reference-profile-wrap { position:static; }
 #profileMenu.dashboard-avatar-popover { position:absolute; z-index:1000; bottom:56px; left:10px; width:258px; padding:8px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; color:#334155; box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1); font-size:14px; transform-origin:bottom left; }
+#profileMenu.dashboard-avatar-popover.is-header-menu { position:fixed;top:var(--profile-menu-top,64px);left:var(--profile-menu-left,12px);bottom:auto;width:min(276px,calc(100vw - 24px));max-height:var(--profile-menu-max-height,calc(100dvh - 80px));box-sizing:border-box;overflow:auto;overscroll-behavior:contain;transform-origin:top right; }
 #profileMenu.dashboard-avatar-popover[hidden] { display:none!important; }
 #profileMenu .dashboard-avatar-identity { display:flex; align-items:center; gap:16px; margin-bottom:6px; padding:10px; border-bottom:1px solid #e2e8f0; }
 #profileMenu .dashboard-avatar-identity-copy { min-width:0; flex:1 1 auto; }
@@ -1239,21 +1240,21 @@ html.dark #dashboardScroller > #dashboardSharedTopbarPortal > #dashboardSharedTo
 }
 /* v3.5.444 — avatar + nhãn gói ở chân sidebar: màu / viền / kiểu = đúng khung Cài đặt, chỉ giữ kích thước 28px */
 /* đã đăng nhập: nền tím #7262df, chữ trắng, bóng trong như .profile-avatar */
-#dashboardSidebar .reference-avatar-letter.profile-avatar {
+:is(#dashboardSidebar .reference-avatar-letter, #dashboardHeaderProfileAvatar).profile-avatar {
   width:28px; height:28px; flex:0 0 28px; font-size:12px; font-weight:650;
   border:0; border-radius:50%; overflow:hidden;
   background:#7262df; color:#fff; box-shadow:inset 0 2px 5px #0002;
 }
 /* khách: viền liền 2px, nền trong suốt, icon xám trung tính như trong Cài đặt */
-#dashboardSidebar .reference-avatar-letter.profile-avatar.profile-avatar-guest {
+:is(#dashboardSidebar .reference-avatar-letter, #dashboardHeaderProfileAvatar).profile-avatar.profile-avatar-guest {
   border:2px solid #cbd5e1; background:transparent; color:#71717a; box-shadow:none;
 }
-html.dark #dashboardSidebar .reference-avatar-letter.profile-avatar { color:#fff; border-color:#fff; }
-html.dark #dashboardSidebar .reference-avatar-letter.profile-avatar.profile-avatar-guest {
+html.dark :is(#dashboardSidebar .reference-avatar-letter, #dashboardHeaderProfileAvatar).profile-avatar { color:#fff; border-color:#fff; }
+html.dark :is(#dashboardSidebar .reference-avatar-letter, #dashboardHeaderProfileAvatar).profile-avatar.profile-avatar-guest {
   border-color:#55555c; background:transparent; color:#a1a1aa;
 }
-#dashboardSidebar .reference-avatar-letter.profile-avatar svg { width:13px; height:13px; }
-#dashboardSidebar .reference-avatar-letter.profile-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+:is(#dashboardSidebar .reference-avatar-letter, #dashboardHeaderProfileAvatar).profile-avatar svg { width:13px; height:13px; }
+:is(#dashboardSidebar .reference-avatar-letter, #dashboardHeaderProfileAvatar).profile-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
 /* nhãn gói "Miễn phí": đúng bảng màu .kp-plan-badge[data-plan="free"] của Cài đặt */
 #dashboardSidebar .reference-footer-button > .kp-plan-badge {
   display:inline-flex; align-items:center; gap:4px; height:21px;

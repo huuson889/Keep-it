@@ -34,7 +34,7 @@
       </button>
       <div id="profileMenu" class="dashboard-avatar-popover" hidden>
         <div class="dashboard-avatar-identity">
-          <div class="dashboard-avatar-identity-copy"><strong id="profilePopoverName">Bạn</strong><span id="profilePopoverStatus" data-i18n="profileSignInToSync">Đăng nhập để đồng bộ</span><span id="profilePopoverEmail" hidden></span><span id="profileMenuPlan" class="dashboard-reference-plan" hidden>Keepit Pro</span></div>
+          <div class="dashboard-avatar-identity-copy"><strong id="profilePopoverName">Bạn</strong><span id="profilePopoverStatus" data-i18n="profileSignInToSync">Đăng nhập để đồng bộ</span><span id="profilePopoverEmail" hidden></span><span id="profileMenuPlan" class="dashboard-reference-plan" data-plan="free" data-i18n="usagePlanFree">Miễn phí</span></div>
           <button id="profilePopoverSyncButton" class="dashboard-avatar-sync-button" type="button" data-profile-menu-action="login" data-i18n-title="profileSignInToSync" data-i18n-aria-label="profileSignInToSync" aria-label="Đăng nhập để đồng bộ" title="Đăng nhập để đồng bộ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.94 5.274A7 7 0 0 1 15.71 10h1.79a4.5 4.5 0 0 1 4.222 6.057"/><path d="M18.796 18.81A4.5 4.5 0 0 1 17.5 19H9A7 7 0 0 1 5.79 5.78"/><path d="m2 2 20 20"/></svg></button>
         </div>
         <div class="dashboard-avatar-options">
@@ -87,7 +87,7 @@
   <div id="dashboardSharedTopbar" class="ov-topbar ov-reveal">
   <div class="ov-brand" id="dashboardSharedTopbarBrand"><img alt="" aria-hidden="true" height="26" src="../assets/icons/icon.svg" width="26"/><span>Keepit</span></div>
   <div class="ov-crumb" id="dashboardSharedTopbarCrumb"><span id="dashboardSharedTopbarSlash">/</span><span id="dashboardSharedTopbarLabel">Tổng quan</span></div>
-  <div class="dashboard-shared-topbar-right"><div id="dashboardSharedTopbarStatus" class="ov-demo">✨ <span id="dashboardSharedTopbarStatusText">Dữ liệu cục bộ</span></div><div id="dashboardSharedTopbarActionsSlot" hidden></div></div>
+  <div class="dashboard-shared-topbar-right"><div id="dashboardSharedTopbarActionsSlot" hidden></div><button id="dashboardHeaderProfileToggle" class="dashboard-header-profile-toggle" type="button" data-i18n-title="profileMenuToggleTitle" data-i18n-aria-label="profileMenuToggleTitle" title="Cài đặt &amp; Tài khoản" aria-label="Cài đặt &amp; Tài khoản" aria-haspopup="true" aria-controls="profileMenu" aria-expanded="false"><span id="dashboardHeaderProfileAvatar" class="profile-avatar profile-avatar-guest"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span></button></div>
 </div>
   </div>
 <main id="dashboardDocumentsView" class="dashboard-documents-view" hidden data-i18n-aria-label="docs_title" aria-label="Documents"><iframe id="dashboardDocumentsFrame" data-src="documents.html" title="Documents" data-i18n-title="docs_title" allow="autoplay; fullscreen" allowfullscreen></iframe></main>

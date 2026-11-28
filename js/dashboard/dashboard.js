@@ -543,13 +543,14 @@ function renderProfileMenu() {
     emailNode.textContent = activeEmail;
     emailNode.hidden = !demoProfile || !activeEmail;
   }
-  if (menuToggleAvatar) {
-    menuToggleAvatar.classList.toggle("profile-avatar-guest", !demoProfile);
-    menuToggleAvatar.innerHTML = demoProfile
+  for (const avatarNode of [menuToggleAvatar, $("dashboardHeaderProfileAvatar")]) {
+    if (!avatarNode) continue;
+    avatarNode.classList.toggle("profile-avatar-guest", !demoProfile);
+    avatarNode.innerHTML = demoProfile
       ? profilePictureMarkup(demoProfile, escapeHtml(String(activeName).slice(0, 1).toLocaleUpperCase()))
       : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
   }
-  if (profileMenuPlan) profileMenuPlan.hidden = !demoProfile;
+  if (profileMenuPlan) profileMenuPlan.hidden = false;
   if (popoverStatus) { popoverStatus.textContent = t("profileSignInToSync"); popoverStatus.hidden = Boolean(demoProfile); }
   for (const item of [syncMenuItem, helpMenuItem]) if (item) item.hidden = !demoProfile;
   if (logoutMenuItem) logoutMenuItem.hidden = !demoProfile;
@@ -2249,7 +2250,7 @@ async function downloadJsonExport(pageUrl = null) {
 }
 function closeMenus() {
   $("exportAllMenu").hidden = true; $("settingsBackupExportMenu").hidden = true; $("profileMenu").hidden = true;
-  $("profileMenuToggle").setAttribute("aria-expanded", "false"); $("exportAllBtn").setAttribute("aria-expanded", "false");
+  $("profileMenuToggle").setAttribute("aria-expanded", "false"); $("dashboardHeaderProfileToggle").setAttribute("aria-expanded", "false"); $("exportAllBtn").setAttribute("aria-expanded", "false");
   $("settingsExportButton").setAttribute("aria-expanded", "false");
 }
 function detectLanguage(text, url) {
@@ -3148,7 +3149,7 @@ $("profileAuthForm").addEventListener("submit", async event => {
   await finishProfileAuth(result.profile);
 });
 $("exportAllBtn").addEventListener("click", e => { e.stopPropagation(); const menu = $("exportAllMenu"), open = menu.hidden; closeMenus(); $("profileMenu").hidden = false; $("profileMenuToggle").setAttribute("aria-expanded", "true"); menu.hidden = !open; $("exportAllBtn").setAttribute("aria-expanded", String(open)); });
-document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const format = option.dataset.export; if (format === "json") downloadJsonExport().catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else downloadExport(format, annotations); closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, .settings-backup-export-wrap")) closeMenus(); });
+document.addEventListener("click", e => { const option = e.target.closest("button[data-export]"); if (option) { const format = option.dataset.export; if (format === "json") downloadJsonExport().catch(error => { console.error("JSON export failed", error); alert(error.message || "JSON export failed"); }); else downloadExport(format, annotations); closeMenus(); return; } if (!e.target.closest(".menu-wrap, .profile-menu-wrap, #profileMenu, .settings-backup-export-wrap")) closeMenus(); });
 const dashboardSidebar = $("dashboardSidebar"), dashboardSidebarPin = $("dashboardSidebarPin"), dashboardSidebarTooltip = $("dashboardSidebarTooltip");
 let dashboardSidebarTooltipTimer = 0, dashboardSidebarTooltipTarget = null;
 function dashboardSidebarTooltipItem(target) { return target?.closest?.(".reference-nav-item, .reference-footer-button") || null; }
@@ -3302,7 +3303,7 @@ dashboardDictationView.addEventListener("scroll", scheduleDashboardScrollPositio
 window.addEventListener("pagehide", saveDashboardScrollState);
 window.addEventListener("beforeunload", saveDashboardScrollState);
 const dashboardSharedTopbar = $("dashboardSharedTopbar"), dashboardSharedTopbarPortal = $("dashboardSharedTopbarPortal");
-const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarStatus = $("dashboardSharedTopbarStatus"), dashboardSharedTopbarStatusText = $("dashboardSharedTopbarStatusText"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
+const dashboardSharedTopbarLabel = $("dashboardSharedTopbarLabel"), dashboardSharedTopbarActionsSlot = $("dashboardSharedTopbarActionsSlot");
 let activeDashboardView = null;
 function updateSharedTopbarContent(view) {
   const fallbackKey = view === "dictation" ? "ovMenuDictation" : view === "highlights-notes" ? "ovMenuHighlightsNotes" : view === "trash" ? "ovMenuTrash" : "ovNavOverview";
@@ -3311,8 +3312,6 @@ function updateSharedTopbarContent(view) {
   const labelKey = sidebarLabel || fallbackKey;
   if (dashboardSharedTopbarLabel) dashboardSharedTopbarLabel.textContent = t(labelKey);
   const inHighlightsNotes = view === "highlights-notes";
-  if (dashboardSharedTopbarStatus) dashboardSharedTopbarStatus.hidden = inHighlightsNotes || view === "trash";
-  if (dashboardSharedTopbarStatusText) dashboardSharedTopbarStatusText.textContent = t(view === "dictation" ? "dictationBadge" : "ovPreview");
   if (dashboardSharedTopbarActionsSlot) dashboardSharedTopbarActionsSlot.hidden = !inHighlightsNotes;
   if (inHighlightsNotes && dashboardSharedTopbarActionsSlot) {
     const actions = dashboardHighlightsNotesView.querySelector("#dashboardSharedTopbarActions");
@@ -3326,6 +3325,7 @@ function closeSharedTopbarExportMenu() {
   if (button) button.setAttribute("aria-expanded", "false");
 }
 function mountSharedTopbarInParent(view) {
+  closeMenus();
   closeSharedTopbarExportMenu();
   updateSharedTopbarContent(view);
   if (dashboardSharedTopbar && dashboardSharedTopbar.parentElement !== dashboardSharedTopbarPortal) dashboardSharedTopbarPortal?.append(dashboardSharedTopbar);
@@ -3808,7 +3808,39 @@ const dashboardParams=new URL(location.href).searchParams,requestedDocument=dash
 // v3.5.542: Flashcards bấm từ thanh Keepit ở trang chủ = cờ một lần
 try { if (sessionStorage.getItem("keepitDashboardQuick") === "flashcards") { sessionStorage.removeItem("keepitDashboardQuick"); setTimeout(() => document.querySelector('[data-dashboard-action="flashcards"]')?.click(), 600); } } catch { /* session storage may be unavailable */ }
 if(/^[a-zA-Z0-9-]{16,80}$/.test(requestedDocument||"")){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("document",requestedDocument);const annotation=dashboardParams.get("highlight");if(annotation)uri.searchParams.set("highlight",annotation);dashboardDocumentsFrame.dataset.src=uri.href;setDashboardView("documents");}else if(requestedView==="documents"&&requestedPdf){const uri=new URL(dashboardDocumentsFrame.dataset.src,location.href);uri.searchParams.set("openPdf",requestedPdf);if(requestedPdfHelp)uri.searchParams.set("pdfHelp",requestedPdfHelp);dashboardDocumentsFrame.dataset.src=uri.href;const address=new URL(location.href);address.searchParams.delete("view");address.searchParams.delete("openPdf");address.searchParams.delete("pdfHelp");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else if(requestedView==="documents"){const address=new URL(location.href);address.searchParams.delete("view");history.replaceState(history.state,"",address.href);setDashboardView("documents");}else setDashboardView(savedDashboardView());
-$("profileMenuToggle").addEventListener("click", e => { e.stopPropagation(); const open = $("profileMenu").hidden; closeMenus(); $("profileMenu").hidden = !open; $("profileMenuToggle").setAttribute("aria-expanded", String(open)); });
+// Both avatars open the same account menu and retain its existing action handlers.
+function toggleDashboardProfileMenu(event, fromHeader) {
+  event.stopPropagation();
+  const menu = $("profileMenu"), trigger = event.currentTarget;
+  const open = menu.hidden || menu.dataset.trigger !== trigger.id;
+  closeMenus();
+  closeSharedTopbarExportMenu();
+  if (!open) return;
+  menu.dataset.trigger = trigger.id;
+  menu.classList.toggle("is-header-menu", fromHeader);
+  if (fromHeader) document.body.append(menu);
+  else $("profileMenuToggle").closest(".profile-menu-wrap").append(menu);
+  menu.hidden = false;
+  trigger.setAttribute("aria-expanded", "true");
+  if (fromHeader) {
+    const rect = trigger.getBoundingClientRect(), gap = 12;
+    const top = Math.max(gap, Math.min(rect.bottom + 8, innerHeight - gap - 80));
+    const left = Math.max(gap, Math.min(rect.right - menu.offsetWidth, innerWidth - gap - menu.offsetWidth));
+    menu.style.setProperty("--profile-menu-top", `${top}px`);
+    menu.style.setProperty("--profile-menu-left", `${left}px`);
+    menu.style.setProperty("--profile-menu-max-height", `${Math.max(0, innerHeight - top - gap)}px`);
+  }
+  if (fromHeader && event.detail === 0) menu.querySelector("[data-profile-menu-action]")?.focus({ preventScroll:true });
+}
+$("profileMenuToggle").addEventListener("click", event => toggleDashboardProfileMenu(event, false));
+$("dashboardHeaderProfileToggle").addEventListener("click", event => toggleDashboardProfileMenu(event, true));
+function closeHeaderProfileMenu() {
+  if (!$("profileMenu").hidden && $("profileMenu").classList.contains("is-header-menu")) closeMenus();
+}
+for (const target of [dashboardScroller, dashboardOverviewView, dashboardDictationView]) target.addEventListener("scroll", closeHeaderProfileMenu, { passive:true });
+$("exportAllDemoBtn").addEventListener("click", closeHeaderProfileMenu);
+window.addEventListener("resize", closeHeaderProfileMenu);
+window.addEventListener("blur", closeHeaderProfileMenu);
 $("profileMenu").addEventListener("click", async event => {
   const action = event.target.closest("[data-profile-menu-action]")?.dataset.profileMenuAction;
   if (!action) return;
@@ -4467,7 +4499,12 @@ $("exportErrorLog")?.addEventListener("click", async () => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (error) { console.warn("Could not export diagnostic log", error); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenus(); });
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const menu = $("profileMenu"), trigger = !menu.hidden ? $(menu.dataset.trigger) : null;
+  closeMenus();
+  trigger?.focus({ preventScroll:true });
+});
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (dashboardSettings.sidebarTheme !== "dark" && dashboardSettings.sidebarTheme !== "light") syncDashboardTheme(); });
 load().then(() => {
   overviewInitialDataReady = true;
