@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.646:** ♥ Yêu thích cạnh các chip màu chỉ lọc ghi chú của trang đang chọn; không tham gia lọc thư viện nguồn hoặc video yêu thích. Không khớp vẫn giữ tiêu đề/URL/metadata/chip và hiển thị empty state cục bộ.
-- `refreshSelectedNotes()` dùng chung cho màu và ♥; chỉ render notes/reveal notes, không rebuild source cards/thống kê. Hai bộ lọc giao nhau; tắt ♥ giữ màu, về Tất cả khôi phục notes. Toolbar Yêu thích vẫn lọc trang yêu thích riêng.
-- Người dùng xác nhận layout/cuộn645 đã đúng; responsive.css/responsive-nav.js giữ nguyên byte. Bar/footer644, source CSS642, Documents641, Dashboard owner/CRUD/storage/Settings không đổi.
-- QA646: 227/227 kiểm tra actual Dashboard HTTP/API/protocol/top-frame shim, 650/283/1238×696 và 800×1100 sáng/tối; tái hiện baseline645, 37notes/0favorite, hai nguồn/màu/favorite/video/globalfilter, snapshot, Back, en/vi/ko, errors[]. Pointer thật bật ♥0 giữ trang, tắt khôi phục37. Chưa unpacked/CSP/device/crop4×; fixture snapshot không phải importer JSON hay xác nhận storage thật.
+- **Bản test 3.5.647:** theo ảnh22–23, chip màu chỉ hiển thị số lượng riêng (Vàng 1), không còn mẫu1/12. Yêu thích và màu chọn loại trừ nhau, chỉ đúng một chip active/aria-pressed.
+- Chọn Yêu thích bỏ màu đang chọn; chọn màu/Tất cả tắt Yêu thích. Chọn nguồn khác reset cả hai về Tất cả như màu cũ; snapshot cùng nguồn giữ filter, snapshot/toolbar đổi nguồn tự reset. Tim dùng SVG `heart` của module, class `lucide small`13px/outline thay ký tự♥.
+- Giữ646 note-localempty/selection/library, toolbar page favorites riêng; responsive645, bar/footer644, source CSS642, Documents/Dashboard owner/CRUD/storage/Settings giữ nguyên byte. Chỉ đổi một file logic và manifest/docs.
+- QA647:247/247 actual Dashboard HTTP/API/protocol/top-frame shim,650/283/1238×696 và800×1100 sáng/tối; bắt baseline646 hai active/reset sai/fraction/textheart, exclusive/reset/snapshot/globalfavorite/real37/Back/en/vi/ko/errors[]. Pointer thật đỏ→Yêu thích chỉ2notes,Back→nguồnB về Tất cả1; chưa unpacked/CSP/device/crop4×/importerJSON/storage thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.646: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.647: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
@@ -191,6 +191,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 
+**2026-11-26 | v3.5.647 | Arena sửa:**
+
+- Tóm tắt: user ảnh22–23 sửa yêu cầu bộ lọc; màu chỉ có số lượng, bỏ mẫu/tổng. Yêu thích và màu là lựa chọn loại trừ nhau, không giao hai điều kiện như646; active/aria-pressed đồng nhất. Chọn Yêu thích clear màu; chọn màu/Tất cả clear Yêu thích; chọn nguồn reset về Tất cả, cả nhánh snapshot/toolbar tự đổi selection. Snapshot cùng nguồn không reset. Thay ký tự♥ bằng SVGheart cùngmodule, dùng classlucidesmall13px có sẵn, không CSSmới/không đổi icon khác.
+- File: `js/dashboard/highlights-notes.js`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`; chuyển nguyên văn bản ghi615 cũ sang history đã thực hiện646, lần647 chuyển616 để giữ30bản ghi. Layout/cuộn645/barfooter644/sourceCSS642/Documents/Dashboardowner/CRUD/storage/Settings nguyênbyte.
+- Kiểm tra:247/247 actualDashboardHTTP/API/protocol/top-frame shim,650/283/1238×696 và800×1100 sáng/tối. Baseline646 tái hiện2active/favoritequa trang/fraction/textheart;647 countsonly/exclusiveactive/notesđúngmàuhoặcfavorite/resetmàu+favoritekhiđổinguồn/snapshotcùngnguồngiữ/khácnguồnreset/globalpagefavorite/localemptykhôngmấtnguồn/real37→0→37/Back/en-vi-ko/errors[]. Lượtđầuharnessclickselectorallkhôngscopechọnnhầmnútngoàinotes,đãlưufailurevàscope#noteColorFilters,khôngsửaappvìlỗiharness.
+- Kiểm tra: pointer thật650dark chọnĐỏ3→Yêuthích2 chỉfavoriteactive,hiện2notekhácmàu;Back→nguồnB tựTấtcả1/favorite0khôngactive;đãxembrowserHTTP. Artifacts `qa-keepit-647/ui-final.json`, `pointer-favorite-replaces-red.json`, `pointer-source-reset.json`, `preserved.json` ngoàiapp;SHA2JSONgốc/copynguyênbyte,chỉQA/khôngcommitZIP. Node/diffchecks;chưaunpacked/CSP/device/crop4×/importer/storageacceptance.
+
 **2026-11-26 | v3.5.646 | Arena sửa:**
 
 - Tóm tắt: sửa lỗi ảnh19–21; ♥ Yêu thích trong hàng màu là bộ lọc notes cục bộ giống màu, không phải lọc trang. Gỡ `favoriteNotes` khỏi `filteredRecords()` và `favoriteVideoPages()`; màu/♥ gọi `refreshSelectedNotes()` chỉ render selected notes. Giữ giao màu+favorite trong `renderSelected()`, empty cục bộ khi0kết quả, header/URL/metadata/selection/library không mất; global page favorites không đổi.
@@ -370,9 +377,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: sidebar OCR ngang bỏ giới hạn mặc định 42vw, dùng cùng giới hạn 380px/viewport với popup; giữ ưu tiên `--trW` đã lưu và kéo resize. Popup tăng z-index trên host Back to top (Shadow DOM), dưới sheet thanh Keepit; không dịch vị trí, không đổi portrait toàn màn hình, engine, flow hay UI khác.
 - File: `css/dashboard/ocr-demo.css`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`; root `AGENTS.md` bỏ version snapshot cố định để tra manifest hiện hành.
 - Kiểm tra: HTTP app thật với shim extension API (không phải unpacked), 6/6 trường hợp 1512/800/390 × theme app sáng/tối: ở ngang sidebar/popup 380px (800px trước là336px), dọc giữ sidebar390px/popup374px; rect popup trước/sau không đổi. Cuộn stage thật để Back to top hiện: hit-test tại vùng chồng trước trúng host thanh, sau trúng popup cả6/6. Kéo chuột thật 380→500px, reload khôi phục500px; OCR Tesseract ảnh tổng hợp hoàn tất, có chữ và1 bản ghi OCR, scan được dọn. console.error/pageerror HTTP rỗng; công cụ storage7/7. Chưa QA ảnh/PNG/crop4×/pixel/CSP/permission hay extension thật vì chrome://extensions bị chặn; không đánh dấu đạt nghiệm thu UI bắt buộc.
-
-**2026-11-26 | v3.5.616 | Arena sửa:**
-
-- Tóm tắt: sửa chuyển trang giật khi OCR cuộn liên tục: thay nhảy `scrollTop` bằng native smooth riêng host OCR, cùng cơ chế cuộn mượt demo; giữ current ở trang đích trong quá trình cuộn, tránh boot/engine gọi trùng làm restart, không để resize-preserve ngắt animation hoặc giữ tọa độ cũ khi kích thước đổi. Wheel/touch/pointer/key trả lại tracking thủ công; điều hướng app khác, single/facing rời, engine, lưu trữ, scan/khung/CSS của 3.5.615 không đổi.
-- File: `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`; chuyển nguyên văn hai bản ghi cũ sang `docs/changelog/ocr-clean-base-history.md` để giữ 30 mục log mới nhất.
-- Kiểm tra: harness HTTP mới trace rAF/scrollTop, cùng byte PDF với demo 2.9.7.33 ở origin riêng. Trước sửa 0/8, nhảy trọn quãng ngay khung đầu, không frame trung gian; sau sửa 8/8 ở 1512/390 × nút theme sáng/tối × continuous/facingContinuous, native smooth có nhiều frame trung gian, đơn điệu, current không lùi, pageStack giữ nguyên. 8/8 lượt OCR thật 3 trang: bắt đầu ở trang1 sau resize, scan đủ 1/2/3, lưu đúng từng page, chuyển mượt và dọn scan. Node24/24, static29/29, scan/khung64/64, bốn flow/hủy18/18, hồi quy15/15, range/current/native-PDF13/13; cú pháp/undefined checks (khai báo shared globals) sạch, console.error/pageerror HTTP rỗng. Wheel thật trusted đã kiểm đổi current3→2 theo cuộn thủ công. Đây không phải bộ ảnh/video/pixel/unpacked; giới hạn môi trường vẫn còn, không đánh dấu 100% hay hứa timing/FPS tuyệt đối.

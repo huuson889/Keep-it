@@ -13,7 +13,7 @@ const iconPaths={
  heart:'<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.5 5.5 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5Z"/>',
  export:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>'
 };
-const icon=name=>`<svg class="lucide" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name]||''}</svg>`;
+const icon=(name,size='')=>`<svg class="lucide${size?` ${size}`:''}" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[name]||''}</svg>`;
 const $=id=>document.getElementById(id), sourceList=$('sourceList'), notesList=$('notesList'), pageCount=$('pageCount'), count=$('count'), toast=$('libraryDemoToast');
 const lhnRevealEffects=globalThis.KeepitDashboardReveal,lhnSourceRevealScope=lhnRevealEffects.createScope(),lhnNotesRevealScope=lhnRevealEffects.createScope(),lhnChartRevealScope=lhnRevealEffects.createScope();
 const text=key=>(labels[currentLanguage]||labels.vi)[key]||labels.vi[key]||key;
@@ -229,6 +229,7 @@ function renderSources(){
  if(quickFilter==='favorites')visible.push(...favoriteVideoPages(visible));
  visible.sort((a,b)=>order==='count'?b.highlights-a.highlights:order==='edited'?b.editedAtMs-a.editedAtMs:b.createdAtMs-a.createdAtMs);
  selected=visible.find(page=>page.key===previousKey)||visible[0]||null;
+ if(selected?.key!==previousKey){noteColor='all';favoriteNotes=false}
  setLhnCounter(pageCount,visible.length,value=>`${formatLhnNumber(value)} trang`);
  setLhnCounter(count,visible.reduce((sum,page)=>sum+page.highlights,0),value=>`${formatLhnNumber(value)} ghi chú`);
  sourceList.replaceChildren();
@@ -276,7 +277,7 @@ function renderSelected(){
 }
 function renderColorFilters(){
  const host=$('noteColorFilters'),colors=['all',...validColors],counts=Object.fromEntries(validColors.map(color=>[color,selected.notes.filter(note=>note.color===color).length]));
- host.innerHTML=colors.map(color=>`<button type="button" class="note-color-filter${noteColor===color?' is-active':''}" data-filter="${color}" aria-pressed="${noteColor===color}">${color==='all'?'':`<span class="lhn-filter-swatch lhn-swatch-${color}"></span>`}<span>${color==='all'?'Tất cả':colorNames[color]}</span><span class="filter-count">${color==='all'?`<span class="lhn-count-value">${selected.notes.length}</span>`:`<span class="lhn-count-value">${counts[color]||0}</span>/<span class="lhn-count-value">${selected.notes.length}</span>`}</span></button>`).join('')+`<button type="button" class="note-color-filter favorite-notes-filter${favoriteNotes?' is-active':''}" data-favorite-notes-filter aria-pressed="${favoriteNotes}"><span aria-hidden="true">♥</span><span>${text('favoriteNotes')}</span><span class="filter-count"><span class="lhn-count-value">${selected.notes.filter(note=>note.favorite).length}</span></span></button>`;
+ host.innerHTML=colors.map(color=>`<button type="button" class="note-color-filter${!favoriteNotes&&noteColor===color?' is-active':''}" data-filter="${color}" aria-pressed="${!favoriteNotes&&noteColor===color}">${color==='all'?'':`<span class="lhn-filter-swatch lhn-swatch-${color}"></span>`}<span>${color==='all'?'Tất cả':colorNames[color]}</span><span class="filter-count"><span class="lhn-count-value">${color==='all'?selected.notes.length:counts[color]||0}</span></span></button>`).join('')+`<button type="button" class="note-color-filter favorite-notes-filter${favoriteNotes?' is-active':''}" data-favorite-notes-filter aria-pressed="${favoriteNotes}">${icon('heart','small')}<span>${text('favoriteNotes')}</span><span class="filter-count"><span class="lhn-count-value">${selected.notes.filter(note=>note.favorite).length}</span></span></button>`;
  host.querySelectorAll('.lhn-count-value').forEach(node=>setLhnCounter(node,Number(node.textContent)||0));
 }
 function updateViewModeButton(){const button=$('viewModeBtn'),grid=viewMode==='grid';button.innerHTML=icon(grid?'grid':'list');button.setAttribute('aria-pressed',String(grid));button.title=grid?'Chuyển sang dạng danh sách':'Chuyển sang dạng lưới';button.setAttribute('aria-label',button.title);notesList.classList.toggle('is-grid-view',grid)}
@@ -349,7 +350,7 @@ function renderLatestHighlightCard(){
  globalThis.LHN_THUMBNAILS?.loadSource(image,page,{onLoad:()=>{image.hidden=false;art.classList.add('has-thumbnail')},onError:()=>{image.hidden=true;art.classList.remove('has-thumbnail')}});
 }
 function selectLhnSource(page){
- restartLhnItemRevealCycle({sources:false,notes:true});selected=page;noteColor='all';
+ restartLhnItemRevealCycle({sources:false,notes:true});selected=page;noteColor='all';favoriteNotes=false;
  sourceList.querySelectorAll(':scope > .source-item').forEach(item=>item.classList.toggle('active',item.dataset.url===page.key));renderSelected();
 }
 function openLatestHighlightNotes(){
@@ -368,6 +369,7 @@ function applyData(data){
  const previousKey=selected?.key,previousLanguage=currentLanguage;currentLanguage=['en','vi','ko'].includes(data.language)?data.language:'vi';applyNewLabels();if(previousLanguage!==currentLanguage)setExportMenus();annotationRecords=Array.isArray(data.items)?data.items:[];favorites=Array.isArray(data.favorites)?data.favorites:[];favoriteVideos=Array.isArray(data.favoriteVideos)?data.favoriteVideos:[];favoriteNoteIds=new Set(Array.isArray(data.favoriteNoteIds)?data.favoriteNoteIds:[]);pages=buildPages(annotationRecords);populateFilters();
  selected=pages.find(page=>page.key===previousKey)||null;
  if(!selected)selected=allFiltered()[0]||pages[0]||null;
+ if(selected?.key!==previousKey){noteColor='all';favoriteNotes=false}
  refresh();
 }
 function sendParent(action,payload={}){const requestId=`lr-${Date.now()}-${++requestSequence}`;window.dispatchEvent(new CustomEvent('keepit:highlights-notes-action',{detail:{type:'HIGHLIGHTS_NOTES_ACTION',version:1,action,requestId,...payload}}));return requestId}
@@ -390,7 +392,7 @@ window.addEventListener('keepit:highlights-notes-data',onDashboardData);
 window.addEventListener('keepit:highlights-notes-result',onDashboardResult);
 setExportMenus();populateFilters();applyNewLabels();
 $('viewModeBtn').setAttribute('aria-pressed','true');notesList.classList.add('is-grid-view');$('viewModeBtn').innerHTML=icon('grid');$('viewModeBtn').addEventListener('click',()=>{viewMode=viewMode==='grid'?'list':'grid';updateViewModeButton()});
-$('noteColorFilters').addEventListener('click',event=>{const favoriteButton=event.target.closest('[data-favorite-notes-filter]');if(favoriteButton){favoriteNotes=!favoriteNotes;refreshSelectedNotes();return}const button=event.target.closest('[data-filter]');if(!button)return;noteColor=button.dataset.filter;refreshSelectedNotes()});
+$('noteColorFilters').addEventListener('click',event=>{const favoriteButton=event.target.closest('[data-favorite-notes-filter]');if(favoriteButton){favoriteNotes=!favoriteNotes;noteColor='all';refreshSelectedNotes();return}const button=event.target.closest('[data-filter]');if(!button)return;noteColor=button.dataset.filter;favoriteNotes=false;refreshSelectedNotes()});
 ['siteFilter','colorFilter','tagFilter','dateFilter','sortBy'].forEach(id=>$(id).addEventListener('change',refresh));$('search').addEventListener('input',refresh);
 $('clearFiltersBtn').addEventListener('click',event=>{playToolbarActionEffect(event.currentTarget,event,'#3b82f6','sparkle');$('search').value='';['siteFilter','colorFilter','tagFilter','dateFilter'].forEach(id=>$(id).value='');$('sortBy').value='created';quickFilter='all';$('dashboardHighlightsNotesView').querySelectorAll('[data-quick-filter]').forEach(button=>button.classList.toggle('active',button.dataset.quickFilter==='all'));noteColor='all';favoriteNotes=false;refresh();showToast(text('clearFilters'))});
 $('dashboardHighlightsNotesView').querySelectorAll('[data-quick-filter]').forEach(button=>button.addEventListener('click',()=>{quickFilter=button.dataset.quickFilter;$('dashboardHighlightsNotesView').querySelectorAll('[data-quick-filter]').forEach(item=>item.classList.toggle('active',item===button));refresh()}));
