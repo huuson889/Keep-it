@@ -1,5 +1,11 @@
 # Nhật ký nền giữ nguyên văn trước OCR clean rebuild
 
+**2026-11-17 | v3.5.610 | Arena:**
+
+- Tóm tắt: Sửa ô chọn tùy biến trong menu Thêm không giãn theo hàng khiến nhãn thu phóng bị cắt; khôi phục bố cục rộng của 3.5.595, giữ bốn kiểu trang, icon và menu mới.
+- File: `css/dashboard/documents.css`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked dashboard 1512/390 sáng/tối, ảnh và crop 4×, 390 cảm ứng giả lập; ô trang 320/344px, zoom 236/260px (chuột), nhãn vi/en/ko và danh sách, chọn trang/zoom, fullscreen, bật thu gọn; console/pageerror rỗng. Chưa kiểm profile Windows, cảm ứng thật, Android/Firefox và tệp người dùng.
+
 **2026-11-17 | v3.5.584 | Arena.ai Agent sửa:**
 
 - Tóm tắt: sửa cơ chế đẩy ngang của ô tô sáng và popup note; bỏ ngoại lệ bỏ kẹp ngang trong `positionPopupAtAnchor`, dùng chung `position()` với popup dịch/Full Dictionary. Khi đủ chỗ vẫn căn giữa toàn vùng chọn; khi tràn mép, đẩy vào trong với lề 10 px. Không thay đổi tầng, lật dọc, kích thước, cách chọn, sheet, icon/tiện ích hay cơ chế Trang tối.

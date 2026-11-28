@@ -232,6 +232,11 @@ function renderSources(){
  setLhnCounter(pageCount,visible.length,value=>`${formatLhnNumber(value)} trang`);
  setLhnCounter(count,visible.reduce((sum,page)=>sum+page.highlights,0),value=>`${formatLhnNumber(value)} ghi chú`);
  sourceList.replaceChildren();
+ if(!visible.length){
+  const hasData=annotationRecords.length>0,empty=document.createElement('section');empty.className='empty source-empty';empty.setAttribute('role','status');
+  empty.innerHTML=`<div class="empty-icon" aria-hidden="true">${icon('file')}</div><h2>${esc(text(hasData?'emptyFilteredTitle':'emptyDataTitle'))}</h2><p>${esc(text(hasData?'emptyFilteredText':'emptyDataText'))}</p>`;
+  sourceList.append(empty);
+ }
  visible.forEach(page=>{
   const row=document.createElement('article');row.className='source-item'+(page===selected?' active':'');row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label',page.title);row.dataset.url=page.key;
   const colors=page.colors.map(color=>`<span class="color-dot ${color}" title="${colorNames[color]||color}"></span>`).join('');

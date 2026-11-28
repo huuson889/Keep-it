@@ -2705,11 +2705,11 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
 #dashboardScroller > #dashboardHighlightsNotesView[hidden] { display:none!important; }
 #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
   display:grid!important;
-  grid-template-columns:minmax(440px,530px) minmax(0,1fr)!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;
   gap:15px!important;
   align-items:stretch!important;
-  height: max(650px, calc(100vh - 472px)) !important;
-  min-height:300px!important;
+  height:clamp(360px,calc(100dvh - 240px),560px)!important;
+  min-height:0!important;
   max-height:none!important;
   overflow:visible!important;
 }
@@ -2730,35 +2730,18 @@ html.dark #dashboardHighlightsNotesView #dashboardSharedTopbar .ov-crumb span { 
   overflow-y:auto!important;
   overscroll-behavior-y:auto!important;
 }
-@media(max-width:1100px) {
-  #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
-    grid-template-columns:minmax(350px,42%) minmax(0,1fr)!important;
-    gap:12px!important;
-  }
+/* Empty libraries remain spacious, without reserving a second blank pane in portrait. */
+#dashboardScroller > #dashboardHighlightsNotesView #sourceList:has(> .source-empty) { display:flex; }
+#dashboardScroller > #dashboardHighlightsNotesView #notesList:empty { display:none; }
+#dashboardScroller > #dashboardHighlightsNotesView .workspace .empty:not([hidden]) {
+  display:flex;flex:1 1 auto;flex-direction:column;align-items:center;justify-content:center;
+  width:100%;max-width:none;margin:0;padding:24px;
 }
-@media(max-width:850px) {
+#dashboardScroller > #dashboardHighlightsNotesView .workspace .empty-icon { flex:none;margin:0; }
+@media(aspect-ratio < 1/1) {
   #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
-    grid-template-columns:minmax(290px,.9fr) minmax(0,1.35fr)!important;
-    gap:10px!important;
-  }
-}
-@media(max-width:680px) {
-  #dashboardScroller > #dashboardHighlightsNotesView {
-    grid-template-rows:auto auto auto auto!important;
-  }
-  #dashboardScroller > #dashboardHighlightsNotesView > .workspace {
-    height:auto!important;
-    min-height:0!important;
-    max-height:none!important;
     grid-template-columns:minmax(0,1fr)!important;
-    gap:12px!important;
-  }
-  #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .sources-panel,
-  #dashboardScroller > #dashboardHighlightsNotesView > .workspace > .notes-panel {
-    height:clamp(300px,65vh,420px)!important;
-    min-height:300px!important;
-    max-height:420px!important;
-    overflow:hidden!important;
+    gap:0!important;
   }
 }
 

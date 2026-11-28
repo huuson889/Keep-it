@@ -4,6 +4,7 @@
 (() => {
   "use strict";
   const PHONE = matchMedia("(max-width: 599.98px)");
+  const NOTES_SINGLE = matchMedia("(aspect-ratio < 1/1)");
   const RAIL = matchMedia("(min-width: 600px) and (max-width: 899.98px)");
   const TEXT = {
     en:{ overview:"Overview", review:"Review", notes:"Notes", dictation:"Dictation", more:"More", settings:"Settings", account:"Account", back:"Back", close:"Close"},
@@ -112,7 +113,7 @@
     else if (travel < -14) showTabbar();
   }, { capture:true, passive:true });
 
-  // ---------- Highlights & Notes: list → detail (phone) ----------
+  // ---------- Highlights & Notes: list → detail (portrait) ----------
   const notesHeader = document.getElementById("notesHeader");
   if (notesHeader) {
     const back = document.createElement("button");
@@ -122,7 +123,7 @@
   }
   let notesDetailState = false;
   function openNotesDetail() {
-    if (!PHONE.matches || document.body.classList.contains("rn-hn-detail")) return;
+    if (!NOTES_SINGLE.matches || document.body.classList.contains("rn-hn-detail")) return;
     document.body.classList.add("rn-hn-detail"); scroller.scrollTop = 0; showTabbar();
     try { history.pushState({ rnDetail:true }, ""); notesDetailState = true; } catch { notesDetailState = false; }
   }
@@ -261,8 +262,8 @@
   new MutationObserver(relabel).observe(document.documentElement, { attributes:true, attributeFilter:["lang"] });
   const due = document.getElementById("overviewDueCount");
   if (due) new MutationObserver(syncBadge).observe(due, { childList:true, characterData:true, subtree:true });
-  const onLayoutChange = () => { hideTip(); closeSheet(); if (!PHONE.matches) { document.body.classList.remove("rn-hn-detail"); showTabbar(); } };
-  PHONE.addEventListener("change", onLayoutChange); RAIL.addEventListener("change", onLayoutChange);
+  const onLayoutChange = () => { hideTip(); closeSheet(); if (!NOTES_SINGLE.matches) { closeNotesDetail(false); showTabbar(); } };
+  PHONE.addEventListener("change", onLayoutChange); RAIL.addEventListener("change", onLayoutChange); NOTES_SINGLE.addEventListener("change", onLayoutChange);
   document.addEventListener("keydown", event => { if (event.key === "Escape" && sheet.classList.contains("open")) closeSheet(); });
   relabel(); syncActive(); syncBadge();
 })();
