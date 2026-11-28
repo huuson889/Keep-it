@@ -36,6 +36,7 @@ Content là controller duy nhất cho chọn chữ, popup dịch/Full Dictionary
 - H&N/Flashcards/backup dùng annotations chung. Metadata tệp, blob và tiến độ vẫn thuộc DB Tài liệu; migration không được tái tạo note đã xóa.
 - `LHN_CONTENT_TOOLS` không dựng UI: toggleNotes/compose/askAI/dictionary/restore/refresh/close và dismiss dùng chính controller. Chỉ source adapter có hooks; web fallback và selector `lhn-*` không đổi.
 - Main sheet mở trong Documents đưa Dịch/Đọc to xuống footer cố định cạnh Cài đặt; dùng `LHN_DOCUMENTS_MAIN_ACTIONS` để gọi cùng viewer handlers, không route qua generic web `page`/`reader`. Ẩn điều khiển Ẩn/Hiện thanh chỉ trong Documents sheet.
+- Nút cạnh `#lhn-sidebar-edge-toggle` có width=min-width=max-width20px, height=min-height=max-height40px với !important; không cho min/max-size toàn cục của website ép lớn/nhỏ hơn. Kích thước hiển thị vẫn theo `--keepit-uiz`; không ghim right bằng CSS !important vì controller đặt right theo bề rộng sidebar. Không đổi chính sách ẩn trên thiết bị coarse/no-hover hoặc inactive Documents.
 - Giữ keyboard/editable/composition, native Android selection-dismiss, site-disabled và source isolation; không chặn Ctrl+A hay tạo thêm cử chỉ riêng.
 
 - Lưới Công cụ Documents có `doc:ocr` khi facade `ocrAvailable()` đúng; đóng main sheet rồi gọi `ocr()` (native toolbar click), label/tooltip qua `bar_ocr` và `ocrLabel`, active qua `ocrOn`. Web/home/Reader không thêm OCR. Dùng các glyph chung `tool-*`, không giữ path bản sao.
@@ -43,3 +44,5 @@ Content là controller duy nhất cho chọn chữ, popup dịch/Full Dictionary
 ## 5. Kiểm tra và xác minh
 
 Syntax/manifest/dependency refs; Chromium extension thật kiểm chọn chữ/styles/masters, composer save/restore/migration, native sidebar/touch, full dict/tim, AI requests và Notes deep-link/backup. Kiểm lại web không có host và homepage sau thay đổi component chung. Các QA thiết bị/Firefox chưa xác nhận vẫn ở `PROJECT.md`, không được coi mock là provider/giọng thật.
+
+QA637:76check HTTP CSS baseline/fixed và controller có API/protocol shim,1512/390 sáng-tối, min/max/logical/important/normal, trạng thái và mở/đóng. Baseline tái hiện220×64, fixed20×40; không phải xác nhận computed CSS hoặc ảnh extension thật trên SlidesCarnival.

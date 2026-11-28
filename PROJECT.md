@@ -1,19 +1,20 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.636:** sửa chú thích Loại từ trong tệp cho giống web theo ảnh người dùng. Web và Documents cùng dùng `word-class/legend.js`, tách nguyên CSS/markup/tooltip từ web635; không tạo bản sao giao diện riêng.
-- Dùng chung font/kính/màu/dòng/nút×, hover/chạm định nghĩa, kéo header và storage vị trí `lhnWordClassLegend`. Documents neo dưới thanh công cụ, clamp theo viewer; đóng× không bị repaint mở lại, tuân thủ auto-show setting và menu mở tay.
-- DOCX v4 của635, classifier/model/core, overlay nhãn, importer/store/OCR/PDF/PPTX/Trash không đổi. Chữ/zoom/flow tài liệu giữ đường cũ; không xử lý nhãn chồng khi zoom vì ngoài yêu cầu chú thích.
-- QA mới:41check UI nguồn thật HTTP+API/protocol/top-frame shim,1512/390 sáng-tối và en/vi/ko, đối chiếu computed styles; chuột thật hover Prep/kéo panel và thấy ghi vị trí. POS responses là fixture chỉ để kiểm UI, không giả là chạy mô hình. Thêm19check hồi quy import/Gốc-Đọc/đóng-mở lại qua controller thật HTTP+shim đạt. Console/pageerror cuối rỗng; chưa ảnh/unpacked/CSP/crop4×/touch-device hoặc nghiệm thu pixel extension.
+- **Bản test 3.5.637:** khóa thêm min/max-width20px và min/max-height40px trên nút cạnh `#lhn-sidebar-edge-toggle`, chống CSS button của website ép kéo dài; không vá riêng SlidesCarnival.
+- Chỉ sửa một rule CSS của nút; màu/SVG/hover/tooltip/vị trí/zoom UI và controller Notes/AI/sidebar không đổi. DOCX635 và chú thích chung636 giữ nguyên.
+- QA:76/76check Chromium HTTP qua fixture CSS xung đột và controller app thật+API/protocol shim,1512/390 sáng-tối. Bản636 tái hiện220×64 với min-width220/min-height64;637 giữ20×40. Nút website không đổi, trạng thái AI/disabled/open và setting ẩn giữ; mở/đóng sidebar/right offset qua. Console/pageerror ghi nhận cuối rỗng.
+- Chưa bắt computed CSS thực trên SlidesCarnival/máy người dùng hoặc test bằng extension unpacked/ảnh/crop4×; không khẳng định đã xác minh rule của website hay nghiệm thu ảnh thực. QA `/home/user/qa-keepit-637` ngoài source.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.636: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.637: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
+- Nút cạnh637: thử lại SlidesCarnival trên extension thật; mới xác minh các fixture tái hiện min-size và controller HTTP, chưa computed-style/ảnh thực của trang.
 - Chú thích636: kiểm hover/chạm/kéo, sáng-tối và vị trí trên extension thật; HTTP mới là kiểm UI có fixture, chưa ảnh/crop4×.
 - DOCX635: kiểm font/layout, chọn chữ + notes cũ/mới, dịch/TTS/AI trên extension thật; HTTP đã qua nhưng chưa có ảnh/crop4×/CSP/OS drop.
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
@@ -187,6 +188,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 
+**2026-11-26 | v3.5.637 | Arena sửa:**
+
+- Tóm tắt: theo ảnh SlidesCarnival nút cạnh bị kéo dài, thêm min-width/max-width20px và min-height/max-height40px `!important` vào rule gốc #lhn-sidebar-edge-toggle. Bảo vệ kích thước khỏi min/max của website thay vì chỉ width/height; không sửa theo hostname, không đổi button website, SVG/màu/hover/vị trí/controller hoặc DOCX/chú thích636.
+- File: css/content/content.css (chỉ4declaration), manifest637, PROJECT và docs/modules/content.md. Không đổi JS runtime.
+- Kiểm tra:76/76HTTP Chromium: baseline636+CSS min-width220/min-height64 tái hiện220×64,637giữ20×40; hostile normal/important/logical min-size/max-size/native ở1512/390,3class trạng thái, nút site giữ kích thước. Controller nguồn thật qua API/protocol shim: nút mở/đóng Notes/sidebar, aria/right offset và theme app sáng-tối, settingẩn; errors[]. Lượt test đầu khi Documents đóng đo nút0×0 do chính sách inactive, đã mở DOCX thật trước kiểm, không sửa app để né. Chưa bắt rule CSS thực trên SlidesCarnival hoặc kiểm extension unpacked/ảnh/crop4×/touch-device/CSP; không gọi fixture là nghiệm thu website thật. QA `/home/user/qa-keepit-637`.
+
 **2026-11-26 | v3.5.636 | Arena sửa:**
 
 - Tóm tắt: theo hai ảnh người dùng, thay panel chú thích Documents riêng bằng component dùng chung với web. Tách nguyên CSS/markup/tooltip/drag web635 sang legend.js; web gọi cùng component, không đổi tagging/model code ngoài khối UI. Documents dùng cùng title wc_legend, row style và định nghĩa en/vi/ko, close, kéo/lưu vị trí; đặt dưới vBar/clamp theo viewer, theo ResizeObserver khi thu hẹp. Bỏ markup/CSS/handler legend cũ và ngăn repaint mở lại sau×; auto-show theo setting, vẫn mở tay được. Không sửa nhãn dưới từ, renderer DOCX635 hoặc bố cục nội dung.
@@ -359,9 +366,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: Thu gọn 80% cả thanh trên và dưới; dải trang kéo chỉnh rộng, ẩn/hiện, ghi nhớ và giới hạn theo màn hình; menu xổ vẫn cỡ thường.
 - File: `pages/documents.html`, `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/core/languages.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
 - Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh 4×; kéo chuột, bàn phím, ẩn/hiện và reload; giả lập cảm ứng 390; thanh dưới chuột 42/34px, cảm ứng 50/40,4px; menu bố cục, console/pageerror rỗng. Chưa kiểm thiết bị cảm ứng thật, profile Windows, Android/Firefox và PDF/Office của người dùng.
-
-**2026-11-17 | v3.5.605 | Arena:**
-
-- Tóm tắt: Giảm một nửa khoảng trống dọc thanh trên tài liệu, giữ cỡ nút và thu gọn 80%.
-- File: `css/dashboard/documents.css`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
-- Kiểm tra: Chromium unpacked 1512/390 sáng/tối, ảnh và crop 4×; chuột 46/36,8px, cảm ứng giả lập 52/41,6px; menu Thêm và Đọc/Đọc to; console/pageerror rỗng. Chưa kiểm thiết bị thật, profile Windows, Android/Firefox và cảm giác dùng.
