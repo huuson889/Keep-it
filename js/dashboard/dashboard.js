@@ -3673,7 +3673,7 @@ window.addEventListener("message", event => {
 });
 /* Documents renders as flat content inside this scroller, so the frame reports its own height
    instead of owning a second scrollbar; it also follows the dashboard theme. */
-let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardDocumentsResizeFrame = 0, dashboardViewerReadyTimer = 0;
+let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardViewerReadyTimer = 0;
 function dashboardDocumentsContentDoc() {
   const frame = $("dashboardDocumentsFrame");
   try { return frame?.contentDocument || null; } catch { return null; }
@@ -3710,18 +3710,63 @@ function syncDashboardDocumentsTheme() {
     }, 60);
   }
 }
+/* Presentation only: mirror the existing630 drag surface without moving it or
+   handling any drag/drop/FileList. The original iframe remains the event target. */
+let dashboardDropUiCleanup = null;
+function watchDashboardDocumentDropUi(doc) {
+  dashboardDropUiCleanup?.();
+  const source = doc?.getElementById("dropAll");
+  if (!source) return;
+  const preview = document.createElement("div");
+  preview.className = "documents-drop-preview";
+  preview.setAttribute("aria-hidden", "true");
+  preview.inert = true;
+  preview.hidden = true;
+  document.body.append(preview);
+  doc.documentElement.classList.add("documents-drop-mirrored");
+  let frame = 0;
+  function paint() {
+    frame = 0;
+    const visible = activeDashboardView === "documents" && source.classList.contains("show") && !doc.fullscreenElement;
+    preview.hidden = !visible;
+    const viewer = doc.getElementById("viewer")?.classList.contains("show");
+    const bar = viewer ? doc.getElementById("vBar") : dashboardSharedTopbar;
+    const frameTop = viewer ? dashboardDocumentsFrame.getBoundingClientRect().top : 0;
+    const top = Math.max(0, Math.min(innerHeight, (bar?.getBoundingClientRect().bottom || 0) + frameTop));
+    const left = viewer ? 0 : Math.max(0, dashboardScroller.getBoundingClientRect().left);
+    doc.documentElement.style.setProperty("--documents-drop-header", (doc.getElementById("vBar")?.getBoundingClientRect().bottom || 46) + "px");
+    if (!visible) return;
+    const copy = source.firstElementChild?.cloneNode(true);
+    if (copy) preview.replaceChildren(copy);
+    Object.assign(preview.style, { top:top+"px", left:left+"px", width:Math.max(0,innerWidth-left)+"px", height:Math.max(0,innerHeight-top)+"px" });
+  }
+  function schedule() { cancelAnimationFrame(frame); frame = requestAnimationFrame(paint); }
+  const observer = new MutationObserver(schedule);
+  observer.observe(source, { attributes:true, attributeFilter:["class"], childList:true, characterData:true, subtree:true });
+  observer.observe(doc.getElementById("viewer"), { attributes:true, attributeFilter:["class"] });
+  observer.observe(document.body, { attributes:true, attributeFilter:["class"] });
+  const size = new ResizeObserver(schedule);
+  size.observe(dashboardScroller);
+  if (dashboardSharedTopbar) size.observe(dashboardSharedTopbar);
+  addEventListener("resize", schedule);
+  addEventListener("scroll", schedule, true);
+  doc.addEventListener("fullscreenchange", schedule);
+  dashboardDropUiCleanup = () => {
+    cancelAnimationFrame(frame); observer.disconnect(); size.disconnect(); preview.remove();
+    doc.documentElement.classList.remove("documents-drop-mirrored");
+    removeEventListener("resize", schedule); removeEventListener("scroll", schedule, true);
+    doc.removeEventListener("fullscreenchange", schedule);
+  };
+  schedule();
+}
 function watchDashboardDocumentsFrame() {
   syncDashboardDocumentsTheme();
   dashboardDocumentsObserver?.disconnect();
-  cancelAnimationFrame(dashboardDocumentsResizeFrame);
   dashboardDocumentsObserver = null;
   const doc = dashboardDocumentsContentDoc();
+  watchDashboardDocumentDropUi(doc);
   if (!doc || typeof ResizeObserver !== "function") return;
-  dashboardDocumentsObserver = new ResizeObserver(() => {
-    // Write iframe height outside the observer delivery cycle (drag portal/width changes).
-    cancelAnimationFrame(dashboardDocumentsResizeFrame);
-    dashboardDocumentsResizeFrame = requestAnimationFrame(resizeDashboardDocumentsFrame);
-  });
+  dashboardDocumentsObserver = new ResizeObserver(() => resizeDashboardDocumentsFrame());
   dashboardDocumentsObserver.observe(doc.documentElement);
   if (doc.body) dashboardDocumentsObserver.observe(doc.body);
 }

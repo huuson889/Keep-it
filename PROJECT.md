@@ -1,17 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.631:** sửa khung kéo thả Tài liệu theo thiết kế người dùng chốt: Dashboard chừa sidebar trái/thanh trên; viewer chừa vBar, phủ cả rail và pager phía dưới.
-- Một phần tử drop được portal lên body Dashboard same-origin khi kéo tệp (trừ fullscreen), về document gốc khi đóng; đo viewport/header/sidebar thật, không dùng chiều cao iframe. Viền12px, nội dung căn giữa, nhãn riêng en/vi/ko. Import/renderer/store/OCR giữ nguyên630.
-- Đọc Office trực tiếp630 vẫn giữ, không backend/LibreOffice. PPTX OOXML→SVG/chữ, DOCX local docx-preview; vẫn có giới hạn fonts/advanced objects và anchor PPTX cũ cần kiểm lại.
-- QA66 kiểm tra HTTP dashboard+viewer thật với API/protocol shim và DragEvents tổng hợp,1512/900/390 sáng/tối, geometry/hit-test/lifecycle/drop DOCX; xem `/home/user/qa-keepit-631`. Chưa OS drag từ Downloads và chưa unpacked/ảnh extension/crop4×; không thay nghiệm thu thật.
+- **Bản test 3.5.632:** lấy trực tiếp ZIP630 đã commit (SHA90247597…), giải nén419 file gốc rồi chỉ sửa UI vùng kéo thả theo yêu cầu người dùng. Không tiếp tục code631.
+- `documents.js` toàn bộ (kể cả drag/import/open), store, renderers, PPTX engine, HTML/i18n và vendor giống từng byte630. Chỉ CSS + adapter hiển thị trong dashboard.js vẽ bản sao inert/pointer-none; không di chuyển target/drop/FileList, không thêm handler drag/drop.
+- Dashboard chừa sidebar/header; viewer chừa vBar, phủ cả rail/pager. Bản sao hiển thị đo theo viewport cha, original event target nằm nguyên trong iframe; fullscreen giữ bản gốc. Các hành vi import của630 không thay đổi.
+- Tệp người dùng262475byte (bỏ .html) được nhận là DOCX thật; renderer630 đọc được nội dung. QA52 kiểm tra HTTP+shim qua; browser upload vào input gốc mở đúng tệp/ảnh; UI1512/900/390 sáng/tối; chưa thay nghiệm thu extension/OS drag.631 bị người dùng báo mọi tệp lỗi dù UI đúng, không dùng kết quả QA631 chứng minh mở tệp thực.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.631: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.632: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP.
-- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp với630–631 và kéo thả từ Downloads/Explorer trên631. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
+- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và kéo thả/picker extension632; ưu tiên xác nhận hết lỗi mở tệp631. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
@@ -172,13 +172,19 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 `documents-renderers.js` sở hữu PDF/DOCX/ảnh và preflight ZIP, lazy-import `documents-pptx.mjs` cho PPTX. Module nhận ZIP đã kiểm, hooks và callback attachBlocks, trả contract pages/render/thumbnail/dispose cũ. XML→SVG/chữ do first-party tạo bằng DOM API, không nới sanitizer của HTML Office. Metadata/text order và render dùng cùng traversal; images theo relationship từng part, cache có giới hạn. `documents.js`, context, Reader, tools, annotation store và OCR không bị thay renderer/UI giả. Font Pangolin có face riêng và OFL trong licenses. Giới hạn/fidelity/anchor cũ xem docs/documents.md.
 
-### Phạm vi drag overlay631
+### UI vùng kéo thả632 — lấy nguồn630 trực tiếp
 
-`documents.js` giữ một dropAll và importer gốc; Documents chỉ portal phần tử UI lên body cha khi host là dashboardDocumentsFrame cùng origin. Listeners cha/con nhận File drag và hủy bằng AbortController khi pagehide; route khác bỏ qua. Viewer đo vBar của iframe để chừa đúng header; fullscreen giữ overlay trong document fullscreen. Portal cao hơn cả công cụ nổi của host. `documents-drop.css` được hai entry HTML nạp chung, không duplicate UI hoặc đổi thông điệp import. Header/sidebar/viewport đo lại lúc resize/scroll/ResizeObserver; height iframe cập nhật ở animation frame để không feedback trong vòng ResizeObserver. Không đổi renderer/store/blob identity.
+`watchDashboardDocumentDropUi` trong dashboard.js chỉ observe trạng thái gốc, clone nội dung sang bản sao trình bày inert/pointer-events:none và đo header/sidebar/viewport. Không adopt/move/drop target gốc và không nhận drag/drop/FileList. documents.js cùng toàn bộ renderer/store/HTML/i18n giữ nguyên byte630. CSS chỉ ẩn paint gốc khi có mirror, giữ node/event path; trong fullscreen hiển thị gốc. Không đưa pipeline xử lý tệp631 vào bản632. Baseline/audit chi tiết ngoài app: `/home/user/qa-keepit-632/baseline630.json`.
 
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
+
+**2026-11-26 | v3.5.632 | Arena sửa:**
+
+- Tóm tắt: theo yêu cầu dứt khoát của người dùng, giải nén trực tiếp ZIP630 đã commit, xác minh SHA256902475970664273dc1227dab2d39dd3afb43707adf04d0fc690f5b43f84f41c6/419file; không lấy631 làm nguồn.631 người dùng xác nhận UI đúng nhưng mọi tệp không mở được.632 chỉ sửa UI bằng bản sao trình bày pointer-none/inert ở Dashboard, giữ nguyên phần tử gốc/event path630, không thêm handler drag/drop và không chuyển FileList giữa document.
+- File: chỉ runtime UI `dashboard.js`, `documents-host.css`, `documents.css`; manifest632 và tài liệu. Toàn bộ `documents.js`/store/renderers/PPTX/HTML/i18n/vendor giữ nguyên byte630; bỏ CSS/portal631. Audit hash từng file và diff UI so với630 trước đóng gói. Giữ ZIP cũ trên main.
+- Kiểm tra: tệp Quarterly Performance người dùng gửi có PK/ZIP DOCX thật,262475byte SHA1ed57730…; renderer630 đọc1trang có “Executive summary”. QA52 kiểm tra HTTP+API/protocol shim qua; browser.upload vào input gốc mở đúng DOCX/ảnh, original DOM identity/presentation-only,1512/900/390 sáng/tối, sidebar/scroll và drop từ context của iframe mở tệp thật ở library/viewer. Phân biệt lỗi fixture File khác realm: JSZip630 từ chối ArrayBuffer của realm khác; không thay parser để né lỗi. Log có2 ResizeObserver notification theo luồng resize630, không gọi error-free; JS syntax/tools10test/vendor220hash qua. Chưa chứng nhận OS Downloads drag/unpacked/extension screenshots/crop4×/CSP/fullscreen/live AI/notes; không tuyên bố lỗi thực đã nghiệm thu. Xem `/home/user/qa-keepit-632`.
 
 **2026-11-26 | v3.5.631 | Arena sửa:**
 
@@ -352,9 +358,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: thống nhất tên đầy đủ và rút gọn của Vừa rộng trong danh sách zoom và nút chọn: vi “Vừa rộng”, en “Fit width”, ko “너비 맞춤”; không thay logic zoom.
 - File: `js/core/languages.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
 - Kiểm tra: Chromium extension unpacked PDF mẫu, 1512/390 sáng/tối, ảnh chi tiết 4×; cả hai chỗ khớp vi/en/ko, nút/danh sách tiếng Việt 90/90px desktop và 97/97px mobile; chọn Vừa rộng, console/pageerror rỗng. Chưa kiểm thiết bị thật, Windows/profile thật và Android/Firefox.
-
-**2026-11-17 | v3.5.601 | Arena:**
-
-- Tóm tắt: hai danh sách và nút chọn tự tính độ rộng theo mục dài nhất; thêm nút vào/thoát toàn màn hình bên trái menu. Cho phép iframe Documents toàn màn hình; Escape thoát toàn màn hình, đóng tài liệu/mở Cài đặt sẽ thoát trước.
-- File: `js/shared/icons.js`, `js/dashboard/documents.js`, `js/core/languages.js`, `pages/documents.html`, `pages/dashboard.html`, `css/dashboard/documents.css`, `manifest.json`, tài liệu.
-- Kiểm tra: Chromium extension unpacked 1512/390 sáng/tối và ảnh nút phóng 4×; không cắt mục vi/en/ko, danh sách và nút lần lượt 154/154px và 125/125px ở 1512 tiếng Việt, màn hình hẹp 169/169px và 137/137px; fullscreen iframe bật/tắt, Escape không đóng tài liệu, chạm giả lập 390 nút 44×44; console/pageerror rỗng. Chưa kiểm profile Windows, màn hình/thiết bị cảm ứng thật, Android/Firefox và Office thực.

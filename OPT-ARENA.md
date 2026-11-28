@@ -7,14 +7,13 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
-## 2026-11-26 | Khung kéo thả Tài liệu
+## 2026-11-26 | UI kéo thả Tài liệu — nguồn bắt buộc630
 
-**Trạng thái:** Thiết kế đã chốt với người dùng.
+**Trạng thái:** Thiết kế và ràng buộc đã chốt với người dùng.
 
-- Dashboard: chừa sidebar trái và thanh trên cùng, phủ hết vùng bên phải xuống đáy, gồm cả thanh công cụ nổi.
-- Trình xem: chừa thanh công cụ trên cùng, phủ hết bên dưới gồm cả cột thumbnail/rail và pager.
-- Viền tím nét đứt bo góc, inset12–16px; nền mờ nhẹ, icon tải lên cùng “Thả tệp để mở” và dòng riêng tư giữa vùng phủ; toàn vùng nhận thả.
-- Không chọn phương án phủ cả sidebar Dashboard; không để khung bị giới hạn/cắt trong ô nội dung hoặc căn giữa theo tài liệu dài.
+- Dashboard chừa sidebar trái/header, viewer chừa vBar và phủ cả rail/pager; viền tím bo góc inset12–16px, thông điệp ở giữa vùng nhìn thấy.
+- Sau khi631 gây lỗi mở tệp, người dùng yêu cầu lấy **trực tiếp630**, tuyệt đối không dùng631 rồi vá/quay lại. Chỉ sửa UI vùng, không thay xử lý kéo thả/import/mở tệp.
+- Không chọn phủ sidebar Dashboard. Không chuyển phần tử nhận thả hoặc FileList sang document khác để làm UI.
 
 ---
 

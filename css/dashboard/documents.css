@@ -332,7 +332,11 @@ html.dark .sheet button.on{background:#25264a;color:#c0c2ff}
 .demoStrip button.try{height:30px;padding:0 11px;border:1px solid var(--line2);border-radius:9px;background:var(--surface);font-size:12.5px;font-weight:600;color:var(--ink2)}
 .demoStrip button.try:hover{border-color:var(--brand);color:var(--brand)}
 .demoStrip .btnP{height:32px;margin-left:auto}
-
+.dropAll{position:fixed;inset:10px;z-index:85;display:none;place-items:center;border:2px dashed var(--brand);border-radius:26px;background:color-mix(in srgb,var(--page) 82%,transparent);backdrop-filter:blur(10px)}
+.dropAll.show{display:grid}
+.dropAll div{padding:0 22px;text-align:center;color:var(--brand);font-size:18px;font-weight:700}
+.dropAll small{display:block;margin-top:6px;color:var(--muted);font-size:13px;font-weight:500}
+.dropAll .dzIcon{width:64px;height:64px;margin:0 auto 12px;border-radius:18px}
 .modalWrap{position:fixed;inset:0;z-index:88;display:none;place-items:center;padding:16px;background:#0b112040}
 .modalWrap.show{display:grid}
 .modal{width:min(400px,100%);padding:18px;border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:0 24px 60px #1b16502e;animation:vin .2s ease}
@@ -823,6 +827,10 @@ html.dash-embedded .main{padding:0 clamp(16px,3vw,32px) 20px}
 html.dash-embedded .topbar{display:none!important}
 html.dash-embedded ::-webkit-scrollbar{width:0;height:0}
 html.dash-embedded .modalWrap{top:var(--dash-vp-top,0px);bottom:auto;height:100vh}
+html.dash-embedded .dropAll{top:calc(var(--dash-vp-top,0px) + 10px);bottom:auto;height:calc(100vh - 20px)}
+/* Hide only the original paint, never its existing630 drag target or event path. */
+html.dash-embedded.documents-drop-mirrored .dropAll{opacity:0}
+html.dash-embedded.documents-drop-mirrored:fullscreen .dropAll{opacity:1;top:calc(var(--documents-drop-header,46px) + 12px);height:calc(100dvh - var(--documents-drop-header,46px) - 24px)}
 html.dash-embedded .toast{top:calc(var(--dash-vp-top,0px) + 18px)}
 html.dash-embedded .tour{top:calc(var(--dash-vp-top,0px) + 100vh - 18px);bottom:auto;transform:translateY(-100%)}
 

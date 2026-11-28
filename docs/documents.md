@@ -54,11 +54,9 @@ Tài liệu dùng bố cục demo v13 nhưng phải gọi module app có sẵn c
 - Thumbnail Office vẫn là text approximation nét cao của628 (version2), không quảng cáo là ảnh chụp bố cục. Không đổi blob/fingerprint/schema, giữ ghi chú/progress và controller gốc; thứ tự/cấu trúc text PPTX mới có thể làm anchor cũ cần kiểm tra lại, chưa nghiệm thu migration thực tế.
 - QA `/home/user/qa-keepit-630`: renderer/app thật qua HTTP + API/protocol shim, 92 slide, DOCX/table, PPTX độc lập/ảnh/ellipse, PDF regression, malformed/security fixtures; không phải extension unpacked. Chưa chứng nhận CSP, permission, note persistence, gọi dịch/TTS/AI thực hoặc pixel/crop4× trên extension.
 
-### Khung kéo thả631
+### UI vùng kéo thả632 (nguồn trực tiếp630)
 
-`documents.js` giữ một DOM `dropAll`, thêm portal lên body Dashboard cùng origin trừ khi document đang fullscreen. Giới hạn host bằng iframe identity, không chuyển dữ liệu tệp sang host khác; importer gốc vẫn xử lý. Dashboard đo left từ scroller và top từ header.bottom, width/height theo viewport cha; viewer đo vBar cộng offset iframe, standalone đo vBar/topbar, nên rail/pager/công cụ nổi host cùng nằm dưới lớp phủ. CSS `documents-drop.css` nạp ở hai HTML entry, viền12px và nội dung center; `docs_dropOpen` tách khỏi nhãn drop zone gốc, đủ en/vi/ko. Lifecycle có nested counters, leave/dragend/drop/Escape/blur/visibility/route cleanup, listeners AbortController. ResizeObserver đo vùng ngoài và cập nhật iframe bằng rAF để tránh feedback delivery. Import/renderer/schema/storage/AI/OCR không thay đổi.
-
-QA thật trên HTTP shell+iframe nhưng synthetic DragEvents không chứng minh kéo OS/Chrome Downloads. Cần thử extension631, sidebar pin/scroll, desktop/mobile sáng/tối và fullscreen thực; xem `/home/user/qa-keepit-631`.
+`documents.js` và mọi xử lý drag/import/render/store giữ nguyên byte630. Adapter `watchDashboardDocumentDropUi` ở dashboard.js chỉ observe class gốc, clone nội dung sang `.documents-drop-preview` inert/pointer-none; CSS trong documents-host.css trình bày theo viewport cha/header/sidebar. Không move/adopt phần tử nhận drop, không lắng nghe drag/drop, không đọc/đổi FileList. CSS documents.css ẩn paint gốc khi mirror hoạt động nhưng giữ node/event path, fullscreen vẫn dùng gốc. Điều kiện632 là bảo toàn hành vi630, không nâng cấp importer. QA/hash/audit ở `/home/user/qa-keepit-632`; HTTP không chứng minh OS Downloads drag.631 đã bị người dùng báo mọi file lỗi, không dùng66test631 làm nghiệm thu.
 
 ## Xác minh
 
