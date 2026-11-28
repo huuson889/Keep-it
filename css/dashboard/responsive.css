@@ -32,6 +32,8 @@
   #dashboardSidebar.dashboard-reference-sidebar,
   body.dashboard-sidebar-pinned #dashboardSidebar.dashboard-reference-sidebar { display: none !important; }
   #dashboardScroller { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; scroll-padding-bottom: 80px; }
+  /* The fallback tabs need 72px; Keepit publishes its actual shown/folded clearance. */
+  html.keepit-bar-on #dashboardScroller { padding-bottom:var(--keepit-dashboard-bottom,0px)!important; scroll-padding-bottom:var(--keepit-dashboard-bottom,0px); }
 
   /* compact shared top bar */
   #dashboardSharedTopbarSlash, #dashboardSharedTopbarStatus { display: none !important; }
