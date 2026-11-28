@@ -1,14 +1,14 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.645:** sửa đúng ý userảnh18: trong detail phải vuốt lên tới ĐẦU TAB Ghi chú (intro/thống kê/search/filter/sharedtopbar), không chỉ cuộn tới headernguồn. Bỏẩn4khốiđầuvàbỏépworkspace/footerhàng1/2;chỉswap2panelworkspace,giữtoànbộphầnđầutabtrongflowgiốngTrangnguồn. Mởdetailscrollworkspacevàochỗdướisharedheader,cóthểcuộnlêntrênkhôngthoátdetail;backrestorelistScroll.
-- Đồngthờisửaregression644:thêmicon-buttonchoBacklàmrulehiệnsharediconthắng.rn-backẩn,trênnganglộBackvàđẩylệchheader. GuardIDscopedmặcđịnhdisplaynone!important,chỉportraitbody.rn-hn-detailmớihiện. Giữicon/style/nútquaylạidọc,khôngđổilayoutdesktopkhác.
-- Giữ644Keepitoverlay/footermọitabkhôngnhảy,cuộnouterNotesvàobserverroot;Documents641/source642/CRUD/storage/Settingskhôngđổi. Chỉ2logicfilesresponsive.css/responsive-nav.js+manifest/docs.
-- QA645:184/184actualDashboardHTTP/API/protocolshim,baseline644ẩnupper/lộBackngangđãbắtđúng;1238/994/696vuông/650/283×696và800×1100,sángtối,rỗng/1/37notes. Upperrowskhôngẩn/đổiorder,vềtopvẫndetail/searchhoạtđộng/lastnote/footerstable/Back/rotate,errors[]. Pointer18trustedwheelchứngminhdetail→stats→introởpageTop0→searchởtrênnotespanel,vẫndetail,khôngbấmBack. FilegốcchỉcopyQAkhôngGitHub/ZIP;chưaunpacked/CSP/device/crop4×.
+- **Bản test 3.5.646:** ♥ Yêu thích cạnh các chip màu chỉ lọc ghi chú của trang đang chọn; không tham gia lọc thư viện nguồn hoặc video yêu thích. Không khớp vẫn giữ tiêu đề/URL/metadata/chip và hiển thị empty state cục bộ.
+- `refreshSelectedNotes()` dùng chung cho màu và ♥; chỉ render notes/reveal notes, không rebuild source cards/thống kê. Hai bộ lọc giao nhau; tắt ♥ giữ màu, về Tất cả khôi phục notes. Toolbar Yêu thích vẫn lọc trang yêu thích riêng.
+- Người dùng xác nhận layout/cuộn645 đã đúng; responsive.css/responsive-nav.js giữ nguyên byte. Bar/footer644, source CSS642, Documents641, Dashboard owner/CRUD/storage/Settings không đổi.
+- QA646: 227/227 kiểm tra actual Dashboard HTTP/API/protocol/top-frame shim, 650/283/1238×696 và 800×1100 sáng/tối; tái hiện baseline645, 37notes/0favorite, hai nguồn/màu/favorite/video/globalfilter, snapshot, Back, en/vi/ko, errors[]. Pointer thật bật ♥0 giữ trang, tắt khôi phục37. Chưa unpacked/CSP/device/crop4×; fixture snapshot không phải importer JSON hay xác nhận storage thật.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.645: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.646: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
@@ -191,6 +191,13 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 
+**2026-11-26 | v3.5.646 | Arena sửa:**
+
+- Tóm tắt: sửa lỗi ảnh19–21; ♥ Yêu thích trong hàng màu là bộ lọc notes cục bộ giống màu, không phải lọc trang. Gỡ `favoriteNotes` khỏi `filteredRecords()` và `favoriteVideoPages()`; màu/♥ gọi `refreshSelectedNotes()` chỉ render selected notes. Giữ giao màu+favorite trong `renderSelected()`, empty cục bộ khi0kết quả, header/URL/metadata/selection/library không mất; global page favorites không đổi.
+- File: `js/dashboard/highlights-notes.js`, `manifest.json`, `PROJECT.md`, `docs/modules/dashboard.md`. Không sửa CSS/layout645 đã được user xác nhận, bar/footer644, Documents, Dashboard owner/CRUD/storage/Settings.
+- Kiểm tra: 227/227 actual Dashboard HTTP+API/protocol/top-frame shim, 650/283/1238×696 và800×1100 sáng/tối. Baseline645 tái hiện mất nguồn khi♥0;646 giữ source DOM identity,37→0→37, không mutation khi lọc; hai nguồn/6notes màu giao favorite, snapshot0, toolbar page favorites/video0notes, bỏ favorite cuối, Back, en/vi/ko/errors[]. Test optimistic bỏ favorite cuối chặn bridge fixture từ shim trước owner (ID không trong DB), rồi inject authoritative snapshot; không gọi đây là storage acceptance. Harness đầu chặn bridge quá muộn gây owner gửi snapshotDB rỗng, đã lưu failure và sửa shim QA, không sửa app vì lỗi harness.
+- Kiểm tra: pointer browser thật650 bật♥0 vẫn ByeTOEIC/URL/37metadata/chip/library1, tắt khôi phục37 không Back; `qa-keepit-646/ui-final.json`, `pointer-empty.json`, `pointer-restored.json`, `preserved.json` ngoài app. SHA2uploadgốc/copy nguyên byte; responsive645/bar644/Dashboard/Documents/sourceCSS giữ nguyên. `node --check`, `git diff --check`; chưa unpacked/CSP/device/ảnhpixel4×, JSON injection không phải importer. Dữ liệu riêng không commit/ZIP.
+
 **2026-11-26 | v3.5.645 | Arena sửa:**
 
 - Userảnh17:Backlộtrênngangpháheader do644thêmclassicon-button(ruleIDdisplayinline-flexthắng.rn-backdisplaynone). Guard`#dashboardHighlightsNotesView #notesHeader > .rn-back`displaynone!important,chỉportraitbody.rn-hn-detailshowgrid!important. Khôngbỏstyleicon/Backdọc.
@@ -369,9 +376,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: sửa chuyển trang giật khi OCR cuộn liên tục: thay nhảy `scrollTop` bằng native smooth riêng host OCR, cùng cơ chế cuộn mượt demo; giữ current ở trang đích trong quá trình cuộn, tránh boot/engine gọi trùng làm restart, không để resize-preserve ngắt animation hoặc giữ tọa độ cũ khi kích thước đổi. Wheel/touch/pointer/key trả lại tracking thủ công; điều hướng app khác, single/facing rời, engine, lưu trữ, scan/khung/CSS của 3.5.615 không đổi.
 - File: `js/dashboard/documents.js`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`; chuyển nguyên văn hai bản ghi cũ sang `docs/changelog/ocr-clean-base-history.md` để giữ 30 mục log mới nhất.
 - Kiểm tra: harness HTTP mới trace rAF/scrollTop, cùng byte PDF với demo 2.9.7.33 ở origin riêng. Trước sửa 0/8, nhảy trọn quãng ngay khung đầu, không frame trung gian; sau sửa 8/8 ở 1512/390 × nút theme sáng/tối × continuous/facingContinuous, native smooth có nhiều frame trung gian, đơn điệu, current không lùi, pageStack giữ nguyên. 8/8 lượt OCR thật 3 trang: bắt đầu ở trang1 sau resize, scan đủ 1/2/3, lưu đúng từng page, chuyển mượt và dọn scan. Node24/24, static29/29, scan/khung64/64, bốn flow/hủy18/18, hồi quy15/15, range/current/native-PDF13/13; cú pháp/undefined checks (khai báo shared globals) sạch, console.error/pageerror HTTP rỗng. Wheel thật trusted đã kiểm đổi current3→2 theo cuộn thủ công. Đây không phải bộ ảnh/video/pixel/unpacked; giới hạn môi trường vẫn còn, không đánh dấu 100% hay hứa timing/FPS tuyệt đối.
-
-**2026-11-26 | v3.5.615 | Arena sửa:**
-
-- Tóm tắt: sửa đúng nguyên nhân UI scan/word/region bị phóng theo native PDF: tách visual surface inverse-scale, reset padding của `.paper`, vẽ box từ rect chuẩn hóa thay outline span text/nested `.en`. Giữ lớp chữ native và công cụ app; khớp reverse-hover theo cụm chữ trước fallback để region append không làm sáng nhầm. Không đổi engine, schema, labels, theme hay renderer.
-- File: `js/dashboard/ocr-controller.mjs`, `css/dashboard/ocr-demo.css`, `manifest.json`, `PROJECT.md`, `README.md`, `docs/documents.md`, `THIRD_PARTY_NOTICES.md`.
-- Kiểm tra: HTTP fixture PDF 3 trang 72×96pt, OCR thật; trước sửa 0/16 ca, sourceScale 10.5556 làm scan 2→21.11px/trail 120→1266.67px/region 2→21.11px và overlay vượt trang; sau sửa 64/64 ca 1512/390 × sáng/tối (nút app) × 4 flow × fit/50/100/800 zoom, scale 0.5–10.5556; visual rect khớp trang, scan 2px/trail120px/region2px/radius2px, nested outline none, scan giữa chu kỳ khớp 50%, thời gian 2.8s/5.6s. Node 16/16, static 29/29, regression 15/15; ESLint/console.error/pageerror HTTP rỗng. Scan trong lượt OCR thật visualScale≈1, beam running 2800ms, line2px/trail120px. Chuột thật kéo vùng 360×36px, nhận đúng tiêu đề, Apply đóng/clear scan, hover thuận/ngược và chọn chữ/tool app. QA chỉ HTTP; chưa unpacked/PNG/crop4×/pixel diff/CSP/permission thật; không tuyên bố đạt 100% demo. Bản 3.5.614 có 976 mẫu style nhưng bỏ sót lỗi overlay, không dùng kết quả đó làm bằng chứng phủ nhận phản hồi người dùng.
