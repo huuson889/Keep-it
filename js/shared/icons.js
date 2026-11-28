@@ -37,7 +37,7 @@
   "flow-facing": '<rect x="2" y="2" width="9" height="20" rx="1"/><rect x="13" y="2" width="9" height="20" rx="1"/><path d="M5 7h3M5 11h3M5 15h3M16 7h3M16 11h3M16 15h3"/>',
   "flow-facingContinuous": '<path d="M2 2h9v11H2zM13 2h9v11h-9zM2 22v-6h9v6M13 22v-6h9v6M5 6h3M5 9h3M16 6h3M16 9h3M5 20h3M16 20h3"/>',
   // v3.5.542: icon của 5 tab Dashboard + Thùng rác — MỘT nguồn cho cả menu trái dashboard và thanh Keepit
-  "nav-overview": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  "nav-overview": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   "nav-dictation": '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
   "nav-flashcards": '<rect width="14" height="17" x="3" y="4" rx="2"/><path d="M7 8h6M7 12h6"/><path d="M16 8h2a2 2 0 0 1 2 2v10H8"/>',
   "nav-notes": '<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>',
