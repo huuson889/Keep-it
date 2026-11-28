@@ -7,15 +7,6 @@ File này lưu **ý tưởng và thiết kế đã chốt qua thảo luận vớ
 
 ---
 
-## 2026-11-26 | Khoanh vùng lỗi kéo thả633
-
-**Trạng thái:** Người dùng chốt phạm vi.
-
--632: viewer kéo vào mở được, picker mở được; **chỉ Dashboard kéo vào lỗi**. Không còn coi mọi đường mở tệp đều lỗi.
-- Chỉ sửa nhận tệp kéo thả Dashboard; giữ UI đã duyệt, viewer receiver/picker/bộ đọc đang hoạt động và nguồn630 của các phần đó.
-
----
-
 ## 2026-11-26 | UI kéo thả Tài liệu — nguồn bắt buộc630
 
 **Trạng thái:** Thiết kế và ràng buộc đã chốt với người dùng.

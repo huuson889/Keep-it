@@ -250,18 +250,17 @@
     try { frame?.contentWindow?.postMessage({ type:'KEEPIT_DOCUMENTS_REFRESH' }, location.origin); } catch { /* frame not ready */ }
   }
 
-  /* Same colour language as the library cards, so a deleted PDF still reads as a PDF. */
+  /* Same approved SVGs as Documents; remaining types use Trash demo v1 option B. */
   const KIND = {
-    pdf:  { label:'PDF', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h4"/>' },
-    docx: { label:'Word', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="m8 12 1.6 5L12 13l2.4 4L16 12"/>' },
-    pptx: { label:'PowerPoint', path:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/><path d="M9 17v-5h2.2a1.9 1.9 0 0 1 0 3.8H9"/>' },
-    image:{ label:'', path:'<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4 17 4.6-4.3a2 2 0 0 1 2.7 0L16 17"/>' },
-    note: { label:'', path:'<path d="M4 21h16"/><path d="m9 14 1.2 4h3.6L15 14"/><path d="m11 4 5 5-6.2 6.2L5 17l1.8-4.8Z"/>' },
-    dictation: { label:'', path:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>' }
+    pdf:  { label:'PDF', icon:'file-kind-pdf' },
+    docx: { label:'Word', icon:'file-kind-docx' },
+    pptx: { label:'PowerPoint', icon:'file-kind-pptx' },
+    image:{ label:'', icon:'file-kind-image' },
+    note: { label:'', icon:'file-kind-note' },
+    dictation: { label:'', icon:'file-kind-dictation' },
+    speak: { label:'', icon:'file-kind-speak' }
   };
-  const kindOf = item => KIND[item.type] || KIND.pdf;
-  /* Icon "trang web" cho hàng gộp: cùng path quả địa cầu app đang dùng ở thanh Keepit. */
-  const WEB_ICON_PATH = '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>';
+  const kindOf = item => KIND[item.kind === 'note' ? 'note' : item.type] || KIND.pdf;
 
   const trim = (value, max) => {
     const text = String(value || '').replace(/\s+/g, ' ').trim();
@@ -290,7 +289,7 @@
     const checked = selected.has(item.id) ? ' checked' : '';
     return `<div class="trash-row${options.sub ? ' sub' : ''}${checked ? ' is-picked' : ''}" data-id="${item.id}">
       <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick="${item.id}"${checked}><span class="trash-box"></span></label>
-      <span class="trash-ico kind-${item.kind === 'note' ? 'note' : (item.type || 'pdf')}"><svg viewBox="0 0 24 24" aria-hidden="true">${kind.path}</svg></span>
+      <span class="trash-ico kind-${item.kind === 'note' ? 'note' : (item.type || 'pdf')}">${LHN_ICONS.render(kind.icon)}</span>
       <span class="trash-main"><b>${escapeHtml(item.kind === 'note' ? (trim(item.quote, 120) || t('trashTypeNote')) : item.kind === 'dictation' ? (trim(item.title, 120) || hostOf(item.url) || t('trashTypeDictation')) : (item.title || item.name || item.id))}</b>
         <span>${parts.join(' · ')}</span></span>
       <span class="trash-left">${t('trashDaysLeft', { days: daysLeft(item.expires) })}</span>
@@ -352,7 +351,7 @@
     parts.push(t('trashDeletedOn', { date: fmtDate(Number(rowItem.deletedAt)) }));
     return `<div class="trash-row trash-page${open ? ' is-open' : ''}${picked > 0 ? ' is-picked' : ''}" data-id="${escapeHtml(rowItem.id)}" data-page-row="1">
       <label class="trash-check" title="${escapeHtml(t('trashSelect'))}"><input type="checkbox" data-pick-page="${escapeHtml(rowItem.url)}"${checked ? ' checked' : ''} data-partial="${partial ? 1 : 0}"><span class="trash-box"></span></label>
-      <span class="trash-ico kind-web"><svg viewBox="0 0 24 24" aria-hidden="true">${WEB_ICON_PATH}</svg></span>
+      <span class="trash-ico kind-web">${LHN_ICONS.render('file-kind-web')}</span>
       <span class="trash-main">
         <b class="with-caret"><span class="t">${escapeHtml(title)}</span><button type="button" class="trash-expand${open ? ' is-open' : ''}" aria-expanded="${open}" aria-label="${escapeHtml(open ? t('trashCollapseNotes') : t('trashExpandNotes'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></b>
         <span>${escapeHtml(parts.join(' · '))}</span>

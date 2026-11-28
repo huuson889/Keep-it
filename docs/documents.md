@@ -58,10 +58,6 @@ Tài liệu dùng bố cục demo v13 nhưng phải gọi module app có sẵn c
 
 `documents.js` và mọi xử lý drag/import/render/store giữ nguyên byte630. Adapter `watchDashboardDocumentDropUi` ở dashboard.js chỉ observe class gốc, clone nội dung sang `.documents-drop-preview` inert/pointer-none; CSS trong documents-host.css trình bày theo viewport cha/header/sidebar. Không move/adopt phần tử nhận drop, không lắng nghe drag/drop, không đọc/đổi FileList. CSS documents.css ẩn paint gốc khi mirror hoạt động nhưng giữ node/event path, fullscreen vẫn dùng gốc. Điều kiện632 là bảo toàn hành vi630, không nâng cấp importer. QA/hash/audit ở `/home/user/qa-keepit-632`; HTTP không chứng minh OS Downloads drag.631 đã bị người dùng báo mọi file lỗi, không dùng66test631 làm nghiệm thu.
 
-### Receiver Dashboard633 — không sửa viewer
-
-Người dùng xác nhận632 chỉ lỗi Dashboard drag; viewer drag/picker được. Adapter parent chỉ hoạt động ở library, nhận drop trên vùng phủ hoặc vùng tài liệu parent; DataTransfer.items→getAsFile trước UI mutation, fallback files, snapshot `new File`, gửi `KEEPIT_DOCUMENTS_IMPORT_FILES` hiện có bằng postMessage target origin chính xác. Không gọi thẳng `contentWindow.KeepitDocuments.importFiles` (File/ArrayBuffer khác realm); không giữ live FileList sau event. Tệp0byte/quá giới hạn vẫn do guard630 xử lý. Không thêm handler vào iframe/viewer, không đổi onchange/pipeline630. Source original giữ nguyên; preview library pointer-auto để nhận thật, viewer pointer-none/inert như632.39 checks HTTP synthetic không thay native OS acceptance.
-
 ## Xác minh
 
 Chromium extension thật cần kiểm selection/composer/sidebar/dictionary, notes/anchor/reopen/migration/deep link/backup, Reader native/thay trang/card, touch selection/sheet/AI và regression web/home. AI chưa đăng nhập có thể báo lỗi nhúng; UI không chứng minh phiên AI thật. Firefox, Edge Android và giọng đọc thực cần xác nhận riêng.

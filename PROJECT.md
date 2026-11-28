@@ -1,17 +1,17 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.633:** người dùng xác nhận632 chỉ lỗi kéo thả từ Dashboard; trong viewer kéo thả được và picker được.633 chỉ sửa adapter nhận drop ở document Dashboard, không thay receiver trong iframe/viewer hoặc picker.
-- Khung Dashboard là receiver thật khi ở thư viện: chụp File từ DataTransfer.items/getAsFile trước thay UI, fallback files, đóng gói File cục bộ và postMessage same-origin qua IMPORT_FILES630. Không giữ FileList qua event/await, không gọi importer trực tiếp xuyên realm. Viewer preview vẫn inert/pointer-none như632.
-- `documents.js` toàn bộ (kể cả viewer drop/import/picker), store/renderers/PPTX/HTML/i18n/vendor vẫn byte-identical630. Không đổi giới hạn kích thước hoặc coi tệp rỗng là hợp lệ. Giữ UI đã duyệt.
-- QA HTTP+shim kiểm riêng drop parent Dashboard→bridge, iframe fallback, viewer direct drop và picker;39 checks qua với DOCX người dùng262475byte; serialized receiver local File, không gửi trùng. Chưa OS Downloads drag/unpacked/extension screenshot/crop4×, cần người dùng xác nhận đường Dashboard633.
+- **Bản test 3.5.634:** áp dụng phương án B demo Trash icon v1 đã được người dùng duyệt trên nền632; bỏ qua633 (đã gỡ theo yêu cầu, lịch sử Git còn).
+- Trash dùng `LHN_ICONS.render(file-kind-*)`: PDF/Word/PPT/Ảnh giữ nguyên SVG đã duyệt; web/note/dictation/speak lấy nguyên SVG B. Icon22px trong ô34px, màu/nền tint theo demo; không đổi bố cục hàng hoặc dữ liệu/khôi phục/xoá.
+- Import/open/drag/drop, Documents/OCR/store/renderers và overlay632 không đổi. Người dùng đã xác nhận632 kéo thả bình thường; báo lỗi632 trước đó do thử nhầm. Speaking chỉ có glyph dự phòng, chưa tích hợp dữ liệu Thùng rác.
+- Kiểm mới: hai JS syntax + diff-check; 4 SVG cũ không đổi/4 SVG B khớp demo;22 kiểm tra Dashboard thật qua HTTP+API shim đạt (1512/390 sáng/tối, icon/màu, chọn/restore fixture). HTTP có2 pageerror ở Documents/OCR ngoài phạm vi; không gọi toàn app error-free. Chưa có unpacked/ảnh1512/390/crop4×/nghiệm thu extension634. Các thư mục QA cũ đã xoá theo yêu cầu, không còn là bằng chứng sẵn có.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.633: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.634: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
-- Cần PNG 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP.
-- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp; ưu tiên kéo thả Dashboard633 trên Chrome Downloads/Explorer.632 viewer drop và picker đã được người dùng xác nhận hoạt động, không sửa chúng. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
+- Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
+- Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
 - Home/dashboard: giữ hay tắt popup giới thiệu thanh; Documents 3.5.503: thử lại mở/nhập/bôi đen để đóng lỗi 3.5.483–502; kéo-thả: xác nhận lại 3.5.491+.
@@ -109,6 +109,7 @@ Có 6 entry `content_scripts`: base `document_start`/`all_frames` nạp browser 
 - Thumbnail: renderer thumbnail(page,bounds) raster PDF/text Office theo backing resolution; library mặc định960×1320, ảnh không upscale. documents.js quản lý lazy cache-version2/queue upgrade và rail theo DPR/resize/scroll, không schema migration.
 - Gợi ý theo tệp/trang: OCR controller gộp officeHint/imageHint vào notice/bulb chung, không còn vBanner strip trong viewer. Body OCR chỉ hiện khi needsOcr; CTA Office là Thu gọn, CTA ảnh/PDF thiếu chữ là Nhận dạng chữ; hint/reset có gate selectedFile đúng ID.
 - Nhãn loại tệp Documents dùng `fileLabel(type)` → `LHN_ICONS.render(file-kind-*)`; bốn glyph option3 demo v5 dùng chung cho thư viện/viewer/import, token màu scoped trong documents.css. Viewer gọi `fileLabel(type,true)` chỉ hiện icon với aria-label/title; supported types giữ pills chữ622.
+- Trash `dashboard-trash.js` dùng chung `file-kind-pdf/docx/pptx/image`; `file-kind-web/note/dictation/speak` là SVG B từ demo v1. `trash.css` giữ ô34px và icon22px, màu scoped; note lấy `kind` thay vì annotation `type`. Không thêm Speaking store hoặc thay luồng khôi phục/xoá.
 - Documents main sheet đặt Dịch/Đọc to ở footer cố định cạnh Cài đặt qua `LHN_DOCUMENTS_MAIN_ACTIONS`; callbacks chia sẻ handler với viewer topbar. Điều khiển Ẩn/Hiện thanh không hiện riêng ở sheet này. OCR là tile trong lưới Công cụ, dùng facade `ocr/ocrAvailable/ocrLabel/ocrOn` gọi nút native; chỉ có khi viewer đang mở. Sáu glyph `tool-*` chia sẻ từ `LHN_ICONS` với toolbar.
 - Renderer/vendored licences/giới hạn v314 giữ nguyên; details ở `docs/documents.md` và trang module tương ứng.
 
@@ -176,19 +177,15 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 `watchDashboardDocumentDropUi` trong dashboard.js chỉ observe trạng thái gốc, clone nội dung sang bản sao trình bày inert/pointer-events:none và đo header/sidebar/viewport. Không adopt/move/drop target gốc và không nhận drag/drop/FileList. documents.js cùng toàn bộ renderer/store/HTML/i18n giữ nguyên byte630. CSS chỉ ẩn paint gốc khi có mirror, giữ node/event path; trong fullscreen hiển thị gốc. Không đưa pipeline xử lý tệp631 vào bản632. Baseline/audit chi tiết ngoài app: `/home/user/qa-keepit-632/baseline630.json`.
 
-### Dashboard-only drop633
-
-`watchDashboardDocumentDropUi` sở hữu receiver ở parent Dashboard khi libraryActive. Capture Files trong callback trước UI reset, dựng File snapshot rồi structured-clone bằng message IMPORT_FILES sẵn có của630; source/origin kiểm trong handler630. Không gắn drop listener vào iframe; viewer receiver/picker/importer vẫn nguyên630. CSS chỉ bật pointer-events cho preview library, viewer vẫn inert/pointer-none. Events AbortController được hủy khi UI rebind, route khác không nhận và viewer thật không bị reset source class. Baseline/audit và QA ngoài app `/home/user/qa-keepit-633`.
-
 ## 5. Nhật ký
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 
-**2026-11-26 | v3.5.633 | Arena sửa:**
+**2026-11-26 | v3.5.634 | Arena sửa:**
 
-- Tóm tắt: theo xác nhận mới của người dùng, chỉ Dashboard632 kéo thả lỗi, viewer drop/picker đang được. Sửa riêng receiver thư viện tại parent Dashboard: nhận drop ngay vùng phủ (trước632 chỉ là lớp nhìn xuyên), lấy File từ items trước đổi UI/fallback FileList, snapshot File rồi gửi IMPORT_FILES630 bằng structured clone cùng origin. Không giữ DataTransfer/FileList qua await, không gọi importer qua object khác realm. Viewer không nhận bridge/drop mới; CSS viewer vẫn pointer-none/inert.
-- File: `dashboard.js`, `documents-host.css`, manifest633 và docs; `documents.js`, picker, renderer/store/OCR/HTML/i18n/vendor nguyên630. Không đổi giới hạn/chấp nhận tệp rỗng, không sửa đường viewer đang hoạt động.
-- Kiểm tra:39 checks HTTP app+API shim, parent drop với File từ cửa sổ khác mở DOCX người dùng và ảnh, một bridge/local realm/đúng262475byte; FileList placeholder0 nhưng item thật vẫn giữ đủ byte, revoke store ngay sau dispatch; iframe fallback, viewer direct drop không bridge, picker độc lập;1512/900/390 sáng/tối, sidebar, route guard, geometry/hit-path. Browser.upload vào input gốc cũng mở được; JS syntax/vendor220hash/tools10test/diff-check qua; không có app error được ghi trong phiên QA cuối. Các drop này là synthetic; browser mouse HTML drag chỉ ghi trusted start, chưa chứng minh native file drop. Chưa OS Downloads/Explorer, unpacked633/ảnh extension/crop4×/pixel/CSP/permission; không tuyên bố hết lỗi trên máy người dùng. QA `/home/user/qa-keepit-633`.
+- Tóm tắt: áp dụng phương án B người dùng đã chọn từ demo Trash icon v1; file silhouette màu/glyph trắng cho web/note/dictation/speak. PDF/Word/PPT/Ảnh tái dùng nguyên SVG đã duyệt; icon22px trong ô34px, tint/màu demo sáng/tối. Sửa ánh xạ note theo `kind` để annotation `type:highlight` không hiện nhầm PDF. Chỉ icon UI, không thêm Speaking trash, không sửa import/open/drag/drop/layout/restore/delete.
+- File: `js/shared/icons.js`, `js/dashboard/dashboard-trash.js`, `css/dashboard/trash.css`, manifest634, PROJECT và `docs/modules/dashboard.md`. Nền632 được người dùng xác nhận kéo thả bình thường (thử nhầm trước đó);633 đã gỡ khỏi cây/main theo yêu cầu. QA cũ đã xoá theo yêu cầu, không tái tạo các thư mục cũ.
+- Kiểm tra: node syntax2file, git diff-check; đối chiếu4glyph file giữ nguyên byte và4glyph B đúng demo.22check Dashboard source thật trên HTTP+API shim/fixture đạt:7loại hiện hữu,22/34px, màu note/không tràn ngang1512/390 sáng/tối (bật bằng nút app), chọn/khôi phục fixture và Speaking vẫn pending. Quan sát browser HTTP sáng; không coi là ảnh nghiệm thu extension. HTTP có2pageerror `LHN_DOCUMENT_CONTEXT is not defined` ở documents.js:915 và `reading source` ở ocr-controller.mjs:12, các file này không đổi; chưa kết luận nguyên nhân. Chưa unpacked634/CSP/profile/ảnh1512/390/crop4×/console-empty/OS drag, không chứng nhận nghiệm thu extension thật.
 
 **2026-11-26 | v3.5.632 | Arena sửa:**
 

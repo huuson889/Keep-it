@@ -1579,3 +1579,9 @@
 
 - Sửa vị trí blend PDF: áp `mix-blend-mode:multiply` lên stacking context của text span PDF có highlight, để màu tô hòa với canvas gốc thay vì thành dải che chữ.
 - Kiểm tra cú pháp/CSS selector/static class, `git diff --check`; chưa browser-test trên PDF thật.
+
+**2026-11-17 | v3.5.602 | Arena:**
+
+- Tóm tắt: thống nhất tên đầy đủ và rút gọn của Vừa rộng trong danh sách zoom và nút chọn: vi “Vừa rộng”, en “Fit width”, ko “너비 맞춤”; không thay logic zoom.
+- File: `js/core/languages.js`, `pages/documents.html`, `manifest.json`, `PROJECT.md`.
+- Kiểm tra: Chromium extension unpacked PDF mẫu, 1512/390 sáng/tối, ảnh chi tiết 4×; cả hai chỗ khớp vi/en/ko, nút/danh sách tiếng Việt 90/90px desktop và 97/97px mobile; chọn Vừa rộng, console/pageerror rỗng. Chưa kiểm thiết bị thật, Windows/profile thật và Android/Firefox.

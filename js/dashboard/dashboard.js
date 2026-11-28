@@ -3710,9 +3710,8 @@ function syncDashboardDocumentsTheme() {
     }, 60);
   }
 }
-/* Dashboard drop adapter. The viewer keeps its existing630 receiver unchanged.
-   Capture real File objects before hiding UI, then structured-clone them through
-   the existing same-origin IMPORT_FILES bridge, never a direct cross-realm call. */
+/* Presentation only: mirror the existing630 drag surface without moving it or
+   handling any drag/drop/FileList. The original iframe remains the event target. */
 let dashboardDropUiCleanup = null;
 function watchDashboardDocumentDropUi(doc) {
   dashboardDropUiCleanup?.();
@@ -3725,53 +3724,12 @@ function watchDashboardDocumentDropUi(doc) {
   preview.hidden = true;
   document.body.append(preview);
   doc.documentElement.classList.add("documents-drop-mirrored");
-  const events = new AbortController();
-  let frame = 0, libraryDragging = false;
-  const viewerOpen = () => doc.getElementById("viewer")?.classList.contains("show");
-  const libraryActive = () => activeDashboardView === "documents" && !viewerOpen() && !doc.fullscreenElement;
-  const fileDrag = event => [...(event.dataTransfer?.types || [])].includes("Files");
-  function resetLibraryDrag() { libraryDragging = false; if (!viewerOpen()) source.classList.remove("show"); schedule(); }
-  function libraryArea(event) {
-    const area = dashboardScroller.getBoundingClientRect(), bar = dashboardSharedTopbar?.getBoundingClientRect();
-    return event.clientX >= area.left && event.clientY >= Math.max(0,bar?.bottom || 0);
-  }
-  function receiveLibraryDrop(event) {
-    if (!libraryActive() || !fileDrag(event)) return;
-    if (event.target !== preview && !libraryArea(event)) return;
-    // DataTransfer is protected outside this event. Read items/files NOW, before
-    // any DOM/class change or await; FileList itself must never be retained.
-    const transfer = event.dataTransfer, files = [];
-    for (const item of [...(transfer?.items || [])]) {
-      if (item.kind !== "file") continue;
-      try { const file = item.getAsFile(); if (file) files.push(file); } catch { /* files fallback below */ }
-    }
-    if (!files.length) files.push(...(transfer?.files || []));
-    const snapshot = files.map(file => new File([file],file.name,{type:file.type,lastModified:file.lastModified}));
-    event.preventDefault(); event.stopImmediatePropagation();
-    if (snapshot.length) dashboardDocumentsFrame.contentWindow?.postMessage({type:"KEEPIT_DOCUMENTS_IMPORT_FILES",files:snapshot},location.origin);
-    resetLibraryDrag();
-  }
-  // Only parent Dashboard library drops use this adapter. Events inside the
-  // iframe never bubble here: viewer and original iframe handlers stay untouched.
-  addEventListener("drop",receiveLibraryDrop,{capture:true,signal:events.signal});
-  for (const type of ["dragenter","dragover"]) addEventListener(type,event => {
-    if (!libraryActive() || !fileDrag(event) || !libraryArea(event)) return;
-    event.preventDefault(); event.dataTransfer.dropEffect = "copy";
-    libraryDragging = true; schedule();
-  },{signal:events.signal});
-  addEventListener("dragleave",event => {
-    if (libraryDragging && (!event.relatedTarget && (event.clientX <= 0 || event.clientY <= 0 || event.clientX >= innerWidth || event.clientY >= innerHeight) || event.target === preview)) resetLibraryDrag();
-  },{signal:events.signal});
-  addEventListener("dragend",resetLibraryDrag,{signal:events.signal});
-  addEventListener("keydown",event => { if (event.key === "Escape" && libraryDragging) resetLibraryDrag(); },{signal:events.signal});
+  let frame = 0;
   function paint() {
     frame = 0;
-    const viewer = viewerOpen();
-    if (activeDashboardView !== "documents" || viewer) libraryDragging = false;
-    const visible = activeDashboardView === "documents" && (source.classList.contains("show") || libraryDragging) && !doc.fullscreenElement;
+    const visible = activeDashboardView === "documents" && source.classList.contains("show") && !doc.fullscreenElement;
     preview.hidden = !visible;
-    preview.inert = !!viewer;
-    preview.classList.toggle("documents-drop-receiver", !viewer);
+    const viewer = doc.getElementById("viewer")?.classList.contains("show");
     const bar = viewer ? doc.getElementById("vBar") : dashboardSharedTopbar;
     const frameTop = viewer ? dashboardDocumentsFrame.getBoundingClientRect().top : 0;
     const top = Math.max(0, Math.min(innerHeight, (bar?.getBoundingClientRect().bottom || 0) + frameTop));
@@ -3794,7 +3752,7 @@ function watchDashboardDocumentDropUi(doc) {
   addEventListener("scroll", schedule, true);
   doc.addEventListener("fullscreenchange", schedule);
   dashboardDropUiCleanup = () => {
-    events.abort(); cancelAnimationFrame(frame); observer.disconnect(); size.disconnect(); preview.remove();
+    cancelAnimationFrame(frame); observer.disconnect(); size.disconnect(); preview.remove();
     doc.documentElement.classList.remove("documents-drop-mirrored");
     removeEventListener("resize", schedule); removeEventListener("scroll", schedule, true);
     doc.removeEventListener("fullscreenchange", schedule);

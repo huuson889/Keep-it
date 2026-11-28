@@ -17,10 +17,9 @@ body.documents-viewer-open .rn-tabbar,body.documents-viewer-open .rn-sheet,body.
 /* The frame spans the whole route so its internal media queries see the same widths as the
    v3.5.379 page; the 44/22/12px content padding now lives inside documents.html again. */
 
-/* Library receives drops here; viewer remains a pointer-none visual copy. */
+/* Visual-only copy of the630 surface. It never receives pointer/drop events. */
 .documents-drop-preview{position:fixed;z-index:2147483647;display:grid;place-items:center;box-sizing:border-box;overflow:hidden;pointer-events:none!important;background:color-mix(in srgb,var(--dash-page-bg,var(--lhn-ui-page)) 82%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--lhn-ui-brand);font:700 18px/1.45 var(--lhn-app-font-family,system-ui,sans-serif)}
 .documents-drop-preview[hidden]{display:none}
-.documents-drop-preview.documents-drop-receiver{pointer-events:auto!important}
 .documents-drop-preview *{pointer-events:none!important}
 .documents-drop-preview::before{content:"";position:absolute;inset:12px;border:2px dashed currentColor;border-radius:24px}
 .documents-drop-preview>div{box-sizing:border-box;max-width:100%;padding:28px 32px;text-align:center;overflow-wrap:anywhere}
