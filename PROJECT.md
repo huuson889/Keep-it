@@ -1,21 +1,22 @@
 # Keepit - Hồ sơ dự án
 
 ## 1. Trạng thái hiện tại
-- **Bản test 3.5.640:** sửa đúng lớp chung Dashboard: bỏ72pxnavreserve cố định khi dùng Keepit; bar thật publish `--keepit-dashboard-bottom` theo shown/folded, resize/zoom và state. Folded0, shown có chỗ cho bar; rn-tabbar dự phòng vẫn72px+safearea. Giữ scrollBottom và cậpnhậtlastTop tránh paddingclamp bị hiểu là cuộnngược.
-- Dashboard bỏ minwidth320 ở body (minwidth0/width100%), body/scroller dùng100dvh có100vhfallback; root/body/scroller cùngcanvas token (#e9edf4/#000), không lộ mảng nền cũ dưới283px. Không đổi footer từngtab/card/nội dung/flowDOCX/OCR/router. 639shortlayout còn giữ.
-- QA640:215/215check Chromium HTTP actualDashboard+actualKeepitbar controller/openShadow,API/protocol/top-frame shim chỉserver:710/580/398/283/994×696 sángtối,Overview/Dictation fold/show/scroll và5route. Baseline639barfoldedvẫn72px;640foldedpad0/footergaproute25–30px. Rootfit/height696/canvasmatch, khôngoverflowpage; idle khôngbarfeedback. Parenterrors[] baselineerrors[]. Không giả state bar bằng class/helper.
-- Realpointer283×696:60trustedwheel xuống đáy→barshid/pad0/footerbottom665.734 trênviewport696/canvas3lớp cùngrgb233,237,244/errors[];cuộnngược→barhiện/pad76/errors[]. Đãxem browser screenshotHTTP ở283 không mảngnềnkhác/khôngkhoảng72cũ; chưa extensionunpacked/CSP/thiếtbị thật/safearea phầncứng/crop4× hoặc pixelmatch ảnhuser.
-- QA `/home/user/qa-keepit-640` (ui-final-215.json,real-pointer-folded/shown.json); giữ Importantreport635–638+ZIP638 và demoarchive đãbackup. Không xoá QA/sourcechưa lưu. Nền638,nút637userxácnhận,chúthích636/DOCX635 giữ.
+- **Bản test 3.5.641:** sửa vùng cuộn dư sau footer Tài liệu bằng chiều cao khối thư viện `body > .app`, không dùng root.scrollHeight (bị floor theo viewport iframe, không co sau narrow→wide). ResizeObserver theo library, gộp write qua rAF/cancel khi rebind; giữ nhánh viewport viewer và hidden route.
+- Baseline640:544pxsau283→544,library1124.906px nhưngiframe1870px,dư745px.641frame1125px và co lại theo filter/nội dung/resize. Lượt simple scroll không resize ban đầu không tái hiện tăng vôhạn; không khẳngđịnh đãchứngminh mọi đường tăngvôhạn, đãbắt lỗi giữ chiều cao dư đúngảnh.
+- QA641:162/162ChromiumHTTP+API/protocol/topframe shim,544/283/398/710/994→544×696 sángtối,4lầncuộnđáy mỗi lượt/theme/đổitab/idle,fixturetăng1600px&rút,importDOCXthật→viewerviewport696→vềlibrary,filter/clear và5route. Finalerrorsbaseline/parent/child[];rAFloạicảnhbáoROcủalượtđầufix.
+- Realpointer:Home544bấmTàiliệutrênbarthật(location.assign→dashboard),283→544rồiwheeltớiđáy;frame1319=ceil(library1318.422),scrollTop=max695,footerbottom671.422/viewport696,barshid,parent/childerrors[]. Có1DOCXQA từautomatedtest nênlibrarykhôngrỗng;wheels[]trongmanualreport do eventnằmiframecon,khôngsuyđếmtrustedwheel. ĐãnhìnbrowserHTTPđúngHome→Documents khôngcònkhốitrốngkéo dài;chưaunpacked/CSP/device/pixelcrop4×.
+- Nút/đáyDashboard640 đượcuserxácnhận,khôngđổikeepitbar640/CSS/renderers/DOCX/OCR/router. QA `/home/user/qa-keepit-641` giữ ui-final-162.json/baseline-stale-height-1870.json/real-pointer-home-documents.json;khôngxoátrướcsao lưu.
 
 ## 2. Việc đang mở / Tiếp theo (sửa đè)
 ### OCR — chặn nghiệm thu
-- Cần người dùng thử bản 3.5.640: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
+- Cần người dùng thử bản 3.5.641: sidebar/popup, cuộn OCR và scan/khung trên PDF gây lỗi trong extension thật; HTTP đã đo nhưng chưa có nghiệm thu bằng ảnh/video extension.
 - Cần môi trường unpacked thật để kiểm CSP/worker/model/permission; Chrome công cụ hiện chặn chrome://extensions.
 - Cần PNG extension634 1512/390 sáng/tối, crop 4× và so pixel/trạng thái với demo; mới có DOM/số đo HTTP. Kiểm lại hai lỗi HTTP Documents/OCR trong môi trường extension thật.
 - Kiểm profile/thiết bị/tệp thực, PDF xoay/mật khẩu/lớn/hỏng, clipboard, note anchors cũ/mới, dịch/TTS/AI và fidelity Office phức tạp và picker/OS drag extension634; người dùng đã xác nhận632 kéo thả bình thường, không còn coi632 là lỗi chặn. Mẫu ảnh Việt/Hàn tổng hợp đã chạy; Hàn còn lỗi đọc giống demo trên cùng byte PNG.
 - Bản test được đóng gói theo xác nhận của người dùng; chỉ nâng trạng thái nghiệm thu sau khi kiểm đủ unpacked/ảnh, không dùng phép đo HTTP thay ảnh/pixel.
 ### Cần người dùng xác nhận
-- Đáy Dashboard640: thử710/580/398/283px,cuộnthu/hiện thanh vàđổitab trên extension thật. HTTPbarcontrollerthật+trustedwheel đãxácminh foldpad0/shown76ở283, chưasafearea phầncứng/ảnhextensioncrop4×.
+- ScrollTàiliệu641: thửHome→Documents,resize/cuộnđáy,mở/đóngfile trên extensionthật;HTTPđãcoframeđúnglibrary,chưaunpacked/ảnhpixel.
+- ĐáyDashboard640 đượcuserxácnhận hoạtđộngtốt;giữchưatesthardware safearea/ảnhextensioncrop4×.
 - Nền638: kiểm tab Tài liệu đồng bộ vùng trên khi đổi tab/theme trên extension thật; HTTP đã đối chiếu màu, chưa ảnhcrop4×.
 - Chú thích636: kiểm hover/chạm/kéo, sáng-tối và vị trí trên extension thật; HTTP mới là kiểm UI có fixture, chưa ảnh/crop4×.
 - DOCX635: kiểm font/layout, chọn chữ + notes cũ/mới, dịch/TTS/AI trên extension thật; HTTP đã qua nhưng chưa có ảnh/crop4×/CSP/OS drop.
@@ -190,6 +191,12 @@ Các mũi tên qua `core/messaging` là runtime messages. Settings giao diện �
 
 Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 
+**2026-11-26 | v3.5.641 | Arena sửa:**
+
+- Userảnhimage7/8:HomevàoDocumentscuộntrốngkéo dài. Baseline640đo544lúcđầuscrollổn1125px,khôngtáihiệntăngvôhạnsimple-scroll;283→544thìroot/iframe1870pxtrongkhilibrary1124.906px,dư745pxkhôngco. Nguyênnhânroot.scrollHeight>=viewporthiệntạicủaiframe. Đổiđoceil(body>.app.getBoundingClientRect.height),chỉflowlibrarykhôngfixedoverlay;ROtheolibrarythayroot/body,gộpwritequaRAF/cancelrebind. Giữviewer/hiddenbranch. KhôngsửaCSS,keepitbar640,docxrender/import/store/router.
+-162/162HTTPactualDashboard+child+bar/API/protocol/topframeshim:544/283/398/710/994→544×696sángtối,4scrolltobottom/lượt,theme/tab/idle;heightframe=ceilapp,footerchừađúngpaddingtheowidthiframe(khôngdùngouterwidth994khicósidebar220). Fixturegrow1600vàremovevềoldheight;realDOCXimportviewer696→vềlibrary;filter/clear và5route. Errorsbaseline/parent/childcuối[]. LượtđầufixcóROdeliverywarnings,đãđưawritequarAFchạylạihết;khônghidewarnings.
+- RealpointerHTTPHome544→bấmbarTàiliệu(location.assigndashboard)→283→544→wheelđáy:frame1319/app1318.422(vìcó1DOCXQA),scrollTop=max695,footerbottom671.422/696,barshid,errorsparent/child[]. Đãviewbrowserảnhfooterđúngcuốikhôngkéo dài. Manualwheels[]vìeventnằmiframecon,khôngclaimđếmtrusted. Chưaunpacked/CSP/device/safearea/pixelcrop4×. QAui-final-162.json+baseline-stale-height-1870.json+real-pointer-home-documents.json. Userđãkhen/xácnhận640 trướcảnhDocumentsmới;khôngrevivebugđáy640.
+
 **2026-11-26 | v3.5.640 | Arena sửa:**
 
 - User gửi thêmảnh Overview710/580/398/283 vàyêucầufix sau639khôngtrúng. Sửa shellchung: khihtml.keepit-bar-on, scrollerbottompadding/scrollpadding dùng --keepit-dashboard-bottom từkeepitbar. applyOff gọi syncDashboardBottom chỉDASHBOARD, px đo(baroffsetheight+computedbottom)/UIzoom khi shown/narrow,0khi folded/off/keyboard/fullscreen/yield/docsviewer. Khôngsửafooter từngtab; fallback rnnav vẫn72+safearea. Preserve bottomvà lastTop sau thaypadding đểkhôngbarfeedback; onScroll đọc lạiactualscrollTop chỉDashboardscroller,web giữđườngcũ.
@@ -363,9 +370,3 @@ Nhật ký cũ: `docs/changelog/ocr-clean-base-history.md`.
 - Tóm tắt: Sửa ô chọn tùy biến trong menu Thêm không giãn theo hàng khiến nhãn thu phóng bị cắt; khôi phục bố cục rộng của 3.5.595, giữ bốn kiểu trang, icon và menu mới.
 - File: `css/dashboard/documents.css`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
 - Kiểm tra: Chromium unpacked dashboard 1512/390 sáng/tối, ảnh và crop 4×, 390 cảm ứng giả lập; ô trang 320/344px, zoom 236/260px (chuột), nhãn vi/en/ko và danh sách, chọn trang/zoom, fullscreen, bật thu gọn; console/pageerror rỗng. Chưa kiểm profile Windows, cảm ứng thật, Android/Firefox và tệp người dùng.
-
-**2026-11-17 | v3.5.609 | Arena:**
-
-- Tóm tắt: Reader nằm giữa vùng xem tài liệu và theo dõi các panel; thu gọn 80% thêm Reader/nút về đầu, menu Reader giữ cỡ thường, Reader tự vừa vùng hẹp.
-- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/content/keepit-bar-css.js`, `js/core/languages.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
-- Kiểm tra: Chromium unpacked dashboard 1512/390 sáng/tối, ảnh và crop 4×, cảm ứng giả lập; tâm Reader/vùng xem trùng khi ẩn dải trang/mở dịch, 560×64 → 448×51,2px, nút về đầu 46 → 36,8px và cuộn về 0; menu tốc độ hoạt động, console/pageerror rỗng. Chưa kiểm profile Windows, thiết bị chạm thật, giọng thật, Android/Firefox và PDF/Office người dùng.

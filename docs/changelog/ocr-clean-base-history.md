@@ -1621,3 +1621,9 @@
 - Tóm tắt: Chuyển động trượt 0,26s cubic-bezier(.2,.8,.2,1) cùng thanh Ghi chú cho dải trang và bảng dịch Tài liệu, cùng hai cột Nói/Chép Overlay; vùng giữa co giãn đồng bộ, màn dọc bảng dịch giữ kiểu sheet; hỗ trợ giảm chuyển động.
 - File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/overlay/ui/overlay-css.js`, `js/overlay/ui/overlay-ui.js`, `manifest.json`, `docs/documents.md`, `docs/modules/overlay.md`, `PROJECT.md`.
 - Kiểm tra: extension Chromium unpacked, ảnh 1512/390 sáng/tối và crop 4×; tài liệu PDF fixture và Overlay trang web fixture, đo vị trí lúc chuyển động, ẩn/hiện và mở lại hai cột; console/pageerror rỗng. Màn dọc Overlay không có hai cột theo thiết kế. Chưa kiểm profile Windows, cảm ứng thật, video/phụ đề thực, Android/Firefox và tài liệu của người dùng.
+
+**2026-11-17 | v3.5.609 | Arena:**
+
+- Tóm tắt: Reader nằm giữa vùng xem tài liệu và theo dõi các panel; thu gọn 80% thêm Reader/nút về đầu, menu Reader giữ cỡ thường, Reader tự vừa vùng hẹp.
+- File: `css/dashboard/documents.css`, `js/dashboard/documents.js`, `js/content/keepit-bar-css.js`, `js/core/languages.js`, `manifest.json`, `docs/documents.md`, `PROJECT.md`.
+- Kiểm tra: Chromium unpacked dashboard 1512/390 sáng/tối, ảnh và crop 4×, cảm ứng giả lập; tâm Reader/vùng xem trùng khi ẩn dải trang/mở dịch, 560×64 → 448×51,2px, nút về đầu 46 → 36,8px và cuộn về 0; menu tốc độ hoạt động, console/pageerror rỗng. Chưa kiểm profile Windows, thiết bị chạm thật, giọng thật, Android/Firefox và PDF/Office người dùng.

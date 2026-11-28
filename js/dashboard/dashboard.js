@@ -3673,7 +3673,7 @@ window.addEventListener("message", event => {
 });
 /* Documents renders as flat content inside this scroller, so the frame reports its own height
    instead of owning a second scrollbar; it also follows the dashboard theme. */
-let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardViewerReadyTimer = 0;
+let dashboardDocumentsFrameHeight = 0, dashboardDocumentsObserver = null, dashboardDocumentsResizeFrame = 0, dashboardViewerReadyTimer = 0;
 function dashboardDocumentsContentDoc() {
   const frame = $("dashboardDocumentsFrame");
   try { return frame?.contentDocument || null; } catch { return null; }
@@ -3682,14 +3682,16 @@ function dashboardDocumentsViewerOpen() { return document.body.classList.contain
 function resizeDashboardDocumentsFrame() {
   const frame = $("dashboardDocumentsFrame"), doc = dashboardDocumentsContentDoc();
   if (!frame || !doc) return;
-  /* v3.5.431: khung chỉ hiện khi xem tệp (thư viện do Dashboard vẽ) nên không cần đo chiều cao;
-     khung ẩn thì document không có documentElement để đo và sẽ ném lỗi. */
+  // Viewer owns the viewport; a hidden route has no measurable library box.
   if (dashboardDocumentsViewerOpen() || frame.getClientRects().length === 0) {
     dashboardDocumentsFrameHeight = 0;
     frame.style.removeProperty("height");
     return;
   }
-  const height = Math.ceil(doc.documentElement?.scrollHeight || doc.body?.scrollHeight || 0);
+  // Root scrollHeight is at least the iframe's current viewport height, so it cannot
+  // shrink after a narrow layout. Measure only the in-flow library, not fixed overlays.
+  const library = doc.querySelector("body > .app");
+  const height = Math.ceil(library?.getBoundingClientRect().height || 0);
   if (!height || Math.abs(height - dashboardDocumentsFrameHeight) < 1) return;
   dashboardDocumentsFrameHeight = height;
   frame.style.height = `${height}px`;
@@ -3762,13 +3764,21 @@ function watchDashboardDocumentDropUi(doc) {
 function watchDashboardDocumentsFrame() {
   syncDashboardDocumentsTheme();
   dashboardDocumentsObserver?.disconnect();
+  cancelAnimationFrame(dashboardDocumentsResizeFrame);
+  dashboardDocumentsResizeFrame = 0;
   dashboardDocumentsObserver = null;
   const doc = dashboardDocumentsContentDoc();
   watchDashboardDocumentDropUi(doc);
-  if (!doc || typeof ResizeObserver !== "function") return;
-  dashboardDocumentsObserver = new ResizeObserver(() => resizeDashboardDocumentsFrame());
-  dashboardDocumentsObserver.observe(doc.documentElement);
-  if (doc.body) dashboardDocumentsObserver.observe(doc.body);
+  const library = doc?.querySelector("body > .app");
+  if (!library || typeof ResizeObserver !== "function") return;
+  dashboardDocumentsObserver = new ResizeObserver(() => {
+    if (dashboardDocumentsResizeFrame) return;
+    dashboardDocumentsResizeFrame = requestAnimationFrame(() => {
+      dashboardDocumentsResizeFrame = 0;
+      resizeDashboardDocumentsFrame();
+    });
+  });
+  dashboardDocumentsObserver.observe(library);
 }
 function watchDashboardDocumentsFrameAtParse() {
   const frame = $("dashboardDocumentsFrame");
